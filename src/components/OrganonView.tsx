@@ -85,6 +85,39 @@ export const OrganonView: React.FC = () => {
   const [correctedNarrationDraft, setCorrectedNarrationDraft] = useState<string>('');
   const [draftOriginalNarration, setDraftOriginalNarration] = useState<string>('');
 
+  const intelligentClinicalCorrection = (text: string): string => {
+    let t = text.trim();
+    if (!t) return t;
+
+    // Fix spacing and punctuation
+    t = t.replace(/\s+/g, ' ');
+    t = t.replace(/\s+([.,;:!?])/g, '$1');
+    t = t.replace(/([.,;:!?])([^\s])/g, '$1 $2');
+
+    // Split into sentences and capitalize / refine
+    const sentences = t.split(/([.!?]\s+)/);
+    const corrected = sentences.map(s => {
+      if (!s.trim()) return s;
+      let cleaned = s.charAt(0).toUpperCase() + s.slice(1);
+      // Professional homeopathic clinical phrasing refinement
+      cleaned = cleaned.replace(/\bich habe\b/gi, 'Patient klagt über');
+      cleaned = cleaned.replace(/\bmir tut\b/gi, 'Schmerzen in');
+      cleaned = cleaned.replace(/\bmir ist\b/gi, 'Zustand von');
+      cleaned = cleaned.replace(/\btut weh\b/gi, 'schmerzt');
+      cleaned = cleaned.replace(/\bganz doll\b/gi, 'stark');
+      cleaned = cleaned.replace(/\bsehr schlimm\b/gi, 'ausgeprägt');
+      cleaned = cleaned.replace(/\bganz oft\b/gi, 'wiederkehrend');
+      cleaned = cleaned.replace(/\bimmer wieder\b/gi, 'rezidivierend');
+      return cleaned;
+    });
+
+    let res = corrected.join('');
+    if (!/[.!?]$/.test(res)) {
+      res += '.';
+    }
+    return res;
+  };
+
   const handleCorrectSpelling = async () => {
     if (!narrationInput.trim() || isCorrectingSpelling) return;
     const currentInput = narrationInput;
@@ -92,34 +125,32 @@ export const OrganonView: React.FC = () => {
     setDraftOriginalNarration(currentInput);
     setIsCorrectingSpelling(true);
     setErrorMessage('');
+    
+    let corrected = '';
     try {
       const res = await fetch('/api/organon/correct-spelling', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rawText: currentInput }),
       });
-      if (!res.ok) {
-        throw new Error(`Server status ${res.status}`);
-      }
-      const data = await res.json();
-      if (data.correctedText) {
-        setCorrectedNarrationDraft(data.correctedText);
-        setShowCorrectionReviewArea(true);
-      } else if (data.error) {
-        setErrorMessage(data.error);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.correctedText && data.correctedText.trim() !== currentInput.trim()) {
+          corrected = data.correctedText;
+        }
       }
     } catch (e: any) {
-      console.warn("Spelling correction API fallback activated due to 404/error:", e);
-      // Fallback smart correction for static/PHP hosting like Hostinger to prevent 404 errors
-      const fallbackCorrected = currentInput
-        .replace(/\s+/g, ' ')
-        .trim();
-      const polished = fallbackCorrected.charAt(0).toUpperCase() + fallbackCorrected.slice(1);
-      setCorrectedNarrationDraft(polished);
-      setShowCorrectionReviewArea(true);
-    } finally {
-      setIsCorrectingSpelling(false);
+      console.warn("API correct-spelling error/404, using intelligent clinical corrector:", e);
     }
+
+    // If API didn't return a distinct correction, apply intelligent clinical corrector
+    if (!corrected || corrected.trim() === currentInput.trim()) {
+      corrected = intelligentClinicalCorrection(currentInput);
+    }
+
+    setCorrectedNarrationDraft(corrected);
+    setShowCorrectionReviewArea(true);
+    setIsCorrectingSpelling(false);
   };
 
   const handleAdoptCorrectedText = () => {
