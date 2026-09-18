@@ -94,7 +94,7 @@ export function LandingPage({ onGetStarted, onGoToLogin }: LandingPageProps) {
   }, []);
 
   return (
-    <div id="landing-page-root" className="bg-[#faf9f6] text-slate-800 antialiased font-sans selection:bg-teal-100 selection:text-teal-900">
+    <div id="landing-page-root" className="bg-[#faf9f6] text-slate-800 antialiased font-sans selection:bg-teal-100 selection:text-teal-900 overflow-x-hidden w-full max-w-full">
       
       {/* 1. HERO SECTION WITH SEMANTIC ENGINE ANIMATION */}
       <section id="landing-hero" className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28 border-b border-slate-200/70">
@@ -672,11 +672,11 @@ export function LandingPage({ onGetStarted, onGoToLogin }: LandingPageProps) {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm">
-            <div className="grid grid-cols-12 bg-slate-900 text-white text-xs sm:text-sm font-bold p-4 sm:p-5">
-              <div className="col-span-6 text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 bg-slate-900 text-white text-xs sm:text-sm font-bold p-4 sm:p-5">
+              <div className="sm:col-span-6 text-slate-300">
                 {t('landingCompareClassicHeader')}
               </div>
-              <div className="col-span-6 text-teal-400 flex items-center gap-1.5">
+              <div className="sm:col-span-6 text-teal-400 flex items-center gap-1.5 mt-2 sm:mt-0">
                 <Sparkles className="w-4 h-4" />
                 <span>{t('landingComparePlatformHeader')}</span>
               </div>
@@ -691,12 +691,12 @@ export function LandingPage({ onGetStarted, onGoToLogin }: LandingPageProps) {
                 { old: t('landingCompareRow5Old'), neu: t('landingCompareRow5New') },
                 { old: t('landingCompareRow6Old'), neu: t('landingCompareRow6New') }
               ].map((row, idx) => (
-                <div key={idx} className="grid grid-cols-12 p-4 sm:p-5 items-center hover:bg-slate-50 transition-colors">
-                  <div className="col-span-6 text-slate-500 pr-4 flex items-start gap-2">
+                <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 p-4 sm:p-5 items-center hover:bg-slate-50 transition-colors gap-3 sm:gap-0">
+                  <div className="sm:col-span-6 text-slate-500 sm:pr-4 flex items-start gap-2">
                     <span className="text-rose-500 font-bold shrink-0 mt-0.5">✕</span>
                     <span>{row.old}</span>
                   </div>
-                  <div className="col-span-6 text-slate-900 font-semibold pl-4 flex items-start gap-2">
+                  <div className="sm:col-span-6 text-slate-900 font-semibold sm:pl-4 flex items-start gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                     <CheckCheck className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
                     <span>{row.neu}</span>
                   </div>
