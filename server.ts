@@ -1206,43 +1206,45 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
       };
       const targetLanguageName = langNames[language] || "German (Deutsch)";
 
-      const prompt = `CRITICAL INSTRUCTIONS: You MUST output all analysis results, category names, core questions, text results, control notes, and clarification questions in ${targetLanguageName}. Translate every single category name and core question fully into ${targetLanguageName}.
+      const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all text, category names, core questions, analysis results (result_text), examinations, adopted complaints, control notes, and clarification questions FULLY TRANSLATED into ${targetLanguageName} (${language}). 
+Do NOT output any German phrases or sentences (such as "Keine Angaben zur Causa...") unless German is the selected target language. 
+If the selected target language is Greek (el), use proper Greek alphabet and terminology (e.g. use "Καμία" or "Δεν αναφέρεται" instead of Latin/German words or romanized letters like 'n').
 
-Du bist ein präziser NLP- und Text-Parser für homöopathische Fallschilderungen nach Samuel Hahnemann.
-Deine Aufgabe ist es, den Patiententext in einer 3-Stufen-Analyse nach folgenden 10 exakten Kategorien zu analysieren:
-1. Causa (Wodurch ausgelöst? Wichtig: Unterscheide streng zwischen bloßen Handlungen/zeitlichem Kontext [z.B. "zur Schule laufen"] und echten Auslösern. Wenn kein ursächliches Ereignis als Auslöser genannt ist, erwähne dies nicht als Causa bzw. kennzeichne es als keine Causa.)
-2. Localisatio (Wo?)
-3. Sensatio (Wie fühlt es sich an?)
-4. Symptoma (Was?)
-5. Modalitates – Besserung (Wann besser?)
-6. Modalitates – Verschlechterung (Wann schlechter?)
-7. Symptomata concomitantia (Was tritt dazu auf?)
-8. Comorbiditas (Welche weiteren Erkrankungen?)
-9. Mens (Was verändert sich beim Denken?)
-10. Animus (Wie geht es dir emotional?)
+You are a precise NLP and text parser for homeopathic case narratives according to Samuel Hahnemann (Organon of Medicine).
+Your task is to analyze the patient narrative in a 3-stage analysis according to the following 10 exact categories:
+1. Causa (What triggered it? Important: Distinguish strictly between mere actions/temporal context and real triggers. If no causal event is mentioned, state this clearly in ${targetLanguageName}.)
+2. Localisatio (Where?)
+3. Sensatio (What does it feel like?)
+4. Symptoma (What?)
+5. Modalitates – Besserung (When better?)
+6. Modalitates – Verschlechterung (When worse?)
+7. Symptomata concomitantia (What occurs concomitantly?)
+8. Comorbiditas (What other conditions exist?)
+9. Mens (What changes in thinking?)
+10. Animus (How do you feel emotionally?)
 
-WICHTIGE REGEL FÜR ALLE KATEGORIEN: Wenn etwas nicht zutrifft oder keinen Einfluss hat (z.B. Handlungen ohne Krankheitswert, fehlende Modalitäten, fehlende psychische Zustände), dann führe es in der jeweiligen Kategorie gar nicht erst auf, sondern lass es weg ("Keine"). Nenne nur das, was tatsächlich zutrifft.
+IMPORTANT RULE FOR ALL CATEGORIES: If something does not apply or has no disease value, state clearly in ${targetLanguageName} (e.g., "None" / "Δεν αναφέρεται"). Only mention what actually applies.
 
-Erstelle in der Antwort zwingend das Feld "three_stage" mit:
-- "stage1": Array mit allen 10 Kategorien (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text).
-- "stage2": Array mit Prüfungen von Textstellen (text_snippet, examination, adopted_complaint).
-- "stage3": Objekt mit control_notes und clarification_question.
+You MUST create the "three_stage" field in the JSON response with:
+- "stage1": Array with all 10 categories (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text [fully in ${targetLanguageName}]).
+- "stage2": Array of text checks (text_snippet, examination [in ${targetLanguageName}], adopted_complaint [in ${targetLanguageName}]).
+- "stage3": Object with control_notes [in ${targetLanguageName}] and clarification_question [in ${targetLanguageName}].
 
-Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Format (ohne Markdown Code-Blöcke):
+Answer EXCLUSIVELY as a compact, valid JSON object in the following format (without markdown code blocks):
 {
   "raw_text": "${rawText.replace(/"/g, '\\\\"')}",
   "three_stage": {
     "stage1": [
-      { "category_key": "causa", "category_name": "Causa (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "localisatio", "category_name": "Localisatio (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "sensatio", "category_name": "Sensatio (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "symptoma", "category_name": "Symptoma (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "modalitates_besserung", "category_name": "Modalitates – Besserung (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "modalitates_verschlechterung", "category_name": "Modalitates – Verschlechterung (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "symptomata_concomitantia", "category_name": "Symptomata concomitantia (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "comorbiditas", "category_name": "Comorbiditas (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "mens", "category_name": "Mens (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
-      { "category_key": "animus", "category_name": "Animus (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." }
+      { "category_key": "causa", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "localisatio", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "sensatio", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "symptoma", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "modalitates_besserung", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "modalitates_verschlechterung", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "symptomata_concomitantia", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "comorbiditas", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "mens", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "animus", "category_name": "...", "core_question": "...", "result_text": "..." }
     ],
     "stage2": [
       { "text_snippet": "...", "examination": "...", "adopted_complaint": "..." }
@@ -1286,7 +1288,7 @@ Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Forma
             const completion = await openai.chat.completions.create({
               model: "gpt-4o",
               messages: [
-                { role: "system", content: "You are a precise homeopathic text parser. Output valid JSON only." },
+                { role: "system", content: `You are a precise homeopathic text parser. Output valid JSON only. All output texts, category names, core questions, and result descriptions MUST be fully translated into ${targetLanguageName} (${language}).` },
                 { role: "user", content: prompt }
               ],
               temperature: 0.2,
@@ -1305,14 +1307,47 @@ Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Forma
         const apiKey = getGeminiApiKey();
         if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
         const ai = new GoogleGenAI({ apiKey });
-        const secondPrompt = `Du bist GPT-4o Pro (Zweitmeinungs-Modus), ein international anerkannter klinischer Experte für klassische Homöopathie und miasmatische Konstitutionsanalyse nach Hahnemann, Bönninghausen und Kent.
-Deine Aufgabe ist es, eine VOLLSTÄNDIG UNABHÄNGIGE, alternative Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104) zu erstellen.
-WICHTIG: Du musst dich in der klinischen Gewichtung, Begriffs- und Formulierungswahl DEUTLICH von einer Erst-Analyse abheben. Lege einen starken Fokus auf konstitutionelle Generalsymptome und Modalitäten-Wechselwirkungen.
+        const secondPrompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all text, category names, core questions, analysis results (result_text), examinations, adopted complaints, control notes, and clarification questions FULLY TRANSLATED into ${targetLanguageName} (${language}). 
+Do NOT output any German phrases or sentences unless German is the selected target language.
+If the selected target language is Greek (el), use proper Greek alphabet and terminology (e.g. use "Καμία" or "Δεν αναφέρεται" instead of Latin/German words).
 
-Patiententext:
+You are GPT-4o Pro (Second-Opinion Mode), an internationally recognized clinical expert in classical homeopathy and miasmatic constitutional analysis according to Hahnemann, Bönninghausen, and Kent.
+Your task is to create a COMPLETELY INDEPENDENT alternative second analysis of the patient narrative according to the 10 Organon categories (§§ 83–104) in ${targetLanguageName}.
+IMPORTANT: Clearly differentiate in clinical weighting and terminology from a first analysis. Focus strongly on constitutional general symptoms and modality interactions.
+
+Patient narrative:
 "${rawText.replace(/"/g, '\\"')}"
 
-${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_stage"'))}`;
+You MUST create the "three_stage" field in the JSON response with:
+- "stage1": Array with all 10 categories (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text [fully in ${targetLanguageName}]).
+- "stage2": Array of text checks (text_snippet, examination [in ${targetLanguageName}], adopted_complaint [in ${targetLanguageName}]).
+- "stage3": Object with control_notes [in ${targetLanguageName}] and clarification_question [in ${targetLanguageName}].
+
+Answer EXCLUSIVELY as a compact, valid JSON object in the following format (without markdown code blocks):
+{
+  "raw_text": "${rawText.replace(/"/g, '\\\\"')}",
+  "three_stage": {
+    "stage1": [
+      { "category_key": "causa", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "localisatio", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "sensatio", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "symptoma", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "modalitates_besserung", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "modalitates_verschlechterung", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "symptomata_concomitantia", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "comorbiditas", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "mens", "category_name": "...", "core_question": "...", "result_text": "..." },
+      { "category_key": "animus", "category_name": "...", "core_question": "...", "result_text": "..." }
+    ],
+    "stage2": [
+      { "text_snippet": "...", "examination": "...", "adopted_complaint": "..." }
+    ],
+    "stage3": {
+      "control_notes": "...",
+      "clarification_question": "..."
+    }
+  }
+}`;
 
         let response;
         try {
