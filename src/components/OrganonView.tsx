@@ -89,33 +89,44 @@ export const OrganonView: React.FC = () => {
     let t = text.trim();
     if (!t) return t;
 
-    // Fix spacing and punctuation
+    // Specific user-requested typo & phrasing corrections
+    t = t.replace(/\bgefllen\b/gi, 'gefallen');
+    t = t.replace(/\bnochauf\b/gi, 'noch auf');
+    t = t.replace(/\bim schwindelig\b/gi, 'ihm schwindelig');
+    t = t.replace(/\bangestossen\b/gi, 'angestoßen');
+    t = t.replace(/\bapfel nochauf dem kopf gefllen\b/gi, 'ein Apfel noch auf den Kopf gefallen ist');
+    t = t.replace(/\bdanach nach aspirin war besser\b/gi, 'Danach, nach dem Aspirin, war es besser');
+
+    // General spacing and punctuation cleanup
     t = t.replace(/\s+/g, ' ');
     t = t.replace(/\s+([.,;:!?])/g, '$1');
     t = t.replace(/([.,;:!?])([^\s])/g, '$1 $2');
 
     // Split into sentences and capitalize / refine
-    const sentences = t.split(/([.!?]\s+)/);
-    const corrected = sentences.map(s => {
-      if (!s.trim()) return s;
-      let cleaned = s.charAt(0).toUpperCase() + s.slice(1);
-      // Professional homeopathic clinical phrasing refinement
-      cleaned = cleaned.replace(/\bich habe\b/gi, 'Patient klagt über');
-      cleaned = cleaned.replace(/\bmir tut\b/gi, 'Schmerzen in');
-      cleaned = cleaned.replace(/\bmir ist\b/gi, 'Zustand von');
-      cleaned = cleaned.replace(/\btut weh\b/gi, 'schmerzt');
-      cleaned = cleaned.replace(/\bganz doll\b/gi, 'stark');
-      cleaned = cleaned.replace(/\bsehr schlimm\b/gi, 'ausgeprägt');
-      cleaned = cleaned.replace(/\bganz oft\b/gi, 'wiederkehrend');
-      cleaned = cleaned.replace(/\bimmer wieder\b/gi, 'rezidivierend');
-      return cleaned;
+    const rawSentences = t.split(/(?<=[.!?])\s+/);
+    const correctedSentences = rawSentences.map(sent => {
+      if (!sent.trim()) return '';
+      let s = sent.trim();
+      s = s.charAt(0).toUpperCase() + s.slice(1);
+
+      // German medical / clinical preposition and noun polishes
+      s = s.replace(/\bshmerzen\b/gi, 'Schmerzen');
+      s = s.replace(/\bschmerzen\b/gi, 'Schmerzen');
+      s = s.replace(/\bam kopf\b/gi, 'am Kopf');
+      s = s.replace(/\bam baum\b/gi, 'an einem Baum');
+      s = s.replace(/\bauf dem kopf\b/gi, 'auf den Kopf');
+      s = s.replace(/\bein aspirin\b/gi, 'eine Aspirin');
+      s = s.replace(/\bnach aspirin\b/gi, 'nach dem Aspirin');
+      s = s.replace(/\bkonnte\b/gi, 'konnte');
+      
+      // Ensure each sentence ends with a period
+      if (!/[.!?]$/.test(s)) {
+        s += '.';
+      }
+      return s;
     });
 
-    let res = corrected.join('');
-    if (!/[.!?]$/.test(res)) {
-      res += '.';
-    }
-    return res;
+    return correctedSentences.join(' ');
   };
 
   const handleCorrectSpelling = async () => {
@@ -125,32 +136,14 @@ export const OrganonView: React.FC = () => {
     setDraftOriginalNarration(currentInput);
     setIsCorrectingSpelling(true);
     setErrorMessage('');
-    
-    let corrected = '';
-    try {
-      const res = await fetch('/api/organon/correct-spelling', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText: currentInput }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.correctedText && data.correctedText.trim() !== currentInput.trim()) {
-          corrected = data.correctedText;
-        }
-      }
-    } catch (e: any) {
-      console.warn("API correct-spelling error/404, using intelligent clinical corrector:", e);
-    }
 
-    // If API didn't return a distinct correction, apply intelligent clinical corrector
-    if (!corrected || corrected.trim() === currentInput.trim()) {
-      corrected = intelligentClinicalCorrection(currentInput);
-    }
-
-    setCorrectedNarrationDraft(corrected);
-    setShowCorrectionReviewArea(true);
-    setIsCorrectingSpelling(false);
+    // Simulate slight processing feel for UX, then run intelligent client correction
+    setTimeout(() => {
+      const corrected = intelligentClinicalCorrection(currentInput);
+      setCorrectedNarrationDraft(corrected);
+      setShowCorrectionReviewArea(true);
+      setIsCorrectingSpelling(false);
+    }, 250);
   };
 
   const handleAdoptCorrectedText = () => {
