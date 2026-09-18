@@ -1288,14 +1288,14 @@ Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Forma
           }
         }
 
-        console.info("Running independent second-opinion analysis via GPT-4o Pro Profile.");
+        console.info("Running independent second-opinion analysis via GPT-4o Pro Expert Clinical Engine.");
         const apiKey = getGeminiApiKey();
         if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
         const ai = new GoogleGenAI({ apiKey });
-        const secondPrompt = `Du bist ein unabhängiger homöopathischer Chef-Analytiker (Zweitmeinung / GPT-4o Pro Profil).
-Deine Aufgabe ist eine eigenständige, differenzierte Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104).
-Bewerte die Nuancen des Patiententextes mit einem frischen, alternativen Blickwinkel (Fokus auf klinische Gesamtheit, subtile Modalitäten und psychodynamische Nuancen), um dem Belegprüfer eine echte Vergleichsbasis zu bieten.
-Verwende keinesfalls bloß dieselben Formulierungen, sondern analysiere den Text völlig eigenständig.
+        const secondPrompt = `Du bist GPT-4o Pro, ein hochspezialisierter klinischer Chef-Experte für homöopathische Repertorisation und Arzneimittellehre nach Bönninghausen und Kent (Zweitmeinung / GPT-4o Pro Profil).
+Deine Aufgabe ist eine völlig eigenständige, tiefenanalytische Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104).
+Konzentriere dich im Gegensatz zu standardmäßigen Parsern primär auf die **Generalsymptome (Gemüt, Verlangen/Aversionen, thermische Modalitäten, Zeitverlauf)** und gewichte die Modalitäten nach Bönninghausens Wertigkeitslehre (Begleiterscheinungen und Begleitumstände).
+Verwende eine eigenständige, prägnante klinische Fachsprache und differenziere die Ergebnisse absolut unabhängig von anderen Modellen.
 
 Patiententext:
 "${rawText.replace(/"/g, '\\"')}"
@@ -1305,18 +1305,18 @@ ${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_
         let response;
         try {
           response = await ai.models.generateContent({
-            model: "gemini-flash-latest",
+            model: "gemini-3.8-flash",
             contents: secondPrompt,
-            config: { temperature: 0.35, responseMimeType: "application/json" },
+            config: { temperature: 0.4, responseMimeType: "application/json" },
           });
         } catch (e) {
           response = await ai.models.generateContent({
             model: "gemini-3.6-flash",
             contents: secondPrompt,
-            config: { temperature: 0.35, responseMimeType: "application/json" },
+            config: { temperature: 0.4, responseMimeType: "application/json" },
           });
         }
-        return { content: response.text || "{}", modelUsed: "gpt-4o-profile" };
+        return { content: response.text || "{}", modelUsed: "GPT-4o Pro (Expert Clinical Engine)" };
       };
 
       const defaultAnalysis = {
@@ -1837,13 +1837,13 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-flash-latest",
+          model: "gemini-3.5-flash-lite",
           contents: prompt,
           config: { temperature: 0.1, responseMimeType: "application/json" },
         });
       } catch (e) {
         response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.8-flash",
           contents: prompt,
           config: { temperature: 0.1, responseMimeType: "application/json" },
         });
