@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from '../i18n/LanguageContext';
+import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation, useLanguage } from '../i18n/LanguageContext';
 import { analyzeOrganonText, OrganonAiAnalysisResult } from '../services/organonAiService';
 import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
+import { 
+  isSpeechRecognitionSupported, 
+  startSpeechRecognition, 
+  SpeechRecognitionSession,
+  mergeWithOverlap,
+  deduplicateRepeatedPhrases
+} from '../services/speechService';
 import { 
   Activity, 
   FileText, 
@@ -15,7 +22,12 @@ import {
   Clock,
   MessageSquare,
   X,
-  Maximize2
+  Maximize2,
+  Mic,
+  MicOff,
+  Stethoscope,
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 
 // OrganonView component - Updated with intelligent clinical spelling correction (2026)
@@ -71,6 +83,7 @@ const safeJoin = (arr: any, separator: string = ', '): string => {
 
 export const OrganonView: React.FC = () => {
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const [narrationInput, setNarrationInput] = useState<string>('');
   const [analysisResult, setAnalysisResult] = useState<OrganonAiAnalysisResult | null>(null);
   const [compareResult, setCompareResult] = useState<any | null>(null);
@@ -89,6 +102,99 @@ export const OrganonView: React.FC = () => {
   const [showCorrectionReviewArea, setShowCorrectionReviewArea] = useState<boolean>(false);
   const [correctedNarrationDraft, setCorrectedNarrationDraft] = useState<string>('');
   const [draftOriginalNarration, setDraftOriginalNarration] = useState<string>('');
+
+  // Voice recording state & refs
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordSecondsLeft, setRecordSecondsLeft] = useState(60);
+  const [isSpeechSupported, setIsSpeechSupported] = useState(true);
+  const recordingBaseTextRef = useRef<string>('');
+  const lastSpokenTranscriptRef = useRef<string>('');
+  const isFinalizingRef = useRef<boolean>(false);
+  const recognitionRef = useRef<SpeechRecognitionSession | null>(null);
+  const timerIntervalRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setIsSpeechSupported(isSpeechRecognitionSupported());
+    return () => {
+      if (timerIntervalRef.current) window.clearInterval(timerIntervalRef.current);
+      if (recognitionRef.current) recognitionRef.current.abort();
+    };
+  }, []);
+
+  const startVoiceRecording = () => {
+    if (isRecording) {
+      stopVoiceRecording();
+      return;
+    }
+    if (!isSpeechSupported) return;
+
+    recordingBaseTextRef.current = narrationInput;
+    lastSpokenTranscriptRef.current = '';
+    isFinalizingRef.current = false;
+    setRecordSecondsLeft(60);
+    setIsRecording(true);
+
+    const session = startSpeechRecognition({
+      language: language as any,
+      continuous: true,
+      interimResults: true,
+      onResult: (transcript) => {
+        if (isFinalizingRef.current) return;
+        const trimmed = transcript.trim();
+        if (!trimmed) return;
+        lastSpokenTranscriptRef.current = trimmed;
+
+        const base = recordingBaseTextRef.current;
+        if (!base) {
+          setNarrationInput(deduplicateRepeatedPhrases(trimmed));
+        } else {
+          setNarrationInput(mergeWithOverlap(base, trimmed));
+        }
+      },
+      onError: (err) => {
+        console.warn('Speech recognition notice:', err);
+      },
+      onEnd: () => {
+        if (!isFinalizingRef.current && isRecording) {
+          stopVoiceRecording();
+        }
+      },
+    });
+
+    recognitionRef.current = session;
+
+    if (timerIntervalRef.current) {
+      window.clearInterval(timerIntervalRef.current);
+    }
+
+    timerIntervalRef.current = window.setInterval(() => {
+      setRecordSecondsLeft((prev) => {
+        if (prev <= 1) {
+          stopVoiceRecording();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const stopVoiceRecording = () => {
+    isFinalizingRef.current = true;
+    if (timerIntervalRef.current) {
+      window.clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsRecording(false);
+    setNarrationInput((prev) => deduplicateRepeatedPhrases(prev));
+  };
+
+  const handleClearNarration = () => {
+    setNarrationInput('');
+  };
 
   useEffect(() => {
     if (isResultsModalOpen && compareResult && !arbitratorResult && !isArbitrating) {
@@ -458,10 +564,6 @@ export const OrganonView: React.FC = () => {
     const ts = res.three_stage;
     return (
       <div className="space-y-6 overflow-y-auto max-h-[750px] pr-2">
-        <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium">
-          <strong>Rohtext:</strong> „{res.raw_text}“
-        </div>
-
         {/* Stufe 1: 10 Kategorien */}
         <div className="space-y-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-3 py-2 rounded-xl">
@@ -537,195 +639,270 @@ export const OrganonView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex flex-col font-sans antialiased">
-      {/* Header Bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 text-xs font-bold tracking-wide uppercase">
-              ORGANON TESTBETRIEB
-            </span>
-            <span className="text-xs text-slate-400 font-mono">gemini-3.8-flash AI Pipeline</span>
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex flex-col font-sans antialiased p-4 sm:p-6 lg:p-8 max-w-[1800px] w-full mx-auto gap-6">
+      {/* Top Header Card (Uniform Akutanalyse / Falldokumentation Design) */}
+      <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-teal-700 text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0 font-serif">
+              <Stethoscope className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl font-bold text-slate-900 font-serif">
+                  Organon KI-Zerlegung
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80 shadow-2xs">
+                  ORGANON TESTBETRIEB
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Klinische Fallanalyse nach Hahnemann §§ 83–104 mit Parallel-Synthese & Belegprüfer
+              </p>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">Organon KI-Zerlegung</h1>
-          <p className="text-sm text-slate-500">Testbetrieb für Textzerlegung, Spans, Entities, Claims & Temporal Bindings</p>
+        </div>
+
+        {/* Structured 3-Column Meta Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 text-xs">
+          <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
+              <Mic className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-[11px] text-slate-400 font-medium">Spracheingabe & Diktat</span>
+              <span className="font-semibold text-slate-800 text-xs truncate block">60s Mikrofonaufnahme & Textanalyse</span>
+            </div>
+          </div>
+          <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
+              <Stethoscope className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-[11px] text-slate-400 font-medium">Klinische Differenzierung</span>
+              <span className="font-semibold text-slate-800 text-xs truncate block">Hahnemann Organon §§ 83-104</span>
+            </div>
+          </div>
+          <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-[11px] text-slate-400 font-medium">Strenger Belegprüfer</span>
+              <span className="font-semibold text-slate-800 text-xs truncate block">Konsens & Originaltext-Abgleich</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 max-w-[1800px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex-1 w-full flex flex-col gap-6">
         
-        {/* Left Column: Input Form (Patientenschilderung) */}
-        <div className="w-full lg:w-[450px] shrink-0 flex flex-col gap-6 lg:sticky lg:top-6">
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <label htmlFor="patient-narration-input" className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-teal-600" />
-                <span>Patientenschilderung (Raw Text)</span>
-              </label>
-              <span className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">
-                Gemini 3.8 + GPT-4o
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <textarea
-                id="patient-narration-input"
-                rows={8}
-                value={narrationInput}
-                onChange={(e) => setNarrationInput(e.target.value)}
-                placeholder="Geben Sie hier den Patiententext ein..."
-                className="w-full rounded-xl border border-slate-300 p-3.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all resize-y min-h-[180px]"
-              />
-              
-              {debugStatus && (
-                <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs font-mono">
-                  <strong>Debug Status:</strong> {debugStatus}
-                </div>
-              )}
-              {errorMessage && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-mono">
-                  <strong>Fehler:</strong> {errorMessage}
-                </div>
-              )}
-
-              {/* Two buttons side-by-side spanning full width */}
-              <div className="grid grid-cols-2 gap-2 w-full">
-                <button
-                  type="button"
-                  onClick={handleRestoreOriginal}
-                  disabled={!originalNarrationInput}
-                  className="py-2.5 px-3 bg-slate-200 hover:bg-slate-300 disabled:opacity-40 text-slate-800 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Originaltext wiederherstellen</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCorrectSpelling}
-                  disabled={!narrationInput.trim() || isCorrectingSpelling}
-                  className="py-2.5 px-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {isCorrectingSpelling ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  )}
-                  <span>Prüfen und korrigieren</span>
-                </button>
+        {/* Results Available Banner / Launcher */}
+        {compareResult && (
+          <div className="bg-gradient-to-r from-teal-900 to-slate-900 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 border border-teal-700/50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-inner">
+                <Sparkles className="w-6 h-6" />
               </div>
-
-              {/* Correction Review Area (opens on button click) */}
-              {showCorrectionReviewArea && (
-                <div className="mt-2 p-4 bg-purple-50/90 border border-purple-200 rounded-2xl space-y-3">
-                  <div className="flex items-center justify-between pb-1 border-b border-purple-200/60">
-                    <span className="text-xs font-bold text-purple-900 uppercase tracking-wide flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />
-                      Rechtschreib- & Grammatikprüfung
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowCorrectionReviewArea(false)}
-                      className="text-xs text-purple-700 hover:text-purple-900 font-medium cursor-pointer"
-                    >
-                      Schließen
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-600">Ursprünglicher Text (Original):</label>
-                    <textarea
-                      readOnly
-                      rows={3}
-                      value={draftOriginalNarration}
-                      className="w-full rounded-xl border border-slate-200 bg-white/80 p-2.5 text-xs text-slate-700 resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-purple-900">Geprüfter und korrigierter Text (Vorschlag):</label>
-                    <textarea
-                      rows={4}
-                      value={correctedNarrationDraft}
-                      onChange={(e) => setCorrectedNarrationDraft(e.target.value)}
-                      className="w-full rounded-xl border border-purple-300 bg-white p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 resize-y"
-                    />
-                  </div>
-
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="button"
-                      onClick={handleAdoptCorrectedText}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Schilderung übernehmen</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 border-t border-slate-100 gap-3">
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={enableGptCompare}
-                      onChange={(e) => setEnableGptCompare(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
-                  </label>
-                  <div className="text-left">
-                    <span className="text-xs font-semibold text-slate-700 block">GPT-4o Pro Vergleich (Zweitmeinung)</span>
-                    <span className="text-[10px] text-slate-400 block">
-                      {enableGptCompare ? 'Aktiviert (ca. 15s)' : 'Deaktiviert (Blitzschnell in ~3s)'}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleAnalyze()}
-                  disabled={!narrationInput.trim() || isProcessing}
-                  className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center gap-2 cursor-pointer ml-auto"
-                >
-                  {isProcessing ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  <span>Schilderung übernehmen</span>
-                </button>
+              <div>
+                <span className="text-xs uppercase font-bold tracking-wider text-teal-400">Analyse erfolgreich abgeschlossen</span>
+                <h3 className="text-base font-bold text-white">Διπλή ανάλυση AI Organon bereit</h3>
+                <p className="text-xs text-slate-300">Primärsynthese, GPT-4o Zweitmeinung & Belegprüfer stehen zur Ansicht bereit.</p>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Right Column: Results Launcher Card */}
-        <div className="w-full lg:flex-1 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col items-center justify-center text-center gap-4 transition-all min-h-[400px]">
-          <div className="p-4 bg-teal-50 text-teal-700 rounded-2xl">
-            <Terminal className="w-10 h-10 mx-auto" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-slate-900">Διπλή ανάλυση AI Organon (Gemini 3.8 Flash & GPT-4o Pro)</h2>
-            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-              Die KI-Analyse vergleicht Primärsynthese und Parallel-Synthese mit strengem Belegprüfer. Klicken Sie unten, um die Ergebnisse im Vollbild-Popup zu öffnen.
-            </p>
-          </div>
-
-          {compareResult ? (
             <button
               type="button"
               onClick={() => { setActiveTab('gemini'); setIsResultsModalOpen(true); }}
-              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md transition-colors flex items-center gap-2 cursor-pointer"
+              className="px-5 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer shrink-0"
             >
               <Maximize2 className="w-4 h-4" />
               <span>Ergebnisse im Vollbild-Popup öffnen</span>
             </button>
-          ) : (
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500">
-              Noch keine Analyse durchgeführt. Geben Sie links eine Patientenschilderung ein und starten Sie die Analyse.
+          </div>
+        )}
+
+        {/* Center Input Form (Patientenschilderung) */}
+        <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <label htmlFor="patient-narration-input" className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+              HAUPTBESCHWERDE & LEITSYMPTOM *
+            </label>
+
+            {narrationInput && (
+              <button
+                type="button"
+                onClick={handleClearNarration}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-semibold cursor-pointer transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                <span>Eingabe löschen</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {/* Side-by-Side: Textarea on left, Vertical Aufnahme Button on right */}
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+              <div className="relative flex-1">
+                <textarea
+                  id="patient-narration-input"
+                  rows={8}
+                  value={narrationInput}
+                  onChange={(e) => setNarrationInput(e.target.value)}
+                  placeholder="Beispiel: Plötzliches hohes Fieber nach kaltem Wind, große Unruhe und Angst, heißer roter Kopf..."
+                  className="w-full h-full min-h-[180px] p-4 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all resize-y shadow-2xs"
+                />
+              </div>
+
+              {/* Vertical Aufnahme Button */}
+              <button
+                type="button"
+                onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                disabled={!isSpeechSupported}
+                className={`w-full sm:w-32 md:w-36 shrink-0 rounded-xl text-white flex flex-col items-center justify-center gap-2 p-3 transition-all shadow-xs cursor-pointer min-h-[180px] border ${
+                  isRecording
+                    ? 'bg-rose-600 hover:bg-rose-700 animate-pulse border-rose-700'
+                    : 'bg-[#00897b] hover:bg-[#00796b] border-teal-800/20'
+                } ${!isSpeechSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white shadow-inner">
+                  {isRecording ? (
+                    <MicOff className="w-6 h-6 text-white" />
+                  ) : (
+                    <Mic className="w-6 h-6 text-white" />
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-white tracking-wide text-center">
+                  {isRecording ? `Stop (${recordSecondsLeft}s)` : 'Aufnahme'}
+                </span>
+              </button>
             </div>
-          )}
+
+            {isRecording && (
+              <div className="space-y-1">
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-rose-500 h-full transition-all duration-1000 ease-linear rounded-full"
+                    style={{ width: `${((60 - recordSecondsLeft) / 60) * 100}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
+                  <span>Mikrofon aktiv...</span>
+                  <span>{recordSecondsLeft}s</span>
+                </div>
+              </div>
+            )}
+            
+            {debugStatus && (
+              <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs font-mono">
+                <strong>Debug Status:</strong> {debugStatus}
+              </div>
+            )}
+            {errorMessage && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-mono">
+                <strong>Fehler:</strong> {errorMessage}
+              </div>
+            )}
+
+            {/* Two buttons side-by-side spanning full width */}
+            <div className="grid grid-cols-2 gap-3 w-full pt-1">
+              <button
+                type="button"
+                onClick={handleRestoreOriginal}
+                disabled={!originalNarrationInput}
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 disabled:opacity-40 text-slate-800 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Originaltext wiederherstellen</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCorrectSpelling}
+                disabled={!narrationInput.trim() || isCorrectingSpelling}
+                className="py-3 px-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isCorrectingSpelling ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                <span>Prüfen und korrigieren</span>
+              </button>
+            </div>
+
+            {/* Correction Review Area (opens on button click) */}
+            {showCorrectionReviewArea && (
+              <div className="mt-3 p-4 bg-purple-50/90 border border-purple-200 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-purple-200/60">
+                  <span className="text-xs font-bold text-purple-900 uppercase tracking-wide flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-purple-600" />
+                    Rechtschreib- & Grammatikprüfung
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCorrectionReviewArea(false)}
+                    className="text-xs text-purple-700 hover:text-purple-900 font-medium cursor-pointer"
+                  >
+                    Schließen
+                  </button>
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-purple-900">Geprüfter und korrigierter Text (Vorschlag):</label>
+                  <textarea
+                    rows={4}
+                    value={correctedNarrationDraft}
+                    onChange={(e) => setCorrectedNarrationDraft(e.target.value)}
+                    className="w-full rounded-xl border border-purple-300 bg-white p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 resize-y"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleAdoptCorrectedText}
+                    className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Schilderung übernehmen</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-slate-100 gap-4">
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enableGptCompare}
+                    onChange={(e) => setEnableGptCompare(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
+                </label>
+                <div className="text-left">
+                  <span className="text-xs font-semibold text-slate-700 block">GPT-4o Pro Vergleich (Zweitmeinung)</span>
+                  <span className="text-[10px] text-slate-400 block">
+                    {enableGptCompare ? 'Aktiviert (ca. 15s)' : 'Deaktiviert (Blitzschnell in ~3s)'}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleAnalyze()}
+                disabled={!narrationInput.trim() || isProcessing}
+                className="px-6 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer ml-auto"
+              >
+                {isProcessing ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                <span>Analyse starten</span>
+              </button>
+            </div>
+          </div>
         </div>
 
       </div>

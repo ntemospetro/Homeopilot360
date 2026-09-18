@@ -1292,10 +1292,9 @@ Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Forma
         const apiKey = getGeminiApiKey();
         if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
         const ai = new GoogleGenAI({ apiKey });
-        const secondPrompt = `Du bist GPT-4o Pro, ein hochspezialisierter klinischer Chef-Experte für homöopathische Repertorisation und Arzneimittellehre nach Bönninghausen und Kent (Zweitmeinung / GPT-4o Pro Profil).
-Deine Aufgabe ist eine völlig eigenständige, tiefenanalytische Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104).
-Konzentriere dich im Gegensatz zu standardmäßigen Parsern primär auf die **Generalsymptome (Gemüt, Verlangen/Aversionen, thermische Modalitäten, Zeitverlauf)** und gewichte die Modalitäten nach Bönninghausens Wertigkeitslehre (Begleiterscheinungen und Begleitumstände).
-Verwende eine eigenständige, prägnante klinische Fachsprache und differenziere die Ergebnisse absolut unabhängig von anderen Modellen.
+        const secondPrompt = `Du bist GPT-4o Pro (Zweitmeinungs-Modus), ein international anerkannter klinischer Experte für klassische Homöopathie und miasmatische Konstitutionsanalyse nach Hahnemann, Bönninghausen und Kent.
+Deine Aufgabe ist es, eine VOLLSTÄNDIG UNABHÄNGIGE, alternative Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104) zu erstellen.
+WICHTIG: Du musst dich in der klinischen Gewichtung, Begriffs- und Formulierungswahl DEUTLICH von einer Erst-Analyse abheben. Lege einen starken Fokus auf konstitutionelle Generalsymptome und Modalitäten-Wechselwirkungen.
 
 Patiententext:
 "${rawText.replace(/"/g, '\\"')}"
@@ -1307,13 +1306,13 @@ ${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_
           response = await ai.models.generateContent({
             model: "gemini-3.8-flash",
             contents: secondPrompt,
-            config: { temperature: 0.4, responseMimeType: "application/json" },
+            config: { temperature: 0.6, responseMimeType: "application/json" },
           });
         } catch (e) {
           response = await ai.models.generateContent({
             model: "gemini-3.6-flash",
             contents: secondPrompt,
-            config: { temperature: 0.4, responseMimeType: "application/json" },
+            config: { temperature: 0.6, responseMimeType: "application/json" },
           });
         }
         return { content: response.text || "{}", modelUsed: "GPT-4o Pro (Expert Clinical Engine)" };
