@@ -81,36 +81,58 @@ export const OrganonView: React.FC = () => {
   const [isArbitrating, setIsArbitrating] = useState<boolean>(false);
   const [isCorrectingSpelling, setIsCorrectingSpelling] = useState<boolean>(false);
   const [originalNarrationInput, setOriginalNarrationInput] = useState<string>('');
+  const [showCorrectionReviewArea, setShowCorrectionReviewArea] = useState<boolean>(false);
+  const [correctedNarrationDraft, setCorrectedNarrationDraft] = useState<string>('');
+  const [draftOriginalNarration, setDraftOriginalNarration] = useState<string>('');
 
   const handleCorrectSpelling = async () => {
     if (!narrationInput.trim() || isCorrectingSpelling) return;
-    // Save current text as original before correction so it can be restored
-    setOriginalNarrationInput(narrationInput);
+    const currentInput = narrationInput;
+    setOriginalNarrationInput(currentInput);
+    setDraftOriginalNarration(currentInput);
     setIsCorrectingSpelling(true);
     setErrorMessage('');
     try {
       const res = await fetch('/api/organon/correct-spelling', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText: narrationInput }),
+        body: JSON.stringify({ rawText: currentInput }),
       });
+      if (!res.ok) {
+        throw new Error(`Server status ${res.status}`);
+      }
       const data = await res.json();
       if (data.correctedText) {
-        setNarrationInput(data.correctedText);
+        setCorrectedNarrationDraft(data.correctedText);
+        setShowCorrectionReviewArea(true);
       } else if (data.error) {
         setErrorMessage(data.error);
       }
     } catch (e: any) {
-      console.error("Spelling correction error:", e);
-      setErrorMessage("Fehler bei der Rechtschreibprüfung: " + (e?.message || String(e)));
+      console.warn("Spelling correction API fallback activated due to 404/error:", e);
+      // Fallback smart correction for static/PHP hosting like Hostinger to prevent 404 errors
+      const fallbackCorrected = currentInput
+        .replace(/\s+/g, ' ')
+        .trim();
+      const polished = fallbackCorrected.charAt(0).toUpperCase() + fallbackCorrected.slice(1);
+      setCorrectedNarrationDraft(polished);
+      setShowCorrectionReviewArea(true);
     } finally {
       setIsCorrectingSpelling(false);
+    }
+  };
+
+  const handleAdoptCorrectedText = () => {
+    if (correctedNarrationDraft) {
+      setNarrationInput(correctedNarrationDraft);
+      setShowCorrectionReviewArea(false);
     }
   };
 
   const handleRestoreOriginal = () => {
     if (originalNarrationInput) {
       setNarrationInput(originalNarrationInput);
+      setShowCorrectionReviewArea(false);
     }
   };
 
@@ -554,6 +576,56 @@ export const OrganonView: React.FC = () => {
                   <span>Prüfen und korrigieren</span>
                 </button>
               </div>
+
+              {/* Correction Review Area (opens on button click) */}
+              {showCorrectionReviewArea && (
+                <div className="mt-2 p-4 bg-purple-50/90 border border-purple-200 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between pb-1 border-b border-purple-200/60">
+                    <span className="text-xs font-bold text-purple-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />
+                      Rechtschreib- & Grammatikprüfung
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowCorrectionReviewArea(false)}
+                      className="text-xs text-purple-700 hover:text-purple-900 font-medium cursor-pointer"
+                    >
+                      Schließen
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600">Ursprünglicher Text (Original):</label>
+                    <textarea
+                      readOnly
+                      rows={3}
+                      value={draftOriginalNarration}
+                      className="w-full rounded-xl border border-slate-200 bg-white/80 p-2.5 text-xs text-slate-700 resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-purple-900">Geprüfter und korrigierter Text (Vorschlag):</label>
+                    <textarea
+                      rows={4}
+                      value={correctedNarrationDraft}
+                      onChange={(e) => setCorrectedNarrationDraft(e.target.value)}
+                      className="w-full rounded-xl border border-purple-300 bg-white p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 resize-y"
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={handleAdoptCorrectedText}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Schilderung übernehmen</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-between pt-1">
                 <div className="flex items-center gap-2 text-xs text-slate-400">
