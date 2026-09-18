@@ -446,7 +446,7 @@ export const AdminConfigEditor: React.FC<AdminConfigEditorProps> = ({ onShowToas
                 <span>Maintenance Mode (Wartungsmodus)</span>
               </h3>
               <p className="text-xs text-slate-600 mt-1">
-                Activate platform-wide maintenance mode. Normal visitors will see a professional English maintenance page. Administrators can log in using their PIN (360) or password to bypass it.
+                Activate platform-wide maintenance mode. Normal visitors will see a professional English maintenance page. Administrators can log in using their PIN or password to bypass it.
               </p>
             </div>
             <div>

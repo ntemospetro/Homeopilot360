@@ -70,7 +70,7 @@ export const MaintenancePage: React.FC<MaintenancePageProps> = ({ onAdminLoginSu
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-all shadow-md cursor-pointer backdrop-blur-sm"
         >
           <Lock className="w-3.5 h-3.5 text-teal-400" />
-          <span>Admin Access (PIN 360)</span>
+          <span>Admin Login</span>
         </button>
       </div>
 
@@ -132,7 +132,7 @@ export const MaintenancePage: React.FC<MaintenancePageProps> = ({ onAdminLoginSu
             </div>
 
             <p className="text-xs text-slate-300 mb-5 leading-relaxed">
-              Enter your Administrator Security PIN (e.g. <strong className="text-teal-400">360</strong>) or administrator password to bypass maintenance mode and log in securely.
+              Enter your Administrator Security PIN or administrator password to unlock the platform.
             </p>
 
             <form onSubmit={handleAdminBypassLogin} className="space-y-4">
@@ -147,7 +147,7 @@ export const MaintenancePage: React.FC<MaintenancePageProps> = ({ onAdminLoginSu
                     autoFocus
                     value={pinOrPassword}
                     onChange={(e) => setPinOrPassword(e.target.value)}
-                    placeholder="Enter PIN (e.g. 360)"
+                    placeholder="Enter PIN or password"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
                   />
                 </div>

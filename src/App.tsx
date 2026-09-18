@@ -63,11 +63,6 @@ function AppContent() {
     return () => window.removeEventListener('homoeo_site_config_changed', handleSiteConfigChange);
   }, []);
 
-  // If maintenance mode is active AND user is not logged in as admin, render MaintenancePage
-  if (siteConfig.maintenanceMode && !isAdmin) {
-    return <MaintenancePage onAdminLoginSuccess={() => setIsAdmin(true)} />;
-  }
-
   useEffect(() => {
     setStoredActiveView(currentView);
   }, [currentView]);
@@ -162,6 +157,11 @@ function AppContent() {
     setIsAdmin(false);
     setIsAdminGateUnlocked(false);
   };
+
+  // If maintenance mode is active AND user is not logged in as admin, show MaintenancePage
+  if (siteConfig.maintenanceMode && !isAdmin) {
+    return <MaintenancePage onAdminLoginSuccess={() => setIsAdmin(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans antialiased selection:bg-teal-100 selection:text-teal-900">
