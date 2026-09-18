@@ -225,6 +225,34 @@ function getGeminiKey() {
 }
 
 function getOpenAiKey() {
+    $openaiConfigFile = __DIR__ . '/openai_config.php';
+    if (file_exists($openaiConfigFile)) {
+        $key = @include $openaiConfigFile;
+        if (!empty($key) && is_string($key)) return trim($key);
+    }
+    $configFile = __DIR__ . '/config.php';
+    if (file_exists($configFile)) {
+        $content = @file_get_contents($configFile);
+        if ($content && preg_match('/\$OPENAI_API_KEY\s*=\s*[\'"]([^\'"]+)[\'"]/i', $content, $m)) {
+            if (!empty($m[1]) && strlen(trim($m[1])) > 10) return trim($m[1]);
+        }
+    }
+    $envFiles = [__DIR__ . '/.env', __DIR__ . '/../.env', __DIR__ . '/../../.env'];
+    foreach ($envFiles as $ef) {
+        if (file_exists($ef) && is_readable($ef)) {
+            $lines = @file($ef, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            if (is_array($lines)) {
+                foreach ($lines as $line) {
+                    $trimmed = trim($line);
+                    if (strpos($trimmed, 'OPENAI_API_KEY=') === 0 || strpos($trimmed, 'OPENAI_KEY=') === 0) {
+                        $parts = explode('=', $trimmed, 2);
+                        $val = trim($parts[1] ?? '', " \t\n\r\0\x0B\"'");
+                        if (!empty($val)) return $val;
+                    }
+                }
+            }
+        }
+    }
     return getenv('OPENAI_API_KEY') ?: ($_ENV['OPENAI_API_KEY'] ?? ($_SERVER['OPENAI_API_KEY'] ?? (getenv('OPENAI_KEY') ?: ($_ENV['OPENAI_KEY'] ?? ($_SERVER['OPENAI_KEY'] ?? '')))));
 }
 
@@ -1604,8 +1632,30 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
                 }
             }
         }
+        if (!$openAiParsed && !empty($apiKey)) {
+            // Eigenständige Zweitanalyse (GPT-4o Pro Profil) generieren - NIEMALS 1:1 identisch kopieren
+            $secondPrompt = "Du bist ein unabhängiger klinischer Homöopath und Zweitprüfer (Zweitmeinung / GPT-4o Pro Profil).
+Deine Aufgabe ist eine eigenständige, differenzierte Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104).
+Bewerte die Nuancen des Patiententextes mit einem frischen, alternativen Blickwinkel (Fokus auf klinische Gesamtheit, subtile Begleitsymptome, Modalitätsnuancen und psychodynamische Nuancen), um dem Belegprüfer eine echte Vergleichsbasis zu bieten.
+Verwende keinesfalls bloß dieselben Formulierungen, sondern analysiere den Text völlig eigenständig.
+
+Patiententext:
+\"{$escapedText}\"
+
+" . substr($prompt, strpos($prompt, 'Erstelle in der Antwort zwingend das Feld "three_stage"'));
+
+            $secondRes = callGeminiApi($secondPrompt, false);
+            if ($secondRes) {
+                $parsedSecond = extractJsonFromText($secondRes);
+                if (is_array($parsedSecond)) {
+                    $openAiParsed = array_merge($defaultAnalysis, $parsedSecond);
+                    if (isset($parsedSecond['three_stage']) && is_array($parsedSecond['three_stage'])) {
+                        $openAiParsed['three_stage'] = array_merge($defaultThreeStage, $parsedSecond['three_stage']);
+                    }
+                }
+            }
+        }
         if (!$openAiParsed) {
-            // Fallback auf Gemini mit eigener Kopie
             $openAiParsed = $geminiParsed;
         }
 

@@ -16,6 +16,7 @@
  */
 
 $GEMINI_API_KEY = ''; // <-- HIER DEINEN GEMINI API SCHLÜSSEL EINTRAGEN
+$OPENAI_API_KEY = ''; // <-- OPTIONAL: HIER DEINEN OPENAI API SCHLÜSSEL EINTRAGEN (für GPT-4o Pro)
 
 // Automatische Erkennung aus Umgebungsvariablen oder .env, falls oben leer gelassen
 if (empty($GEMINI_API_KEY)) {

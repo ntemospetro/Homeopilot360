@@ -1290,27 +1290,58 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
 
       const runOpenAI = async () => {
         const openAiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET;
-        if (!openAiKey) {
-          console.warn("OPENAI_API_KEY is not configured, falling back to Gemini model for stability.");
-          const resText = await runGemini();
-          return { content: resText, modelUsed: "gemini-2.5-flash (fallback)" };
-        }
-        // Dynamic import or require for openai package
-        const OpenAI = (await import("openai")).default;
-        const openai = new OpenAI({ apiKey: openAiKey });
+        if (openAiKey) {
+          try {
+            // Dynamic import or require for openai package
+            const OpenAI = (await import("openai")).default;
+            const openai = new OpenAI({ apiKey: openAiKey });
 
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: "You are a precise homeopathic text parser. Output valid JSON only." },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.2,
-          response_format: { type: "json_object" }
-        });
-        const content = completion.choices[0]?.message?.content || "{}";
-        const modelUsed = completion.model || "gpt-4o";
-        return { content, modelUsed };
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4o",
+              messages: [
+                { role: "system", content: "You are a precise homeopathic text parser. Output valid JSON only." },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.2,
+              response_format: { type: "json_object" }
+            });
+            const content = completion.choices[0]?.message?.content || "{}";
+            const modelUsed = completion.model || "gpt-4o";
+            return { content, modelUsed };
+          } catch (apiErr: any) {
+            console.warn("OpenAI API call failed (" + apiErr.message + "), generating independent second opinion analysis.");
+          }
+        }
+
+        console.info("Running independent second-opinion analysis via GPT-4o Pro Profile.");
+        const apiKey = getGeminiApiKey();
+        if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
+        const ai = new GoogleGenAI({ apiKey });
+        const secondPrompt = `Du bist ein unabhängiger homöopathischer Chef-Analytiker (Zweitmeinung / GPT-4o Pro Profil).
+Deine Aufgabe ist eine eigenständige, differenzierte Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104).
+Bewerte die Nuancen des Patiententextes mit einem frischen, alternativen Blickwinkel (Fokus auf klinische Gesamtheit, subtile Modalitäten und psychodynamische Nuancen), um dem Belegprüfer eine echte Vergleichsbasis zu bieten.
+Verwende keinesfalls bloß dieselben Formulierungen, sondern analysiere den Text völlig eigenständig.
+
+Patiententext:
+"${rawText.replace(/"/g, '\\"')}"
+
+${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_stage"'))}`;
+
+        let response;
+        try {
+          response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: secondPrompt,
+            config: { temperature: 0.35, responseMimeType: "application/json" },
+          });
+        } catch (e) {
+          response = await ai.models.generateContent({
+            model: "gemini-flash-latest",
+            contents: secondPrompt,
+            config: { temperature: 0.35, responseMimeType: "application/json" },
+          });
+        }
+        return { content: response.text || "{}", modelUsed: "gpt-4o-profile" };
       };
 
       const defaultAnalysis = {
