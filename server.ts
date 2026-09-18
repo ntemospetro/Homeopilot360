@@ -1248,15 +1248,15 @@ Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Forma
         let response;
         try {
           response = await ai.models.generateContent({
-            model: "gemini-flash-latest",
+            model: "gemini-3.5-flash-lite",
             contents: prompt,
-            config: { temperature: 0.2, responseMimeType: "application/json" },
+            config: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: "application/json" },
           });
         } catch (e) {
           response = await ai.models.generateContent({
-            model: "gemini-3.6-flash",
+            model: "gemini-3.8-flash",
             contents: prompt,
-            config: { temperature: 0.2, responseMimeType: "application/json" },
+            config: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: "application/json" },
           });
         }
         return response.text || "{}";
