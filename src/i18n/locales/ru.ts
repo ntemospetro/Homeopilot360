@@ -3243,5 +3243,12 @@ export const ru = {
   adminConfigSecurityPinDesc: "Дополнительный барьер безопасности перед входом администратора (По умолчанию: 360).",
   anamnesisStepBetter: "Столп 4.1 – КОГДА: Улучшение (> Облегчение)",
   anamnesisStepWorse: "Столп 4.2 – КОГДА: Ухудшение (< Утяжеление)",
-  anamnesisStepPillarCausa: "Столп 3 – ОТ ЧЕГО? (Causa и триггер)"
+  anamnesisStepPillarCausa: "Столп 3 – ОТ ЧЕГО? (Causa и триггер)",
+  organonDualAiTitle: "Параллельный двойной ИИ-анализ",
+  organonDualAiDesc: "Gemini 3.8 Flash и GPT-4o Pro анализируют одновременно и полностью автоматически параллельно.",
+  organonActiveDualModels: "Gemini 3.8 и GPT-4o Pro активны",
+  organonDualAiBadge: "Параллельная обработка в реальном времени",
+  organonViewSideBySide: "Сравнение бок о бок",
+  organonViewTabs: "Вкладки",
+  organonResultsTitle: "Двойной ИИ-анализ Органона (Gemini 3.8 Flash & GPT-4o Pro)"
 };

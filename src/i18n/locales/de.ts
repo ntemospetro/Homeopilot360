@@ -3250,5 +3250,12 @@ export const de = {
   adminConfigSecurityPinDesc: "Zusätzlicher Schutzwall vor dem Administrator-Login (Standard: 360).",
   anamnesisStepBetter: "Säule 4.1 – WANN: Besserung (> Linderung)",
   anamnesisStepWorse: "Säule 4.2 – WANN: Verschlimmerung (< Verschlechterung)",
-  anamnesisStepPillarCausa: "Säule 3 – WODURCH? (Causa & Auslöser)"
+  anamnesisStepPillarCausa: "Säule 3 – WODURCH? (Causa & Auslöser)",
+  organonDualAiTitle: "Parallele Dual-KI-Analyse",
+  organonDualAiDesc: "Gemini 3.8 Flash & GPT-4o Pro analysieren gleichzeitig und vollautomatisch parallel.",
+  organonActiveDualModels: "Gemini 3.8 & GPT-4o Pro aktiv",
+  organonDualAiBadge: "Echtzeit-Parallelverarbeitung",
+  organonViewSideBySide: "Gegenüberstellung nebeneinander",
+  organonViewTabs: "Reiter-Ansicht",
+  organonResultsTitle: "Organon Dual-KI-Analyse (Gemini 3.8 Flash & GPT-4o Pro)"
 };

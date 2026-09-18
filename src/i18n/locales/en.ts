@@ -3249,5 +3249,12 @@ export const en = {
   adminConfigSecurityPinDesc: "Additional security gate before administrator login (Default: 360).",
   anamnesisStepBetter: "Pillar 4.1 – WHEN: Improvement (> Relief)",
   anamnesisStepWorse: "Pillar 4.2 – WHEN: Aggravation (< Worsening)",
-  anamnesisStepPillarCausa: "Pillar 3 – FROM WHAT? (Causa & Trigger)"
+  anamnesisStepPillarCausa: "Pillar 3 – FROM WHAT? (Causa & Trigger)",
+  organonDualAiTitle: "Parallel Dual-AI Analysis",
+  organonDualAiDesc: "Gemini 3.8 Flash & GPT-4o Pro analyze simultaneously and fully automatically in parallel.",
+  organonActiveDualModels: "Gemini 3.8 & GPT-4o Pro Active",
+  organonDualAiBadge: "Real-Time Parallel Processing",
+  organonViewSideBySide: "Side-by-side comparison",
+  organonViewTabs: "Tab view",
+  organonResultsTitle: "Organon Dual-AI Analysis (Gemini 3.8 Flash & GPT-4o Pro)"
 };

@@ -301,7 +301,7 @@ function callGeminiApi($prompt, $withSearch = false) {
     $apiKey = getGeminiKey();
     if (empty($apiKey)) return null;
 
-    $models = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
+    $models = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.8-flash'];
 
     foreach ($models as $model) {
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . urlencode($apiKey);
@@ -334,7 +334,7 @@ function callGeminiApi($prompt, $withSearch = false) {
                 'Content-Length: ' . strlen($jsonPayload)
             ]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 35);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 25);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
             $response = curl_exec($ch);
@@ -353,7 +353,7 @@ function callGeminiApi($prompt, $withSearch = false) {
                     'Content-Length: ' . strlen($jsonPayloadNoSearch)
                 ]);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayloadNoSearch);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 25);
                 $response = curl_exec($ch);
                 curl_close($ch);
             }
@@ -363,7 +363,7 @@ function callGeminiApi($prompt, $withSearch = false) {
                     'method' => 'POST',
                     'header' => "Content-Type: application/json\r\n",
                     'content' => $jsonPayload,
-                    'timeout' => 35
+                    'timeout' => 25
                 ]
             ];
             $context = stream_context_create($opts);
@@ -395,6 +395,81 @@ function callGeminiApi($prompt, $withSearch = false) {
     }
 
     return null;
+}
+
+function callGeminiApiMulti(array $prompts) {
+    $apiKey = getGeminiKey();
+    if (empty($apiKey)) return array_fill(0, count($prompts), null);
+    if (!function_exists('curl_multi_init') || count($prompts) <= 1) {
+        $results = [];
+        foreach ($prompts as $p) {
+            $results[] = callGeminiApi($p, false);
+        }
+        return $results;
+    }
+
+    $model = 'gemini-3.6-flash';
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . urlencode($apiKey);
+
+    $mh = curl_multi_init();
+    $curlHandles = [];
+
+    foreach ($prompts as $idx => $p) {
+        $payload = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $p]
+                    ]
+                ]
+            ]
+        ];
+        $jsonPayload = json_encode($payload);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($jsonPayload)
+        ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+
+        curl_multi_add_handle($mh, $ch);
+        $curlHandles[$idx] = $ch;
+    }
+
+    $running = null;
+    do {
+        $status = curl_multi_exec($mh, $running);
+        if ($running) {
+            curl_multi_select($mh, 0.05);
+        }
+    } while ($running && $status == CURLM_OK);
+
+    $results = [];
+    foreach ($curlHandles as $idx => $ch) {
+        $response = curl_multi_getcontent($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_multi_remove_handle($mh, $ch);
+        curl_close($ch);
+
+        $textResult = null;
+        if ($httpCode >= 200 && $httpCode < 300 && $response) {
+            $decoded = @json_decode($response, true);
+            if (isset($decoded['candidates'][0]['content']['parts'][0]['text'])) {
+                $textResult = trim($decoded['candidates'][0]['content']['parts'][0]['text']);
+            }
+        }
+        // Fallback falls der Multi-Request leer war
+        if (!$textResult) {
+            $textResult = callGeminiApi($prompts[$idx], false);
+        }
+        $results[$idx] = $textResult;
+    }
+    curl_multi_close($mh);
+    return $results;
 }
 
 // -------------------------------------------------------------------------
@@ -1602,26 +1677,24 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
   \"repertory_scoring\": { \"status\": \"READY\", \"feature_weights\": [], \"remedy_scores\": [], \"warnings\": [] }
 }";
 
-    $geminiParsed = null;
-    if (!empty($apiKey)) {
-        $aiRes = callGeminiApi($prompt, false);
-        if ($aiRes) {
-            $parsed = extractJsonFromText($aiRes);
-            if (is_array($parsed)) {
-                $geminiParsed = array_merge($defaultAnalysis, $parsed);
-                if (isset($parsed['three_stage']) && is_array($parsed['three_stage'])) {
-                    $geminiParsed['three_stage'] = array_merge($defaultThreeStage, $parsed['three_stage']);
-                }
-            }
-        }
-    }
-    if (!$geminiParsed) {
-        $geminiParsed = $defaultAnalysis;
-    }
+    $secondPrompt = "Du bist ein unabhängiger klinischer Homöopath und Zweitprüfer (Zweitmeinung / GPT-4o Pro Profil).
+Deine Aufgabe ist eine eigenständige, differenzierte Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104).
+Bewerte die Nuancen des Patiententextes mit einem frischen, alternativen Blickwinkel (Fokus auf klinische Gesamtheit, subtile Begleitsymptome, Modalitätsnuancen und psychodynamische Nuancen), um dem Belegprüfer eine echte Vergleichsbasis zu bieten.
+Verwende keinesfalls bloß dieselben Formulierungen, sondern analysiere den Text völlig eigenständig.
 
-    if ($compare) {
-        // OpenAI Ausführung (GPT-4o) oder Gemini Fallback
-        $openAiParsed = null;
+Patiententext:
+\"{$escapedText}\"
+
+" . substr($prompt, strpos($prompt, 'Erstelle in der Antwort zwingend das Feld "three_stage"'));
+
+    $geminiParsed = null;
+    $openAiParsed = null;
+
+    $openAiKey = getOpenAiKey();
+    $useOpenAiDirect = !empty($openAiKey);
+
+    if ($compare && $useOpenAiDirect) {
+        $aiRes = callGeminiApi($prompt, false);
         $openAiRes = callOpenAiApi($prompt, 'gpt-4o');
         if ($openAiRes) {
             $parsed = extractJsonFromText($openAiRes);
@@ -1632,29 +1705,40 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
                 }
             }
         }
-        if (!$openAiParsed && !empty($apiKey)) {
-            // Eigenständige Zweitanalyse (GPT-4o Pro Profil) generieren - NIEMALS 1:1 identisch kopieren
-            $secondPrompt = "Du bist ein unabhängiger klinischer Homöopath und Zweitprüfer (Zweitmeinung / GPT-4o Pro Profil).
-Deine Aufgabe ist eine eigenständige, differenzierte Zweitanalyse der Patientenschilderung nach den 10 Organon-Kategorien (§§ 83–104).
-Bewerte die Nuancen des Patiententextes mit einem frischen, alternativen Blickwinkel (Fokus auf klinische Gesamtheit, subtile Begleitsymptome, Modalitätsnuancen und psychodynamische Nuancen), um dem Belegprüfer eine echte Vergleichsbasis zu bieten.
-Verwende keinesfalls bloß dieselben Formulierungen, sondern analysiere den Text völlig eigenständig.
+    } elseif ($compare) {
+        // High-Speed parallele Ausführung beider Analysen (Gemini & eigenständiges GPT-4o Profil)
+        $multiRes = callGeminiApiMulti([$prompt, $secondPrompt]);
+        $aiRes = $multiRes[0] ?? null;
+        $secondRes = $multiRes[1] ?? null;
 
-Patiententext:
-\"{$escapedText}\"
-
-" . substr($prompt, strpos($prompt, 'Erstelle in der Antwort zwingend das Feld "three_stage"'));
-
-            $secondRes = callGeminiApi($secondPrompt, false);
-            if ($secondRes) {
-                $parsedSecond = extractJsonFromText($secondRes);
-                if (is_array($parsedSecond)) {
-                    $openAiParsed = array_merge($defaultAnalysis, $parsedSecond);
-                    if (isset($parsedSecond['three_stage']) && is_array($parsedSecond['three_stage'])) {
-                        $openAiParsed['three_stage'] = array_merge($defaultThreeStage, $parsedSecond['three_stage']);
-                    }
+        if ($secondRes) {
+            $parsedSecond = extractJsonFromText($secondRes);
+            if (is_array($parsedSecond)) {
+                $openAiParsed = array_merge($defaultAnalysis, $parsedSecond);
+                if (isset($parsedSecond['three_stage']) && is_array($parsedSecond['three_stage'])) {
+                    $openAiParsed['three_stage'] = array_merge($defaultThreeStage, $parsedSecond['three_stage']);
                 }
             }
         }
+    } else {
+        $aiRes = callGeminiApi($prompt, false);
+    }
+
+    if ($aiRes) {
+        $parsed = extractJsonFromText($aiRes);
+        if (is_array($parsed)) {
+            $geminiParsed = array_merge($defaultAnalysis, $parsed);
+            if (isset($parsed['three_stage']) && is_array($parsed['three_stage'])) {
+                $geminiParsed['three_stage'] = array_merge($defaultThreeStage, $parsed['three_stage']);
+            }
+        }
+    }
+
+    if (!$geminiParsed) {
+        $geminiParsed = $defaultAnalysis;
+    }
+
+    if ($compare) {
         if (!$openAiParsed) {
             $openAiParsed = $geminiParsed;
         }

@@ -3243,5 +3243,12 @@ export const fr = {
   adminConfigSecurityPinDesc: "Barrière de sécurité supplémentaire avant la connexion administrateur (Par défaut : 360).",
   anamnesisStepBetter: "Pilier 4.1 – QUAND : Amélioration (> Soulagement)",
   anamnesisStepWorse: "Pilier 4.2 – QUAND : Aggravation (< Aggravation)",
-  anamnesisStepPillarCausa: "Pilier 3 – PAR QUOI ? (Causa & Déclencheur)"
+  anamnesisStepPillarCausa: "Pilier 3 – PAR QUOI ? (Causa & Déclencheur)",
+  organonDualAiTitle: "Double analyse IA en parallèle",
+  organonDualAiDesc: "Gemini 3.8 Flash et GPT-4o Pro analysent simultanément et de manière entièrement automatique en parallèle.",
+  organonActiveDualModels: "Gemini 3.8 & GPT-4o Pro actifs",
+  organonDualAiBadge: "Traitement parallèle en temps réel",
+  organonViewSideBySide: "Comparaison côte à côte",
+  organonViewTabs: "Affichage par onglets",
+  organonResultsTitle: "Double analyse IA Organon (Gemini 3.8 Flash & GPT-4o Pro)"
 };

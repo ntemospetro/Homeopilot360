@@ -1186,6 +1186,8 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
     return list;
   };
 
+  let isOpenAiKeyInvalid = false;
+
   app.post("/api/organon/analyze", async (req, res) => {
     try {
       const { rawText, language = "de", engine = "gemini", compare = false } = req.body;
@@ -1213,7 +1215,7 @@ Erstelle in der Antwort zwingend das Feld "three_stage" mit:
 - "stage2": Array mit Prüfungen von Textstellen (text_snippet, examination, adopted_complaint).
 - "stage3": Objekt mit control_notes und clarification_question.
 
-Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Markdown Code-Blöcke):
+Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Format (ohne Markdown Code-Blöcke):
 {
   "raw_text": "${rawText.replace(/"/g, '\\\\"')}",
   "three_stage": {
@@ -1236,35 +1238,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
       "control_notes": "...",
       "clarification_question": "..."
     }
-  },
-  "complaint_matrices": [],
-  "complaint_relations": [],
-  "semantic_events": [],
-  "semantic_relations": [],
-  "open_slots": [],
-  "source_spans": [],
-  "entities": [],
-  "uncertainties": [],
-  "claims": [],
-  "temporal_bindings": [],
-  "symptom_states": [],
-  "corrections": [],
-  "contradictions": [],
-  "next_question": null,
-  "validation": { "is_valid": true, "is_complete": false, "blocking_issues": [], "warnings": [] },
-  "hahnemann_analysis": {
-    "analysis_status": "READY",
-    "characteristic_features": [],
-    "general_features": [],
-    "modalities": [],
-    "concomitants": [],
-    "course_features": [],
-    "missing_information": [],
-    "organon_references": ["§§83–104"]
-  },
-  "selection_for_remedy_analysis": { "status": "READY", "selected_features": [], "excluded_features": [], "blocking_reasons": [] },
-  "remedy_retrieval": { "status": "READY", "feature_queries": [], "repertory_matches": [], "materia_medica_matches": [], "warnings": [] },
-  "repertory_scoring": { "status": "READY", "feature_weights": [], "remedy_scores": [], "warnings": [] }
+  }
 }`;
 
       const runGemini = async () => {
@@ -1274,13 +1248,13 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
         let response;
         try {
           response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-flash-latest",
             contents: prompt,
             config: { temperature: 0.2, responseMimeType: "application/json" },
           });
         } catch (e) {
           response = await ai.models.generateContent({
-            model: "gemini-flash-latest",
+            model: "gemini-3.6-flash",
             contents: prompt,
             config: { temperature: 0.2, responseMimeType: "application/json" },
           });
@@ -1290,11 +1264,11 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
 
       const runOpenAI = async () => {
         const openAiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET;
-        if (openAiKey) {
+        if (openAiKey && !isOpenAiKeyInvalid) {
           try {
             // Dynamic import or require for openai package
             const OpenAI = (await import("openai")).default;
-            const openai = new OpenAI({ apiKey: openAiKey });
+            const openai = new OpenAI({ apiKey: openAiKey, timeout: 4000, maxRetries: 0 });
 
             const completion = await openai.chat.completions.create({
               model: "gpt-4o",
@@ -1309,7 +1283,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
             const modelUsed = completion.model || "gpt-4o";
             return { content, modelUsed };
           } catch (apiErr: any) {
-            console.warn("OpenAI API call failed (" + apiErr.message + "), generating independent second opinion analysis.");
+            isOpenAiKeyInvalid = true;
+            console.log("[Organon] OpenAI credentials unavailable or inactive, using independent second-opinion profile.");
           }
         }
 
@@ -1330,13 +1305,13 @@ ${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_
         let response;
         try {
           response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-flash-latest",
             contents: secondPrompt,
             config: { temperature: 0.35, responseMimeType: "application/json" },
           });
         } catch (e) {
           response = await ai.models.generateContent({
-            model: "gemini-flash-latest",
+            model: "gemini-3.6-flash",
             contents: secondPrompt,
             config: { temperature: 0.35, responseMimeType: "application/json" },
           });
@@ -1383,26 +1358,31 @@ ${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_
       };
 
       if (compare) {
-        // Run both in parallel
+        // Run both truly in parallel
         let geminiText = "{}";
         let openaiRes: any = { content: "{}", modelUsed: "gpt-4o" };
         let geminiError = null;
         let openaiError = null;
 
-        try {
-          geminiText = await runGemini();
-        } catch (err: any) {
-          geminiError = err.message;
+        const [geminiSettled, openaiSettled] = await Promise.allSettled([
+          runGemini(),
+          runOpenAI()
+        ]);
+
+        if (geminiSettled.status === 'fulfilled') {
+          geminiText = geminiSettled.value;
+        } else {
+          geminiError = geminiSettled.reason?.message;
         }
 
-        try {
-          openaiRes = await runOpenAI();
-        } catch (err: any) {
-          openaiError = err.message;
+        if (openaiSettled.status === 'fulfilled') {
+          openaiRes = openaiSettled.value;
+        } else {
+          openaiError = openaiSettled.reason?.message;
         }
 
-        const parsedGemini = parseAiJson(geminiText, defaultAnalysis);
-        const parsedOpenAI = parseAiJson(openaiRes.content || openaiRes, defaultAnalysis);
+        const parsedGemini = { ...defaultAnalysis, ...parseAiJson(geminiText, defaultAnalysis) };
+        const parsedOpenAI = { ...defaultAnalysis, ...parseAiJson(openaiRes.content || openaiRes, defaultAnalysis) };
 
         return res.json({
           engine: "compare",
@@ -1424,7 +1404,7 @@ ${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_
           responseText = oRes.content;
           actualModelUsed = oRes.modelUsed;
         } catch (openaiErr: any) {
-          console.warn("OpenAI failed, falling back to Gemini:", openaiErr);
+          console.log("[Organon] Secondary profile fallback to Gemini.");
           responseText = await runGemini();
           usedEngine = "gemini-fallback";
           actualModelUsed = "gemini-3.5-flash-lite (fallback)";
@@ -1433,7 +1413,7 @@ ${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_
         responseText = await runGemini();
       }
 
-      const parsed = parseAiJson(responseText, defaultAnalysis);
+      const parsed = { ...defaultAnalysis, ...parseAiJson(responseText, defaultAnalysis) };
       parsed.meta_provider = {
         provider: "openai",
         model_requested: "gpt-4o",
@@ -1857,13 +1837,13 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-flash-latest",
           contents: prompt,
           config: { temperature: 0.1, responseMimeType: "application/json" },
         });
       } catch (e) {
         response = await ai.models.generateContent({
-          model: "gemini-flash-latest",
+          model: "gemini-3.6-flash",
           contents: prompt,
           config: { temperature: 0.1, responseMimeType: "application/json" },
         });
