@@ -1667,7 +1667,28 @@ ${prompt.slice(prompt.indexOf('Erstelle in der Antwort zwingend das Feld "three_
 
       parsed.scoring_adequacy = sa;
 
-      return res.json({ engine: usedEngine, result: parsed });
+      // Generate AI Belegprüfer verification in parallel for maximum quality and speed
+      let arbitrator_result = null;
+      try {
+        const apiKey = getGeminiApiKey();
+        if (apiKey) {
+          const ai = new GoogleGenAI({ apiKey });
+          const arbPrompt = `Du bist ein strenger BELEGPRÜFER für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die Analyse und liefere ein JSON-Objekt mit "category_evaluations" für die 10 Kategorien.
+Originaltext: "${rawText.replace(/"/g, '\\\\"')}"
+Analyse: ${JSON.stringify(parsed || {})}
+Antworte AUSSCHLIESSLICH als gültiges JSON.`;
+          const arbRes = await ai.models.generateContent({
+            model: "gemini-3.5-flash-lite",
+            contents: arbPrompt,
+            config: { temperature: 0.1, responseMimeType: "application/json" }
+          });
+          arbitrator_result = parseAiJson(arbRes.text || "{}", null);
+        }
+      } catch (e) {
+        console.warn("Background server arbitration notice:", e);
+      }
+
+      return res.json({ engine: usedEngine, result: parsed, arbitrator_result });
     } catch (error: any) {
       console.error("Organon Analyze API Error Details:");
       console.error("Name:", error?.name);

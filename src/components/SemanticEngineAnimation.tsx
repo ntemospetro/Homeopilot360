@@ -347,11 +347,11 @@ export function SemanticEngineAnimation() {
                   return (
                     <div 
                       key={idx}
-                      className="h-8 text-xs px-3 py-1.5 rounded-lg bg-teal-50/90 border border-teal-200/90 text-teal-950 font-medium flex items-center justify-between shadow-xs transition-all duration-300 animate-fadeIn"
+                      className="h-8 text-xs px-2.5 py-1.5 rounded-lg bg-teal-50/90 border border-teal-200/90 text-teal-950 font-medium flex items-center justify-between gap-2 shadow-xs transition-all duration-300 animate-fadeIn min-w-0 max-w-full overflow-hidden"
                     >
-                      <div className="flex items-center gap-2 truncate">
+                      <div className="flex items-center gap-1.5 min-w-0 truncate">
                         <CheckCircle2 className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-                        <span className="truncate">{token.text}</span>
+                        <span className="truncate text-xs">{token.text}</span>
                       </div>
                       <span className="text-[10px] font-semibold text-teal-700 uppercase bg-white/80 px-1.5 py-0.5 rounded border border-teal-100 shrink-0">
                         {token.chapter}
@@ -487,34 +487,34 @@ export function SemanticEngineAnimation() {
                   return (
                     <div
                       key={remedy.name}
-                      className={`p-3.5 rounded-xl transition-all duration-500 ease-out transform translate-y-0 opacity-100 ${
+                      className={`p-3.5 rounded-xl transition-all duration-500 ease-out transform translate-y-0 opacity-100 min-w-0 max-w-full overflow-hidden ${
                         isWinner 
                           ? 'h-[105px] bg-gradient-to-r from-teal-50/90 via-white to-white border-2 border-teal-600 shadow-sm' 
                           : 'h-[95px] bg-white border border-slate-200/90 shadow-2xs hover:border-slate-300'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-5 h-5 rounded-full text-[11px] font-extrabold flex items-center justify-center ${
+                      <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0 truncate">
+                          <span className={`w-5 h-5 rounded-full text-[11px] font-extrabold flex items-center justify-center shrink-0 ${
                             isWinner ? 'bg-teal-700 text-white' : 'bg-slate-100 text-slate-700'
                           }`}>
                             {idx + 1}
                           </span>
-                          <span className={`font-bold ${isWinner ? 'text-sm sm:text-base text-slate-900' : 'text-xs sm:text-sm text-slate-800'}`}>
+                          <span className={`font-bold truncate ${isWinner ? 'text-sm sm:text-base text-slate-900' : 'text-xs sm:text-sm text-slate-800'}`}>
                             {remedy.name}
                           </span>
                           {isWinner && (
-                            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
+                            <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 shrink-0">
                               <Check className="w-3 h-3 text-teal-700" /> {t('landingSimSimileCandidate')}
                             </span>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[11px] text-slate-500 font-medium hidden sm:inline truncate">
                             {remedy.rubricsMatched}
                           </span>
-                          <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md ${
+                          <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md shrink-0 ${
                             isWinner 
                               ? 'bg-teal-700 text-white shadow-xs' 
                               : 'bg-slate-100 text-slate-700 border border-slate-200'
@@ -535,7 +535,7 @@ export function SemanticEngineAnimation() {
                       </div>
 
                       {/* Detailed Clinical Repertory Verification */}
-                      <p className="text-[11px] text-slate-600 leading-relaxed font-sans pl-7 line-clamp-2">
+                      <p className="text-[11px] text-slate-600 leading-relaxed font-sans pl-7 line-clamp-2 truncate">
                         {remedy.detail}
                       </p>
                     </div>

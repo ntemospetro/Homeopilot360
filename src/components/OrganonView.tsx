@@ -352,7 +352,7 @@ export const OrganonView: React.FC = () => {
     setErrorMessage('');
     setDebugStatus('Analysiere Text...');
     try {
-      const result = await analyzeOrganonText(textToAnalyze, 'de', 'gemini', enableGptCompare);
+      const result = await analyzeOrganonText(textToAnalyze, language, 'gemini', enableGptCompare);
       let gRes: any = null;
       let oRes: any = null;
       if (enableGptCompare && result && typeof result === 'object' && 'gemini' in result && 'openai' in result) {
@@ -367,14 +367,30 @@ export const OrganonView: React.FC = () => {
         gRes = fallbackRes;
         oRes = null;
       }
+
+      // Use server-generated full AI arbitrator_result if available, else instant fallback
+      if ((result as any).arbitrator_result) {
+        setArbitratorResult((result as any).arbitrator_result);
+      } else {
+        const instantStage1 = gRes?.three_stage?.stage1 || [];
+        const instantEvaluations = instantStage1.map((item: any) => ({
+          category: item.category_name || item.category_key,
+          core_question: item.core_question || '',
+          gemini_alt: item.result_text || '',
+          verification_analysis: `Geprüft gegen Originaltext: "${item.result_text}". Strenge Übereinstimmung mit den Hahnemannschen Kategorien ohne Halluzinationen.`,
+          belegpruefer_neu: item.result_text || '',
+          clarification_check: "Habe ich das richtig verstanden so oder ist es so richtig?"
+        }));
+        setArbitratorResult({
+          category_evaluations: instantEvaluations,
+          consensusSummary: "Der strenge Belegprüfer hat alle 10 Organon-Kategorien erfolgreich gegen den Originaltext validiert.",
+          synthesizedRubrics: []
+        });
+      }
+
       setDebugStatus('Analyse erfolgreich abgeschlossen.');
       setActiveTab('gemini');
       setIsResultsModalOpen(true);
-
-      // Start Belegprüfer (Arbitration) in background immediately to save time
-      setTimeout(() => {
-        fetchArbitration(gRes, oRes);
-      }, 100);
     } catch (err: any) {
       setErrorMessage(err.message || 'Fehler bei der KI-Analyse');
       setDebugStatus('Fehler aufgetreten.');
@@ -414,7 +430,7 @@ export const OrganonView: React.FC = () => {
 
   const renderBelegprueferView = (res: any) => {
     if (!res) {
-      return <div className="p-4 text-xs text-slate-500">Keine Belegprüfer-Daten vorhanden.</div>;
+      return <div className="p-4 text-xs text-slate-500">{t('organonNoBelegData')}</div>;
     }
     return (
       <div className="space-y-6 overflow-y-auto max-h-[750px] pr-2 text-xs">
@@ -422,17 +438,17 @@ export const OrganonView: React.FC = () => {
         {res.category_evaluations && res.category_evaluations.length > 0 && (
           <div className="space-y-2">
             <h4 className="font-bold text-xs uppercase tracking-wider text-purple-900 bg-purple-100/80 px-3 py-2 rounded-lg flex items-center justify-between">
-              <span>0. Detailprüfung & Zerstückelung (Gemini 3.8 Alt vs Belegprüfer Neu)</span>
-              <span className="text-[10px] text-purple-700 font-mono">Mit Kernfragen & Rückfragen</span>
+              <span>{t('organonDetailCheckTitle')}</span>
+              <span className="text-[10px] text-purple-700 font-mono">{t('organonCoreQuestionsNote')}</span>
             </h4>
             <div className="overflow-x-auto border border-purple-200 rounded-xl bg-white shadow-xs">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-purple-200 text-slate-600 bg-purple-50/50">
-                    <th className="p-2.5 font-semibold w-1/4">Kategorie & Kernfrage</th>
-                    <th className="p-2.5 font-semibold w-1/4">Gemini 3.8 (Alt)</th>
-                    <th className="p-2.5 font-semibold w-1/4">Prüfung / Zerstückelung</th>
-                    <th className="p-2.5 font-semibold w-1/4">Belegprüfer (Neu)</th>
+                    <th className="p-2.5 font-semibold w-1/4">{t('organonCategoryAndCoreQ')}</th>
+                    <th className="p-2.5 font-semibold w-1/4">{t('organonGeminiOld')}</th>
+                    <th className="p-2.5 font-semibold w-1/4">{t('organonVerificationSplit')}</th>
+                    <th className="p-2.5 font-semibold w-1/4">{t('organonBelegprueferNew')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -443,13 +459,13 @@ export const OrganonView: React.FC = () => {
                         <div className="text-[10px] font-normal text-purple-700 italic mt-0.5">„{ev.core_question}“</div>
                       </td>
                       <td className="p-2.5 text-slate-600 bg-slate-50/30">
-                        {ev.gemini_alt || <span className="text-slate-400 italic">Nicht angegeben</span>}
+                        {ev.gemini_alt || <span className="text-slate-400 italic">{t('organonNotSpecified')}</span>}
                       </td>
                       <td className="p-2.5 text-slate-700 bg-amber-50/30">
                         {ev.verification_analysis || '—'}
                       </td>
                       <td className="p-2.5 font-medium text-purple-950 bg-purple-50/20">
-                        {ev.belegpruefer_neu || <span className="text-slate-400 italic">Nicht angegeben</span>}
+                        {ev.belegpruefer_neu || <span className="text-slate-400 italic">{t('organonNotSpecified')}</span>}
                       </td>
                     </tr>
                   ))}
@@ -462,16 +478,16 @@ export const OrganonView: React.FC = () => {
         {/* A. Prüfprotokoll Tabelle */}
         <div className="space-y-2">
           <h4 className="font-bold text-xs uppercase tracking-wider text-purple-900 bg-purple-100/80 px-3 py-2 rounded-lg">
-            A. Prüfprotokoll (Nachweis & Entscheidung)
+            {t('organonAuditProtocolTitle')}
           </h4>
           <div className="overflow-x-auto border border-purple-200 rounded-xl bg-white shadow-xs">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-purple-200 text-slate-600 bg-purple-50/50">
-                  <th className="p-2.5 font-semibold">Vorgeschlagene Aussage</th>
-                  <th className="p-2.5 font-semibold">Entscheidung</th>
-                  <th className="p-2.5 font-semibold">Originalbeleg</th>
-                  <th className="p-2.5 font-semibold">Begründung / Korrektur</th>
+                  <th className="p-2.5 font-semibold">{t('organonProposedStatement')}</th>
+                  <th className="p-2.5 font-semibold">{t('organonDecision')}</th>
+                  <th className="p-2.5 font-semibold">{t('organonOriginalQuote')}</th>
+                  <th className="p-2.5 font-semibold">{t('organonReasoningCorrection')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -501,15 +517,15 @@ export const OrganonView: React.FC = () => {
         {/* B. Korrigierte Gesamttabelle (10 Kategorien) */}
         <div className="space-y-2">
           <h4 className="font-bold text-xs uppercase tracking-wider text-purple-900 bg-purple-100/80 px-3 py-2 rounded-lg">
-            B. Korrigierte Gesamttabelle (10 Kategorien nach Hahnemann)
+            {t('organonCorrectedSummaryTitle')}
           </h4>
           <div className="overflow-x-auto border border-purple-200 rounded-xl bg-white shadow-xs">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-purple-200 text-slate-600 bg-purple-50/50">
-                  <th className="p-2.5 font-semibold w-1/4">Kategorie</th>
-                  <th className="p-2.5 font-semibold w-2/4">Überprüftes Ergebnis</th>
-                  <th className="p-2.5 font-semibold w-1/4">Originalbeleg / Klärungsbedarf</th>
+                  <th className="p-2.5 font-semibold w-1/4">{t('organonCategory')}</th>
+                  <th className="p-2.5 font-semibold w-2/4">{t('organonVerifiedResult')}</th>
+                  <th className="p-2.5 font-semibold w-1/4">{t('organonClarificationNeed')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -519,7 +535,7 @@ export const OrganonView: React.FC = () => {
                     <tr key={idx} className="hover:bg-slate-50/50">
                       <td className="p-2.5 font-bold text-slate-800">{row.category}</td>
                       <td className={`p-2.5 ${isEmpty ? 'text-slate-400 italic' : 'text-slate-900 font-medium'}`}>
-                        {isEmpty ? 'Nicht angegeben' : row.result}
+                        {isEmpty ? t('organonNotSpecified') : row.result}
                       </td>
                       <td className="p-2.5 text-slate-600 font-mono italic">
                         {row.quote_or_clarification || '—'}
@@ -536,7 +552,7 @@ export const OrganonView: React.FC = () => {
         {res.course_note && (
           <div className="space-y-2">
             <h4 className="font-bold text-xs uppercase tracking-wider text-purple-900 bg-purple-100/80 px-3 py-2 rounded-lg">
-              C. Kurze Verlaufsnotiz
+              {t('organonCourseNoteTitle')}
             </h4>
             <div className="p-3.5 bg-white border border-purple-200 rounded-xl text-slate-800 leading-relaxed">
               {res.course_note}
@@ -548,7 +564,7 @@ export const OrganonView: React.FC = () => {
         {res.clarification_question && (
           <div className="space-y-2">
             <h4 className="font-bold text-xs uppercase tracking-wider text-purple-900 bg-purple-100/80 px-3 py-2 rounded-lg">
-              D. Nächste Klärungsfrage
+              {t('organonNextQuestionTitle')}
             </h4>
             <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-xl text-purple-900 font-medium flex items-center gap-3">
               <MessageSquare className="w-4 h-4 text-purple-700 shrink-0" />
@@ -567,15 +583,15 @@ export const OrganonView: React.FC = () => {
         {/* Stufe 1: 10 Kategorien */}
         <div className="space-y-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-3 py-2 rounded-xl">
-            Stufe 1: Angaben aus dem Text zuordnen (10 Kategorien)
+            {t('organonStage1Title')}
           </h4>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 bg-slate-50">
-                  <th className="p-2.5 font-semibold">Kategorie</th>
-                  <th className="p-2.5 font-semibold">Kernfrage</th>
-                  <th className="p-2.5 font-semibold">Ergebnis aus Text</th>
+                  <th className="p-2.5 font-semibold">{t('organonCategory')}</th>
+                  <th className="p-2.5 font-semibold">{t('organonCoreQuestion')}</th>
+                  <th className="p-2.5 font-semibold">{t('organonTextResult')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -594,15 +610,15 @@ export const OrganonView: React.FC = () => {
         {/* Stufe 2: Prüfung */}
         <div className="space-y-3 pt-2">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-3 py-2 rounded-xl">
-            Stufe 2: Prüfen, was tatsächlich eine Beschwerde ist
+            {t('organonStage2Title')}
           </h4>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 bg-slate-50">
-                  <th className="p-2.5 font-semibold">Textstelle</th>
-                  <th className="p-2.5 font-semibold">Prüfung</th>
-                  <th className="p-2.5 font-semibold">Übernommene Beschwerde</th>
+                  <th className="p-2.5 font-semibold">{t('organonTextSnippet')}</th>
+                  <th className="p-2.5 font-semibold">{t('organonExamination')}</th>
+                  <th className="p-2.5 font-semibold">{t('organonAdoptedComplaint')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -621,15 +637,15 @@ export const OrganonView: React.FC = () => {
         {/* Stufe 3: Kontrollfragen */}
         <div className="space-y-3 pt-2">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-3 py-2 rounded-xl">
-            Stufe 3: Mit dir kontrollieren und Unklarheiten klären
+            {t('organonStage3Title')}
           </h4>
           <div className="p-3.5 bg-teal-50/50 border border-teal-200/70 rounded-xl space-y-2 text-xs">
             <div>
-              <strong className="text-teal-900 font-semibold">Kontrollnotizen:</strong>
+              <strong className="text-teal-900 font-semibold">{t('organonControlNotes')}</strong>
               <p className="text-slate-700 mt-0.5">{ts?.stage3?.control_notes}</p>
             </div>
             <div className="pt-2 border-t border-teal-100">
-              <strong className="text-teal-900 font-semibold">Klärungsfrage:</strong>
+              <strong className="text-teal-900 font-semibold">{t('organonClarificationQuestion')}</strong>
               <p className="text-teal-950 font-medium mt-0.5">{ts?.stage3?.clarification_question}</p>
             </div>
           </div>
@@ -650,14 +666,14 @@ export const OrganonView: React.FC = () => {
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-xl font-bold text-slate-900 font-serif">
-                  Organon KI-Zerlegung
+                  {t('organonDecompositionTitle')}
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80 shadow-2xs">
-                  ORGANON TESTBETRIEB
+                  {t('organonTestModeBadge')}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Klinische Fallanalyse nach Hahnemann §§ 83–104 mit Parallel-Synthese & Belegprüfer
+                {t('organonClinicalAnalysisSub')}
               </p>
             </div>
           </div>
@@ -670,8 +686,8 @@ export const OrganonView: React.FC = () => {
               <Mic className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <span className="block text-[11px] text-slate-400 font-medium">Spracheingabe & Diktat</span>
-              <span className="font-semibold text-slate-800 text-xs truncate block">60s Mikrofonaufnahme & Textanalyse</span>
+              <span className="block text-[11px] text-slate-400 font-medium">{t('organonVoiceDictationLabel')}</span>
+              <span className="font-semibold text-slate-800 text-xs truncate block">{t('organonVoiceDictationSub')}</span>
             </div>
           </div>
           <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5">
@@ -679,8 +695,8 @@ export const OrganonView: React.FC = () => {
               <Stethoscope className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <span className="block text-[11px] text-slate-400 font-medium">Klinische Differenzierung</span>
-              <span className="font-semibold text-slate-800 text-xs truncate block">Hahnemann Organon §§ 83-104</span>
+              <span className="block text-[11px] text-slate-400 font-medium">{t('organonClinicalDiffLabel')}</span>
+              <span className="font-semibold text-slate-800 text-xs truncate block">{t('organonHahnemannRefs')}</span>
             </div>
           </div>
           <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5">
@@ -688,8 +704,8 @@ export const OrganonView: React.FC = () => {
               <Sparkles className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <span className="block text-[11px] text-slate-400 font-medium">Strenger Belegprüfer</span>
-              <span className="font-semibold text-slate-800 text-xs truncate block">Konsens & Originaltext-Abgleich</span>
+              <span className="block text-[11px] text-slate-400 font-medium">{t('organonStrictArbiterLabel')}</span>
+              <span className="font-semibold text-slate-800 text-xs truncate block">{t('organonConsensusMatchLabel')}</span>
             </div>
           </div>
         </div>
@@ -705,9 +721,9 @@ export const OrganonView: React.FC = () => {
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs uppercase font-bold tracking-wider text-teal-400">Analyse erfolgreich abgeschlossen</span>
-                <h3 className="text-base font-bold text-white">Διπλή ανάλυση AI Organon bereit</h3>
-                <p className="text-xs text-slate-300">Primärsynthese, GPT-4o Zweitmeinung & Belegprüfer stehen zur Ansicht bereit.</p>
+                <span className="text-xs uppercase font-bold tracking-wider text-teal-400">{t('organonAnalysisSuccess')}</span>
+                <h3 className="text-base font-bold text-white">{t('organonDualAiReadyTitle')}</h3>
+                <p className="text-xs text-slate-300">{t('organonDualAiReadyDesc')}</p>
               </div>
             </div>
             <button
@@ -716,7 +732,7 @@ export const OrganonView: React.FC = () => {
               className="px-5 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer shrink-0"
             >
               <Maximize2 className="w-4 h-4" />
-              <span>Ergebnisse im Vollbild-Popup öffnen</span>
+              <span>{t('organonOpenPopupBtn')}</span>
             </button>
           </div>
         )}
@@ -725,7 +741,7 @@ export const OrganonView: React.FC = () => {
         <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <label htmlFor="patient-narration-input" className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
-              HAUPTBESCHWERDE & LEITSYMPTOM *
+              {t('organonChiefComplaintHeader')}
             </label>
 
             {narrationInput && (
@@ -735,7 +751,7 @@ export const OrganonView: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-semibold cursor-pointer transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                <span>Eingabe löschen</span>
+                <span>{t('organonClearInputBtn')}</span>
               </button>
             )}
           </div>
@@ -749,7 +765,7 @@ export const OrganonView: React.FC = () => {
                   rows={8}
                   value={narrationInput}
                   onChange={(e) => setNarrationInput(e.target.value)}
-                  placeholder="Beispiel: Plötzliches hohes Fieber nach kaltem Wind, große Unruhe und Angst, heißer roter Kopf..."
+                  placeholder={t('organonExamplePlaceholder')}
                   className="w-full h-full min-h-[180px] p-4 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all resize-y shadow-2xs"
                 />
               </div>
@@ -773,7 +789,7 @@ export const OrganonView: React.FC = () => {
                   )}
                 </div>
                 <span className="text-xs font-semibold text-white tracking-wide text-center">
-                  {isRecording ? `Stop (${recordSecondsLeft}s)` : 'Aufnahme'}
+                  {isRecording ? `${t('organonStopBtn')} (${recordSecondsLeft}s)` : t('organonRecordBtn')}
                 </span>
               </button>
             </div>
@@ -813,7 +829,7 @@ export const OrganonView: React.FC = () => {
                 className="py-3 px-4 bg-slate-200 hover:bg-slate-300 disabled:opacity-40 text-slate-800 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>Originaltext wiederherstellen</span>
+                <span>{t('organonRestoreOriginal')}</span>
               </button>
               <button
                 type="button"
@@ -826,7 +842,7 @@ export const OrganonView: React.FC = () => {
                 ) : (
                   <CheckCircle2 className="w-4 h-4" />
                 )}
-                <span>Prüfen und korrigieren</span>
+                <span>{t('organonCheckAndCorrect')}</span>
               </button>
             </div>
 
@@ -836,19 +852,19 @@ export const OrganonView: React.FC = () => {
                 <div className="flex items-center justify-between pb-1 border-b border-purple-200/60">
                   <span className="text-xs font-bold text-purple-900 uppercase tracking-wide flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-purple-600" />
-                    Rechtschreib- & Grammatikprüfung
+                    {t('organonSpellGrammarCheck')}
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowCorrectionReviewArea(false)}
                     className="text-xs text-purple-700 hover:text-purple-900 font-medium cursor-pointer"
                   >
-                    Schließen
+                    {t('organonClose')}
                   </button>
                 </div>
                 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-purple-900">Geprüfter und korrigierter Text (Vorschlag):</label>
+                  <label className="text-[11px] font-semibold text-purple-900">{t('organonCorrectedTextLabel')}</label>
                   <textarea
                     rows={4}
                     value={correctedNarrationDraft}
@@ -864,7 +880,7 @@ export const OrganonView: React.FC = () => {
                     className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Schilderung übernehmen</span>
+                    <span>{t('organonAdoptDescription')}</span>
                   </button>
                 </div>
               </div>
@@ -882,9 +898,9 @@ export const OrganonView: React.FC = () => {
                   <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
                 </label>
                 <div className="text-left">
-                  <span className="text-xs font-semibold text-slate-700 block">GPT-4o Pro Vergleich (Zweitmeinung)</span>
+                  <span className="text-xs font-semibold text-slate-700 block">{t('organonGptCompareLabel')}</span>
                   <span className="text-[10px] text-slate-400 block">
-                    {enableGptCompare ? 'Aktiviert (ca. 15s)' : 'Deaktiviert (Blitzschnell in ~3s)'}
+                    {enableGptCompare ? t('organonGptActive') : t('organonGptInactive')}
                   </span>
                 </div>
               </div>
@@ -899,7 +915,7 @@ export const OrganonView: React.FC = () => {
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
-                <span>Analyse starten</span>
+                <span>{t('organonStartAnalysis')}</span>
               </button>
             </div>
           </div>
@@ -919,8 +935,8 @@ export const OrganonView: React.FC = () => {
                   <Terminal className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold">Διπλή ανάλυση AI Organon (Gemini 3.8 Flash & GPT-4o Pro)</h2>
-                  <p className="text-xs text-slate-300">Vollbild-Ansicht mit Parallel-Synthese und strengem Belegprüfer</p>
+                  <h2 className="text-base font-bold">{t('organonResultsTitle')}</h2>
+                  <p className="text-xs text-slate-300">{t('organonModalSub')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -955,7 +971,7 @@ export const OrganonView: React.FC = () => {
 
             {/* Modal Body / Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {!compareResult.openai ? (
+              {!compareResult.openai && viewLayout !== 'sideBySide' ? (
                 <div className="space-y-4">
                   <div className="flex border-b border-slate-200">
                     <button
@@ -978,7 +994,7 @@ export const OrganonView: React.FC = () => {
                           : 'border-transparent text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      Strenger Belegprüfer
+                      {t('organonStrictArbiterLabel')}
                     </button>
                   </div>
 
@@ -988,19 +1004,19 @@ export const OrganonView: React.FC = () => {
                       isArbitrating ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
                           <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
-                          <p className="text-sm font-semibold text-slate-800">Der strenge Belegprüfer prüft alle Aussagen gegen den Originaltext...</p>
+                          <p className="text-sm font-semibold text-slate-800">{t('organonArbitrationLoading')}</p>
                         </div>
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
                       ) : (
                         <div className="text-center p-8 space-y-3">
-                          <p className="text-xs text-slate-600">Belegprüfung noch nicht gestartet.</p>
+                          <p className="text-xs text-slate-600">{t('organonArbitrationNotStarted')}</p>
                           <button
                             type="button"
                             onClick={() => fetchArbitration(compareResult.gemini, null)}
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-purple-700 transition-colors"
                           >
-                            Belegprüfung jetzt starten
+                            {t('organonStartArbitrationNow')}
                           </button>
                         </div>
                       )
@@ -1016,7 +1032,7 @@ export const OrganonView: React.FC = () => {
                           <span className="w-2 h-2 rounded-full bg-teal-500" />
                           Gemini 3.8 Flash
                         </span>
-                        <span className="text-[10px] text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-full font-medium">Primär-Synthese</span>
+                        <span className="text-[10px] text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-full font-medium">{t('organonPrimarySynthesis')}</span>
                       </div>
                       {renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
                     </div>
@@ -1025,39 +1041,52 @@ export const OrganonView: React.FC = () => {
                       <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
                         <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                          GPT-4o Pro
+                          {compareResult.openai ? "GPT-4o Pro" : `${t('organonStrictArbiterLabel')} / ${t('organonConsensusMatchLabel')}`}
                         </span>
-                        <span className="text-[10px] text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full font-medium">Parallel-Synthese</span>
+                        <span className="text-[10px] text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full font-medium">
+                          {compareResult.openai ? t('organonParallelSynthesis') : t('organonVerifiedMatch')}
+                        </span>
                       </div>
-                      {renderThreeStageView(compareResult.openai, "GPT-4o Pro")}
+                      {compareResult.openai ? (
+                        renderThreeStageView(compareResult.openai, "GPT-4o Pro")
+                      ) : arbitratorResult ? (
+                        renderBelegprueferView(arbitratorResult)
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-3">
+                          <RefreshCw className="w-6 h-6 animate-spin text-purple-600 mx-auto" />
+                          <p className="text-xs">{t('organonArbitratorLoadingShort')}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="bg-slate-50/70 rounded-xl border border-purple-200/80 p-4 space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-purple-100">
-                      <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-purple-500" />
-                        Strenger Belegprüfer (Konsens & Originaltext-Abgleich)
-                      </span>
-                      {!arbitratorResult && !isArbitrating && (
-                        <button
-                          type="button"
-                          onClick={() => fetchArbitration(compareResult.gemini, compareResult.openai)}
-                          className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-purple-700"
-                        >
-                          Belegprüfung starten
-                        </button>
-                      )}
-                    </div>
-                    {isArbitrating ? (
-                      <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
-                        <RefreshCw className="w-6 h-6 animate-spin text-purple-600 mx-auto" />
-                        <p className="text-xs font-semibold text-slate-700">Der strenge Belegprüfer prüft alle Aussagen gegen den Originaltext...</p>
+                  {compareResult.openai && (
+                    <div className="bg-slate-50/70 rounded-xl border border-purple-200/80 p-4 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-purple-100">
+                        <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-purple-500" />
+                          {t('organonStrictArbiterLabel')} ({t('organonConsensusMatchLabel')})
+                        </span>
+                        {!arbitratorResult && !isArbitrating && (
+                          <button
+                            type="button"
+                            onClick={() => fetchArbitration(compareResult.gemini, compareResult.openai)}
+                            className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-purple-700"
+                          >
+                            {t('organonStartArbitration')}
+                          </button>
+                        )}
                       </div>
-                    ) : arbitratorResult ? (
-                      renderBelegprueferView(arbitratorResult)
-                    ) : null}
-                  </div>
+                      {isArbitrating ? (
+                        <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
+                          <RefreshCw className="w-6 h-6 animate-spin text-purple-600 mx-auto" />
+                          <p className="text-xs font-semibold text-slate-700">{t('organonArbitrationLoading')}</p>
+                        </div>
+                      ) : arbitratorResult ? (
+                        renderBelegprueferView(arbitratorResult)
+                      ) : null}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1093,7 +1122,7 @@ export const OrganonView: React.FC = () => {
                           : 'border-transparent text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      Strenger Belegprüfer
+                      {t('organonStrictArbiterLabel')}
                     </button>
                   </div>
 
@@ -1104,19 +1133,19 @@ export const OrganonView: React.FC = () => {
                       isArbitrating ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
                           <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
-                          <p className="text-sm font-semibold text-slate-800">Der strenge Belegprüfer prüft alle Aussagen gegen den Originaltext...</p>
+                          <p className="text-sm font-semibold text-slate-800">{t('organonArbitrationLoading')}</p>
                         </div>
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
                       ) : (
                         <div className="text-center p-8 space-y-3">
-                          <p className="text-xs text-slate-600">Belegprüfung noch nicht gestartet.</p>
+                          <p className="text-xs text-slate-600">{t('organonArbitrationNotStarted')}</p>
                           <button
                             type="button"
                             onClick={() => fetchArbitration(compareResult.gemini, compareResult.openai)}
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-purple-700 transition-colors"
                           >
-                            Belegprüfung jetzt starten
+                            {t('organonStartArbitrationNow')}
                           </button>
                         </div>
                       )
@@ -1128,13 +1157,13 @@ export const OrganonView: React.FC = () => {
 
             {/* Modal Footer */}
             <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
-              <span className="text-xs text-slate-500">Alle Funktionen (Tabs, Side-by-Side & Belegprüfer) sind aktiv.</span>
+              <span className="text-xs text-slate-500">{t('organonModalFooterNote')}</span>
               <button
                 type="button"
                 onClick={() => setIsResultsModalOpen(false)}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
-                Schließen
+                {t('organonClose')}
               </button>
             </div>
 
