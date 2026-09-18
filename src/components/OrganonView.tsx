@@ -13,7 +13,9 @@ import {
   Send,
   Layers,
   Clock,
-  MessageSquare
+  MessageSquare,
+  X,
+  Maximize2
 } from 'lucide-react';
 
 // OrganonView component - Updated with intelligent clinical spelling correction (2026)
@@ -78,6 +80,7 @@ export const OrganonView: React.FC = () => {
   const [debugStatus, setDebugStatus] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState<boolean>(false);
+  const [isResultsModalOpen, setIsResultsModalOpen] = useState<boolean>(false);
   const [arbitratorResult, setArbitratorResult] = useState<any | null>(null);
   const [isArbitrating, setIsArbitrating] = useState<boolean>(false);
   const [isCorrectingSpelling, setIsCorrectingSpelling] = useState<boolean>(false);
@@ -246,6 +249,7 @@ export const OrganonView: React.FC = () => {
         fetchArbitration(fallbackRes, fallbackRes);
       }
       setDebugStatus('Analyse erfolgreich abgeschlossen.');
+      setIsResultsModalOpen(true);
     } catch (err: any) {
       setErrorMessage(err.message || 'Fehler bei der KI-Analyse');
       setDebugStatus('Fehler aufgetreten.');
@@ -664,21 +668,59 @@ export const OrganonView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Results Display (Gemini, GPT & Belegprüfer) */}
-        <div className="w-full lg:flex-1 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 flex flex-col gap-6 transition-all">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200 gap-2 flex-wrap">
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-teal-600" />
-              <span>{t('organonResultsTitle')}</span>
-            </h2>
-            <div className="flex items-center gap-3 text-xs">
-              {compareResult && (
-                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+        {/* Right Column: Results Launcher Card */}
+        <div className="w-full lg:flex-1 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col items-center justify-center text-center gap-4 transition-all min-h-[400px]">
+          <div className="p-4 bg-teal-50 text-teal-700 rounded-2xl">
+            <Terminal className="w-10 h-10 mx-auto" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Διπλή ανάλυση AI Organon (Gemini 3.8 Flash & GPT-4o Pro)</h2>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+              Die KI-Analyse vergleicht Primärsynthese und Parallel-Synthese mit strengem Belegprüfer. Klicken Sie unten, um die Ergebnisse im Vollbild-Popup zu öffnen.
+            </p>
+          </div>
+
+          {compareResult ? (
+            <button
+              type="button"
+              onClick={() => setIsResultsModalOpen(true)}
+              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md transition-colors flex items-center gap-2 cursor-pointer"
+            >
+              <Maximize2 className="w-4 h-4" />
+              <span>Ergebnisse im Vollbild-Popup öffnen</span>
+            </button>
+          ) : (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500">
+              Noch keine Analyse durchgeführt. Geben Sie links eine Patientenschilderung ein und starten Sie die Analyse.
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Full-Width Results Modal Popup */}
+      {isResultsModalOpen && compareResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-7xl rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[95vh] overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-teal-600 rounded-xl text-white">
+                  <Terminal className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold">Διπλή ανάλυση AI Organon (Gemini 3.8 Flash & GPT-4o Pro)</h2>
+                  <p className="text-xs text-slate-300">Vollbild-Ansicht mit Parallel-Synthese und strengem Belegprüfer</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700">
                   <button
                     type="button"
                     onClick={() => setViewLayout('tabs')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                      viewLayout === 'tabs' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      viewLayout === 'tabs' ? 'bg-teal-600 text-white shadow-2xs' : 'text-slate-300 hover:text-white'
                     }`}
                   >
                     {t('organonViewTabs')}
@@ -686,180 +728,163 @@ export const OrganonView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setViewLayout('sideBySide')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                      viewLayout === 'sideBySide' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      viewLayout === 'sideBySide' ? 'bg-teal-600 text-white shadow-2xs' : 'text-slate-300 hover:text-white'
                     }`}
                   >
                     {t('organonViewSideBySide')}
                   </button>
                 </div>
-              )}
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="font-semibold text-slate-700">
-                  {t('organonActiveDualModels')}
-                </span>
+                <button 
+                  onClick={() => setIsResultsModalOpen(false)}
+                  className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
             </div>
-          </div>
 
-          {compareResult ? (
-            viewLayout === 'sideBySide' ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                  <div className="bg-slate-50/70 rounded-xl border border-teal-200/80 p-3.5 space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-teal-100">
-                      <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-teal-500" />
-                        Gemini 3.8 Flash
-                      </span>
-                      <span className="text-[10px] text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-full font-medium">Primär-Synthese</span>
-                    </div>
-                    {renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
-                  </div>
-
-                  <div className="bg-slate-50/70 rounded-xl border border-indigo-200/80 p-3.5 space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
-                      <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                        GPT-4o Pro
-                      </span>
-                      <span className="text-[10px] text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full font-medium">Parallel-Synthese</span>
-                    </div>
-                    {renderThreeStageView(compareResult.openai, "GPT-4o Pro")}
-                  </div>
-                </div>
-
-                {/* Strenger Belegprüfer below side-by-side */}
-                <div className="bg-slate-50/70 rounded-xl border border-purple-200/80 p-4 space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-purple-100">
-                    <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-purple-500" />
-                      Strenger Belegprüfer (Konsens & Originaltext-Abgleich)
-                    </span>
-                    {!arbitratorResult && !isArbitrating && (
-                      <button
-                        type="button"
-                        onClick={() => fetchArbitration(compareResult.gemini, compareResult.openai)}
-                        className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-purple-700"
-                      >
-                        Belegprüfung starten
-                      </button>
-                    )}
-                  </div>
-                  {isArbitrating ? (
-                    <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
-                      <RefreshCw className="w-6 h-6 animate-spin text-purple-600 mx-auto" />
-                      <p className="text-xs font-semibold text-slate-700">Der strenge Belegprüfer prüft alle Aussagen gegen den Originaltext...</p>
-                    </div>
-                  ) : arbitratorResult ? (
-                    renderBelegprueferView(arbitratorResult)
-                  ) : null}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Tabs */}
-                <div className="flex border-b border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('gemini')}
-                    className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                      activeTab === 'gemini'
-                        ? 'border-teal-600 text-teal-900 bg-teal-50/50'
-                        : 'border-transparent text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    Gemini 3.8 Flash
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('openai')}
-                    className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                      activeTab === 'openai'
-                        ? 'border-indigo-600 text-indigo-900 bg-indigo-50/50'
-                        : 'border-transparent text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    GPT-4o Pro
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab('arbitrator');
-                      if (compareResult && !arbitratorResult && !isArbitrating) {
-                        fetchArbitration(compareResult.gemini, compareResult.openai);
-                      }
-                    }}
-                    className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                      activeTab === 'arbitrator'
-                        ? 'border-purple-600 text-purple-900 bg-purple-50/50'
-                        : 'border-transparent text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    Strenger Belegprüfer
-                  </button>
-                </div>
-
-                {/* Tab Content */}
-                <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-4 space-y-4">
-                  {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
-                  {activeTab === 'openai' && renderThreeStageView(compareResult.openai, "GPT-4o Pro")}
-                  {activeTab === 'arbitrator' && (
-                    isArbitrating ? (
-                      <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
-                        <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
-                        <p className="text-sm font-semibold text-slate-800">Der strenge Belegprüfer prüft alle Aussagen gegen den Originaltext...</p>
-                        <p className="text-xs text-slate-500">Prüfung von Textbelegen, Bedeutungen, Kategorieregeln und Vollständigkeit (ohne Modellabstimmung).</p>
+            {/* Modal Body / Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {viewLayout === 'sideBySide' ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <div className="bg-slate-50/70 rounded-xl border border-teal-200/80 p-4 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-teal-100">
+                        <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-teal-500" />
+                          Gemini 3.8 Flash
+                        </span>
+                        <span className="text-[10px] text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-full font-medium">Primär-Synthese</span>
                       </div>
-                    ) : arbitratorResult ? (
-                      renderBelegprueferView(arbitratorResult)
-                    ) : (
-                      <div className="text-center p-8 space-y-3">
-                        <p className="text-xs text-slate-600">Belegprüfung noch nicht gestartet.</p>
+                      {renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
+                    </div>
+
+                    <div className="bg-slate-50/70 rounded-xl border border-indigo-200/80 p-4 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
+                        <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                          GPT-4o Pro
+                        </span>
+                        <span className="text-[10px] text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full font-medium">Parallel-Synthese</span>
+                      </div>
+                      {renderThreeStageView(compareResult.openai, "GPT-4o Pro")}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50/70 rounded-xl border border-purple-200/80 p-4 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-purple-100">
+                      <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-purple-500" />
+                        Strenger Belegprüfer (Konsens & Originaltext-Abgleich)
+                      </span>
+                      {!arbitratorResult && !isArbitrating && (
                         <button
                           type="button"
                           onClick={() => fetchArbitration(compareResult.gemini, compareResult.openai)}
-                          className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-purple-700 transition-colors"
+                          className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-purple-700"
                         >
-                          Belegprüfung jetzt starten
+                          Belegprüfung starten
                         </button>
+                      )}
+                    </div>
+                    {isArbitrating ? (
+                      <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
+                        <RefreshCw className="w-6 h-6 animate-spin text-purple-600 mx-auto" />
+                        <p className="text-xs font-semibold text-slate-700">Der strenge Belegprüfer prüft alle Aussagen gegen den Originaltext...</p>
                       </div>
-                    )
-                  )}
+                    ) : arbitratorResult ? (
+                      renderBelegprueferView(arbitratorResult)
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            )
-          ) : !analysisResult ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">
-              <Activity className="w-10 h-10 text-slate-300 mb-3" />
-              <p className="text-sm font-medium">Noch keine Analyse durchgeführt.</p>
-              <p className="text-xs text-slate-400 mt-1">Geben Sie Text ein oder nutzen Sie einen der Testläufe.</p>
-            </div>
-          ) : (
-            <div className="space-y-6 overflow-y-auto max-h-[750px] pr-2">
-              {/* Action Banner for Dynamic Questions */}
-              <div className="bg-gradient-to-r from-teal-900 to-slate-900 text-white p-4 rounded-xl flex items-center justify-between shadow-md">
-                <div>
-                  <h4 className="font-bold text-sm">Semantische Grundzerlegung erfolgreich</h4>
-                  <p className="text-xs text-teal-200">Starten Sie nun den dynamischen Einzelfragen-Dialog nach Hahnemann & Bönninghausen.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsQuestionModalOpen(true)}
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-lg shadow transition-colors flex items-center gap-2 shrink-0 cursor-pointer"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Dynamische Fallaufnahme starten</span>
-                </button>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex border-b border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('gemini')}
+                      className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                        activeTab === 'gemini'
+                          ? 'border-teal-600 text-teal-900 bg-teal-50/50'
+                          : 'border-transparent text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Gemini 3.8 Flash
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('openai')}
+                      className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                        activeTab === 'openai'
+                          ? 'border-indigo-600 text-indigo-900 bg-indigo-50/50'
+                          : 'border-transparent text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      GPT-4o Pro
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('arbitrator');
+                        if (compareResult && !arbitratorResult && !isArbitrating) {
+                          fetchArbitration(compareResult.gemini, compareResult.openai);
+                        }
+                      }}
+                      className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                        activeTab === 'arbitrator'
+                          ? 'border-purple-600 text-purple-900 bg-purple-50/50'
+                          : 'border-transparent text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Strenger Belegprüfer
+                    </button>
+                  </div>
 
-              {renderThreeStageView(analysisResult, "Gemini 3.8 Flash")}
+                  <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-4 space-y-4">
+                    {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
+                    {activeTab === 'openai' && renderThreeStageView(compareResult.openai, "GPT-4o Pro")}
+                    {activeTab === 'arbitrator' && (
+                      isArbitrating ? (
+                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
+                          <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
+                          <p className="text-sm font-semibold text-slate-800">Der strenge Belegprüfer prüft alle Aussagen gegen den Originaltext...</p>
+                        </div>
+                      ) : arbitratorResult ? (
+                        renderBelegprueferView(arbitratorResult)
+                      ) : (
+                        <div className="text-center p-8 space-y-3">
+                          <p className="text-xs text-slate-600">Belegprüfung noch nicht gestartet.</p>
+                          <button
+                            type="button"
+                            onClick={() => fetchArbitration(compareResult.gemini, compareResult.openai)}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-purple-700 transition-colors"
+                          >
+                            Belegprüfung jetzt starten
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+              <span className="text-xs text-slate-500">Alle Funktionen (Tabs, Side-by-Side & Belegprüfer) sind aktiv.</span>
+              <button
+                type="button"
+                onClick={() => setIsResultsModalOpen(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Schließen
+              </button>
+            </div>
+
+          </div>
         </div>
-
-      </div>
+      )}
 
       <OrganonDynamicQuestionModal
         isOpen={isQuestionModalOpen}
