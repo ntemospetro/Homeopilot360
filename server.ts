@@ -1274,7 +1274,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
         let response;
         try {
           response = await ai.models.generateContent({
-            model: "gemini-3.5-flash-lite",
+            model: "gemini-2.5-flash",
             contents: prompt,
             config: { temperature: 0.2, responseMimeType: "application/json" },
           });
@@ -1293,7 +1293,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Mar
         if (!openAiKey) {
           console.warn("OPENAI_API_KEY is not configured, falling back to Gemini model for stability.");
           const resText = await runGemini();
-          return { content: resText, modelUsed: "gemini-3.5-flash-lite (fallback)" };
+          return { content: resText, modelUsed: "gemini-2.5-flash (fallback)" };
         }
         // Dynamic import or require for openai package
         const OpenAI = (await import("openai")).default;

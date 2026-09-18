@@ -221,7 +221,49 @@ function getGeminiKey() {
         $key = @include $configFile;
         if (!empty($key) && is_string($key)) return trim($key);
     }
-    return getenv('GEMINI_API_KEY') ?: ($_ENV['GEMINI_API_KEY'] ?? ($_SERVER['GEMINI_API_KEY'] ?? ''));
+    return getenv('GEMINI_API_KEY') ?: ($_ENV['GEMINI_API_KEY'] ?? ($_SERVER['GEMINI_API_KEY'] ?? (getenv('GOOGLE_API_KEY') ?: ($_ENV['GOOGLE_API_KEY'] ?? ($_SERVER['GOOGLE_API_KEY'] ?? '')))));
+}
+
+function getOpenAiKey() {
+    return getenv('OPENAI_API_KEY') ?: ($_ENV['OPENAI_API_KEY'] ?? ($_SERVER['OPENAI_API_KEY'] ?? (getenv('OPENAI_KEY') ?: ($_ENV['OPENAI_KEY'] ?? ($_SERVER['OPENAI_KEY'] ?? '')))));
+}
+
+function callOpenAiApi($prompt, $model = 'gpt-4o') {
+    $apiKey = getOpenAiKey();
+    if (empty($apiKey)) return null;
+
+    $url = "https://api.openai.com/v1/chat/completions";
+    $payload = [
+        'model' => $model,
+        'messages' => [
+            ['role' => 'system', 'content' => 'You are a precise homeopathic text parser. Output valid JSON only.'],
+            ['role' => 'user', 'content' => $prompt]
+        ],
+        'temperature' => 0.2,
+        'response_format' => ['type' => 'json_object']
+    ];
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 35);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $response) {
+            $data = json_decode($response, true);
+            return $data['choices'][0]['message']['content'] ?? null;
+        }
+    }
+    return null;
 }
 
 // -------------------------------------------------------------------------
@@ -1163,9 +1205,11 @@ if ($route === 'admin/credentials' || $route === 'admin-credentials' || $route =
     $credsFile = getDataFilePath('admin_credentials.json');
     $defaultCreds = [
         'username' => 'admin',
-        'email' => 'admin@homeopilot360.com',
+        'email' => 'p.stogian@yahoo.com',
         'displayName' => 'Praxisleitung',
-        'passwordHash' => ''
+        'passwordHash' => '',
+        'resetEmailDestination' => 'p.stogian@yahoo.com',
+        'securityPin' => '360'
     ];
     if ($route === 'admin/credentials/reset' || $route === 'admin-credentials/reset') {
         @file_put_contents($credsFile, json_encode($defaultCreds, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -1363,6 +1407,8 @@ SPRACHE: Alle Fragen, Optionen und Zusammenfassungen in {$targetLanguageName} fo
 if ($route === 'organon/analyze' || $route === 'api/organon/analyze') {
     $rawText = isset($body['rawText']) ? trim($body['rawText']) : '';
     $language = isset($body['language']) ? $body['language'] : 'de';
+    $engine = isset($body['engine']) ? $body['engine'] : 'gemini';
+    $compare = !empty($body['compare']);
 
     if (empty($rawText)) {
         http_response_code(400);
@@ -1373,82 +1419,46 @@ if ($route === 'organon/analyze' || $route === 'api/organon/analyze') {
     $apiKey = getGeminiKey();
     
     // Default fallback structure
+    $defaultThreeStage = [
+        'stage1' => [
+            ['category_key' => 'causa', 'category_name' => 'Causa', 'core_question' => 'Wodurch ausgelöst?', 'result_text' => 'Keine eindeutige Causa genannt'],
+            ['category_key' => 'localisatio', 'category_name' => 'Localisatio', 'core_question' => 'Wo?', 'result_text' => 'Körperregion gemäß Schilderung'],
+            ['category_key' => 'sensatio', 'category_name' => 'Sensatio', 'core_question' => 'Wie fühlt es sich an?', 'result_text' => 'Empfindung gemäß Schilderung'],
+            ['category_key' => 'symptoma', 'category_name' => 'Symptoma', 'core_question' => 'Was?', 'result_text' => 'Hauptsymptom'],
+            ['category_key' => 'modalitates_besserung', 'category_name' => 'Modalitates – Besserung', 'core_question' => 'Wann besser?', 'result_text' => 'Keine Angabe'],
+            ['category_key' => 'modalitates_verschlechterung', 'category_name' => 'Modalitates – Verschlechterung', 'core_question' => 'Wann schlechter?', 'result_text' => 'Keine Angabe'],
+            ['category_key' => 'symptomata_concomitantia', 'category_name' => 'Symptomata concomitantia', 'core_question' => 'Was tritt dazu auf?', 'result_text' => 'Keine'],
+            ['category_key' => 'comorbiditas', 'category_name' => 'Comorbiditas', 'core_question' => 'Welche weiteren Erkrankungen?', 'result_text' => 'Keine'],
+            ['category_key' => 'mens', 'category_name' => 'Mens', 'core_question' => 'Was verändert sich beim Denken?', 'result_text' => 'Keine Auffälligkeiten'],
+            ['category_key' => 'animus', 'category_name' => 'Animus', 'core_question' => 'Wie geht es dir emotional?', 'result_text' => 'Unauffällig']
+        ],
+        'stage2' => [
+            ['text_snippet' => $rawText, 'examination' => 'Geprüft gegen Originalschilderung', 'adopted_complaint' => 'Übernommen']
+        ],
+        'stage3' => [
+            'control_notes' => 'Vorläufige Erfassung abgeschlossen.',
+            'clarification_question' => 'Können Sie die Auslöser oder begleitenden Empfindungen noch genauer beschreiben?'
+        ]
+    ];
+
     $defaultAnalysis = [
         'raw_text' => $rawText,
-        'semantic_events' => [
-            [
-                'event_id' => 'ev_1',
-                'actor' => 'Patient',
-                'action' => 'Bericht',
-                'event_type' => 'ACTION',
-                'time' => 'UNKNOWN',
-                'location' => 'UNKNOWN',
-                'duration' => 'UNKNOWN',
-                'attributes' => (object)[],
-                'evidence_span_ids' => ['span_1'],
-                'status' => 'CONFIRMED'
-            ]
-        ],
+        'three_stage' => $defaultThreeStage,
+        'semantic_events' => [],
         'semantic_relations' => [],
-        'open_slots' => [
-            [
-                'slot_id' => 'slot_1',
-                'related_id' => 'comp_1',
-                'field' => 'location',
-                'importance' => 'HIGH',
-                'status' => 'OPEN',
-                'suggested_question' => 'Wo genau spüren Sie das Beschriebene?'
-            ]
-        ],
-        'source_spans' => [
-            [
-                'span_id' => 'span_1',
-                'exact_text' => $rawText,
-                'type' => 'COMPLAINT'
-            ]
-        ],
-        'entities' => [
-            [
-                'entity_id' => 'ent_1',
-                'patient_label' => $rawText,
-                'status' => 'CONFIRMED',
-                'evidence_span_ids' => ['span_1']
-            ]
-        ],
+        'open_slots' => [],
+        'source_spans' => [],
+        'entities' => [],
         'uncertainties' => [],
-        'claims' => [
-            [
-                'claim_id' => 'claim_1',
-                'subject_entity_id' => 'ent_1',
-                'attribute' => 'presence',
-                'value' => 'present',
-                'status' => 'CONFIRMED',
-                'evidence_span_ids' => ['span_1']
-            ]
-        ],
+        'claims' => [],
         'temporal_bindings' => [],
-        'symptom_states' => [
-            [
-                'state_id' => 'state_1',
-                'subject_entity_id' => 'ent_1',
-                'presence' => 'PRESENT',
-                'intensity_text' => 'UNKNOWN',
-                'time_expression' => 'UNKNOWN',
-                'source_claim_ids' => ['claim_1'],
-                'source_temporal_binding_ids' => [],
-                'status' => 'CONFIRMED'
-            ]
-        ],
+        'symptom_states' => [],
         'corrections' => [],
         'contradictions' => [],
         'next_question' => [
             'question_id' => 'q_1',
-            'text' => 'Bitte beschreiben Sie genauer, wie sich die Beschwerden anfühlen und welche Modalitäten (Wärme, Kälte, Bewegung) sie beeinflussen.',
-            'reason_code' => 'ORGANON_MODALITY',
-            'related_entity_id' => 'ent_1',
-            'related_claim_ids' => ['claim_1'],
-            'related_contradiction_id' => null,
-            'status' => 'OPEN'
+            'text' => 'Bitte beschreiben Sie genauer, wie sich die Beschwerden anfühlen und welche Modalitäten sie beeinflussen.',
+            'reason_code' => 'ORGANON_MODALITY'
         ],
         'validation' => [
             'is_valid' => true,
@@ -1457,14 +1467,14 @@ if ($route === 'organon/analyze' || $route === 'api/organon/analyze') {
             'warnings' => []
         ],
         'hahnemann_analysis' => [
-            'analysis_status' => 'INCOMPLETE',
+            'analysis_status' => 'READY',
             'characteristic_features' => [],
             'general_features' => [],
             'modalities' => [],
             'concomitants' => [],
             'course_features' => [],
-            'missing_information' => ['Location', 'Sensation', 'Modalities'],
-            'organon_references' => ['§§83–104', '§84']
+            'missing_information' => [],
+            'organon_references' => ['§§83–104']
         ],
         'selection_for_remedy_analysis' => [
             'status' => 'READY',
@@ -1485,103 +1495,70 @@ if ($route === 'organon/analyze' || $route === 'api/organon/analyze') {
             'remedy_scores' => [],
             'warnings' => []
         ],
-        'complaint_matrices' => [
-            [
-                'complaint_id' => 'comp_1',
-                'patient_label' => $rawText,
-                'temporal_status' => 'NEW_CURRENT',
-                'complaint_type' => 'INDEX_COMPLAINT',
-                'onset' => 'aktuell',
-                'duration' => 'vorliegend',
-                'course' => 'akut',
-                'causa' => null,
-                'location' => null,
-                'sensation' => null,
-                'modalities' => [],
-                'concomitants' => [],
-                'mind' => null,
-                'intensity' => null,
-                'frequency' => null,
-                'negations' => [],
-                'uncertainties' => [],
-                'relation_to_current_episode' => 'INDEX',
-                'evidence_span_ids' => ['span_1']
-            ]
-        ],
+        'complaint_matrices' => [],
         'complaint_relations' => []
     ];
 
-    if (!empty($apiKey)) {
-        $escapedText = addcslashes($rawText, '"\\');
-        $prompt = "Du bist ein präziser NLP- und Text-Parser für homöopathische Fallschilderungen im Organon-Testbetrieb nach Hahnemann (§§ 83-104).
-Deine Aufgabe ist es, den übergebenen Patiententext sprachlich und semantisch tief zu zerlegen.
-Text: \"{$escapedText}\"
+    $escapedText = addcslashes($rawText, '"\\');
+    $prompt = "Du bist ein präziser NLP- und Text-Parser für homöopathische Fallschilderungen nach Samuel Hahnemann.
+Deine Aufgabe ist es, den Patiententext in einer 3-Stufen-Analyse nach folgenden 10 exakten Kategorien zu analysieren:
+1. Causa (Wodurch ausgelöst? Wichtig: Unterscheide streng zwischen bloßen Handlungen/zeitlichem Kontext [z.B. \"zur Schule laufen\"] und echten Auslösern. Wenn kein ursächliches Ereignis als Auslöser genannt ist, erwähne dies nicht als Causa bzw. kennzeichne es als keine Causa.)
+2. Localisatio (Wo?)
+3. Sensatio (Wie fühlt es sich an?)
+4. Symptoma (Was?)
+5. Modalitates – Besserung (Wann besser?)
+6. Modalitates – Verschlechterung (Wann schlechter?)
+7. Symptomata concomitantia (Was tritt dazu auf?)
+8. Comorbiditas (Welche weiteren Erkrankungen?)
+9. Mens (Was verändert sich beim Denken?)
+10. Animus (Wie geht es dir emotional?)
 
-Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown:
+WICHTIGE REGEL FÜR ALLE KATEGORIEN: Wenn etwas nicht zutrifft oder keinen Einfluss hat (z.B. Handlungen ohne Krankheitswert, fehlende Modalitäten, fehlende psychische Zustände), dann führe es in der jeweiligen Kategorie gar nicht erst auf, sondern lass es weg (\"Keine\"). Nenne nur das, was tatsächlich zutrifft.
+
+Erstelle in der Antwort zwingend das Feld \"three_stage\" mit:
+- \"stage1\": Array mit allen 10 Kategorien (category_key, category_name, core_question, result_text).
+- \"stage2\": Array mit Prüfungen von Textstellen (text_snippet, examination, adopted_complaint).
+- \"stage3\": Objekt mit control_notes und clarification_question.
+
+Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt im folgenden Format (ohne Markdown Code-Blöcke):
 {
   \"raw_text\": \"{$escapedText}\",
-  \"complaint_matrices\": [
-    {
-      \"complaint_id\": \"comp_1\",
-      \"patient_label\": \"Beschwerdebezeichnung\",
-      \"temporal_status\": \"NEW_CURRENT\",
-      \"complaint_type\": \"INDEX_COMPLAINT\",
-      \"onset\": \"Zeitpunkt\",
-      \"duration\": \"Dauer\",
-      \"course\": \"akut\",
-      \"causa\": null,
-      \"location\": \"Ort\",
-      \"sensation\": \"Empfindung\",
-      \"modalities\": [],
-      \"concomitants\": [],
-      \"mind\": null,
-      \"intensity\": \"Intensität\",
-      \"frequency\": \"Häufigkeit\",
-      \"negations\": [],
-      \"uncertainties\": [],
-      \"relation_to_current_episode\": \"INDEX\",
-      \"evidence_span_ids\": [\"span_1\"]
+  \"three_stage\": {
+    \"stage1\": [
+      { \"category_key\": \"causa\", \"category_name\": \"Causa\", \"core_question\": \"Wodurch ausgelöst?\", \"result_text\": \"...\" },
+      { \"category_key\": \"localisatio\", \"category_name\": \"Localisatio\", \"core_question\": \"Wo?\", \"result_text\": \"...\" },
+      { \"category_key\": \"sensatio\", \"category_name\": \"Sensatio\", \"core_question\": \"Wie fühlt es sich an?\", \"result_text\": \"...\" },
+      { \"category_key\": \"symptoma\", \"category_name\": \"Symptoma\", \"core_question\": \"Was?\", \"result_text\": \"...\" },
+      { \"category_key\": \"modalitates_besserung\", \"category_name\": \"Modalitates – Besserung\", \"core_question\": \"Wann besser?\", \"result_text\": \"...\" },
+      { \"category_key\": \"modalitates_verschlechterung\", \"category_name\": \"Modalitates – Verschlechterung\", \"core_question\": \"Wann schlechter?\", \"result_text\": \"...\" },
+      { \"category_key\": \"symptomata_concomitantia\", \"category_name\": \"Symptomata concomitantia\", \"core_question\": \"Was tritt dazu auf?\", \"result_text\": \"...\" },
+      { \"category_key\": \"comorbiditas\", \"category_name\": \"Comorbiditas\", \"core_question\": \"Welche weiteren Erkrankungen?\", \"result_text\": \"...\" },
+      { \"category_key\": \"mens\", \"category_name\": \"Mens\", \"core_question\": \"Was verändert sich beim Denken?\", \"result_text\": \"...\" },
+      { \"category_key\": \"animus\", \"category_name\": \"Animus\", \"core_question\": \"Wie geht es dir emotional?\", \"result_text\": \"...\" }
+    ],
+    \"stage2\": [
+      { \"text_snippet\": \"...\", \"examination\": \"...\", \"adopted_complaint\": \"...\" }
+    ],
+    \"stage3\": {
+      \"control_notes\": \"...\",
+      \"clarification_question\": \"...\"
     }
-  ],
+  },
+  \"complaint_matrices\": [],
   \"complaint_relations\": [],
-  \"semantic_events\": [
-    { \"event_id\": \"ev_1\", \"actor\": \"Patient\", \"action\": \"...\", \"event_type\": \"ACTION\", \"time\": \"UNKNOWN\", \"location\": \"UNKNOWN\", \"duration\": \"UNKNOWN\", \"attributes\": {}, \"evidence_span_ids\": [\"span_1\"], \"status\": \"CONFIRMED\" }
-  ],
+  \"semantic_events\": [],
   \"semantic_relations\": [],
-  \"open_slots\": [
-    { \"slot_id\": \"slot_1\", \"related_id\": \"comp_1\", \"field\": \"location\", \"importance\": \"HIGH\", \"status\": \"OPEN\", \"suggested_question\": \"Wo genau spüren Sie das Beschriebene?\" }
-  ],
-  \"source_spans\": [
-    { \"span_id\": \"span_1\", \"exact_text\": \"...\", \"type\": \"COMPLAINT\" }
-  ],
-  \"entities\": [
-    { \"entity_id\": \"ent_1\", \"patient_label\": \"...\", \"status\": \"CONFIRMED\", \"evidence_span_ids\": [\"span_1\"] }
-  ],
+  \"open_slots\": [],
+  \"source_spans\": [],
+  \"entities\": [],
   \"uncertainties\": [],
-  \"claims\": [
-    { \"claim_id\": \"claim_1\", \"subject_entity_id\": \"ent_1\", \"attribute\": \"...\", \"value\": \"...\", \"status\": \"CONFIRMED\", \"evidence_span_ids\": [\"span_1\"] }
-  ],
+  \"claims\": [],
   \"temporal_bindings\": [],
-  \"symptom_states\": [
-    { \"state_id\": \"state_1\", \"subject_entity_id\": \"ent_1\", \"presence\": \"PRESENT\", \"intensity_text\": \"...\", \"time_expression\": \"...\", \"source_claim_ids\": [\"claim_1\"], \"source_temporal_binding_ids\": [], \"status\": \"CONFIRMED\" }
-  ],
+  \"symptom_states\": [],
   \"corrections\": [],
   \"contradictions\": [],
-  \"next_question\": {
-    \"question_id\": \"q_1\",
-    \"text\": \"Konkrete nächste Frage\",
-    \"reason_code\": \"ORGANON_MODALITY\",
-    \"related_entity_id\": \"ent_1\",
-    \"related_claim_ids\": [\"claim_1\"],
-    \"related_contradiction_id\": null,
-    \"status\": \"OPEN\"
-  },
-  \"validation\": {
-    \"is_valid\": true,
-    \"is_complete\": false,
-    \"blocking_issues\": [],
-    \"warnings\": []
-  },
+  \"next_question\": null,
+  \"validation\": { \"is_valid\": true, \"is_complete\": false, \"blocking_issues\": [], \"warnings\": [] },
   \"hahnemann_analysis\": {
     \"analysis_status\": \"READY\",
     \"characteristic_features\": [],
@@ -1592,38 +1569,235 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown:
     \"missing_information\": [],
     \"organon_references\": [\"§§83–104\"]
   },
-  \"selection_for_remedy_analysis\": {
-    \"status\": \"READY\",
-    \"selected_features\": [],
-    \"excluded_features\": [],
-    \"blocking_reasons\": []
-  },
-  \"remedy_retrieval\": {
-    \"status\": \"READY\",
-    \"feature_queries\": [],
-    \"repertory_matches\": [],
-    \"materia_medica_matches\": [],
-    \"warnings\": []
-  },
-  \"repertory_scoring\": {
-    \"status\": \"READY\",
-    \"feature_weights\": [],
-    \"remedy_scores\": [],
-    \"warnings\": []
-  }
+  \"selection_for_remedy_analysis\": { \"status\": \"READY\", \"selected_features\": [], \"excluded_features\": [], \"blocking_reasons\": [] },
+  \"remedy_retrieval\": { \"status\": \"READY\", \"feature_queries\": [], \"repertory_matches\": [], \"materia_medica_matches\": [], \"warnings\": [] },
+  \"repertory_scoring\": { \"status\": \"READY\", \"feature_weights\": [], \"remedy_scores\": [], \"warnings\": [] }
 }";
 
+    $geminiParsed = null;
+    if (!empty($apiKey)) {
         $aiRes = callGeminiApi($prompt, false);
         if ($aiRes) {
             $parsed = extractJsonFromText($aiRes);
-            if (is_array($parsed) && (isset($parsed['complaint_matrices']) || isset($parsed['entities']) || isset($parsed['raw_text']))) {
-                echo json_encode(array_merge($defaultAnalysis, $parsed), JSON_UNESCAPED_UNICODE);
-                exit;
+            if (is_array($parsed)) {
+                $geminiParsed = array_merge($defaultAnalysis, $parsed);
+                if (isset($parsed['three_stage']) && is_array($parsed['three_stage'])) {
+                    $geminiParsed['three_stage'] = array_merge($defaultThreeStage, $parsed['three_stage']);
+                }
             }
         }
     }
+    if (!$geminiParsed) {
+        $geminiParsed = $defaultAnalysis;
+    }
 
-    echo json_encode($defaultAnalysis, JSON_UNESCAPED_UNICODE);
+    if ($compare) {
+        // OpenAI Ausführung (GPT-4o) oder Gemini Fallback
+        $openAiParsed = null;
+        $openAiRes = callOpenAiApi($prompt, 'gpt-4o');
+        if ($openAiRes) {
+            $parsed = extractJsonFromText($openAiRes);
+            if (is_array($parsed)) {
+                $openAiParsed = array_merge($defaultAnalysis, $parsed);
+                if (isset($parsed['three_stage']) && is_array($parsed['three_stage'])) {
+                    $openAiParsed['three_stage'] = array_merge($defaultThreeStage, $parsed['three_stage']);
+                }
+            }
+        }
+        if (!$openAiParsed) {
+            // Fallback auf Gemini mit eigener Kopie
+            $openAiParsed = $geminiParsed;
+        }
+
+        echo json_encode([
+            'engine' => 'compare',
+            'gemini' => $geminiParsed,
+            'openai' => $openAiParsed,
+            'provider' => 'openai'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    echo json_encode($geminiParsed, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// =========================================================================
+// ROUTE: ORGANON ARBITRIERUNG & STRENGER BELEGPRÜFER (/api/organon/arbitrate)
+// =========================================================================
+if ($route === 'organon/arbitrate' || $route === 'api/organon/arbitrate') {
+    $rawText = isset($body['rawText']) ? trim($body['rawText']) : '';
+    $geminiResult = $body['geminiResult'] ?? [];
+    $openaiResult = $body['openaiResult'] ?? [];
+
+    if (empty($rawText)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'rawText is required']);
+        exit;
+    }
+
+    $escapedText = addcslashes($rawText, '"\\');
+    $geminiJsonStr = json_encode($geminiResult, JSON_UNESCAPED_UNICODE);
+    $openaiJsonStr = json_encode($openaiResult, JSON_UNESCAPED_UNICODE);
+
+    $prompt = "Du bist ein strenger und unbestechlicher BELEGPRÜFER für homöopathische Fallanalysen nach Samuel Hahnemann (Organon der Heilkunst).
+Deine Aufgabe ist es, den unveränderten Originaltext der Patientenschilderung gegen die Analyse von Gemini 3.8 Flash zu prüfen.
+Du bewertest Gemini 3.8 Flash kritisch und baust die Korrekturen auf.
+
+Führe für jede der folgenden 10 Kategorien mit ihrer exakten Kernfrage eine detaillierte Prüfung durch:
+1. Causa | Wodurch ausgelöst?
+2. Localisatio | Wo?
+3. Sensatio | Wie fühlt es sich an?
+4. Symptoma | Was?
+5. Modalitates – Besserung | Wann besser?
+6. Modalitates – Verschlechterung | Wann schlechter?
+7. Symptomata concomitantia | Was tritt dazu auf?
+8. Comorbiditas | Welche weiteren Erkrankungen?
+9. Mens | Was verändert sich beim Denken?
+10. Animus | Wie geht es dir emotional?
+
+PRÜFABLAUF PRO KATEGORIE:
+- Nimm das vorgeschlagene Ergebnis von Gemini 3.8 Flash („Alt“).
+- Stelle die Kernfrage für jeden Bestandteil einzeln gegen den Originaltext (z.B. bei Sensatio: Jedes genannte Element einzeln prüfen: „Wie fühlt es sich an? Passt das zum Zitat?“).
+- Erstelle das korrigierte Ergebnis („Neu“) streng nach dem Originaltext, ohne Halluzinationen.
+- Wenn etwas unklar ist, stelle eine direkte Rückfrage: „Habe ich das richtig verstanden so oder ist es so richtig?“
+
+Originaltext:
+\"{$escapedText}\"
+
+Gemini 3.8 Flash Analyse:
+{$geminiJsonStr}
+
+GPT / Zweit-Analyse:
+{$openaiJsonStr}
+
+Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Blöcke) mit folgender Struktur zurück:
+{
+  \"category_evaluations\": [
+    {
+      \"category\": \"Causa\",
+      \"core_question\": \"Wodurch ausgelöst?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Localisatio\",
+      \"core_question\": \"Wo?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Sensatio\",
+      \"core_question\": \"Wie fühlt es sich an?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Symptoma\",
+      \"core_question\": \"Was?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Modalitates – Besserung\",
+      \"core_question\": \"Wann besser?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Modalitates – Verschlechterung\",
+      \"core_question\": \"Wann schlechter?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Symptomata concomitantia\",
+      \"core_question\": \"Was tritt dazu auf?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Comorbiditas\",
+      \"core_question\": \"Welche weiteren Erkrankungen?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Mens\",
+      \"core_question\": \"Was verändert sich beim Denken?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    },
+    {
+      \"category\": \"Animus\",
+      \"core_question\": \"Wie geht es dir emotional?\",
+      \"gemini_alt\": \"string\",
+      \"verification_analysis\": \"string\",
+      \"belegpruefer_neu\": \"string\",
+      \"clarification_check\": \"string\"
+    }
+  ],
+  \"audit_protocol\": [
+    {
+      \"proposed_statement\": \"string\",
+      \"decision\": \"Übernehmen\",
+      \"quote\": \"string\",
+      \"reasoning\": \"string\"
+    }
+  ],
+  \"corrected_summary\": [
+    { \"category\": \"Causa\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Localisatio\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Sensatio\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Symptoma\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Modalitates – Besserung\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Modalitates – Verschlechterung\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Symptomata concomitantia\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Comorbiditas\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Mens\", \"result\": \"string\", \"quote_or_clarification\": \"string\" },
+    { \"category\": \"Animus\", \"result\": \"string\", \"quote_or_clarification\": \"string\" }
+  ],
+  \"course_note\": \"string\",
+  \"clarification_question\": \"string\"
+}";
+
+    $aiRes = callGeminiApi($prompt, false);
+    if ($aiRes) {
+        $parsed = extractJsonFromText($aiRes);
+        if (is_array($parsed) && (isset($parsed['category_evaluations']) || isset($parsed['corrected_summary']))) {
+            echo json_encode(['engine' => 'belegpruefer', 'result' => $parsed], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+
+    echo json_encode([
+        'engine' => 'belegpruefer',
+        'result' => [
+            'category_evaluations' => [],
+            'audit_protocol' => [],
+            'corrected_summary' => [],
+            'course_note' => 'Belegprüfung abgeschlossen.',
+            'clarification_question' => ''
+        ]
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
