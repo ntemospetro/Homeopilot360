@@ -1826,7 +1826,7 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-3.5-flash-lite",
+          model: "gemini-2.5-flash",
           contents: prompt,
           config: { temperature: 0.1, responseMimeType: "application/json" },
         });
@@ -1870,7 +1870,7 @@ Text:
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-3.5-flash-lite",
+          model: "gemini-2.5-flash",
           contents: prompt,
           config: { temperature: 0.1 },
         });

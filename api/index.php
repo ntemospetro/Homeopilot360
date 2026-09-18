@@ -1703,6 +1703,41 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt:
 }
 
 // =========================================================================
+// ROUTE: ORGANON TEXTKORREKTUR & LEKTORAT (/api/organon/correct-spelling)
+// =========================================================================
+if ($route === 'organon/correct-spelling' || $route === 'api/organon/correct-spelling') {
+    $rawText = isset($body['rawText']) ? trim($body['rawText']) : '';
+    if (empty($rawText)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'rawText is required']);
+        exit;
+    }
+
+    $apiKey = getGeminiKey();
+    if (!empty($apiKey)) {
+        $prompt = "Du bist ein professioneller homöopathischer Assistent und Lektor.
+Korrigiere den folgenden Patiententext hinsichtlich Rechtschreibung, Grammatik, Satzbau und sprachlicher Klarheit.
+Bewahre dabei exakt den inhaltlichen Sinn, die medizinischen/homöopathischen Aussagen und den Ton des Patienten. Verändere oder erfinde keine medizinischen Fakten, sondern korrigiere nur Grammatik, Rechtschreibung und schwer verständliches Wortdurcheinander, damit der Text Sinn ergibt und für die homöopathische Analyse sauber lesbar ist.
+
+Antworte AUSSCHLIESSLICH mit dem korrigierten Text, ohne Erklärungen, ohne Anführungszeichen und ohne Markdown-Code-Blöcke.
+
+Text:
+\"{$rawText}\"";
+
+        $aiRes = callGeminiApi($prompt, false);
+        if ($aiRes) {
+            $cleaned = trim(preg_replace('/^["\']|["\']$/u', '', trim($aiRes)));
+            echo json_encode(['correctedText' => $cleaned], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+
+    // Fallback: unveränderter Text
+    echo json_encode(['correctedText' => $rawText], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// =========================================================================
 // ROUTE 10: 5-SCHRITTE-AKUT-REPERTORISATION (/api/acute-repertorise)
 // =========================================================================
 if ($route === 'acute-repertorise' || $route === 'acute/repertorise') {
