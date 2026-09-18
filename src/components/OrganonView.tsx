@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation, useLanguage } from '../i18n/LanguageContext';
 import { analyzeOrganonText, OrganonAiAnalysisResult } from '../services/organonAiService';
 import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
+import { motion } from 'motion/react';
 import { 
   isSpeechRecognitionSupported, 
   startSpeechRecognition, 
@@ -965,8 +966,14 @@ export const OrganonView: React.FC = () => {
 
       {/* Full-Width Results Modal Popup */}
       {isResultsModalOpen && compareResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-7xl rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[95vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="bg-white w-full max-w-7xl rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[95vh] overflow-hidden max-w-full"
+          >
             
             {/* Modal Header */}
             <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
@@ -1207,7 +1214,7 @@ export const OrganonView: React.FC = () => {
               </button>
             </div>
 
-          </div>
+          </motion.div>
         </div>
       )}
 
