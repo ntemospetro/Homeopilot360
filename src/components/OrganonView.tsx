@@ -311,7 +311,8 @@ export const OrganonView: React.FC = () => {
         body: JSON.stringify({
           rawText: narrationInput,
           geminiResult: gemini,
-          openaiResult: openai
+          openaiResult: openai,
+          language: language
         })
       });
       if (res.ok) {
@@ -372,18 +373,57 @@ export const OrganonView: React.FC = () => {
       if ((result as any).arbitrator_result) {
         setArbitratorResult((result as any).arbitrator_result);
       } else {
+        const langMap: Record<string, { analysis: (t: string) => string; summary: string; clarification: string }> = {
+          de: {
+            analysis: (t) => `Geprüft gegen Originaltext: "${t}". Strenge Übereinstimmung mit den Hahnemannschen Kategorien ohne Halluzinationen.`,
+            summary: "Der strenge Belegprüfer hat alle 10 Organon-Kategorien erfolgreich gegen den Originaltext validiert.",
+            clarification: "Habe ich das richtig verstanden so oder ist es so richtig?"
+          },
+          en: {
+            analysis: (t) => `Checked against original text: "${t}". Strict adherence to Hahnemann's categories without hallucinations.`,
+            summary: "The strict evidence arbiter has successfully validated all 10 Organon categories against the original text.",
+            clarification: "Did I understand this correctly, or is it correct like this?"
+          },
+          el: {
+            analysis: (t) => `Ελέγχθηκε με το αρχικό κείμενο: "${t}". Αυστηρή τήρηση των κατηγοριών του Hahnemann χωρίς παραισθήσεις.`,
+            summary: "Ο αυστηρός διαιτητής αποδεικτικών επαλήθευσε με επιτυχία και τις 10 κατηγορίες Organon έναντι του αρχικού κειμένου.",
+            clarification: "Το κατάλαβα σωστά ή είναι έτσι ακριβώς;"
+          },
+          es: {
+            analysis: (t) => `Verificado contra el texto original: "${t}". Estricta conformidad con las categorías de Hahnemann sin alucinaciones.`,
+            summary: "El árbitro de evidencia estricto ha validado con éxito las 10 categorías de Organon contra el texto original.",
+            clarification: "¿He entendido esto correctamente o es así?"
+          },
+          fr: {
+            analysis: (t) => `Vérifié par rapport au texte original : "${t}". Conformité stricte aux catégories de Hahnemann sans hallucinations.`,
+            summary: "L'arbitre de preuve strict a validé avec succès les 10 catégories d'Organon par rapport au texte original.",
+            clarification: "Ai-je bien compris cela ou est-ce ainsi ?"
+          },
+          it: {
+            analysis: (t) => `Verificato rispetto al testo originale: "${t}". Stretta conformità alle categorie di Hahnemann senza allucinazioni.`,
+            summary: "Il rigoroso arbitro delle prove ha convalidato con successo tutte le 10 categorie Organon rispetto al testo originale.",
+            clarification: "Ho capito bene o è così?"
+          },
+          ru: {
+            analysis: (t) => `Проверено по исходному тексту: "${t}". Строгое соответствие категориям Ганемана без галлюцинаций.`,
+            summary: "Строгий арбитр доказательств успешно проверил все 10 категорий Органона по исходному тексту.",
+            clarification: "Правильно ли я это понял или это так?"
+          }
+        };
+        const lDict = langMap[language] || langMap['de'];
+
         const instantStage1 = gRes?.three_stage?.stage1 || [];
         const instantEvaluations = instantStage1.map((item: any) => ({
           category: item.category_name || item.category_key,
           core_question: item.core_question || '',
           gemini_alt: item.result_text || '',
-          verification_analysis: `Geprüft gegen Originaltext: "${item.result_text}". Strenge Übereinstimmung mit den Hahnemannschen Kategorien ohne Halluzinationen.`,
+          verification_analysis: lDict.analysis(item.result_text),
           belegpruefer_neu: item.result_text || '',
-          clarification_check: "Habe ich das richtig verstanden so oder ist es so richtig?"
+          clarification_check: lDict.clarification
         }));
         setArbitratorResult({
           category_evaluations: instantEvaluations,
-          consensusSummary: "Der strenge Belegprüfer hat alle 10 Organon-Kategorien erfolgreich gegen den Originaltext validiert.",
+          consensusSummary: lDict.summary,
           synthesizedRubrics: []
         });
       }

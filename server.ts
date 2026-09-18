@@ -1195,7 +1195,20 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
         return res.status(400).json({ error: "rawText is required" });
       }
 
-      const prompt = `Du bist ein präziser NLP- und Text-Parser für homöopathische Fallschilderungen nach Samuel Hahnemann.
+      const langNames: Record<string, string> = {
+        de: "German (Deutsch)",
+        en: "English",
+        el: "Greek (Ελληνικά)",
+        es: "Spanish (Español)",
+        fr: "French (Français)",
+        it: "Italian (Italiano)",
+        ru: "Russian (Русский)"
+      };
+      const targetLanguageName = langNames[language] || "German (Deutsch)";
+
+      const prompt = `CRITICAL INSTRUCTIONS: You MUST output all analysis results, category names, core questions, text results, control notes, and clarification questions in ${targetLanguageName}. Translate every single category name and core question fully into ${targetLanguageName}.
+
+Du bist ein präziser NLP- und Text-Parser für homöopathische Fallschilderungen nach Samuel Hahnemann.
 Deine Aufgabe ist es, den Patiententext in einer 3-Stufen-Analyse nach folgenden 10 exakten Kategorien zu analysieren:
 1. Causa (Wodurch ausgelöst? Wichtig: Unterscheide streng zwischen bloßen Handlungen/zeitlichem Kontext [z.B. "zur Schule laufen"] und echten Auslösern. Wenn kein ursächliches Ereignis als Auslöser genannt ist, erwähne dies nicht als Causa bzw. kennzeichne es als keine Causa.)
 2. Localisatio (Wo?)
@@ -1211,7 +1224,7 @@ Deine Aufgabe ist es, den Patiententext in einer 3-Stufen-Analyse nach folgenden
 WICHTIGE REGEL FÜR ALLE KATEGORIEN: Wenn etwas nicht zutrifft oder keinen Einfluss hat (z.B. Handlungen ohne Krankheitswert, fehlende Modalitäten, fehlende psychische Zustände), dann führe es in der jeweiligen Kategorie gar nicht erst auf, sondern lass es weg ("Keine"). Nenne nur das, was tatsächlich zutrifft.
 
 Erstelle in der Antwort zwingend das Feld "three_stage" mit:
-- "stage1": Array mit allen 10 Kategorien (category_key, category_name, core_question, result_text).
+- "stage1": Array mit allen 10 Kategorien (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text).
 - "stage2": Array mit Prüfungen von Textstellen (text_snippet, examination, adopted_complaint).
 - "stage3": Objekt mit control_notes und clarification_question.
 
@@ -1220,16 +1233,16 @@ Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Forma
   "raw_text": "${rawText.replace(/"/g, '\\\\"')}",
   "three_stage": {
     "stage1": [
-      { "category_key": "causa", "category_name": "Causa", "core_question": "Wodurch ausgelöst?", "result_text": "..." },
-      { "category_key": "localisatio", "category_name": "Localisatio", "core_question": "Wo?", "result_text": "..." },
-      { "category_key": "sensatio", "category_name": "Sensatio", "core_question": "Wie fühlt es sich an?", "result_text": "..." },
-      { "category_key": "symptoma", "category_name": "Symptoma", "core_question": "Was?", "result_text": "..." },
-      { "category_key": "modalitates_besserung", "category_name": "Modalitates – Besserung", "core_question": "Wann besser?", "result_text": "..." },
-      { "category_key": "modalitates_verschlechterung", "category_name": "Modalitates – Verschlechterung", "core_question": "Wann schlechter?", "result_text": "..." },
-      { "category_key": "symptomata_concomitantia", "category_name": "Symptomata concomitantia", "core_question": "Was tritt dazu auf?", "result_text": "..." },
-      { "category_key": "comorbiditas", "category_name": "Comorbiditas", "core_question": "Welche weiteren Erkrankungen?", "result_text": "..." },
-      { "category_key": "mens", "category_name": "Mens", "core_question": "Was verändert sich beim Denken?", "result_text": "..." },
-      { "category_key": "animus", "category_name": "Animus", "core_question": "Wie geht es dir emotional?", "result_text": "..." }
+      { "category_key": "causa", "category_name": "Causa (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "localisatio", "category_name": "Localisatio (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "sensatio", "category_name": "Sensatio (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "symptoma", "category_name": "Symptoma (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "modalitates_besserung", "category_name": "Modalitates – Besserung (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "modalitates_verschlechterung", "category_name": "Modalitates – Verschlechterung (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "symptomata_concomitantia", "category_name": "Symptomata concomitantia (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "comorbiditas", "category_name": "Comorbiditas (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "mens", "category_name": "Mens (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." },
+      { "category_key": "animus", "category_name": "Animus (translated to ${targetLanguageName})", "core_question": "...", "result_text": "..." }
     ],
     "stage2": [
       { "text_snippet": "...", "examination": "...", "adopted_complaint": "..." }
@@ -1706,36 +1719,49 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
 
   app.post("/api/organon/arbitrate", async (req, res) => {
     try {
-      const { rawText, geminiResult, openaiResult } = req.body;
+      const { rawText, geminiResult, openaiResult, language = "de" } = req.body;
       if (!rawText || typeof rawText !== "string") {
         return res.status(400).json({ error: "rawText is required" });
       }
+
+      const langNames: Record<string, string> = {
+        de: "German (Deutsch)",
+        en: "English",
+        el: "Greek (Ελληνικά)",
+        es: "Spanish (Español)",
+        fr: "French (Français)",
+        it: "Italian (Italiano)",
+        ru: "Russian (Русский)"
+      };
+      const targetLanguageName = langNames[language] || "German (Deutsch)";
 
       const apiKey = getGeminiApiKey();
       if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
       const ai = new GoogleGenAI({ apiKey });
 
-      const prompt = `Du bist ein strenger und unbestechlicher BELEGPRÜFER für homöopathische Fallanalysen nach Samuel Hahnemann (Organon der Heilkunst).
-Deine Aufgabe ist es, den unveränderten Originaltext der Patientenschilderung gegen die Analyse von Gemini 3.8 Flash zu prüfen.
-Du bewertest Gemini 3.8 Flash kritisch und baust die Korrekturen auf.
+      const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all text, category names, core questions, verification analyses, audit protocol decisions/reasonings, corrected summary tables, course notes, and clarification questions FULLY TRANSLATED into ${targetLanguageName} (${language}). Do NOT output any German phrases unless German is the selected target language.
 
-Führe für jede der folgenden 10 Kategorien mit ihrer exakten Kernfrage eine detaillierte Prüfung durch:
-1. Causa | Wodurch ausgelöst?
-2. Localisatio | Wo?
-3. Sensatio | Wie fühlt es sich an?
-4. Symptoma | Was?
-5. Modalitates – Besserung | Wann besser?
-6. Modalitates – Verschlechterung | Wann schlechter?
-7. Symptomata concomitantia | Was tritt dazu auf?
-8. Comorbiditas | Welche weiteren Erkrankungen?
-9. Mens | What verändert sich beim Denken? (Was verändert sich beim Denken?)
-10. Animus | Wie geht es dir emotional?
+You are a strict and incorruptible EVIDENCE ARBITER for homeopathic case analyses according to Samuel Hahnemann (Organon of Medicine).
+Your task is to examine the unaltered original patient narrative against the analysis of Gemini 3.8 Flash.
+Critically evaluate Gemini 3.8 Flash and build the corrections.
 
-PRÜFABLAUF PRO KATEGORIE:
-- Nimm das vorgeschlagene Ergebnis von Gemini 3.8 Flash („Alt“).
-- Stelle die Kernfrage für jeden Bestandteil einzeln gegen den Originaltext (z.B. bei Sensatio: Jedes genannte Element einzeln prüfen: „Wie fühlt es sich an? Passt das zum Zitat?“).
-- Erstelle das korrigierte Ergebnis („Neu“) streng nach dem Originaltext, ohne Halluzinationen.
-- Wenn etwas unklar ist, stelle eine direkte Rückfrage: „Habe ich das richtig verstanden so oder ist es so richtig?“
+Perform a detailed evaluation for each of the following 10 categories with its exact core question (fully translated into ${targetLanguageName}):
+1. Causa | What triggered it?
+2. Localisatio | Where?
+3. Sensatio | What does it feel like?
+4. Symptoma | What?
+5. Modalitates – Besserung | When better?
+6. Modalitates – Verschlechterung | When worse?
+7. Symptomata concomitantia | What occurs concomitantly?
+8. Comorbiditas | What other conditions exist?
+9. Mens | What changes in thinking?
+10. Animus | How do you feel emotionally?
+
+EVALUATION PROCESS PER CATEGORY:
+- Take the proposed result from Gemini 3.8 Flash ("Old").
+- Check each core question against the original text.
+- Create the corrected result ("New") strictly according to the original text without hallucinations.
+- Write the 'verification_analysis' in ${targetLanguageName} (e.g. checked against original text, adherence to Hahnemann's categories).
 
 Originaltext:
 "${rawText.replace(/"/g, '\\\\"')}"
@@ -1746,112 +1772,33 @@ ${JSON.stringify(geminiResult || {})}
 GPT / Zweit-Analyse:
 ${JSON.stringify(openaiResult || {})}
 
-Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Blöcke) mit folgender Struktur zurück:
+Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Blöcke) mit folgender Struktur zurück (wobei alle Kategorienamen, Kernfragen, Prüfungen und Begründungen in ${targetLanguageName} verfasst sein müssen):
 {
   "category_evaluations": [
     {
-      "category": "Causa",
-      "core_question": "Wodurch ausgelöst?",
+      "category": "Category name in ${targetLanguageName}",
+      "core_question": "Core question in ${targetLanguageName}",
       "gemini_alt": "string",
-      "verification_analysis": "string (Prüfung jedes Elements gegen den Text)",
-      "belegpruefer_neu": "string (korrigiertes Ergebnis)",
-      "clarification_check": "string (z.B. 'Habe ich das richtig verstanden so oder ist es so richtig?')"
-    },
-    {
-      "category": "Localisatio",
-      "core_question": "Wo?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
+      "verification_analysis": "string in ${targetLanguageName}",
       "belegpruefer_neu": "string",
-      "clarification_check": "string"
+      "clarification_check": "string in ${targetLanguageName}"
     },
-    {
-      "category": "Sensatio",
-      "core_question": "Wie fühlt es sich an?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
-      "belegpruefer_neu": "string",
-      "clarification_check": "string"
-    },
-    {
-      "category": "Symptoma",
-      "core_question": "Was?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
-      "belegpruefer_neu": "string",
-      "clarification_check": "string"
-    },
-    {
-      "category": "Modalitates – Besserung",
-      "core_question": "Wann besser?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
-      "belegpruefer_neu": "string",
-      "clarification_check": "string"
-    },
-    {
-      "category": "Modalitates – Verschlechterung",
-      "core_question": "Wann schlechter?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
-      "belegpruefer_neu": "string",
-      "clarification_check": "string"
-    },
-    {
-      "category": "Symptomata concomitantia",
-      "core_question": "Was tritt dazu auf?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
-      "belegpruefer_neu": "string",
-      "clarification_check": "string"
-    },
-    {
-      "category": "Comorbiditas",
-      "core_question": "Welche weiteren Erkrankungen?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
-      "belegpruefer_neu": "string",
-      "clarification_check": "string"
-    },
-    {
-      "category": "Mens",
-      "core_question": "Was verändert sich beim Denken?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
-      "belegpruefer_neu": "string",
-      "clarification_check": "string"
-    },
-    {
-      "category": "Animus",
-      "core_question": "Wie geht es dir emotional?",
-      "gemini_alt": "string",
-      "verification_analysis": "string",
-      "belegpruefer_neu": "string",
-      "clarification_check": "string"
-    }
+    ... (all 10 categories)
   ],
   "audit_protocol": [
     {
       "proposed_statement": "string",
-      "decision": "Übernehmen" | "Korrigieren" | "Verwerfen" | "Rückfrage erforderlich",
+      "decision": "string in ${targetLanguageName} (e.g. Accept, Correct, Reject)",
       "quote": "string",
-      "reasoning": "string"
+      "reasoning": "string in ${targetLanguageName}"
     }
   ],
   "corrected_summary": [
-    { "category": "Causa", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Localisatio", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Sensatio", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Symptoma", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Modalitates – Besserung", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Modalitates – Verschlechterung", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Symptomata concomitantia", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Comorbiditas", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Mens", "result": "string", "quote_or_clarification": "string" },
-    { "category": "Animus", "result": "string", "quote_or_clarification": "string" }
+    { "category": "Category name in ${targetLanguageName}", "result": "string", "quote_or_clarification": "string" }
+    ... (all 10 categories)
   ],
-  "course_note": "string",
-  "clarification_question": "string"
+  "course_note": "string in ${targetLanguageName}",
+  "clarification_question": "string in ${targetLanguageName}"
 }`;
 
       let response;
