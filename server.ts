@@ -1250,13 +1250,13 @@ Antworte AUSSCHLIESSLICH als kompaktes, gültiges JSON-Objekt im folgenden Forma
           response = await ai.models.generateContent({
             model: "gemini-3.5-flash-lite",
             contents: prompt,
-            config: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: "application/json" },
+            config: { temperature: 0.1, maxOutputTokens: 8192, responseMimeType: "application/json" },
           });
         } catch (e) {
           response = await ai.models.generateContent({
             model: "gemini-3.8-flash",
             contents: prompt,
-            config: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: "application/json" },
+            config: { temperature: 0.1, maxOutputTokens: 8192, responseMimeType: "application/json" },
           });
         }
         return response.text || "{}";
@@ -2351,8 +2351,9 @@ oder
   }
 
   function parseAiJson(text: string, fallbackObj: any): any {
-    if (!text) return fallbackObj;
+    if (!text || typeof text !== 'string') return fallbackObj;
     let clean = text.trim();
+    if (clean === '{' || clean === '' || clean.length < 2) return fallbackObj;
     const jsonMatch = clean.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
       clean = jsonMatch[1].trim();
@@ -2362,6 +2363,8 @@ oder
     const lastBrace = clean.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace > firstBrace) {
       clean = clean.substring(firstBrace, lastBrace + 1);
+    } else {
+      return fallbackObj;
     }
 
     try {
@@ -2380,15 +2383,21 @@ oder
         return JSON.parse(fixed);
       } catch (e2) {
         try {
-          // Fallback evaluation if safe
+          // Fallback evaluation if safe or attempting to auto-close truncated JSON
+          let trial = clean;
+          // Count open braces vs close braces
+          const opens = (trial.match(/{/g) || []).length;
+          const closes = (trial.match(/}/g) || []).length;
+          if (opens > closes) {
+            trial += '}'.repeat(opens - closes);
+          }
           // eslint-disable-next-line no-new-func
-          const evaluated = new Function(`return ${clean}`)();
+          const evaluated = new Function(`return ${trial}`)();
           if (evaluated && typeof evaluated === 'object') {
             return evaluated;
           }
         } catch {}
 
-        console.error("Failed to parse AI JSON response. Raw text snippet:", clean.substring(0, 300));
         return fallbackObj;
       }
     }

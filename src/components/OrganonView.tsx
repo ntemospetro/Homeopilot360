@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../i18n/LanguageContext';
 import { analyzeOrganonText, OrganonAiAnalysisResult } from '../services/organonAiService';
 import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
@@ -89,6 +89,14 @@ export const OrganonView: React.FC = () => {
   const [showCorrectionReviewArea, setShowCorrectionReviewArea] = useState<boolean>(false);
   const [correctedNarrationDraft, setCorrectedNarrationDraft] = useState<string>('');
   const [draftOriginalNarration, setDraftOriginalNarration] = useState<string>('');
+
+  useEffect(() => {
+    if (isResultsModalOpen && compareResult && !arbitratorResult && !isArbitrating) {
+      const g = compareResult.gemini;
+      const o = compareResult.openai || null;
+      fetchArbitration(g, o);
+    }
+  }, [isResultsModalOpen, compareResult]);
 
   const intelligentClinicalCorrection = (text: string): string => {
     let t = text.trim();
@@ -239,18 +247,28 @@ export const OrganonView: React.FC = () => {
     setDebugStatus('Analysiere Text...');
     try {
       const result = await analyzeOrganonText(textToAnalyze, 'de', 'gemini', enableGptCompare);
+      let gRes: any = null;
+      let oRes: any = null;
       if (enableGptCompare && result && typeof result === 'object' && 'gemini' in result && 'openai' in result) {
         setCompareResult(result);
         setAnalysisResult((result as any).gemini);
-        fetchArbitration((result as any).gemini, (result as any).openai);
+        gRes = (result as any).gemini;
+        oRes = (result as any).openai;
       } else {
         const fallbackRes = result as OrganonAiAnalysisResult;
         setCompareResult({ engine: 'single', gemini: fallbackRes, openai: null });
         setAnalysisResult(fallbackRes);
-        fetchArbitration(fallbackRes, null);
+        gRes = fallbackRes;
+        oRes = null;
       }
       setDebugStatus('Analyse erfolgreich abgeschlossen.');
+      setActiveTab('gemini');
       setIsResultsModalOpen(true);
+
+      // Start Belegprüfer (Arbitration) in background immediately to save time
+      setTimeout(() => {
+        fetchArbitration(gRes, oRes);
+      }, 100);
     } catch (err: any) {
       setErrorMessage(err.message || 'Fehler bei der KI-Analyse');
       setDebugStatus('Fehler aufgetreten.');
@@ -697,7 +715,7 @@ export const OrganonView: React.FC = () => {
           {compareResult ? (
             <button
               type="button"
-              onClick={() => setIsResultsModalOpen(true)}
+              onClick={() => { setActiveTab('gemini'); setIsResultsModalOpen(true); }}
               className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md transition-colors flex items-center gap-2 cursor-pointer"
             >
               <Maximize2 className="w-4 h-4" />
@@ -776,12 +794,7 @@ export const OrganonView: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setActiveTab('arbitrator');
-                        if (compareResult && !arbitratorResult && !isArbitrating) {
-                          fetchArbitration(compareResult.gemini, null);
-                        }
-                      }}
+                      onClick={() => setActiveTab('arbitrator')}
                       className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
                         activeTab === 'arbitrator'
                           ? 'border-purple-600 text-purple-900 bg-purple-50/50'
@@ -896,12 +909,7 @@ export const OrganonView: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setActiveTab('arbitrator');
-                        if (compareResult && !arbitratorResult && !isArbitrating) {
-                          fetchArbitration(compareResult.gemini, compareResult.openai);
-                        }
-                      }}
+                      onClick={() => setActiveTab('arbitrator')}
                       className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
                         activeTab === 'arbitrator'
                           ? 'border-purple-600 text-purple-900 bg-purple-50/50'
