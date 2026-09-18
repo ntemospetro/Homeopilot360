@@ -1,0 +1,168 @@
+[
+  {
+    "rubric_id": "kent-extremities-pain",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN"],
+    "rubric_text_original": "Pain",
+    "rubric_text_normalized": "extremities > pain",
+    "parent_rubric_id": null,
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "acon", "grade": 1 },
+      { "remedy_id": "bry", "grade": 3 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-pain-burning",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN", "BURNING"],
+    "rubric_text_original": "Burning",
+    "rubric_text_normalized": "extremities > pain > burning",
+    "parent_rubric_id": "kent-extremities-pain",
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "ars", "grade": 3 },
+      { "remedy_id": "sulph", "grade": 3 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-pain-burning-ankle",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN", "BURNING", "ANKLE"],
+    "rubric_text_original": "Ankle",
+    "rubric_text_normalized": "extremities > pain > burning > ankle",
+    "parent_rubric_id": "kent-extremities-pain-burning",
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "agar", "grade": 1 },
+      { "remedy_id": "berb", "grade": 2 },
+      { "remedy_id": "euph", "grade": 1 },
+      { "remedy_id": "kreos", "grade": 1 },
+      { "remedy_id": "laur", "grade": 1 },
+      { "remedy_id": "mane", "grade": 1 },
+      { "remedy_id": "nat-c", "grade": 1 },
+      { "remedy_id": "plat", "grade": 1 },
+      { "remedy_id": "puis", "grade": 1 },
+      { "remedy_id": "sulph", "grade": 3 },
+      { "remedy_id": "zinc", "grade": 2 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-pain-burning-ankle-internal-malleolus",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN", "BURNING", "ANKLE", "INTERNAL MALLEOLUS"],
+    "rubric_text_original": "Internal Malleolus",
+    "rubric_text_normalized": "extremities > pain > burning > ankle > internal malleolus",
+    "parent_rubric_id": "kent-extremities-pain-burning-ankle",
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "carb-v", "grade": 2 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-pain-burning-ankle-outer-side",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN", "BURNING", "ANKLE", "OUTER SIDE"],
+    "rubric_text_original": "Outer Side",
+    "rubric_text_normalized": "extremities > pain > burning > ankle > outer side",
+    "parent_rubric_id": "kent-extremities-pain-burning-ankle",
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "caust", "grade": 2 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-pain-ankle",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN", "ANKLE"],
+    "rubric_text_original": "Ankle",
+    "rubric_text_normalized": "extremities > pain > ankle",
+    "parent_rubric_id": "kent-extremities-pain",
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "bry", "grade": 2 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-pain-ankle-internal-malleolus",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN", "ANKLE", "INTERNAL MALLEOLUS"],
+    "rubric_text_original": "Internal Malleolus",
+    "rubric_text_normalized": "extremities > pain > ankle > internal malleolus",
+    "parent_rubric_id": "kent-extremities-pain-ankle",
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "kali-c", "grade": 2 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-pain-ankle-outer-side",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN", "ANKLE", "OUTER SIDE"],
+    "rubric_text_original": "Outer Side",
+    "rubric_text_normalized": "extremities > pain > ankle > outer side",
+    "parent_rubric_id": "kent-extremities-pain-ankle",
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "nat-m", "grade": 2 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-pain-darting-ankle",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "PAIN", "DARTING", "ANKLE"],
+    "rubric_text_original": "Ankle",
+    "rubric_text_normalized": "extremities > pain > darting > ankle",
+    "parent_rubric_id": "kent-extremities-pain",
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "bell", "grade": 2 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-malleolus",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "MALLEOLUS"],
+    "rubric_text_original": "Malleolus",
+    "rubric_text_normalized": "extremities > malleolus",
+    "parent_rubric_id": null,
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "merc", "grade": 2 }
+    ]
+  },
+  {
+    "rubric_id": "kent-extremities-outer-side",
+    "chapter": "EXTREMITIES",
+    "rubric_path": ["EXTREMITIES", "OUTER SIDE"],
+    "rubric_text_original": "Outer Side",
+    "rubric_text_normalized": "extremities > outer side",
+    "parent_rubric_id": null,
+    "source_work": "Repertory of the Homoeopathic Materia Medica",
+    "source_language": "en",
+    "source_edition": null,
+    "remedies": [
+      { "remedy_id": "rhus-t", "grade": 2 }
+    ]
+  }
+]

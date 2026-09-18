@@ -1,0 +1,241 @@
+{
+  "ibuprofen_el": {
+    "activeSubstance": "Ibuprofen",
+    "category": "",
+    "sideEffectsByFrequency": {
+      "veryCommon": [],
+      "common": [],
+      "uncommon": [
+        "Γαστρικές ενοχλήσεις"
+      ],
+      "rare": [],
+      "veryRare": []
+    },
+    "sideEffects": [
+      "Γαστρικές ενοχλήσεις"
+    ],
+    "interactions": [
+      "Να αποφεύγεται το ASS (ακετυλοσαλικυλικό οξύ)"
+    ],
+    "warnings": "Γαστρεντερικές (GI) αιμορραγίες",
+    "monographText": "Εδώ είναι η πλήρης επισκόπηση για την ιβουπροφαίνη (Ibuprofen) με όλες τις σημαντικές πληροφορίες σχετικά με τα συστατικά, τη δοσολογία, τις ανεπιθύμητες ενέργειες, τις αντενδείξεις και τις αλληλεπιδράσεις, συνοψισμένες με σαφήνεια.\n\n📝 1. Δραστική ουσία και συστατικά\nΗ ιβουπροφαίνη (Ibuprofen) ανήκει στη θεραπευτική κατηγορία: ΜΣΑΦ (NSAR).\nΚύρια δραστική ουσία: Ibuprofen.\nΦαρμακοτεχνικές μορφές: Δισκίο. Τα έκδοχα αναγράφονται στο εκάστοτε φύλλο οδηγιών χρήσης του εκάστοτε κατασκευαστή.\n\n💊 2. Δοσολογία & χορήγηση\nΗ δοσολογία της ιβουπροφαίνης (Ibuprofen) καθορίζεται αυστηρά εξατομικευμένα από τη θεράπουσα ιατρό ή τον θεράποντα ιατρό. Ισχύει η βασική αρχή της χρήσης της χαμηλότερης δυνατής δόσης και για τη συντομότερη δυνατή διάρκεια ή σύμφωνα με τις ενδείξεις, ώστε να ελαχιστοποιούνται οι κίνδυνοι.\nΔιαθέσιμες δοσολογικές περιεκτικότητες: 400 mg.\nΣύσταση λήψης: 1-3x ημερησίως.\nΗλικιωμένοι ή εξασθενημένοι ασθενείς: Σε ηλικιωμένα άτομα ή άτομα με μειωμένη οργανική λειτουργία (ιδίως ήπατος/νεφρών) είναι απαραίτητη η στενή προσαρμογή της δόσης κατόπιν ιατρικής συνεννόησης.\n\n⚠️ 3. Ανεπιθύμητες ενέργειες\nΌχι συχνές (≥ 1/1.000 έως < 1/100): Γαστρικές ενοχλήσεις.\nΕιδικοί κίνδυνοι & προειδοποιήσεις:\nΓαστρεντερικές (GI) αιμορραγίες\n\n🚫 4. Αντενδείξεις\nΥπό ορισμένες συνθήκες υγείας, η ιβουπροφαίνη (Ibuprofen) είτε δεν επιτρέπεται να χρησιμοποιείται καθόλου είτε επιτρέπεται μόνο κατόπιν αυστηρής ιατρικής στάθμισης οφέλους-κινδύνου.\n\n❌ 5. Επικίνδυνες αλληλεπιδράσεις\nΟ συνδυασμός της ιβουπροφαίνης (Ibuprofen) με ορισμένες άλλες ουσίες μπορεί να μεταβάλει απρόβλεπτα τη δράση της ή να προκαλέσει ανεπιθύμητες αντιδράσεις.\nΝα αποφεύγεται το ASS (ακετυλοσαλικυλικό οξύ)."
+  },
+  "ibuprofen_en": {
+    "activeSubstance": "",
+    "category": "",
+    "sideEffectsByFrequency": {
+      "veryCommon": [
+        "Gastrointestinal complaints such as heartburn, abdominal pain, nausea"
+      ],
+      "common": [],
+      "uncommon": [],
+      "rare": [],
+      "veryRare": []
+    },
+    "sideEffects": [
+      "Gastrointestinal complaints such as heartburn",
+      "abdominal pain",
+      "nausea"
+    ],
+    "interactions": [
+      "Other NSAIDs and ASA: Markedly increased risk of gastrointestinal bleeding"
+    ],
+    "warnings": "",
+    "monographText": "📝 1. Active substance and ingredients\nIbuprofen belongs to the drug class: NSAIDs / Non-steroidal anti-inflammatory drugs.\nMain active substance: Ibuprofen.\nDosage forms: Film-coated tablet, granules, suppository, suspension.\n\n💊 2. Dosage & administration\nThe dosage of ibuprofen is determined strictly individually by the treating physician.\nAvailable dosage strengths: 200 mg, 400 mg, 600 mg, 800 mg.\nAdministration recommendation: 1-3x daily, swallowed whole with a glass of water after meals.\n\n⚠️ 3. Side effects\nVery common: Gastrointestinal complaints such as heartburn, abdominal pain, nausea.\n\n🚫 4. Contraindications\nContraindicated in active peptic ulcers.\n\n❌ 5. Dangerous drug interactions\nOther NSAIDs and ASA: Markedly increased risk of gastrointestinal bleeding."
+  },
+  "ibuprofen_es": {
+    "activeSubstance": "Ibuprofeno",
+    "category": "",
+    "sideEffectsByFrequency": {
+      "veryCommon": [],
+      "common": [],
+      "uncommon": [],
+      "rare": [],
+      "veryRare": []
+    },
+    "sideEffects": [],
+    "interactions": [
+      "La combinación de ibuprofeno con determinadas sustancias puede alterar su efecto de forma impredecible o inducir reacciones adversas",
+      "Otros AINE y ácido acetilsalicílico (AAS): Riesgo marcadamente incrementado de úlceras y hemorragias gastrointestinales",
+      "Anticoagulantes y antiagregantes plaquetarios (Marcumar, ACOD, AAS): Aumento del riesgo hemorrágico",
+      "Antihipertensivos (inhibidores de la ECA [IECA], antagonistas de los receptores de angiotensina II [ARA-II], betabloqueantes): Atenuación del efecto antihipertensivo",
+      "Litio, metotrexato, digoxina: Elevación de los niveles séricos y potenciación de la toxicidad",
+      "Glucocorticoides: Mayor riesgo de lesiones gastrointestinales",
+      "Alcohol: Aumento del riesgo de hemorragias en la mucosa gástrica"
+    ],
+    "warnings": "Contraindicado en caso de úlceras pépticas activas, insuficiencia cardíaca, renal o hepática grave, así como durante el tercer trimestre del embarazo.",
+    "monographText": "A continuación se presenta el resumen completo sobre el ibuprofeno con toda la información relevante sobre principios activos, posología, reacciones adversas, contraindicaciones e interacciones, estructurado de forma clara.\n\n📝 1. Principio activo y componentes\nEl ibuprofeno pertenece al grupo farmacológico: AINE / Antiinflamatorio no esteroideo.\nPrincipio activo principal: Ibuprofeno.\nFormas farmacéuticas: Comprimidos recubiertos con película, granulado, supositorios, suspensión. Para consultar los excipientes, remitirse al prospecto específico de cada fabricante.\n\n💊 2. Dosificación y administración\nLa posología del ibuprofeno debe ser establecida de forma estrictamente individual por el médico responsable. Se aplica el principio fundamental de administrar la dosis más baja posible durante el menor período de tiempo y acorde con la indicación terapéutica, a fin de minimizar los riesgos.\nConcentraciones disponibles: 200 mg, 400 mg, 600 mg, 800 mg.\nPauta de administración recomendada: 1 a 3 veces al día, sin masticar, acompañado de un vaso de agua y tras las comidas.\nPacientes de edad avanzada o debilitados: En personas de edad avanzada o con insuficiencia orgánica (especialmente hepática o renal), resulta esencial realizar un ajuste posológico riguroso previa consulta médica.\n\n⚠️ 3. Reacciones adversas\nMuy frecuentes (≥ 1/10): Molestias gastrointestinales como pirosis (acidez), dolor abdominal, náuseas, dispepsia.\nFrecuentes (≥ 1/100 a < 1/10): Diarrea, vómitos, estreñimiento, flatulencia, hemorragias gastrointestinales leves; cefalea, mareos, astenia/fatiga.\nPoco frecuentes (≥ 1/1.000 a < 1/100): Úlceras gástricas o duodenales (con riesgo de hemorragia o perforación); estomatitis ulcerosa, gastritis; exantemas cutáneos, prurito, urticaria.\nRaras (≥ 1/10.000 a < 1/1.000): Tinnitus (acúfenos), trastornos auditivos; lesiones del tejido renal (necrosis papilar), hiperuricemia.\nMuy raras (< 1/10.000): Agranulocitosis, trombocitopenia, leucopenia; reacciones cutáneas graves (síndrome de Stevens-Johnson, DRESS); insuficiencia cardíaca, edemas, hipertensión arterial.\nRiesgos específicos y advertencias:\nContraindicado en caso de úlceras pépticas activas, insuficiencia cardíaca, renal o hepática grave, así como durante el tercer trimestre del embarazo.\n\n🚫 4. Contraindicaciones\nBajo determinadas condiciones clínicas, el ibuprofeno no debe administrarse en absoluto o únicamente tras una estricta evaluación médica de la relación beneficio-riesgo.\nContraindicaciones absolutas (uso excluido):\nHipersensibilidad conocida al ibuprofeno o a otros AINE;\nÚlceras gástricas o intestinales activas, hemorragias o perforaciones gastrointestinales;\nInsuficiencia cardíaca grave (NYHA IV);\nInsuficiencia hepática o renal grave;\nTercer trimestre del embarazo.\nContraindicaciones relativas (se requiere especial precaución):\nAntecedentes de patología gastrointestinal (colitis ulcerosa, enfermedad de Crohn);\nHipertensión arterial e insuficiencia cardíaca;\nFunción renal o hepática alterada;\nAdministración concomitante de anticoagulantes.\n\n❌ 5. Interacciones farmacológicas peligrosas\nLa combinación de ibuprofeno con determinadas sustancias puede alterar su efecto de forma impredecible o inducir reacciones adversas.\nOtros AINE y ácido acetilsalicílico (AAS): Riesgo marcadamente incrementado de úlceras y hemorragias gastrointestinales.\nAnticoagulantes y antiagregantes plaquetarios (Marcumar, ACOD, AAS): Aumento del riesgo hemorrágico.\nAntihipertensivos (inhibidores de la ECA [IECA], antagonistas de los receptores de angiotensina II [ARA-II], betabloqueantes): Atenuación del efecto antihipertensivo.\nLitio, metotrexato, digoxina: Elevación de los niveles séricos y potenciación de la toxicidad.\nGlucocorticoides: Mayor riesgo de lesiones gastrointestinales.\nAlcohol: Aumento del riesgo de hemorragias en la mucosa gástrica."
+  },
+  "ibuprofen_fr": {
+    "activeSubstance": "",
+    "category": "",
+    "sideEffectsByFrequency": {
+      "veryCommon": [
+        "Troubles gastro-intestinaux tels que pyrosis (brûlures d'estomac), douleurs abdominales, nausées, dyspepsie"
+      ],
+      "common": [
+        "Diarrhée, vomissements, constipation, flatulences, pertes sanguines gastro-intestinales occultes ou mineures ; céphalées, sensations vertigineuses, fatigue"
+      ],
+      "uncommon": [
+        "Ulcères gastriques ou duodénaux (avec risque d'hémorragie ou de perforation) ; stomatite ulcérative, gastrite ; éruptions cutanées, prurit, urticaire"
+      ],
+      "rare": [
+        "Acouphènes, troubles de l'audition ; lésions du parenchyme rénal (nécroses papillaires), hyperuricémie"
+      ],
+      "veryRare": [
+        "Agranulocytose, thrombocytopénie, leucopénie ; réactions cutanées sévères (syndrome de Stevens-Johnson, DRESS) ; insuffisance cardiaque, œdèmes, hypertension artérielle"
+      ]
+    },
+    "sideEffects": [
+      "Troubles gastro-intestinaux tels que pyrosis (brûlures d'estomac)",
+      "douleurs abdominales",
+      "nausées",
+      "dyspepsie",
+      "Diarrhée",
+      "vomissements",
+      "constipation",
+      "flatulences",
+      "pertes sanguines gastro-intestinales occultes ou mineures ; céphalées",
+      "sensations vertigineuses",
+      "fatigue",
+      "Ulcères gastriques ou duodénaux (avec risque d'hémorragie ou de perforation) ; stomatite ulcérative",
+      "gastrite ; éruptions cutanées",
+      "prurit",
+      "urticaire",
+      "Acouphènes",
+      "troubles de l'audition ; lésions du parenchyme rénal (nécroses papillaires)",
+      "hyperuricémie",
+      "Agranulocytose",
+      "thrombocytopénie",
+      "leucopénie ; réactions cutanées sévères (syndrome de Stevens-Johnson",
+      "DRESS) ; insuffisance cardiaque",
+      "œdèmes",
+      "hypertension artérielle"
+    ],
+    "interactions": [
+      "Autres AINS et acide acétylsalicylique (AAS) : Risque fortement accru d'ulcères et d'hémorragies gastro-intestinaux",
+      "Anticoagulants et antiagrégants plaquettaires (Marcoumar, AOD, AAS) : Risque hémorragique accru",
+      "Antihypertenseurs (IEC, sartans, bêtabloquants) : Diminution de l'effet hypotenseur",
+      "Lithium, méthotrexate, digoxine : Élévation des concentrations sériques et augmentation de la toxicité",
+      "Glucocorticoïdes : Risque majoré de lésions gastro-intestinales",
+      "Alcool : Risque accru d'hémorragies de la muqueuse gastrique"
+    ],
+    "warnings": "Contre-indiqué en cas d'ulcère peptique actif, d'insuffisance hépatique, rénale ou cardiaque sévère ainsi qu'au troisième trimestre de la grossesse.",
+    "monographText": "Voici la vue d'ensemble complète sur l'ibuprofène (Ibuprofène) avec toutes les informations essentielles concernant la substance active, la posologie, les effets indésirables, les contre-indications et les interactions, résumée de manière claire pour vous.\n\n📝 1. Wirkstoff und Inhaltsstoffe\nL'ibuprofène appartient à la classe pharmacologique : AINS / Anti-inflammatoire non stéroïdien.\nSubstance active principale : Ibuprofène.\nFormes pharmaceutiques : Comprimé pelliculé, granulés, suppositoire, suspension. Pour les excipients, se référer à la notice spécifique du fabricant.\n\n💊 2. Dosierung & Anwendung\nLa posologie de l'ibuprofène (Ibuprofène) est déterminée de manière strictement individuelle par le médecin traitant. La règle fondamentale consiste à administrer la dose minimale efficace pendant la durée la plus courte possible, adaptée à l'indication, afin de minimiser les risques.\nDosages disponibles : 200 mg, 400 mg, 600 mg, 800 mg.\nRecommandation de prise : 1 à 3 fois par jour, à avaler sans croquer avec un verre d'eau après les repas.\nPatients âgés ou fragilisés : Chez les personnes âgées ou présentant une altération de la fonction organique (en particulier hépatique/rénale), une adaptation posologique étroite après avis médical est essentielle.\n\n⚠️ 3. Nebenwirkungen\nTrès fréquent (≥ 1/10) : Troubles gastro-intestinaux tels que pyrosis (brûlures d'estomac), douleurs abdominales, nausées, dyspepsie.\nFréquent (≥ 1/100 à < 1/10) : Diarrhée, vomissements, constipation, flatulences, pertes sanguines gastro-intestinales occultes ou mineures ; céphalées, sensations vertigineuses, fatigue.\nPeu fréquent (≥ 1/1 000 à < 1/100) : Ulcères gastriques ou duodénaux (avec risque d'hémorragie ou de perforation) ; stomatite ulcérative, gastrite ; éruptions cutanées, prurit, urticaire.\nRare (≥ 1/10 000 à < 1/1 000) : Acouphènes, troubles de l'audition ; lésions du parenchyme rénal (nécroses papillaires), hyperuricémie.\nTrès rare (< 1/10 000) : Agranulocytose, thrombocytopénie, leucopénie ; réactions cutanées sévères (syndrome de Stevens-Johnson, DRESS) ; insuffisance cardiaque, œdèmes, hypertension artérielle.\nRisques particuliers & mises en garde :\nContre-indiqué en cas d'ulcère peptique actif, d'insuffisance hépatique, rénale ou cardiaque sévère ainsi qu'au troisième trimestre de la grossesse.\n\n🚫 4. Kontraindikationen (Gegenanzeigen)\nDans certaines conditions cliniques, l'ibuprofène ne doit pas être utilisé ou ne doit l'être qu'après une stricte évaluation médicale du rapport bénéfice/risque.\nContre-indications absolues (utilisation proscrite) :\nHypersensibilité connue à l'ibuprofène ou à d'autres AINS ;\nUlcères gastriques ou intestinaux actifs, hémorragies ou perforations gastro-intestinales ;\nInsuffisance cardiaque sévère (NYHA IV) ;\nTroubles sévères de la fonction hépatique ou rénale ;\nTroisième trimestre de la grossesse.\nContre-indications relatives (prudence particulière requise) :\nAntécédents d'affections gastro-intestinales (rectocolite hémorragique, maladie de Crohn) ;\nHypertension artérielle et insuffisance cardiaque ;\nAltération de la fonction rénale ou hépatique ;\nAdministration concomitante d'anticoagulants.\n\n❌ 5. Gefährliche Wechselwirkungen\nL'association de l'ibuprofène avec certaines autres substances peut modifier son effet de manière imprévisible ou provoquer des effets indésirables.\nAutres AINS et acide acétylsalicylique (AAS) : Risque fortement accru d'ulcères et d'hémorragies gastro-intestinaux.\nAnticoagulants et antiagrégants plaquettaires (Marcoumar, AOD, AAS) : Risque hémorragique accru.\nAntihypertenseurs (IEC, sartans, bêtabloquants) : Diminution de l'effet hypotenseur.\nLithium, méthotrexate, digoxine : Élévation des concentrations sériques et augmentation de la toxicité.\nGlucocorticoïdes : Risque majoré de lésions gastro-intestinales.\nAlcool : Risque accru d'hémorragies de la muqueuse gastrique."
+  },
+  "ibuprofen_it": {
+    "activeSubstance": "ibuprofene",
+    "category": "",
+    "sideEffectsByFrequency": {
+      "veryCommon": [
+        "disturbi gastrointestinali come pirosi gastrica, dolore addominale, nausea, dispepsia"
+      ],
+      "common": [
+        "diarrea, vomito, stipsi, flatulenza, perdite ematiche gastrointestinali di modesta entità; cefalea, vertigini, affaticamento"
+      ],
+      "uncommon": [
+        "ulcere gastriche o duodenali (con potenziale rischio di emorragia o perforazione); stomatite ulcerosa, gastrite; eruzioni cutanee, prurito, orticaria"
+      ],
+      "rare": [
+        "tinnito, disturbi dell'udito; danni al tessuto renale (necrosi papillare), iperuricemia"
+      ],
+      "veryRare": [
+        "agranulocitosi, trombocitopenia, leucopenia; reazioni cutanee gravi (sindrome di Stevens-Johnson, DRESS); insufficienza cardiaca, edemi, ipertensione"
+      ]
+    },
+    "sideEffects": [
+      "disturbi gastrointestinali come pirosi gastrica",
+      "dolore addominale",
+      "nausea",
+      "dispepsia",
+      "diarrea",
+      "vomito",
+      "stipsi",
+      "flatulenza",
+      "perdite ematiche gastrointestinali di modesta entità; cefalea",
+      "vertigini",
+      "affaticamento",
+      "ulcere gastriche o duodenali (con potenziale rischio di emorragia o perforazione); stomatite ulcerosa",
+      "gastrite; eruzioni cutanee",
+      "prurito",
+      "orticaria",
+      "tinnito",
+      "disturbi dell'udito; danni al tessuto renale (necrosi papillare)",
+      "iperuricemia",
+      "agranulocitosi",
+      "trombocitopenia",
+      "leucopenia; reazioni cutanee gravi (sindrome di Stevens-Johnson",
+      "DRESS); insufficienza cardiaca",
+      "edemi",
+      "ipertensione"
+    ],
+    "interactions": [
+      "Altri FANS e acido acetilsalicilico (ASA): rischio fortemente aumentato di ulcere ed emorragie gastrointestinali",
+      "Anticoagulanti e antiaggreganti piastrinici (Marcumar, DOAC, ASA): aumentato rischio di sanguinamento",
+      "Antipertensivi (ACE-inibitori, sartani, beta-bloccanti): attenuazione dell'effetto ipotensivo",
+      "Litio, metotrexato, digossina: aumento dei livelli sierici e conseguente tossicità",
+      "Glucocorticoidi: aumentato rischio di lesioni gastrointestinali",
+      "Alcol: aumentato rischio di emorragie a carico della mucosa gastrica"
+    ],
+    "warnings": "Controindicato in presenza di ulcera peptica attiva, grave insufficienza epatica, renale o cardiaca, nonché durante il terzo trimestre di gravidanza.",
+    "monographText": "Ecco la panoramica completa relativa all'ibuprofene (Ibuprofen) con tutte le informazioni importanti su principi attivi, posologia, effetti indesiderati, controindicazioni e interazioni, riassunte in modo chiaro.\n\n📝 1. Principio attivo ed eccipienti\nL'ibuprofene appartiene alla classe farmacologica: FANS / Farmaci antinfiammatori non steroidei.\nPrincipio attivo principale: ibuprofene.\nForme farmaceutiche: compresse rivestite con film, granulato, supposte, sospensione. Per l'elenco degli eccipienti si rimanda al rispettivo foglio illustrativo specifico del produttore.\n\n💊 2. Posologia e modo di somministrazione\nLa posologia dell'ibuprofene (Ibuprofen) viene stabilita dal medico curante su base strettamente individuale. Si applica il principio di somministrare il farmaco al dosaggio più basso possibile e per il periodo più breve strettamente necessario al controllo dei sintomi, al fine di ridurre al minimo i rischi.\nDosaggi disponibili: 200 mg, 400 mg, 600 mg, 800 mg.\nModo d'uso: 1-3 volte al giorno, da deglutire senza masticare con un bicchiere d'acqua dopo i pasti.\nPazienti anziani o debilitati: Nei pazienti anziani o con funzionalità d'organo compromessa (in particolare epatica o renale), è essenziale un attento aggiustamento posologico previo consulto medico.\n\n⚠️ 3. Effetti indesiderati\nMolto comune (≥ 1/10): disturbi gastrointestinali come pirosi gastrica, dolore addominale, nausea, dispepsia.\nComune (≥ 1/100, < 1/10): diarrea, vomito, stipsi, flatulenza, perdite ematiche gastrointestinali di modesta entità; cefalea, vertigini, affaticamento.\nNon comune (≥ 1/1.000, < 1/100): ulcere gastriche o duodenali (con potenziale rischio di emorragia o perforazione); stomatite ulcerosa, gastrite; eruzioni cutanee, prurito, orticaria.\nRaro (≥ 1/10.000, < 1/1.000): tinnito, disturbi dell'udito; danni al tessuto renale (necrosi papillare), iperuricemia.\nMolto raro (< 1/10.000): agranulocitosi, trombocitopenia, leucopenia; reazioni cutanee gravi (sindrome di Stevens-Johnson, DRESS); insufficienza cardiaca, edemi, ipertensione.\nRischi particolari e avvertenze:\nControindicato in presenza di ulcera peptica attiva, grave insufficienza epatica, renale o cardiaca, nonché durante il terzo trimestre di gravidanza.\n\n🚫 4. Controindicazioni\nIn presenza di determinate condizioni cliniche, l'ibuprofene non deve essere utilizzato affatto o deve essere somministrato esclusivamente previa rigorosa valutazione medica del rapporto rischio-beneficio.\nControindicazioni assolute (uso controindicato):\nIpersensibilità nota all'ibuprofene o ad altri FANS;\nUlcera gastrica o intestinale attiva, emorragia o perforazione gastrointestinale;\nGrave insufficienza cardiaca (NYHA IV);\nGrave compromissione della funzionalità epatica o renale;\nTerzo trimestre di gravidanza.\nControindicazioni relative (particolare cautela richiesta):\nPregresse patologie gastrointestinali (colite ulcerosa, morbo di Crohn);\nIpertensione arteriosa e insufficienza cardiaca;\nCompromissione della funzionalità renale o epatica;\nConcomitante assunzione di anticoagulanti.\n\n❌ 5. Interazioni pericolose\nLa combinazione dell'ibuprofene con determinate altre sostanze può alterarne l'effetto in modo imprevedibile o provocare reazioni avverse.\nAltri FANS e acido acetilsalicilico (ASA): rischio fortemente aumentato di ulcere ed emorragie gastrointestinali.\nAnticoagulanti e antiaggreganti piastrinici (Marcumar, DOAC, ASA): aumentato rischio di sanguinamento.\nAntipertensivi (ACE-inibitori, sartani, beta-bloccanti): attenuazione dell'effetto ipotensivo.\nLitio, metotrexato, digossina: aumento dei livelli sierici e conseguente tossicità.\nGlucocorticoidi: aumentato rischio di lesioni gastrointestinali.\nAlcol: aumentato rischio di emorragie a carico della mucosa gastrica."
+  },
+  "ibuprofen_ru": {
+    "activeSubstance": "ибупрофен",
+    "category": "НПВП / Нестероидные противовоспалительные препараты",
+    "sideEffectsByFrequency": {
+      "veryCommon": [
+        "желудочно-кишечные нарушения, такие как изжога, боли в животе, тошнота, диспепсия"
+      ],
+      "common": [
+        "диарея, рвота, запор, метеоризм, незначительные желудочно-кишечные кровопотери; головная боль, головокружение, повышенная утомляемость"
+      ],
+      "uncommon": [
+        "язвы желудка или двенадцатиперстной кишки (с риском кровотечения или перфорации); язвенный стоматит, гастрит; кожные высыпания, кожный зуд, крапивница"
+      ],
+      "rare": [
+        "шум в ушах, нарушения слуха; поражения почечной ткани (папиллярный некроз), гиперурикемия"
+      ],
+      "veryRare": [
+        "агранулоцитоз, тромбоцитопения, лейкопения; тяжелые кожные реакции (синдром Стивенса — Джонсона, DRESS-синдром); сердечная недостаточность, отеки, артериальная гипертензия"
+      ]
+    },
+    "sideEffects": [
+      "желудочно-кишечные нарушения",
+      "такие как изжога",
+      "боли в животе",
+      "тошнота",
+      "диспепсия",
+      "диарея",
+      "рвота",
+      "запор",
+      "метеоризм",
+      "незначительные желудочно-кишечные кровопотери; головная боль",
+      "головокружение",
+      "повышенная утомляемость",
+      "язвы желудка или двенадцатиперстной кишки (с риском кровотечения или перфорации); язвенный стоматит",
+      "гастрит; кожные высыпания",
+      "кожный зуд",
+      "крапивница",
+      "шум в ушах",
+      "нарушения слуха; поражения почечной ткани (папиллярный некроз)",
+      "гиперурикемия",
+      "агранулоцитоз",
+      "тромбоцитопения",
+      "лейкопения; тяжелые кожные реакции (синдром Стивенса — Джонсона",
+      "DRESS-синдром); сердечная недостаточность",
+      "отеки",
+      "артериальная гипертензия"
+    ],
+    "interactions": [
+      "Другие НПВП и ацетилсалициловая кислота (АСК): Значительное повышение риска образования желудочно-кишечных язв и кровотечений",
+      "Антикоагулянты и антиагреганты (Маркумар, ПОАК, АСК): Повышенный риск кровотечений",
+      "Антигипертензивные препараты (ингибиторы АПФ, сартаны, бета-адреноблокаторы): Ослабление гипотензивного действия",
+      "Препараты лития, метотрексат, дигоксин: Повышение концентрации в сыворотке крови и усиление токсичности",
+      "Глюкокортикостероиды: Повышенный риск эрозивно-язвенных поражений ЖКТ",
+      "Алкоголь: Повышенный риск кровотечений из слизистой оболочки желудка"
+    ],
+    "warnings": "Противопоказан при активных пептических язвах, тяжелой печеночной, почечной или сердечной недостаточности, а также в III триместре беременности.",
+    "monographText": "Ниже представлен полный обзор препарата Ибупрофен (Ibuprofen) со всей важной информацией о действующих веществах, дозировании, побочных эффектах, противопоказаниях и взаимодействиях.\n\n📝 1. Wirkstoff und Inhaltsstoffe\nИбупрофен относится к фармакотерапевтической группе: НПВП / Нестероидные противовоспалительные препараты.\nОсновное действующее вещество: ибупрофен.\nЛекарственные формы: таблетки, покрытые пленочной оболочкой; гранулы; суппозитории; суспензия. Перечень вспомогательных веществ указан в инструкции по медицинскому применению конкретного производителя.\n\n💊 2. Dosierung & Anwendung\nРежим дозирования ибупрофена (Ibuprofen) определяется лечащим врачом строго индивидуально. Действует принцип применения препарата в минимальной эффективной дозе и минимально возможным коротким курсом в соответствии с показаниями для снижения риска нежелательных реакций.\nДоступные дозировки: 200 мг, 400 мг, 600 мг, 800 мг.\nРекомендации по приему: 1–3 раза в сутки, не разжевывая, запивая стаканом воды, после еды.\nПациенты пожилого возраста или ослабленные пациенты: У пожилых пациентов или лиц с нарушениями функции органов (в частности, печени/почек) необходим тщательный подбор и коррекция дозы после консультации врача.\n\n⚠️ 3. Nebenwirkungen\nОчень часто (≥ 1/10): желудочно-кишечные нарушения, такие как изжога, боли в животе, тошнота, диспепсия.\nЧасто (от ≥ 1/100 до < 1/10): диарея, рвота, запор, метеоризм, незначительные желудочно-кишечные кровопотери; головная боль, головокружение, повышенная утомляемость.\nНечасто (от ≥ 1/1 000 до < 1/100): язвы желудка или двенадцатиперстной кишки (с риском кровотечения или перфорации); язвенный стоматит, гастрит; кожные высыпания, кожный зуд, крапивница.\nРедко (от ≥ 1/10 000 до < 1/1 000): шум в ушах, нарушения слуха; поражения почечной ткани (папиллярный некроз), гиперурикемия.\nОчень редко (< 1/10 000): агранулоцитоз, тромбоцитопения, лейкопения; тяжелые кожные реакции (синдром Стивенса — Джонсона, DRESS-синдром); сердечная недостаточность, отеки, артериальная гипертензия.\nОсобые риски и предупреждения:\nПротивопоказан при активных пептических язвах, тяжелой печеночной, почечной или сердечной недостаточности, а также в III триместре беременности.\n\n🚫 4. Kontraindikationen (Gegenanzeigen)\nПри определенных состояниях здоровья ибупрофен либо полностью противопоказан, либо может применяться только после строгой врачебной оценки соотношения пользы и риска.\nАбсолютные противопоказания (применение исключено):\nИзвестная гиперчувствительность к ибупрофену или другим НПВП;\nАктивные язвы желудка или кишечника, желудочно-кишечные кровотечения или перфорации;\nТяжелая сердечная недостаточность (класс IV по NYHA);\nТяжелые нарушения функции печени или почек;\nТретий триместр беременности.\nОтносительные противопоказания (требуется особая осторожность):\nЗаболевания ЖКТ в анамнезе (язвенный колит, болезнь Крона);\nАртериальная гипертензия и сердечная недостаточность;\nНарушения функции почек или печени;\nОдновременный прием антикоагулянтов.\n\n❌ 5. Gefährliche Wechselwirkungen\nКомбинация ибупрофена с определенными веществами может непредсказуемо изменить терапевтический эффект или вызвать нежелательные реакции.\nДругие НПВП и ацетилсалициловая кислота (АСК): Значительное повышение риска образования желудочно-кишечных язв и кровотечений.\nАнтикоагулянты и антиагреганты (Маркумар, ПОАК, АСК): Повышенный риск кровотечений.\nАнтигипертензивные препараты (ингибиторы АПФ, сартаны, бета-адреноблокаторы): Ослабление гипотензивного действия.\nПрепараты лития, метотрексат, дигоксин: Повышение концентрации в сыворотке крови и усиление токсичности.\nГлюкокортикостероиды: Повышенный риск эрозивно-язвенных поражений ЖКТ.\nАлкоголь: Повышенный риск кровотечений из слизистой оболочки желудка."
+  }
+}

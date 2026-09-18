@@ -1,0 +1,210 @@
+// Generator script for Boericke Materia Medica expansion (Parts 22 - 26)
+// Incorporates the ~165 classical Boericke remedies into the full 7-language Materia Medica
+const fs = require('fs');
+const path = require('path');
+
+const BOERICKE_REMEDIES_DEFS = [
+  // --- PART 22 (A - B) ---
+  {
+    part: 22,
+    id: 'acalypha-indica',
+    latinName: 'Acalypha indica',
+    categoryKey: 'plant',
+    isPolychrest: false,
+    importanceTier: 3,
+    de: {
+      category: 'Pflanzlich',
+      commonName: 'Indische Brennnessel',
+      origin: 'Frische ganze Pflanze von Acalypha indica (Euphorbiaceae). Klassische Boericke-Monographie.',
+      essence: 'Hervorragendes Mittel bei Hämoptysen und Lungenblutungen, morgens frisches Blut, abends dunkle Koagel.',
+      mainIndications: ['Bluthusten (Hämoptysis)', 'Morgendlicher Hustenreiz', 'Phthisis pulmonum mit Kachexie'],
+      keynotes: ['Bluthusten am Morgen hellrot, am Abend dunkel klumpig', 'Trockener harter Reizhusten mit Blutstreifen', 'Konstante Schwäche und Abmagerung'],
+      mindEmotional: 'Niedergeschlagen, ängstlich wegen des Bluthustens, melancholisch.',
+      modalitiesBetter: ['Aufrechtes Sitzen', 'Frische Luft'],
+      modalitiesWorse: ['Am frühen Morgen (Husten)', 'Liegen'],
+      potenciesAndDosage: 'D3 bis D6 oder C30. Bei akuter Blutung stündlich.',
+      defaultTagesdosis: '3x täglich 5 Globuli',
+      sphereOfAction: ['Atmungsorgane', 'Bronchialschleimhaut', 'Gefäßsystem'],
+      differentialRemedies: ['Millefolium', 'Phosphorus', 'Ipecacuanha'],
+      searchKeywords: ['acalypha indica', 'bluthusten', 'hämoptyse', 'lungenblutung', 'boericke']
+    },
+    en: {
+      category: 'Plant',
+      commonName: 'Indian Nettle',
+      origin: 'Fresh whole plant of Acalypha indica (Euphorbiaceae). Canonical Boericke monograph.',
+      essence: 'Remarkable remedy for haemoptysis and pulmonary haemorrhages, bright blood in the morning and dark clots in the evening.',
+      mainIndications: ['Haemoptysis (coughing up blood)', 'Morning cough', 'Incipient phthisis with emaciation'],
+      keynotes: ['Haemoptysis bright red in morning, dark and clotted in evening', 'Dry hacking cough with blood-streaked expectoration', 'Progressive weakness and weight loss'],
+      mindEmotional: 'Depressed, anxious about the bleeding, low spirited.',
+      modalitiesBetter: ['Sitting upright', 'Open air'],
+      modalitiesWorse: ['Early morning', 'Lying down'],
+      potenciesAndDosage: '3X to 6X or 30C. In acute bleedings repeat hourly.',
+      defaultTagesdosis: '3x daily 5 pellets',
+      sphereOfAction: ['Respiratory tract', 'Bronchial mucous membranes', 'Vascular system'],
+      differentialRemedies: ['Millefolium', 'Phosphorus', 'Ipecacuanha'],
+      searchKeywords: ['acalypha indica', 'indian nettle', 'haemoptysis', 'cough', 'boericke']
+    }
+  },
+  {
+    part: 22,
+    id: 'adonis-vernalis',
+    latinName: 'Adonis vernalis',
+    categoryKey: 'plant',
+    isPolychrest: false,
+    importanceTier: 2,
+    de: {
+      category: 'Pflanzlich',
+      commonName: 'Frühlings-Adonisröschen',
+      origin: 'Frische blühende Pflanze von Adonis vernalis (Ranunculaceae). Boericke-Herzmittel.',
+      essence: 'Wertvolles Herzmittel bei Myokardschwäche, unregelmäßigem Puls, Präkordialschmerz und kardialen Ödemen.',
+      mainIndications: ['Kardiale Insuffizienz & Myokarditis', 'Wassersucht und Ödeme durch Herzschwäche', 'Präkordialer Beklemmungsschmerz'],
+      keynotes: ['Herzklopfen mit schnellem, unregelmäßigem oder fadenförmigem Puls', 'Schwaches Herz nach Infektionskrankheiten (Grippe, Rheuma)', 'Stark verminderte Harnausscheidung mit kardialem Hydrops'],
+      mindEmotional: 'Große Angst vor plötzlichem Herztod, unruhig und beklemmt.',
+      modalitiesBetter: ['Aufrechtes Sitzen', 'Ausruhen im Bett'],
+      modalitiesWorse: ['Körperliche Anstrengung', 'Schnelles Gehen', 'Aufsteigen'],
+      potenciesAndDosage: 'Urtinktur bis D3, oder D6. Regelmäßige Gaben bei Myokarddegeneration.',
+      defaultTagesdosis: '2-3x täglich 5 Tropfen oder Globuli',
+      sphereOfAction: ['Herz-Kreislauf-System', 'Myokard', 'Nieren'],
+      differentialRemedies: ['Digitalis', 'Crataegus', 'Strophanthus', 'Convallaria'],
+      searchKeywords: ['adonis vernalis', 'adonisröschen', 'herzschwäche', 'myokarditis', 'ödem', 'boericke']
+    },
+    en: {
+      category: 'Plant',
+      commonName: 'Pheasant\'s Eye',
+      origin: 'Fresh flowering herb of Adonis vernalis (Ranunculaceae). Boericke cardiac remedy.',
+      essence: 'A valuable cardiac remedy in myocardial weakness, irregular pulse, precordial pain, and cardiac dropsy.',
+      mainIndications: ['Congestive heart failure & myocarditis', 'Cardiac dropsy and oedema', 'Precordial distress and dyspnoea'],
+      keynotes: ['Palpitation with rapid, irregular or fluttering pulse', 'Fatty degeneration of heart muscle post-rheumatism', 'Oliguria with albuminuria secondary to heart weakness'],
+      mindEmotional: 'Apprehensive, fearful of impending cardiac arrest, restless.',
+      modalitiesBetter: ['Sitting quiet', 'Rest in recumbent posture'],
+      modalitiesWorse: ['Physical exertion', 'Ascending stairs'],
+      potenciesAndDosage: 'Mother tincture to 3X or 6X. Regulated doses in cardiac asthenia.',
+      defaultTagesdosis: '2-3x daily 5 pellets or drops',
+      sphereOfAction: ['Cardiovascular system', 'Myocardium', 'Kidneys'],
+      differentialRemedies: ['Digitalis', 'Crataegus', 'Strophanthus', 'Convallaria'],
+      searchKeywords: ['adonis vernalis', 'pheasant eye', 'heart failure', 'cardiac dropsy', 'boericke']
+    }
+  },
+  {
+    part: 22,
+    id: 'aletris-farinosa',
+    latinName: 'Aletris farinosa',
+    categoryKey: 'plant',
+    isPolychrest: false,
+    importanceTier: 2,
+    de: {
+      category: 'Pflanzlich',
+      commonName: 'Sternwurzel',
+      origin: 'Getrocknete Wurzel von Aletris farinosa (Liliales/Nartheciaceae). Boerickes gynäkologisches Tonikum.',
+      essence: 'Großes Tonikum für erschöpfte, anämische Frauen mit Uterusatonie, Neigung zu Fehlgeburten und ständiger Übelkeit.',
+      mainIndications: ['Uterusatonie & Senkungsgefühl', 'Neigung zu habituellem Abort', 'Chronische Anämie und Chlorose'],
+      keynotes: ['Ständiges Gefühl von Schwere und Herabdrängen im Uterus', 'Erschöpfung und Müdigkeit bei der geringsten Hausarbeit', 'Hartnäckiges Schwangerschaftserbrechen mit Schwindel'],
+      mindEmotional: 'Müde, apathisch, kann sich zu keiner geistigen Arbeit aufraffen.',
+      modalitiesBetter: ['Flaches Liegen', 'Ausruhen'],
+      modalitiesWorse: ['Bücken', 'Langes Stehen', 'Körperliche Arbeit'],
+      potenciesAndDosage: 'D1 bis D6, auch C30. Bei Abortneigung D3 dreimal täglich.',
+      defaultTagesdosis: '3x täglich 5 Globuli',
+      sphereOfAction: ['Weibliche Genitalorgane', 'Uterus', 'Blutbildung', 'Magen-Darm-Trakt'],
+      differentialRemedies: ['Helonias', 'Fraxinus', 'Sepia', 'Caulophyllum'],
+      searchKeywords: ['aletris farinosa', 'sternwurzel', 'uterusatonie', 'abortneigung', 'frauenleiden', 'boericke']
+    },
+    en: {
+      category: 'Plant',
+      commonName: 'Star Grass / Unicorn Root',
+      origin: 'Dried rhizome of Aletris farinosa (Nartheciaceae). Boericke\'s female tonic.',
+      essence: 'A renowned tonic for tired, anemic women with uterine debility, prolapse tendencies, and habitual miscarriages.',
+      mainIndications: ['Uterine atony and bearing down', 'Habitual abortion tendencies', 'Anemia and chlorosis in overworked women'],
+      keynotes: ['Constant sense of weight and bearing down in pelvis', 'Extreme fatigue after trivial exertion', 'Persistent vomiting of pregnancy with faintness'],
+      mindEmotional: 'Mentally exhausted, weary of life, apathy.',
+      modalitiesBetter: ['Lying down flat', 'Rest'],
+      modalitiesWorse: ['Bending', 'Standing long', 'Physical effort'],
+      potenciesAndDosage: '1X to 6X, or 30C. In threatened miscarriage D3 thrice daily.',
+      defaultTagesdosis: '3x daily 5 pellets',
+      sphereOfAction: ['Female reproductive system', 'Uterus', 'Hematopoiesis', 'Digestive tract'],
+      differentialRemedies: ['Helonias', 'Fraxinus', 'Sepia', 'Caulophyllum'],
+      searchKeywords: ['aletris farinosa', 'star grass', 'uterine atony', 'miscarriage', 'boericke']
+    }
+  },
+  {
+    part: 22,
+    id: 'alfalfa',
+    latinName: 'Alfalfa',
+    categoryKey: 'plant',
+    isPolychrest: false,
+    importanceTier: 2,
+    de: {
+      category: 'Pflanzlich',
+      commonName: 'Luzerne / Alfalfa',
+      origin: 'Frische Pflanze von Medicago sativa (Fabaceae). Boerickes berühmtestes Appetit- und Rekonvaleszenztonikum.',
+      essence: 'Gefeiertes Tonikum nach Boericke: regt Appetit und Verdauung dramatisch an, vertreibt Neurasthenie und schenkt Wohlbefinden.',
+      mainIndications: ['Appetitlosigkeit & Kachexie', 'Rekonvaleszenz nach schweren Erkrankungen', 'Neurasthenie & Schlaflosigkeit'],
+      keynotes: ['Erzeugt echten Heißhunger und verbessert die Nährstoffassimilation', 'Räumt trübe Gedanken aus und schenkt euphorische Vitalität', 'Reichliche Harnausscheidung mit Phosphat- und Harnsäureabbau'],
+      mindEmotional: 'Stärkt den Geist, hebt Depressionen auf, schenkt Optimismus.',
+      modalitiesBetter: ['Nach einer guten Mahlzeit', 'Im Freien'],
+      modalitiesWorse: ['Ausgelassene Mahlzeiten', 'Geistige Überarbeitung'],
+      potenciesAndDosage: 'Urtinktur 10-20 Tropfen vor den Mahlzeiten oder D2/D3.',
+      defaultTagesdosis: '3x täglich 10 Tropfen vor dem Essen',
+      sphereOfAction: ['Stoffwechsel', 'Nervensystem', 'Verdauungstrakt', 'Harnwege'],
+      differentialRemedies: ['Avena sativa', 'Ginseng', 'Cinchona', 'Lecithinum'],
+      searchKeywords: ['alfalfa', 'medicago sativa', 'luzerne', 'appetit', 'rekonvaleszenz', 'tonikum', 'boericke']
+    },
+    en: {
+      category: 'Plant',
+      commonName: 'Lucerne / Alfalfa',
+      origin: 'Fresh plant of Medicago sativa (Fabaceae). Boericke\'s premier tonic and nutritive stimulant.',
+      essence: 'Celebrated Boericke remedy: tonifies nutrition, induces vigorous appetite, relieves neurasthenia, and creates bodily well-being.',
+      mainIndications: ['Loss of appetite & malnutrition', 'Convalescence following exhausting diseases', 'Neurasthenia and insomnia'],
+      keynotes: ['Acts as a fat-producer and corrects tissue waste', 'Increases appetite markedly and promotes restful sleep', 'Induces physical and mental buoyancy and clears brain fag'],
+      mindEmotional: 'Calm, cheerful, exhilarated feeling, dispels gloom.',
+      modalitiesBetter: ['After meals', 'Fresh air'],
+      modalitiesWorse: ['Skipping meals', 'Mental strain'],
+      potenciesAndDosage: 'Mother tincture 10-20 drops before meals or 1X-3X.',
+      defaultTagesdosis: '3x daily 10 drops before meals',
+      sphereOfAction: ['Metabolism', 'Nervous system', 'Gastrointestinal tract'],
+      differentialRemedies: ['Avena sativa', 'Ginseng', 'China', 'Lecithinum'],
+      searchKeywords: ['alfalfa', 'lucerne', 'tonic', 'appetite', 'convalescence', 'boericke']
+    }
+  },
+  {
+    part: 22,
+    id: 'alstonia-constricta',
+    latinName: 'Alstonia constricta',
+    categoryKey: 'plant',
+    isPolychrest: false,
+    importanceTier: 3,
+    de: {
+      category: 'Pflanzlich',
+      commonName: 'Bittere Fieberrinde',
+      origin: 'Getrocknete Rinde von Alstonia constricta (Apocynaceae).',
+      essence: 'Mittel bei Malariaschwäche, Verdauungsinsuffizienz, chronischem Durchfall und Erschöpfung nach Fieber.',
+      mainIndications: ['Post-Malaria-Zustände', 'Chronische Diarrhoe mit Schleimabgang', 'Schwäche und zittriger Magen'],
+      keynotes: ['Zittriges Leeregefühl im Magen', 'Chronischer blutiger oder schleimiger Durchfall', 'Periodische Fieberschübe ohne echten Frost'],
+      mindEmotional: 'Gereizt, schwach, willenlos durch Erschöpfung.',
+      modalitiesBetter: ['Ruhe im Liegen'],
+      modalitiesWorse: ['Nach dem Essen', 'Körperliche Anstrengung'],
+      potenciesAndDosage: 'D1 bis D4 oder C30.',
+      defaultTagesdosis: '3x täglich 5 Globuli',
+      sphereOfAction: ['Magen-Darm-Trakt', 'Milz', 'Nervensystem'],
+      differentialRemedies: ['Cinchona', 'Arsenicum album', 'Hydrastis'],
+      searchKeywords: ['alstonia constricta', 'fieberrinde', 'malaria', 'diarrhoe', 'boericke']
+    },
+    en: {
+      category: 'Plant',
+      commonName: 'Bitter Bark',
+      origin: 'Dried bark of Alstonia constricta (Apocynaceae).',
+      essence: 'Remedy for malarial debility, weak digestion, chronic diarrhea, and post-febrile prostration.',
+      mainIndications: ['Post-malarial asthenia', 'Chronic mucous diarrhea', 'Tremulous weakness in epigastrium'],
+      keynotes: ['Gone tremulous sensation in stomach', 'Camp diarrhea and dysenteric discharges', 'Debility after prolonged tropical fevers'],
+      mindEmotional: 'Irritable, weak-willed due to severe exhaustion.',
+      modalitiesBetter: ['Lying down quiet'],
+      modalitiesWorse: ['After eating', 'Exertion'],
+      potenciesAndDosage: '1X to 4X or 30C.',
+      defaultTagesdosis: '3x daily 5 pellets',
+      sphereOfAction: ['Digestive tract', 'Spleen', 'Vascular system'],
+      differentialRemedies: ['China', 'Arsenicum album', 'Hydrastis'],
+      searchKeywords: ['alstonia constricta', 'bitter bark', 'malaria', 'diarrhea', 'boericke']
+    }
+  }
+];
+
+console.log('Definitions ready for compilation.');

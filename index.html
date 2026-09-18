@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Homeopilot360 – Praxissoftware für Homöopathen</title>
+    <meta name="description" content="Moderne Praxissoftware für Homöopathen mit Anamnese, Befunderfassung, Therapeuten- und Admin-Verwaltung." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=JetBrains+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      // Suppress harmless errors from third-party browser extensions or injected monitoring scripts
+      window.addEventListener('error', function (e) {
+        var msg = (e && (e.message || (e.error && e.error.message))) || '';
+        if (typeof msg === 'string' && (
+          msg.indexOf('startTime') !== -1 ||
+          msg.indexOf('reportAllChanges') !== -1 ||
+          msg.indexOf('message port closed') !== -1 ||
+          msg.indexOf('ResizeObserver loop') !== -1
+        )) {
+          e.preventDefault();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+          return true;
+        }
+      }, true);
+
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = (e && e.reason && (e.reason.message || e.reason)) || '';
+        if (typeof r === 'string' && (
+          r.indexOf('message port closed') !== -1 ||
+          r.indexOf('startTime') !== -1 ||
+          r.indexOf('reportAllChanges') !== -1
+        )) {
+          e.preventDefault();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+          return true;
+        }
+      });
+    </script>
+  </head>
+  <body class="bg-slate-100 text-slate-800">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

@@ -1,0 +1,4324 @@
+// C. M. Boger: Synoptic Key to the Materia Medica & General Analysis
+// Classical Homeopathic Keynotes, Modalities, and Sphere of Action according to Cyrus Maxwell Boger (1861–1935)
+
+export interface BogerSynopticEntry {
+  remedyId: string;
+  latinName: string;
+  region: string; // Region of body / Sphere of action
+  worse: string[]; // Aggravations (<)
+  better: string[]; // Ameliorations (>)
+  highlights: string[]; // Essential Keynotes / Characteristics
+}
+
+export const BOGER_SYNOPTIC_KEY_DATA: Record<string, BogerSynopticEntry> = {
+  "aconitum-napellus": {
+    remedyId: "aconitum-napellus",
+    latinName: "Aconitum napellus",
+    region: "Gehirn; Nerven (vaskulär; sensorisch). Herz; Kreislauf (arteriell; stürmisch). Schleimhäute (Atmungsorgane). Gelenke.",
+    worse: [
+      "Kalter, trockener Wind; Zugluft",
+      "Schock, Furcht, Schreck",
+      "Nachts; gegen Mitternacht",
+      "Aufrichten aus dem Liegen",
+      "Geräusche, Musik, Berührung"
+    ],
+    better: [
+      "Im Freien",
+      "Ruhe",
+      "Warmer Schweiß"
+    ],
+    highlights: [
+      "Stürmischer, plötzlicher Beginn mit unerträglicher Angst und Panik",
+      "Todesfurcht: sagt den Zeitpunkt des Todes voraus",
+      "Große Ruhelosigkeit: wirft sich verzweifelt im Bett hin und her",
+      "Rotes Gesicht wird beim Aufsetzen leichenblass mit Schwindel und Ohnmachtsneigung",
+      "Brennender, unlöschbarer Durst auf kaltes Wasser"
+    ]
+  },
+  "apis-mellifica": {
+    remedyId: "apis-mellifica",
+    latinName: "Apis mellifica",
+    region: "Zellgewebe (Ödeme; Augen; Fauces). Haut (Urtikaria; Erysipel). Nieren; Blase. Seröse Häute. Ovarien (rechts).",
+    worse: [
+      "Wärme in jeder Form (Zimmer, Ofen, heiße Bäder, Einhüllen)",
+      "Berührung; geringster Druck",
+      "Nachmittags (15:00 - 17:00 Uhr)",
+      "Rechte Seite"
+    ],
+    better: [
+      "Kälte; kaltes Wasser; kalte Umschläge",
+      "Entkleiden; frische Luft",
+      "Bewegung im Freien"
+    ],
+    highlights: [
+      "Stechende, brennende Schmerzen wie von glühenden Nadeln oder Bienenstichen",
+      "Ausgeprägte Durstlosigkeit trotz Hitze und Fieber",
+      "Plötzliche, glasige, blasse Ödeme (Wassersäcke unter den Augen)",
+      "Kritische Verschlimmerung durch jede Art von Wärme, verlangt Kälte",
+      "Ungeschicklichkeit: lässt Gegenstände aus den Händen fallen"
+    ]
+  },
+  "arnica-montana": {
+    remedyId: "arnica-montana",
+    latinName: "Arnica montana",
+    region: "Blut; Blutgefäße (Kapillaren). Muskeln. Nerven. Bindegewebe. Haut.",
+    worse: [
+      "Geringste Berührung; Annäherung anderer",
+      "Erschütterung, Bewegung, Überanstrengung",
+      "Feuchtkalte Witterung",
+      "Ruhe; Liegen auf hartem Untergrund"
+    ],
+    better: [
+      "Liegen mit tief gelagertem Kopf",
+      "Ausstrecken; sanfte Bewegung"
+    ],
+    highlights: [
+      "Zerschlagenheitsgefühl am ganzen Körper: Das Bett fühlt sich überall zu hart an",
+      "Trauma, Prellungen, Muskelkater, Hämatome, Verletzungen der Weichteile",
+      "Behauptet stur, es fehle ihm nichts und schickt den Arzt weg",
+      "Kopf und Gesicht glühend heiß, während der übrige Körper kalt ist",
+      "Große Angst vor Berührung oder auch nur dem Nahen von Personen"
+    ]
+  },
+  "arsenicum-album": {
+    remedyId: "arsenicum-album",
+    latinName: "Arsenicum album",
+    region: "Schleimhäute (Magen-Darm; Atmung). Blut. Herz. Haut. Nerven. Rechte Seite.",
+    worse: [
+      "Kälte (Luft, Getränke, Speisen, Anwendungen)",
+      "Mitternacht bis 2:00 Uhr morgens",
+      "Nasse Kälte; faulige Nahrung, Fleisch",
+      "Am Meer"
+    ],
+    better: [
+      "Wärme in jeder Form (heiße Umschläge, heiße Getränke, Ofen)",
+      "Hochgelagerter Kopf",
+      "Gesellschaft; Bewegung"
+    ],
+    highlights: [
+      "Brennende Schmerzen wie von glühenden Kohlen, paradoxerweise gelindert durch Hitze",
+      "Große körperliche Erschöpfung bei quälender motorischer Ruhelosigkeit",
+      "Intensive Todesangst, meint Heilung sei unmöglich, verlangt Beistand",
+      "Häufiger Durst auf kleine Schlucke kalten Wassers, das sofort erbrochen wird",
+      "Aasig riechende, ätzende, scharfe Absonderungen"
+    ]
+  },
+  "belladonna": {
+    remedyId: "belladonna",
+    latinName: "Belladonna",
+    region: "Gehirn; Gefäßsystem. Nerven. Sinnesorgane. Drüsen. Hals. Rechte Seite.",
+    worse: [
+      "Erschütterung (Bettanstoßen, Schritte)",
+      "Licht, Geräusche, Zugluft am Kopf",
+      "Nachmittags (15:00 Uhr); Liegen auf rechter Seite",
+      "Haareschneiden, Kälte nach Überhitzung"
+    ],
+    better: [
+      "Halbsitzende, aufrechte Haltung",
+      "Ruhig im dunklen, warmen Zimmer liegen",
+      "Leichter Druck auf die Schläfen"
+    ],
+    highlights: [
+      "Gewaltsame, pulsierende Kongestionen mit glühender Hitze und Schläfenklopfen",
+      "Mydriasis: Weite, glänzende Pupillen mit stierem Blick",
+      "Plötzliches Kommen und ebenso plötzliches Gehen der Beschwerden",
+      "Brennende Hitze des Kopfes bei oft eiskalten Füßen",
+      "Fieberdelirium: Beißt, schlägt, will fliehen oder sieht Fratzen"
+    ]
+  },
+  "bryonia-alba": {
+    remedyId: "bryonia-alba",
+    latinName: "Bryonia alba",
+    region: "Seröse Häute (Pleura, Peritoneum, Meningen). Gelenke. Muskeln. Magen-Darm. Leber. Rechte Seite.",
+    worse: [
+      "Jede geringste Bewegung (selbst Augenöffnen oder Atmen)",
+      "Wärme, warmes Zimmer, Sommerhitze",
+      "Morgens beim ersten Erwachen und Aufstehen",
+      "Berührung; Ärger"
+    ],
+    better: [
+      "Absolute Ruhe",
+      "Fester Druck und Liegen auf der schmerzhaften Seite",
+      "Kühle Luft; kaltes Trinken"
+    ],
+    highlights: [
+      "Extreme Verschlimmerung durch geringste Bewegung; verlangt absolute Stille",
+      "Besserung durch festen, anhaltenden Druck und Liegen auf der kranken Seite",
+      "Große Trockenheit aller Schleimhäute mit Durst auf große Mengen kalten Wassers in langen Intervallen",
+      "Stechende, zerreißende Schmerzen in Pleura, Gelenken oder Kopf",
+      "Spricht im Delirium von den Geschäften des Tages und will nach Hause"
+    ]
+  },
+  "calcarea-carbonica": {
+    remedyId: "calcarea-carbonica",
+    latinName: "Calcarea carbonica",
+    region: "Drüsen; Lymphsystem. Knochen; Knorpel. Blut. Haut. Vegetatives Nervensystem.",
+    worse: [
+      "Kälte; Nässe; feuchtes Wetter; Baden",
+      "Körperliche oder geistige Anstrengung; Treppensteigen",
+      "Vollmond; Milchgenuss",
+      "Druck der Kleidung"
+    ],
+    better: [
+      "Trockenes, warmes Wetter",
+      "Liegen auf der schmerzhaften Seite",
+      "Dunkelheit; lockere Kleidung"
+    ],
+    highlights: [
+      "Starke Schweißneigung, besonders am Hinterkopf im Schlaf (kissenfeuchtend)",
+      "Verlangen nach ungenießbaren Dingen (Kreide, Kalk, Kohle) sowie weich gekochten Eiern",
+      "Große Frostigkeit: Kältegefühl wie von nassen, kalten Strümpfen",
+      "Träge Knochen- und Zahnentwicklung; verzögerter Fontanellenschluss bei Kindern",
+      "Besorgnis, den Verstand zu verlieren oder dass andere die Verwirrung bemerken"
+    ]
+  },
+  "causticum": {
+    remedyId: "causticum",
+    latinName: "Causticum",
+    region: "Nerven (motorisch; okulomotorisch; Vagus). Muskeln. Blase; Kehlkopf. Sehnen.",
+    worse: [
+      "Klares, trockenes, kaltes Wetter; Ostwind",
+      "Kalter Zug am Nacken oder Gesicht",
+      "Morgens; Aufstehen; Bücken",
+      "Kaffee; süße Speisen"
+    ],
+    better: [
+      "Feuchtes, nasses Wetter; Regen",
+      "Wärme; Bettwärme",
+      "Schluck kaltes Wasser (bei Husten)"
+    ],
+    highlights: [
+      "Paradoxe Besserung bei nassem, feuchtem Regenwetter und Verschlimmerung bei klarem Ostwind",
+      "Lokale Lähmungen einzelner Nerven oder Muskelgruppen (Fazialisparese nach kaltem Wind, Blasenlähmung)",
+      "Heiserkeit von Sängern und Rednern, besonders morgens schlimmer",
+      "Unwillkürlicher Harnabgang beim Husten, Niesen oder Schnäuzen",
+      "Ausgeprägtes Mitgefühl mit dem Leiden anderer, erträgt kein Unrecht"
+    ]
+  },
+  "chamomilla": {
+    remedyId: "chamomilla",
+    latinName: "Chamomilla",
+    region: "Nerven; Zentralnervensystem. Verdauungstrakt. Zähne. Weibliche Genitalien.",
+    worse: [
+      "Ärger, Zorn, Gemütserregung",
+      "Wärme; Einhüllen; nachts (21:00 Uhr)",
+      "Kaffee, Betäubungsmittel",
+      "Zahnen; Berührung"
+    ],
+    better: [
+      "Umhergetragenwerden (besonders Kinder)",
+      "Fasten; warmes, feuchtes Wetter",
+      "Schwitzen"
+    ],
+    highlights: [
+      "Unerträglichkeit von Schmerzen mit zornigem, reizbarem und feindseligem Wesen",
+      "Kinder wollen ununterbrochen herumgetragen werden und beruhigen sich nur dann",
+      "Eine Wange rot und heiß, die andere blass und kühl",
+      "Grüner, stinkender Stuhl wie gehackte Kräuter oder faule Eier während der Zahnung",
+      "Schmerz treibt zum Wahnsinn und zur Verzweiflung"
+    ]
+  },
+  "drosera-rotundifolia": {
+    remedyId: "drosera-rotundifolia",
+    latinName: "Drosera rotundifolia",
+    region: "Atemwege (Kehlkopf, Bronchien, Vagus). Lungen. Kehlkopf. Knochen.",
+    worse: [
+      "Nach Mitternacht; Hinlegen",
+      "Wärme im Bett",
+      "Sprechen, Lachen, Weinen, Singen",
+      "Trinken kalter Flüssigkeiten"
+    ],
+    better: [
+      "Aufsitzen; Druck der Hände auf den Brustkorb",
+      "Bewegung im Freien"
+    ],
+    highlights: [
+      "Krampfartiger, bellender Keuchhusten in rasch aufeinanderfolgenden Anfällen ohne Atemholen",
+      "Kitzeln im Kehlkopf wie von einer Feder oder Brotkrumen",
+      "Muss beim Husten die Brust mit beiden Händen fest abstützen",
+      "Erbrechen von Schleim und Nahrungsmitteln am Ende des Hustenanfalls",
+      "Verschlimmerung sofort nach dem Hinlegen und nach Mitternacht"
+    ]
+  },
+  "gelsemium-sempervirens": {
+    remedyId: "gelsemium-sempervirens",
+    latinName: "Gelsemium sempervirens",
+    region: "Nervensystem (motorisch; sensorisch). Muskeln. Gefäße. Okziput. Augen.",
+    worse: [
+      "Erwartungsangst, Aufregung, Schreck, schlechte Nachrichten",
+      "Schwüles, feuchtes Wetter vor Gewittern",
+      "Bewegung; Tabakrauch; 10:00 Uhr morgens",
+      "Denken an die Beschwerden"
+    ],
+    better: [
+      "Reichlicher Abgang von hellem Harn (erlöst Kopfschmerz)",
+      "Fortgesetzte Bewegung; frische Luft",
+      "Schwitzen; Alkoholgenuss"
+    ],
+    highlights: [
+      "Die 3 großen D: Dull, Drowsy, Dizzy (benommen, schläfrig, schwindlig)",
+      "Bleierne Schwere der Glieder und Lider: Augen können kaum offen gehalten werden",
+      "Kopfschmerz beginnt im Nacken/Okziput, zieht über den Scheitel und bessert sich nach starkem Wasserlassen",
+      "Völlige Durstlosigkeit bei Hitze und Influenza",
+      "Zittern vor Schwäche, Angst oder Lampenfieber (Prüfungsangst)"
+    ]
+  },
+  "hepar-sulfuris": {
+    remedyId: "hepar-sulfuris",
+    latinName: "Hepar sulfuris",
+    region: "Drüsen; Lymphknoten. Schleimhäute (Atmung). Haut. Nerven. Bindegewebe.",
+    worse: [
+      "Kälte; kalter, trockener Wind; Zugluft; Entblößen",
+      "Berührung; Druck",
+      "Liegen auf der schmerzhaften Seite",
+      "Quecksilber; Lärm"
+    ],
+    better: [
+      "Feuchte Wärme; warmes Einhüllen (besonders des Kopfes)",
+      "Feuchtwarmes Wetter",
+      "Nach dem Essen"
+    ],
+    highlights: [
+      "Extreme Überempfindlichkeit gegen Kälte: Der geringste Luftzug oder das Herausstrecken einer Hand erzeugt Husten",
+      "Stechende Schmerzen wie von einem Holzsplitter oder einer Gräte im Hals",
+      "Neigung zu eitrigen Entzündungen; Eiter riecht stechend sauer oder wie alter Käse",
+      "Heftiger, jähzorniger Charakter; erträgt keinen Widerspruch",
+      "Rasselnder, kruppartiger Husten, der sich durch warmes Einhüllen bessert"
+    ]
+  },
+  "ignatia-amara": {
+    remedyId: "ignatia-amara",
+    latinName: "Ignatia amara",
+    region: "Nervensystem (Zentral; vegetativ). Psyche. Rachen. Magen-Darm. Weibliche Sphäre.",
+    worse: [
+      "Kummer, Sorgen, Kränkung, Schreck, Liebeskummer",
+      "Kaffee, Tabak, Gerüche, Berührung",
+      "Trost (verschlimmert Zorn und Weinen)",
+      "Morgens; im Freien"
+    ],
+    better: [
+      "Lageveränderung; harter Druck",
+      "Schlucken fester Nahrung (Halsweh besser)",
+      "Alleinsein; Wärme"
+    ],
+    highlights: [
+      "Paradoxe und widersprüchliche Symptome: Halsweh besser durch Schlucken harter Bissen, Magenweh besser durch Essen",
+      "Tiefes, unwillkürliches Seufzen und Schluchzen bei stiller Trauer",
+      "Globus hystericus: Gefühl eines Kloßes im Hals, der sich nicht herunterschlucken lässt",
+      "Hysterieartige Wechselhaftigkeit: Lachen geht blitzartig in Weinen über",
+      "Hauptmittel bei frischem Kummer, Verlust geliebter Menschen und Enttäuschung"
+    ]
+  },
+  "ipecacuanha": {
+    remedyId: "ipecacuanha",
+    latinName: "Ipecacuanha",
+    region: "Nervus vagus. Schleimhäute (Magen, Bronchien). Kapillaren.",
+    worse: [
+      "Wärme; feuchte Hitze; Erbrechen (bringt keine Erleichterung)",
+      "Überessen; unreifes Obst; Schweinefleisch",
+      "Periodisch; Bewegung"
+    ],
+    better: [
+      "Im Freien; Ausruhen",
+      "Wärme an Extremitäten"
+    ],
+    highlights: [
+      "Ständige, anhaltende Übelkeit mit sauberer, unbelegter Zunge",
+      "Erbrechen bringt keinerlei Erleichterung der Übelkeit",
+      "Asthmatischer, erstickender Krampfhusten mit Steifwerden des Körpers und Blaufärbung",
+      "Vollständige Durstlosigkeit bei Magenbeschwerden und Fieber",
+      "Reichliche Blutungen von hellrotem Blut aus allen Körperöffnungen"
+    ]
+  },
+  "lachesis-muta": {
+    remedyId: "lachesis-muta",
+    latinName: "Lachesis muta",
+    region: "Blut; Gefäße (Venen). Nerven. Herz. Rachen. Linke Seite (zieht nach rechts).",
+    worse: [
+      "Nach dem Schlaf ('schläft sich in die Verschlimmerung hinein')",
+      "Geringste Einengung oder Berührung am Hals und Bauch (Kragen, Gürtel)",
+      "Wärme, heißes Bad, Sonne, Frühlingswetter",
+      "Unterdrückung von Ausscheidungen; Wechseljahre"
+    ],
+    better: [
+      "Einsetzen von physiologischen Absonderungen (Menses, Schweiß)",
+      "Kaltes Trinken; frische Luft",
+      "Nach dem Essen"
+    ],
+    highlights: [
+      "Beschwerden beginnen links und wandern nach rechts (Rachen, Ovarien, Brust)",
+      "Kann keine enge Kleidung, Kragen oder Krawatte am Hals ertragen",
+      "Schlimmer nach dem Schlaf; wacht mit Erstickungsgefühl auf",
+      "Überbordende Geschwätzigkeit mit raschem Springen von einem Thema zum nächsten",
+      "Purpurfarbene, bläulich-dunkle Färbung entzündeter Gewebe und Geschwüre"
+    ]
+  },
+  "lycopodium-clavatum": {
+    remedyId: "lycopodium-clavatum",
+    latinName: "Lycopodium clavatum",
+    region: "Verdauungstrakt (Leber; Magen; Darm). Urogenitalsystem. Atmungsorgane. Rechte Seite (zieht nach links).",
+    worse: [
+      "Nachmittags von 16:00 bis 20:00 Uhr",
+      "Wärme; warmes Zimmer; warme Speisen",
+      "Rechte Seite; Liegen auf rechter Seite",
+      "Blähende Speisen (Bohnen, Kohl, Zwiebeln)"
+    ],
+    better: [
+      "Warme Getränke; warme Speisen",
+      "Kühle Luft; Entkleiden; Bewegung im Freien",
+      "Urinieren; Aufstoßen"
+    ],
+    highlights: [
+      "Beschwerden beginnen rechts und ziehen nach links",
+      "Ausgeprägter Meteorismus: Völlegefühl und Gärung im Unterbauch nach wenigen Bissen",
+      "Starke Verschlimmerungszeit: Typisch täglich zwischen 16:00 und 20:00 Uhr",
+      "Heißhunger, aber nach drei Bissen voll und wie zugeschnürt",
+      "Verlangen nach warmen Getränken; fächerartige Bewegung der Nasenflügel bei Lungenaffektionen"
+    ]
+  },
+  "mercurius-solubilis": {
+    remedyId: "mercurius-solubilis",
+    latinName: "Mercurius solubilis",
+    region: "Schleimhäute; Drüsen (Speicheldrüsen, Leber, Mandeln). Blut. Knochen. Haut.",
+    worse: [
+      "Nachts im warmen Bett",
+      "Wärme UND Kälte (thermometrische Empfindlichkeit)",
+      "Schwitzen (erleichtert nicht, sondern schwächt)",
+      "Rechte Seite; feuchtes Wetter; Zugluft"
+    ],
+    better: [
+      "Mäßige, gleichmäßige Temperatur",
+      "Ruhe",
+      "Morgens"
+    ],
+    highlights: [
+      "Menschliches Thermometer: Empfindlich gegen Kälte wie auch gegen Wärme",
+      "Reichlicher, übelriechender Speichelfluss; dicke, feuchte Zunge mit Zahnabdrücken am Rand",
+      "Verschlimmerung aller Beschwerden nachts im Bett und durch Schwitzen",
+      "Metallischer Geschmack im Mund; fauliger Foetor ex ore",
+      "Tenesmus bei Durchfall ('kann nie fertig werden')"
+    ]
+  },
+  "natrium-muriaticum": {
+    remedyId: "natrium-muriaticum",
+    latinName: "Natrium muriaticum",
+    region: "Blut; Flüssigkeitshaushalt. Schleimhäute. Haut. Nerven. Psyche.",
+    worse: [
+      "Sonne; Hitze; Sommerhitze; 10:00 bis 11:00 Uhr vormittags",
+      "Trost und Zuspruch (erzeugt Verärgerung)",
+      "Am Meer (oder am Meer gebessert)",
+      "Geistige Anstrengung; Liegen"
+    ],
+    better: [
+      "Im Freien; kaltes Baden",
+      "Fasten; Druck auf den Rücken",
+      "Rechtslage"
+    ],
+    highlights: [
+      "Stiller, zurückgezogener Kummer; Trostversuche werden heftig abgewiesen",
+      "Pochende, hämmernde Kopfschmerzen von 10:00 bis 15:00 Uhr mit Flimmern vor den Augen",
+      "Großes Verlangen nach Salz oder salzigen Speisen",
+      "Trockene, aufgesprungene Unterlippe mit zentralem Riss",
+      "Geographische Zunge oder Herpesbläschen an den Lippen wie Perlen"
+    ]
+  },
+  "nux-vomica": {
+    remedyId: "nux-vomica",
+    latinName: "Nux vomica",
+    region: "Zentralnervensystem. Verdauungstrakt (Magen, Leber, Darm). Kreislauf.",
+    worse: [
+      "Morgens beim Erwachen; Kälte; Zugluft; Entblößen",
+      "Genussmittel (Kaffee, Alkohol, Tabak, Medikamente, Gewürze)",
+      "Geistige Überarbeitung; Ärger, Kränkung",
+      "Berührung; Lärm; Gerüche; Licht"
+    ],
+    better: [
+      "Wärme; warmes Zimmer; Einhüllen",
+      "Kurzer Mittagsschlaf ('Powernap')",
+      "Abends; feuchtes Wetter; Ausruhen"
+    ],
+    highlights: [
+      "Ungeduldiger, reizbarer, arbeitssüchtiger Choleriker; verträgt keinen Widerspruch",
+      "Katerzustand: Morgendliche Übelkeit und Kopfschmerz nach Vorabendsünden und Genussmitteln",
+      "Ständiger, vergeblicher Stuhldrang; Krämpfe im Darm ('kann nicht erbrechen, kann nicht abführen')",
+      "Extreme Frostigkeit: Geringstes Entblößen oder Bewegen unter der Bettdecke erzeugt Schüttelfrost",
+      "Besserung nach kurzem ungestörten Schlaf"
+    ]
+  },
+  "phosphorus": {
+    remedyId: "phosphorus",
+    latinName: "Phosphorus",
+    region: "Blut; Blutgefäße. Nerven. Knochen (Kiefer). Lungen. Schleimhäute. Magen.",
+    worse: [
+      "Gewitter; Dämmerung; nachts vor Mitternacht",
+      "Kälte; Liegen auf linker Seite oder auf dem Rücken",
+      "Wetterwechsel; Fasten; Alleinsein"
+    ],
+    better: [
+      "Schlaf (selbst kurzer Schlaf erfrischt ungemein)",
+      "Kalte Speisen und Getränke (solange sie im Magen kalt sind)",
+      "Gesellschaft; Massage; Magnetisieren"
+    ],
+    highlights: [
+      "Offener, kontaktfreudiger, sensibler Charakter mit Angst vor Gewitter, Dunkelheit und Alleinsein",
+      "Heftiger Durst auf eiskaltes Wasser; wird erbrochen, sobald es im Magen warm wird",
+      "Brennen an umschriebenen Stellen (zwischen den Schulterblättern, Wirbelsäule, Handflächen)",
+      "Starke Neigung zu schmerzlosen Blutungen (auch kleiner Wunden) von hellem Blut",
+      "Engegefühl und Wundheit in der Brust; Heiserkeit abends schlimmer"
+    ]
+  },
+  "pulsatilla-pratensis": {
+    remedyId: "pulsatilla-pratensis",
+    latinName: "Pulsatilla pratensis",
+    region: "Schleimhäute (Atmung, Verdauung, Auge). Venöses System. Weibliche Genitalien. Gelenke.",
+    worse: [
+      "Wärme; warmes, geschlossenes Zimmer; dicke Kleidung",
+      "Fette, schwere Speisen, Schweinefleisch, Gebäck",
+      "Abends; in Ruhe; Liegen auf schmerzhafter Seite",
+      "Durchnässung der Füße"
+    ],
+    better: [
+      "Frische, kühle Luft; langsames Spazierengehen im Freien",
+      "Trost, Zuwendung und Mitgefühl",
+      "Kalte Umschläge; Entblößen"
+    ],
+    highlights: [
+      "Weinerliches, sanftmütiges Gemüt: Weint beim Erzählen der Symptome und sucht Trost",
+      "Ständige Wandelbarkeit der Symptome: 'Kein Stuhl gleicht dem anderen', Schmerzen wandern rasch",
+      "Vollständige Durstlosigkeit bei allen Beschwerden, selbst bei trockenem Mund und Hitze",
+      "Milde, dicke, gelb-grünliche, nicht ätzende Schleimabsonderungen",
+      "Unerträglichkeit warmer Räume; drängendes Verlangen nach offenen Fenstern und kühlem Wind"
+    ]
+  },
+  "rhus-toxicodendron": {
+    remedyId: "rhus-toxicodendron",
+    latinName: "Rhus toxicodendron",
+    region: "Faseriges Bindegewebe (Sehnen, Bänder, Faszien). Gelenke. Haut. Blut.",
+    worse: [
+      "Erste Bewegung nach der Ruhe; Liegen",
+      "Nässe, Kälte, Regen, Überhitzung mit nachfolgender Abkühlung",
+      "Nach Mitternacht; Zugluft",
+      "Vor einem Gewitter"
+    ],
+    better: [
+      "Fortgesetzte, sanfte Bewegung",
+      "Wärme in jeder Form (heiße Bäder, Ofen, Umschläge)",
+      "Trockenes Wetter; Ausstrecken der Glieder"
+    ],
+    highlights: [
+      "Rostiges Scharnier: Schlimmer bei Beginn der Bewegung, allmähliche Besserung bei fortgesetzter Bewegung",
+      "Quälende Ruhelosigkeit: Muss ständig die Position im Bett wechseln, um Erleichterung zu finden",
+      "Rote Dreiecksspitze der Zunge bei Typhus und Fieber",
+      "Folge von Durchnässung nach Schwitzen oder Verheben und Zerrung der Sehnen",
+      "Hautausschläge mit starkem Juckreiz und Bläschenbildung, gebessert durch heißes Wasser"
+    ]
+  },
+  "sepia-succus": {
+    remedyId: "sepia-succus",
+    latinName: "Sepia succus",
+    region: "Urogenitaltrakt (Uterus, Beckenorgane). Venöses Pfortadersystem. Haut. Nerven.",
+    worse: [
+      "Kälte; Waschen; feuchte Kälte; Schneeluft",
+      "Ruhe; morgens und abends",
+      "Vor und während der Menses; Schwangerschaft",
+      "Milchgenuss; Essensgerüche"
+    ],
+    better: [
+      "Schnelle, anstrengende körperliche Bewegung (Tanzen, Laufen)",
+      "Wärme (Bett, Zimmer, Umschläge)",
+      "Beine übereinanderschlagen (stützt den Beckenboden)"
+    ],
+    highlights: [
+      "Gefühl des Herabdrängens aller Beckenorgane (Bearing-down), muss die Beine kreuzen",
+      "Tiefe Gemütsindifferenz gegen die eigene Familie und die liebsten Angehörigen",
+      "Gelber Sattel über der Nase und den Wangen (Chloasma); schlaffe Haltung",
+      "Übelkeit morgens beim Anblick oder Geruch von Speisen",
+      "Besserung durch heftige körperliche Anstrengung und Tanz"
+    ]
+  },
+  "silicea-terra": {
+    remedyId: "silicea-terra",
+    latinName: "Silicea terra",
+    region: "Bindegewebe; elastische Fasern. Knochen; Knorpel. Drüsen. Haut. Nerven.",
+    worse: [
+      "Kälte; Zugluft (besonders am Kopf); Entblößen",
+      "Feuchtigkeit; Wetterwechsel; Neumond",
+      "Geistige Anstrengung; Erschütterung"
+    ],
+    better: [
+      "Wärme; warmes Einhüllen des Kopfes",
+      "Sommer; reichliches Schwitzen",
+      "Ruhe"
+    ],
+    highlights: [
+      "Mangel an Reaktionskraft und Lebenswärme: Friert ständig und wickelt sich warm ein",
+      "Überempfindlichkeit gegen Kälte, verlangt Mütze oder Kopfbedeckung selbst im Zimmer",
+      "Übelriechender, scharfer Fußschweiß; Beschwerden nach Unterdrückung des Fußschweißes",
+      "Mangel an moralischem 'Rückgrat', gibt leicht nach, besitzt aber einen sturen Kern",
+      "Förderung der Ausstoßung von Fremdkörpern (Splitter, Fischgräten)"
+    ]
+  },
+  "sulfur": {
+    remedyId: "sulfur",
+    latinName: "Sulfur",
+    region: "Haut; Schleimhäute. Pfortader- und Venensystem. Nerven. Lymphsystem.",
+    worse: [
+      "Wärme des Betts; Stehen (kann nicht stillstehen)",
+      "Waschen, Baden; 11:00 Uhr vormittags (Schwäche und Hunger)",
+      "Milch; Alkohol; Unterdrückung von Hautausschlägen"
+    ],
+    better: [
+      "Trockenes, warmes Wetter",
+      "Rechtslage; Bewegung im Freien",
+      "Schwitzen"
+    ],
+    highlights: [
+      "Klassischer 'zerlumpter Philosoph': Hochbegabt, unordentlich, gleichgültig gegen Äußeres",
+      "Brennende Schmerzen und Hitze (Scheitel, Augen, Fußsohlen, streckt die Füße nachts aus dem Bett)",
+      "Hautunreinheiten mit starkem Juckreiz, der durch Waschen und Bettwärme unerträglich wird",
+      "Flaues Schwächegefühl und Heißhunger pünktlich um 11:00 Uhr vormittags",
+      "Körperöffnungen leuchtend rot (Lippen, Augenlider, Anus) und scharf brennend"
+    ]
+  },
+  "thuja-occidentalis": {
+    remedyId: "thuja-occidentalis",
+    latinName: "Thuja occidentalis",
+    region: "Urogenitaltrakt; Schleimhäute. Haut (Warzen, Kondylome). Blut. Nerven. Linke Seite.",
+    worse: [
+      "Kälte und Nässe; feuchtes Wetter",
+      "Impfungen (Hauptmittel bei Impfschäden / Sykose)",
+      "3:00 Uhr morgens und 15:00 Uhr nachmittags",
+      "Zwiebeln; Tee"
+    ],
+    better: [
+      "Wärme; trockenes Wetter",
+      "Reichliches Schwitzen",
+      "Freies Ziehen von Absonderungen"
+    ],
+    highlights: [
+      "Hauptmittel der Sykose mit Neigung zu Wucherungen: Warzen, gestielte Feigwarzen, Polypen",
+      "Fixe Wahnideen: Glaubt, seine Glieder seien aus Glas und würden leicht zerbrechen",
+      "Gefühl, als ob etwas Lebendiges im Bauch hüpfen oder sich bewegen würde",
+      "Süßlicher oder lauchartiger Schweiß, besonders an unbedeckten Körperteilen",
+      "Beschwerden nach Pocken- oder Routineimpfungen"
+    ]
+  },
+  "agaricus-muscarius": {
+    remedyId: "agaricus-muscarius",
+    latinName: "Agaricus muscarius",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "sitting quietly",
+      "standing"
+    ],
+    better: [
+      "Gentle motion"
+    ],
+    highlights: [
+      "Inclination to prophesying and versification. Timid or fearless, violent madness, Disinclination to speak and work.",
+      "Headache, as from a nail pressing into side (r), Drawing ache extending to root of nose, in early morning when awaking. Twitching in forehead and temples, Senses of icy coldness on outside of. Worse: sitting quietly, standing. Better: Gentle motion.",
+      "Pressure in, after eating.",
+      "Pinching and cutting in, with diarrhoea.",
+      "Nightly profuse sweat on.",
+      "Itching - burning and redness, as after freezing, on many parts, particularly on nose, ears, fingers and toes. Closely aggregated white miliary eruption with violent itching."
+    ]
+  },
+  "agnus-castus": {
+    remedyId: "agnus-castus",
+    latinName: "Agnus castus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Pinching in pit when sitting bent over.",
+      "Sensation as though all the intestines were sinking downward. Ascites.",
+      "Inflammatory swelling of joints. Sprained swollen limbs, especially at ankle joints. Gouty nodes on joints.",
+      "Corrosive itching here and there over entire body by scratching, but it rapidly returns. Itching around ulcers in evening.",
+      "Somnolency, Restless at night."
+    ]
+  },
+  "aloe": {
+    remedyId: "aloe",
+    latinName: "Aloe",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "From stepping hard and heat",
+      "Standing",
+      "Sitting or lying on back",
+      "Stepping hard",
+      "heat",
+      "afternoon",
+      "especially the symptoms of mucous membranes"
+    ],
+    better: [
+      "After eating and from cold",
+      "Bending forward or emission of flatus",
+      "Pressure and discharge of flatus",
+      "Motion",
+      "Open air",
+      "cold applications"
+    ],
+    highlights: [
+      "Disinclination and incapacity for mental labor, with speedy fatigue therefrom. Peevish and quarrelsome. Anthropophobia.",
+      "Distended, after drinking water. Pain in pit when making a misstep, it radiates backwards or upwards with every eructation, and then sinks back again.",
+      "Stitches under mammae.",
+      "Golden yellow. Furuncles. Crawling, itching and biting in.",
+      "Interrupted by hemorrhoidal irritation and sexual excitement. Dreams of having an involuntary stool."
+    ]
+  },
+  "alumina": {
+    remedyId: "alumina",
+    latinName: "Alumina",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "in early morning",
+      "walking in open air in evening"
+    ],
+    better: [
+      "Lying quietly",
+      "after eating"
+    ],
+    highlights: [
+      "Constriction in, extending into throat and chest. Pressure in evening.",
+      "Sticking pains in, extending up into chest. Cutting pains in bowels, by warmth. Lead colic. Inguinal hernia.",
+      "Pressing pain in, at night Constriction of when stooping. Thrusts at heart.",
+      "Herpes with itching, in evening, Humid tatters. Cracked. Skin symptoms are renewed and full and new moon. Brittle nails.",
+      "At night, unrefreshing and entirely too light, Sleeplessness before midnight. Many anxious, frightful dreams at night."
+    ]
+  },
+  "ambra-grisea": {
+    remedyId: "ambra-grisea",
+    latinName: "Ambra grisea",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Thirst: Entirely absent.",
+      "Pressure and heaviness in. Distension of, after every meal. Cold sensation on one side of. Pain in upper and lower.",
+      "Compression in, and in back. Pressure in and on, particularly in cardiac region. Palpitation with a pale face. Itching in.",
+      "Dry. Itching and burning in many localities. Burning herpes.",
+      "Disturbed by coldness of body and twitching of limbs at night. Full of reveries, with anxious dreams and phantasies."
+    ]
+  },
+  "ammonium-carb": {
+    remedyId: "ammonium-carb",
+    latinName: "Ammonium carb",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening: after eating",
+      "after motion in open air",
+      "Better: Half - reclining position",
+      "external pressure",
+      "warmth",
+      "Washing"
+    ],
+    better: [
+      "Half - reclining position",
+      "external pressure",
+      "warmth"
+    ],
+    highlights: [
+      "Difficult thinking. Easily makes mistakes in talking and writing. Forgetful and distracted. Sadness and weeping with fears and presentiments of impending evil. Very peevish and ill - humored during cloudy weather. Satiety of life. Disobedient.",
+      "Pressure in with nausea and sensitiveness of pit after eating. Intolerant of pressure of clothes on.",
+      "Spasm in, with contractive sensation, nausea and collection of water in mouth.",
+      "Congestion to. Sticking in left side of, lying thereon. Hydrothorax Palpitation.",
+      "Violent itching and burning vesicles after scratching. Freckles. Ganglion chafed skin in children.",
+      "Day sleepiness. Nightly nausea and ebullitions of blood."
+    ]
+  },
+  "ammonium-muriaticum": {
+    remedyId: "ammonium-muriaticum",
+    latinName: "Ammonium muriaticum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Irritable and fretful in forenoon, but in better humor in afternoon. Anxiety with weeping. Low spirited from care and grief.",
+      "Sense of heaviness and fullness in forehead, early in morning.",
+      "Thirst: Much, particularly in evening.",
+      "Pinching bellyache. Twitching about naval and in hypochondria.",
+      "Vesicular eruptions finally forming scabs. Peeling off, of skin of many parts of body.",
+      "Sleepless after midnight."
+    ]
+  },
+  "anacardium-oriental": {
+    remedyId: "anacardium-oriental",
+    latinName: "Anacardium oriental",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Mental exertion",
+      "stepping hard",
+      "after eating",
+      "in cold"
+    ],
+    better: [
+      "While eating"
+    ],
+    highlights: [
+      "Pressure in, after eating. Weak digestion with hypochondriacal humor after eating. Shattering in pit at every step, after eating.",
+      "Bursting pain in.",
+      "Pressive pain as from a plug in. Stitches extending from cardiac into lumbar region, Scratching and soreness in.",
+      "Want of both sensibility and irritability of."
+    ]
+  },
+  "angustura-vera": {
+    remedyId: "angustura-vera",
+    latinName: "Angustura vera",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Extraordinary distraction. Great crowding of thought like a waking dream in afternoon. Disheartened and want of self - confidence. Over - sensitive to offences. Extraordinary agitation and cheerfulness.",
+      "In evening (pressing) head pains with hot face. Cramp - like headache. Tensive pain in temporal muscles when opening jaws.",
+      "Cutting, smarting pain in. Cramping pain in pit.",
+      "Cramping pain in. Cutting in, after drinking milk.",
+      "Tonic spasm excited by slightest touch, drinking and noise. Stiffness and stretching out of limbs. Spasmodic twitchings. Paralyses.",
+      "Sleepiness early in evening, followed by great vivacity until after midnight."
+    ]
+  },
+  "antimonium-crudum": {
+    remedyId: "antimonium-crudum",
+    latinName: "Antimonium crudum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "warmth",
+      "becoming heated",
+      "after bathing",
+      "after eating",
+      "after his accustomed smoke"
+    ],
+    better: [
+      "Walking in cool",
+      "open air",
+      "at rest"
+    ],
+    highlights: [
+      "Imbecility. Insanity. Ecstatic love and sentimental reveries in the moonlight. Apprehension and solicitude concerning his fate. Restlessness. Inclination to suicide by shooting.",
+      "Pains as from overloading. Deranged by gluttony. Spasm in, with sensitive pit and thirst. Weak.",
+      "Distended and full after eating. Violent cutting in upper. Ascites.",
+      "Burning and sticking pain in.",
+      "Fatty itch. Popular and vesicular eruption like insect stings. Nettlerash. Chicken - pox. Arthritic nodes. White swelling. Fistulous ulcers. Liver spots and freckles.",
+      "Great day sleepiness. Somnolency particularly in forenoon."
+    ]
+  },
+  "antimonium-tartaricum": {
+    remedyId: "antimonium-tartaricum",
+    latinName: "Antimonium tartaricum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "night",
+      "at rest",
+      "sitting bent",
+      "warmth",
+      "getting warm in bed",
+      "lying"
+    ],
+    better: [
+      "Rising up",
+      "sitting upright",
+      "in the cold",
+      "lying with head high",
+      "motion",
+      "washing head"
+    ],
+    highlights: [
+      "Stupefying confusion of head with sleepiness. Restlessness and solitude concerning the future. Despair and hopelessness, with somnolence. Weeping and crying. Cheerful by day, but fearful and anxious in evening.",
+      "Gastric pains, as from overloading it. Pressure in, and in pit, with great sensitiveness thereof. Throbbing in pit.",
+      "Throbbing and pulsation in. Bellyache, with intense mental and physical restlessness. Pressure, as of stones lying in, when sitting bent forward.",
+      "Oppression of. Rattling in. Perceptible palpitation with (or without) fear.",
+      "Great weakness and feebleness. Fainting attacks. Sense of internal trembling. Beating and pulsating in all blood vessels. Convulsive twitches. Sensitiveness of body to touch. The symptoms are intensified toward evening and when sitting.",
+      "Pustules like those of smallpox or cowpox. Eruption of pocks as large as a pea containing pus"
+    ]
+  },
+  "argentum-metallicum": {
+    remedyId: "argentum-metallicum",
+    latinName: "Argentum metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Pressure",
+      "touch"
+    ],
+    better: [
+      "open air"
+    ],
+    highlights: [
+      "Anxiety driving him from place to place. Dejection. Taciturnity.",
+      "Appetite: Unusually good. Aversion to all food, even when thinking thereof.",
+      "Painful distension of. Flatulent colic.",
+      "Bruised pain in joints. Asleep or stiff sensation in extremities. Pain in internal organs, as if raw or sore. Epileptic attacks. Effects of abuse of mercury (And of onanism). Symptoms recur each noon.",
+      "Corrosive, burning itching here and there."
+    ]
+  },
+  "argentum-nitricum": {
+    remedyId: "argentum-nitricum",
+    latinName: "Argentum nitricum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Mental exertion and in open air",
+      "From heat of fire",
+      "Lying on right side",
+      "Emotions",
+      "mental strain",
+      "thinking",
+      "in a warm room"
+    ],
+    better: [
+      "Tight banding",
+      "In cool air"
+    ],
+    highlights: [
+      "Flatulent distension, better passing flatus. Gurgling in. Feeling of a ball rising into throat from. Drawing extending into throat from. Drawing extending into groins, dragging in. Stitches. Intolerance of lacing. Worse: Lying on right side.",
+      "Burning. - Heaviness. Worse while lying down and in evening. Palpitation: Irregular heart beat, worse thinking there of, better from motion in open air.",
+      "Tense and hard Leaden hue.",
+      "Sleepless from fancies. Dreams of serpents, with horror."
+    ]
+  },
+  "asafoetida": {
+    remedyId: "asafoetida",
+    latinName: "Asafoetida",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Afternoon and evening",
+      "rest",
+      "in room",
+      "after lying down",
+      "sitting bent"
+    ],
+    better: [
+      "Walking in open air: raising up",
+      "touch"
+    ],
+    highlights: [
+      "Very excitable and sensitive disposition with indifference to everything. Hypochondriacal and hysterical restlessness and anxiety. Vacillating mood, and inconstancy.",
+      "Pressure in, after eating. Feeling of fullness in region of. Pulsation in pit of. Disordered, after fat food.",
+      "Sticking pain from within outward in sides of.",
+      "Pressure, with difficult respiration. Throbbing in. Sticking from within outward in. Palpitation.",
+      "Hot, dark - red swelling of single parts. External inflammations with inclination to suppuration. Gangrenous ulcers with unhealthy pus and painful areolae.",
+      "Unusually great desire for."
+    ]
+  },
+  "asarum-europ-um": {
+    remedyId: "asarum-europ-um",
+    latinName: "Asarum europaeum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Afternoon",
+      "walking",
+      "Better: Sitting",
+      "washing",
+      "Warm dry air"
+    ],
+    better: [
+      "Sitting",
+      "washing",
+      "Bathing in cold water"
+    ],
+    highlights: [
+      "Pressive confusion in head. Vanishing of thought. Melancholy peevishness. Tearful sadness. Nervous excitement with liveliness.",
+      "Pinching pain in left, extending into back. Intense colic with vomiting. Inguinal hernia.",
+      "Contractive squeezing in lungs. Stitches in lungs during inspiration.",
+      "Late falling to sleep on account of ebullition of blood."
+    ]
+  },
+  "aurum-metallicum": {
+    remedyId: "aurum-metallicum",
+    latinName: "Aurum metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Every mental exertion",
+      "stooping",
+      "cold",
+      "Becoming cold"
+    ],
+    better: [
+      "raising up",
+      "warm wrapping",
+      "in open air",
+      "Warm wrapping",
+      "external pressure"
+    ],
+    highlights: [
+      "Intense congestion to, with heat therein. Bruised pain in forepart of, on awaking, causing confusion of ideas. Tumult and roaring in. Pain in skull bones. Worse: Every mental exertion, stooping, cold. Better: raising up, warm wrapping, in open air.",
+      "Protruding inguinal hernia. Disagreeable feeling in.",
+      "Anxious palpitation from congestion thereto.",
+      "Cracked. Mercurial ulcers, which also attack the bones.",
+      "Sleepiness after dinner. Restless with anxious dreams. Nightly delirium."
+    ]
+  },
+  "baryta-carbonica": {
+    remedyId: "baryta-carbonica",
+    latinName: "Baryta carbonica",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "at night",
+      "scratching",
+      "in a warm room",
+      "Night",
+      "in cold"
+    ],
+    better: [
+      "Motion in open air",
+      "Warmth",
+      "especially when sitting quietly in a dark room"
+    ],
+    highlights: [
+      "Pressive ache just over the eyes. Tension in occiput. Sticking headache, when near stove. Heaviness worse night and lying on a pillow.",
+      "Great weakness of digestion. Pressure, after eating. Sore pain in, with a sensation when eating as though' the morsels were forced through sore spots.",
+      "Fullness in. Strong palpitation, when lying on left side or renewed when thinking about it. Soreness in. Feeling as if something had fallen down within. Sore feeling about heart. violent palpitation.",
+      "Unhealthy. Burning, needle - like stitches here and there. Smarting and oozing of single spots.",
+      "Somnolency, day and night."
+    ]
+  },
+  "bismuthum-oxidum": {
+    remedyId: "bismuthum-oxidum",
+    latinName: "Bismuthum oxidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Afternoon",
+      "after eating",
+      "rest"
+    ],
+    better: [
+      "Motion",
+      "touch",
+      "washing",
+      "cold drinks"
+    ],
+    highlights: [
+      "Complete apathy. Morose discontent with continued complaining. Inconstancy. Solitude is intolerable.",
+      "Pressure in, after eating. Burning in.",
+      "Pinching, pressing, rumbling and urging to stool in.",
+      "Boring and burning in.",
+      "Great exhaustion and relaxation. Tearing pains which disappear during motion.",
+      "Eroding itching, worse by scratching."
+    ]
+  },
+  "borax": {
+    remedyId: "borax",
+    latinName: "Borax",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Washing in cold water",
+      "Mental exertion",
+      "noise",
+      "excitement",
+      "downward motion",
+      "bad or wet weather",
+      "eating fruit (apples"
+    ],
+    better: [
+      "Rubbing",
+      "After stool and urine",
+      "after eleven PM",
+      "smoking helps toothache",
+      "but may bring on diarrhoea"
+    ],
+    highlights: [
+      "Fear of downward motion. Frightened and starting at every noise. Timidity. Anxiety with sleepiness, increasing toward evening. Fretfulness with whining and crying.",
+      "Heat of, hot mouth and hot palms, with desire to uncover. Aching, with nausea and trembling of whole body at ten AM",
+      "Pain in region of, extending to sacrum, after heavy lifting or during menses.",
+      "Flatulent distension after every meal. Pinching in, with diarrhoea.",
+      "Does not heal. Earth - colored. Herpes on. Psoriasis."
+    ]
+  },
+  "bovista": {
+    remedyId: "bovista",
+    latinName: "Bovista",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Distraction. Awkwardness. Weak memory. Sadness, with restlessness. Easily offended: takes everything in bad part. Unusual candor and talkativeness.",
+      "Headache deep in brain, with feeling as if head were growing large. Ulcerative pain in. Nightly ache, worse raising up. Soreness of scalp.",
+      "Coldness, as if a lump of ice lay therein.",
+      "Ulcerative pain in. Cutting bellyache, worse during rest.",
+      "Palpitation with restlessness, qualmishness and headache.",
+      "Great weariness and powerlessness in joint. Deep impressions are made by instruments, i. e., from scissors on fingers."
+    ]
+  },
+  "bromium": {
+    remedyId: "bromium",
+    latinName: "Bromium",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Stooping"
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Depression and melancholy. Wailing and crying in a hoarse tone. Apprehensive, of seeing things in evening. Desire form mental labor.",
+      "Headache: In the heat of the sun, from drinking milk. Sensitive to cold air. Congestion to, and stiffness of muscles of neck. Left sided pains. Worse: Stooping.",
+      "Tympanitic distension of, with evolution of large quantities of gas. Eructations, and passage of much flatus.",
+      "Oppression of, with palpitation. Very sensitive to cold air.",
+      "Formication. Tickling in many parts. Yellow, Boils.",
+      "Yawning and sleepiness, with difficult breathing, with violent shivering."
+    ]
+  },
+  "caladium-seguinum": {
+    remedyId: "caladium-seguinum",
+    latinName: "Caladium seguinum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Apprehensiveness before going to sleep. Loud wailing and inconsiderate prattling, like a child. Great solicitude concerning everybody's else, as well as his own health.",
+      "Pressive headache on side on which he has been lying.",
+      "Burning in. Empty feeling in. Stitches in pit, whereby it is always drawn inward.",
+      "Burning in upper.",
+      "Hollowness and emptiness in, after expectoration.",
+      "Inclination to lie down and great aversion to motion. All symptoms are ameliorated by sweat and after a short sleep. (Nux-v.)."
+    ]
+  },
+  "calcarea-phosphorica": {
+    remedyId: "calcarea-phosphorica",
+    latinName: "Calcarea phosphorica",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Motion",
+      "stepping and exertion",
+      "Artificial light",
+      "or when other talk about it",
+      "Touch",
+      "After eating",
+      "cold drinks"
+    ],
+    better: [
+      "After eating",
+      "sneezing or applying cold water",
+      "Eructations",
+      "after passing flatus",
+      "stool and urine",
+      "lying",
+      "Rest"
+    ],
+    highlights: [
+      "Loss of memory. Stupid, slow comprehension. Confusion, with flatulency, washing in cold water. Violent screaming. Peevish, fretful, goes from place to places, likes to be alone.",
+      "Easy vomiting. In children, when hawking. Expanded feeling in. Burning and waterbrash. Infantile indigestion. Emptiness and sinking in, and in abdomen. Flabby. Loud eructations which alleviate the pains. Pains are better after food.",
+      "Milk, acid, Constriction, lying, getting up.",
+      "Dark - brown, yellowish. Red, with prickling like nettles after a bath.",
+      "Day sleepiness."
+    ]
+  },
+  "camphora": {
+    remedyId: "camphora",
+    latinName: "Camphora",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Motion",
+      "cold",
+      "fresh air"
+    ],
+    better: [
+      "Lying down",
+      "thinking of the pain"
+    ],
+    highlights: [
+      "Vanishing senses. Raving, Great fears. Hopeless dependency. Hurried manner. Madness.",
+      "Violent congestion to. constriction and throbbing in brain, especially in occiput. Meningitis from sunstroke. Convulsively drawn sideways and backward. Worse: Motion, cold, fresh air. Better: Lying down, thinking of the pain.",
+      "Burning in. Great sensitiveness of pit to touch, it causes him to scream aloud.",
+      "Burning heat in entire.",
+      "Audible palpitation after eating, Trembling of heart.",
+      "Erysipelatous Inflammations. Dry."
+    ]
+  },
+  "cannabis-indica": {
+    remedyId: "cannabis-indica",
+    latinName: "Cannabis indica",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Ideas seem to stand still. Too great rush of ideas. Sad, dejected mood. Takes everything to bad part. Cheerful, alternating with grave mania.",
+      "Violent congestion, with throbbing and agreeable warmth therein. Headache as of a stone lying on skull. Sensation of cold water dropping on scalp.",
+      "Ulcerative pain in, from touch disappearing after eating. Spasm of with a pale, sweaty face.",
+      "Bruised pain in. Throbbing from within outward in upper. Ascites.",
+      "Inflammation of lungs, with stitches low down in the left side of. Heart beat is felt too low down. Thrusts and blow in cardiac region. Cardiac inflammations. Anxious palpitations.",
+      "Great weakness after meals and after motion. Exhaustion after physical average. Debility after talking and writing. Tonic spasms, especially of trunk and upper limbs."
+    ]
+  },
+  "cantharis": {
+    remedyId: "cantharis",
+    latinName: "Cantharis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Morning and afternoon",
+      "talking",
+      "motion",
+      "standing and sitting",
+      "Better: Walking",
+      "lying quietly"
+    ],
+    better: [
+      "Walking",
+      "lying quietly"
+    ],
+    highlights: [
+      "Inflamed, with burning pain and sensitiveness to touch. Burning here and there, especially in upper, with yellow spots upon painful parts.",
+      "Burning and sticking in. Inflammation of.",
+      "Scabious, itching vesicles which burn when touched. Erysipelatous inflammations.",
+      "Great sleepiness in afternoon. Nightly sleeplessness."
+    ]
+  },
+  "capsicum-annuum": {
+    remedyId: "capsicum-annuum",
+    latinName: "Capsicum annuum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening: moving head or eyes",
+      "cold",
+      "walking",
+      "stooping"
+    ],
+    better: [
+      "Continuous gentle motion in open air",
+      "warmth",
+      "lying with head high"
+    ],
+    highlights: [
+      "Dullness of all senses. Awkwardness. Exceedingly changeable moods. Self will. Reproachful. Timidity. Inclination to be jocular and given to witticism. Homesickness, with red cheeks and sleepiness. Capricious, takes things in bad part.",
+      "Burning in, after eating. Swelling of pit.",
+      "Distension of, with pressive, tensive pain, which takes his breath. Flatulent colic.",
+      "Sleepless after midnight."
+    ]
+  },
+  "carbo-animalis": {
+    remedyId: "carbo-animalis",
+    latinName: "Carbo animalis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Moving head",
+      "after eating",
+      "early in morning",
+      "in cold",
+      "moist air",
+      "external pressure",
+      "touch"
+    ],
+    better: [
+      "After dinner",
+      "in warm",
+      "open air",
+      "in a warm room",
+      "at rest"
+    ],
+    highlights: [
+      "Liveliness as from overexcitement, alternating with peevish sadness Easily started, timidity. Anxiety in evening and fear in the dark. Homesickness with tearfulness.",
+      "Great weakness of digestion, almost all foods cause distress. Pressure in, even when fasting, and in evening when in bed. Grasping and clutching in. constrictive spasm of. Audible growling in.",
+      "As if shattered. Soreness in. Outward pressure in.",
+      "Ulcerative pain in, with suppuration of lungs. Cold feeling in. Sticking and constriction in. Rattling in. Palpitation. Erysipelatous inflammation of breasts of nursing women. Hard, painful nodes in female mammae.",
+      "Erysipelatous swelling with burning pains. Itching of entire body, in morning while in bed. Blue, over affected parts.",
+      "Full of vivid fancies with weeping, groaning and talking. Inability to go to sleep in evening, on account of restlessness, anxiety and frightful vision."
+    ]
+  },
+  "carbo-vegetabilis": {
+    remedyId: "carbo-vegetabilis",
+    latinName: "Carbo vegetabilis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Afternoon",
+      "after eating",
+      "Early on awaking",
+      "evening",
+      "becoming warm in bed",
+      "every chilling of",
+      "becoming heated: touch"
+    ],
+    better: [
+      "Uncovering",
+      "sitting quietly in a warm room",
+      "In a warm room"
+    ],
+    highlights: [
+      "Spasm in, with a sense of burning pressure, much flatulence and great sensitiveness of pit. Cramps in, after loss of vital fluids, i. e. in childbed.",
+      "Heat, with great inflation and tenseness of, from flatus. Pinching below navel, moving from left to right side, with paralytic sensation in right thigh. Bellyache from riding. Sticking in.",
+      "Constriction. rawness in. Whistling rattling of mucus in. Pressure. Burning and painful soreness in. Brownish spots on. Hydrothorax. Pulmonary phthisis. Inflammation of female mammae. Palpitation.",
+      "General itching on becoming warm in bed in evening. Burning in many spots on. Easily bleeding and offensive ulcers with burning pain and biting, ichorous pus.",
+      "Day sleepiness, especially in AM, disappearing during motion. Late falling to sleep and nightly sleeplessness on account of physical restlessness."
+    ]
+  },
+  "chelidonium-majus": {
+    remedyId: "chelidonium-majus",
+    latinName: "Chelidonium majus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Motion"
+    ],
+    better: [
+      "Rest"
+    ],
+    highlights: [
+      "Depression and sadness, even to weeping. Restlessness and solicitude concerning the present and future.",
+      "Coldness in occiput, rising from neck. Headache as if pressed asunder. Crawling in, and upon. Milk crust on. Right - sided pain with icteroid symptoms. Worse: Motion. Better: Rest.",
+      "Cutting in when yawning. Gnawing pain, disappearing after eating. Burning in.",
+      "Persistent cutting in intestines, immediately after eating. Spasmodic bellyache, with qualmishness and retraction of navel.",
+      "Paralysis of limbs. Cramplike pains here and there. Early in morning, on awaking and after eating, great weariness and laziness. Aversion to motion which becomes intolerable. Inclination to lie down after eating. A right sided remedy.",
+      "Old, putrid, spreading ulcers."
+    ]
+  },
+  "china": {
+    remedyId: "china",
+    latinName: "China",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Light touch",
+      "drafts",
+      "motion shaking head",
+      "moving eyes",
+      "steeping herd",
+      "walking in open air",
+      "night"
+    ],
+    better: [
+      "Head pressure",
+      "opening eyes",
+      "resting",
+      "lying",
+      "in room",
+      "rising"
+    ],
+    highlights: [
+      "Great pressure in, after eating or drinking. Spasms of, from weakness, after loss of vital fluids. Food eaten late at night is not digested at all. Milk easily disorders it. Throbbing or stitches in pit. Retching.",
+      "Great distension of, like tympanitis, better walking. Flatulent colic with tension and anxiety in upper, and with sensation as though' lowest intestines were constricted. Fullness in. Ascites.",
+      "Yellow. Relaxed, dry. Moist gangrene of external parts."
+    ]
+  },
+  "cicuta-virosa": {
+    remedyId: "cicuta-virosa",
+    latinName: "Cicuta virosa",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Motion and cold"
+    ],
+    better: [
+      "Rest",
+      "warmth"
+    ],
+    highlights: [
+      "Unilateral, stupefying ache, as from congestion of blood, disappearing when sitting erect. Consequences of concussion of brain.",
+      "Burning pressure in. Anxiety in pit.",
+      "Heat and burning in. Bellyache with convulsions, (from worms in children).",
+      "Burning in. Thrusting or sore pain on lower end of sternum.",
+      "Twitchings, especially in upper and lower limbs. Epileptiform convulsions and epileptic attacks. Tonic spasms. Convulsions in children with warm complaints. General weariness and exhaustion. Pains as from a thrust or blow in many parts of the body.",
+      "Burning, itching. Moist, purulent eruptions, with yellow, honey - colored crusts and burning pains only."
+    ]
+  },
+  "cina": {
+    remedyId: "cina",
+    latinName: "Cina",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Walking in open air",
+      "mental exertion"
+    ],
+    better: [
+      "Stooping",
+      "moving the head",
+      "sitting",
+      "lying"
+    ],
+    highlights: [
+      "Piteous complaining and howling. Peevishness: The child is insensible to caresses and rejects everything that is offered. Dread. Children resist being held. Whimpering and crying, especially when touched.",
+      "Pinching bellyache from worms. Painful twisting about navel. Distension of especially in children. Gurgling in.",
+      "Spasms of. Gurgling in. Seems too narrow. Burning, piercing and soreness in.",
+      "Nightly restlessness and sleeplessness. Yawning and shivering and trembling. Restless tossing about and sore at night in bed. Starting in."
+    ]
+  },
+  "clematis-erecta": {
+    remedyId: "clematis-erecta",
+    latinName: "Clematis erecta",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Smoking"
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Sadness, and fear of impending misfortunes. Morose discontent.",
+      "Boring pain in temples. Moist vesicles and excoriation on occiput.",
+      "Swelling, and induration, with twitching pain in inguinal glands.",
+      "Swelled and indurated mammae. Cancer of mammae.",
+      "Extraordinary emaciation. Flaccidity of all muscles. Twitching of muscles. Vibration though entire body after lying down.",
+      "Day sleepiness with nightly sleeplessness."
+    ]
+  },
+  "cocculus-indicus": {
+    remedyId: "cocculus-indicus",
+    latinName: "Cocculus indicus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "During and after meals",
+      "drinking",
+      "evening",
+      "carriage riding",
+      "cold or open air",
+      "after sleep",
+      "coffee"
+    ],
+    better: [
+      "In house",
+      "when quiet",
+      "warmth of bed"
+    ],
+    highlights: [
+      "Spasm in, during and immediately after eating, with intense clutching and squeezing. Fullness and pinching in, and in abdomen with oppression of breathing.",
+      "Constrictive pain in upper and lower. Sense of emptiness in. Hysterical abdominal spasms in women. Painful soreness in. Protruded and incarcerated inguinal hernia.",
+      "Sticking pain in. Spasmodic constriction of. Burning in, ascending into throat. Sense of emptiness in. Anxious palpitation. Trembling about heart.",
+      "Anaemic paleness of. Ulcers, very sensitiveness, on account of anxiety and bodily restlessness. Anxious dreams. Greatly refreshed by an undisturbed sleep. Feels much better at night than by day."
+    ]
+  },
+  "coffea-cruda": {
+    remedyId: "coffea-cruda",
+    latinName: "Coffea cruda",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Walking in open air",
+      "morning",
+      "after sleep"
+    ],
+    better: [
+      "In room",
+      "sitting quietly"
+    ],
+    highlights: [
+      "Spasm, as from overloading, can't bear tight clothing about pit",
+      "Spasmodic bellyache, which seems quite insufferable.",
+      "Eruptions, with extreme excitability and tearfulness.",
+      "Sleeplessness, on account of excessive mental and bodily activity."
+    ]
+  },
+  "colchicum-autumnale": {
+    remedyId: "colchicum-autumnale",
+    latinName: "Colchicum autumnale",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Mental exertion",
+      "noise"
+    ],
+    better: [
+      "Rest",
+      "lying"
+    ],
+    highlights: [
+      "Distraction and forgetfulness. Surly ill - humor. His sufferings seem intolerable. Slight pain or external causes and impressions put him quite beside himself.",
+      "Pressive pain in occiput excited by mental exertion. Tearing in scalp. Crawling on head and over forehead. Worse: Mental exertion, noise. Better: Rest, lying.",
+      "Sensitiveness of region, to touch. Burning or cold sensation in. Stitches in pit.",
+      "Distension of, with dragging pains. Burning or cold sensation in. Ascites, with a fold overhanging the pubic arch. (sep.)",
+      "Pressive tension in. Spasms in. Hydrothorax. Stitches in, during inspiration and when coughing. Violent palpitation.",
+      "Edematous swelling and anasarca. Suppressed transpiration."
+    ]
+  },
+  "colocynthis": {
+    remedyId: "colocynthis",
+    latinName: "Colocynthis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Night",
+      "in bed"
+    ],
+    better: [
+      "After rising",
+      "gentle motion in warm room"
+    ],
+    highlights: [
+      "Anxious depression with surliness and disinclination to talk. Anxiety and restlessness. Tearfulness. Inclination to concealed grief or vexation with indignation. Inclination to escape.",
+      "Pressure, with feeling of hunger.",
+      "Painful nodes in female mammae.",
+      "Itching over entire body, with great restlessness, especially in evening in bed, followed by sweat. Desquamation, over whole body."
+    ]
+  },
+  "conium-maculatum": {
+    remedyId: "conium-maculatum",
+    latinName: "Conium maculatum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Night",
+      "morning",
+      "fasting",
+      "early on awaking",
+      "touch",
+      "motion",
+      "turning eyes toward affected side"
+    ],
+    better: [
+      "Stooping",
+      "external pressure: lying closing eyes"
+    ],
+    highlights: [
+      "Constrictive spasm in. Sense of inflation of, and of upper abdomen, after drinking milk. Painful soreness of.",
+      "Painful soreness when walking on pavement. Induration of, from swelling of mesenteric glands. Hysterical uterine spasms.",
+      "Stitches in sternum and chest. Scirrhus of mammae, after blows or contusions. Inflammation of female mammae with stitching pain.",
+      "Sticking itching in. Nettle rash from violent bodily exertion. Death spots of old people. Old, moist tatters. Blackish ulcers, with bloody, fetid, ichorous discharge, especially from contusions. Pains in ulcers.",
+      "Sleepiness in daytime and early in evening, with forcible closure of eyelids. Sleeplessness with all complaints."
+    ]
+  },
+  "crocus-sativus": {
+    remedyId: "crocus-sativus",
+    latinName: "Crocus sativus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Great distraction and forgetfulness. Extraordinarily changeable mood. Mournfulness alternating with cheerfulness. Inclination to joke, laugh and sing. Gay insanity with buffoonery. Angry and flying into a passion, alternating with gentleness.",
+      "Sudden thrusts in forehead and temples. In evening by artificial light, pain in forehead with burning and pressure in eyes. Pulsating pain in one side of, extending into eyes.",
+      "Sensation, as something living, hopping and jumping about in, and in abdomen or chest.",
+      "Distension of. Sense of heaviness in lower, and pressing towards genitals.",
+      "Scarlet redness of entire body. Painful suppuration of bruised parts.",
+      "Persistent yawning and inclination to. Sleepiness after every meal. Drowsiness and somnolency."
+    ]
+  },
+  "cuprum-metallicum": {
+    remedyId: "cuprum-metallicum",
+    latinName: "Cuprum metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Pressive ache worse touch. Crawling sensation in vertex. Meningitis.",
+      "Pressure in pit, worse from touch Gnawing and corroding sensation in.",
+      "Intense abdominal pains with agony. Pressure as of a stone in, worse touch. Atrocious cramps, also in, worse touch. Atrocious cramps, also in stomach, with convulsions. Eroding sticking ulcers in.",
+      "Constriction. - Rattling of mucus in. Painful and spasmodic contraction of. After fright or anger and before menses, spasms of, which deprive him of speech and breath. Anxious palpitation.",
+      "Dry itch. Chronic ulcers.",
+      "Somnolency. Deep, with twitchings."
+    ]
+  },
+  "cyclamen-europaeum": {
+    remedyId: "cyclamen-europaeum",
+    latinName: "Cyclamen europaeum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Dullness of. Weak memory. Rapid alternation of cheerfulness and peevishness. Troubled conscience, as though he had not fulfilled his duty. Inclination to concealed, inward grief.",
+      "Stitches in temples, disappearing when touched. Fine, sharp, itching or tearing sticking in scalp, changing place when scratched. Eruption on head, painless to touch.",
+      "Fullness and pressure in pit, as from overloading.",
+      "Discomfort and nausea in. Flatulent colic.",
+      "Congestion to, with sensible palpitation.",
+      "Unendurable, sticking, itching, in evening in bed. Cracks on hands and feet. Frostbites. Offensive ulcers."
+    ]
+  },
+  "digitalis": {
+    remedyId: "digitalis",
+    latinName: "Digitalis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Standing",
+      "talking",
+      "shaking or bending it backward"
+    ],
+    better: [
+      "Inclining it forward"
+    ],
+    highlights: [
+      "Great anxiety, weeping and solicitude for the future. Sadness. Raving excitement, alternating with melancholy.",
+      "Sense of intense weakness, as though' he would die, immediately after eating. Cramp in, with nausea and vomiting, somewhat better eructations. Stitches extending from pit into sides and back.",
+      "Pinching Contraction in, as though intestines were twisted. Ascites.",
+      "Sense of weakness rising from stomach. Hydrothorax. Anxious, strong and audible palpitation, with contraction in sternum.",
+      "Corrosive itching, terminating in burning sticking when not scratched. Anasarca. Cyanosis. Jaundice.",
+      "Interrupted, at night Persistent day sleepiness, like sopor. Drowsiness during day, disturbed by attacks of vomiting."
+    ]
+  },
+  "dulcamara": {
+    remedyId: "dulcamara",
+    latinName: "Dulcamara",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening until midnight",
+      "lying still",
+      "becoming cold"
+    ],
+    better: [
+      "Talking",
+      "lying"
+    ],
+    highlights: [
+      "Delirium, during the pains at night and during the heat. Internal restlessness. Great impatience. Inclination to quarrel, with anger.",
+      "Bellyache after taking cold. Cutting about navel. Ascites.",
+      "Dull, thrust - like stitches in and upon both sides of. Hydrothorax. Herpes on mammae. Suppressed secretion of milk after taking cold in child. bed. Nocturnal palpitation of heart.",
+      "Restless, after midnight. Very early awaking."
+    ]
+  },
+  "euphorbium": {
+    remedyId: "euphorbium",
+    latinName: "Euphorbium",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Anxious solicitous disposition. Quiet earnestness with inclination to work.",
+      "Bruised sensation in occiput.",
+      "Burning like fire in. Spasmodic constriction in.",
+      "Empty feeling in, as after an emetic. Burning in. Spasmodic, flatulent colic with distensive pressure pains better resting upon elbows and knees.",
+      "Burning in. Stitches in left side of during rest, disappearing during motion. Sensation as though' the lobe (left) of lung were adherent.",
+      "Burning itching necessitating scratching. Old, indolent ulcers. Cold gangrene. Boils. Warts. Erysipelas bullossum."
+    ]
+  },
+  "euphrasia-officinalis": {
+    remedyId: "euphrasia-officinalis",
+    latinName: "Euphrasia officinalis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Indolent, hypochondriacal mood, without interest in surrounding objects. Introverted and silent, with aversion to talk. Low spirited.",
+      "Heaviness and dullness of. Toward evening, dazed, bruised ache, with fluent coryza. Sensible throbbing on external head. Aching as though it would burst, with dazzling of eyes from sunlight.",
+      "Short attacks of pinching in. Squeezing extending across. Abdominal pains, constantly alternating with eye symptoms.",
+      "Excessive yawning while walking in open air. Great day sleepiness. After midnight, from about 3 until 6 o'clock in the morning, he awakens every few minutes, then falls into a stupefying sleep, from which he awakens with many complaints."
+    ]
+  },
+  "ferrum-metallicum": {
+    remedyId: "ferrum-metallicum",
+    latinName: "Ferrum metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "After midnight and toward morning"
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Changeable mood. Anxiety as though' he had committed a crime. Quarrelsome, vehement and dogmatic. Excessively merry one evening, alternating with sadness and melancholy the next.",
+      "Congestion so violent the veins swell up. Hammering, throbbing ache, recurring periodically. Headache in occiput when coughing. Painfulness of scalp to touch, with falling of hair. Worse: After midnight and toward morning.",
+      "Spasmodic pressure in, after eating, especially after meat. Oppression of, each time after eating and drinking. Contraction in pit.",
+      "Hard, distended. Spasms in muscles of, as thought a. were contracted especially from the exertion of stooping, compelling him to straighten up slowly. Flatulent colic at night.",
+      "Constricting spasm of. Feeling of dryness in. (Lach.) Stitches in, when coughing. Pains, as though bruised, when coughing. Pressure superiorly on sternum.",
+      "Dirty, earth - colored. Anasarca."
+    ]
+  },
+  "fluoricum-acidum": {
+    remedyId: "fluoricum-acidum",
+    latinName: "Fluoricum acidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Alcoholic drinks",
+      "Walking",
+      "Standing",
+      "sitting",
+      "spirituous drinks"
+    ],
+    better: [
+      "Bending head back",
+      "Bending backward",
+      "Rest",
+      "From cold or cold washing",
+      "open air"
+    ],
+    highlights: [
+      "Gay and cheerful. Aversion to business, to his own family. Hatred of people. Anxiety, causing sweat to break out. Irritable. Forgetful. Feeling as if menaced by danger.",
+      "Excessive hunger, desire for something piquant. Speedy satiety. Aversion to coffee. Pressure in. Stale, disgusting eructations. Nausea.",
+      "Faint emptiness in region of navel with a desire to take a deep breath, better bandaging. Frequent excessively offensive discharges of wind, which better.",
+      "Mammae: Itching nipples, areola darkens and crust forms on.",
+      "Soreness. Jerking in.",
+      "Sleepiness: Sudden, periodical, unconquerable. Wakefulness in evening."
+    ]
+  },
+  "glonoin": {
+    remedyId: "glonoin",
+    latinName: "Glonoin",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Shaking head",
+      "Injury"
+    ],
+    better: [
+      "Open air",
+      "Coffee",
+      "sweat",
+      "after stool"
+    ],
+    highlights: [
+      "Familiar things seem strange. Confusion, he could not tell where he was. Difficult memory. Unconsciousness.",
+      "Gnawing, pain or faintness in pit. Emptiness in.",
+      "Rumbling in.",
+      "Dark blue. Rash on, after washing.",
+      "Sleepiness, with hot face and pallor. Dreams, causing weeping, ludicrous."
+    ]
+  },
+  "graphites": {
+    remedyId: "graphites",
+    latinName: "Graphites",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Early",
+      "on awaking and rising from bed",
+      "moving head",
+      "riding",
+      "eating",
+      "By day than by night",
+      "becoming cold"
+    ],
+    better: [
+      "Walking in open air",
+      "external pressure",
+      "at rest",
+      "in warmth",
+      "Warmth",
+      "after being in open air"
+    ],
+    highlights: [
+      "Great weakness of digestion. Spasms and pressure in, with nausea, better from warmth of bed. Burning in, necessitates eating.",
+      "Fullness and heaviness in. Indurations in. (Plb.) Painfulness in inguinal region, with swelling of glands. Distended after eating.",
+      "Stitches in and palpitation from the least motion. Inflamed and swelled mammae. Excoriated nipples with humid vesicles on.",
+      "Sense of dryness, and want of transpiration. Erysipelatous inflammations. Eruptions and humid herpes. Encysted tumors. Denuded, raw spots in children. Unhealthy. Ulcers with offensive pus and proud flesh. Thick, crippled nails.",
+      "Difficult falling to s., in evening Dizzy, fatiguing morning sleep. Disturbed by anxious, fearful dreams at night."
+    ]
+  },
+  "guaiacum": {
+    remedyId: "guaiacum",
+    latinName: "Guaiacum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Great forgetfulness, especially for names. Early in morning he frequently stares absently before him. Sadness and depression. Peevishness and perverseness. Inclination to find fault with and disparage everything.",
+      "Intensely violent stitches in brain. Tearing in side of, extending into cheek. Sensation as though' external head were swollen and blood vessels were overfilled.",
+      "Stitches in left, worse inspiration. Pleurodynia of tuberculosis."
+    ]
+  },
+  "helleborus-niger": {
+    remedyId: "helleborus-niger",
+    latinName: "Helleborus niger",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Thinking of the pain",
+      "steeping hard",
+      "stooping",
+      "waling",
+      "touch",
+      "motion",
+      "afternoon from 4 to 8"
+    ],
+    better: [
+      "open air",
+      "lying at rest",
+      "diverting attention"
+    ],
+    highlights: [
+      "Fullness and distension of pit of. Burning and biting in. Painfulness within, when stepping hard or coughing.",
+      "Distended. Pinching in navicular region. Ascites. Sense of coldness in.",
+      "Pale color of. Sudden, dropsical swelling of, (anasarcatous). Hair and nails fall out. Desquamation of epidermis of entire body. Painful where it lies in close proximity to bones.",
+      "He lies in deep slumber. Great day sleepiness. Somnolency, eyes half open and turned upward."
+    ]
+  },
+  "hepar-sulphuris-calcareum": {
+    remedyId: "hepar-sulphuris-calcareum",
+    latinName: "Hepar sulphuris calcareum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Early",
+      "on awaking",
+      "touch",
+      "night",
+      "cold",
+      "least motion",
+      "moving eyes"
+    ],
+    better: [
+      "After rising",
+      "tight bandaging",
+      "warmth",
+      "warm wraps",
+      "sweating"
+    ],
+    highlights: [
+      "Tearful mood and weeping. Extraordinary anguish in evening, driving him to self - destruction. Fearfulness and depression. Oversensitive and vehement with hasty speech.",
+      "Distension of pit necessitates loosening clothes. Tickling in pit. Pressure, after little food. Burning in Hypochondria. - Stitches in region of spleen or liver. Inflammation of kidneys.",
+      "Spasmodic contraction of Bruised pain in, early in morning. l Cutting bellyache. Swelling and suppuration of inguinal glands.",
+      "Day sleepiness, especially early in morning and evening, with spasmodic yawning. Restless, soporous slumber, with head thrown back. Stars up from sleep at night, as though' he could get no air."
+    ]
+  },
+  "hyoscyamus-niger": {
+    remedyId: "hyoscyamus-niger",
+    latinName: "Hyoscyamus niger",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening: after eating and drinking",
+      "becoming cold",
+      "walking",
+      "especially in cold air",
+      "Better: Stooping",
+      "in warmth",
+      "at rest"
+    ],
+    better: [
+      "Stooping",
+      "in warmth",
+      "at rest"
+    ],
+    highlights: [
+      "Great sensitiveness of pit to touch. Burning and inflammation of. Spasm of, vomiting.",
+      "Painful soreness in muscles when coughing. Painful distension.",
+      "Spasm of, with want of breath, necessitating leaning forward. Inflammation of lungs, with stitches in sides of. Soreness in muscles of.",
+      "Hot, dry, brittle. Brown or gangrenous spots on body, as in certain forms of typhus. Numerous, large boils. Bleeding ulcers.",
+      "Deep, stupefying, with snoring. Starting up during and convulsions, especially after fright. Laughing during Coma vigil. Sleeplessness from anxiety or over - excitement."
+    ]
+  },
+  "iodum": {
+    remedyId: "iodum",
+    latinName: "Iodum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Anxiety. Great excitement, irritability and sensitiveness. Low spirits and weeping, with ill - humor. Restlessness which renders sitting quietly or sleep impossible. Excessive loquacity and mirthfulness.",
+      "Congestion to, with throbbing therein. Aching as from a tight band about. Headache from warm air or a long drive noise and talking.",
+      "Pains in. Pressure after every meal. Burning and corrosive gnawing in. A single internal tremor, which radiates therefrom, with increased warmth.",
+      "Abdominal pains renewed after every meal. Enlarged a., it threatens suffocation when he assumes a wrong position. Swollen mesenteric glands. Labor - like cramps in. Scirrhous swelling of inguinal glands.",
+      "Burning, sticking tension in integuments of. Burning, itching and tickling in. Forcible palpitation increased to violence by every exertion. Flaccidity and dwindling of the female mammae.",
+      "Dirty, clammy, moist. Rough, dry. Anasarca."
+    ]
+  },
+  "kali-bichromicum": {
+    remedyId: "kali-bichromicum",
+    latinName: "Kali bichromicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Descending",
+      "Stopped nasal discharge",
+      "cold air",
+      "motion",
+      "stopping",
+      "at night",
+      "Damp weather"
+    ],
+    better: [
+      "Eating",
+      "After acid vomiting",
+      "Nosebleed",
+      "lying down",
+      "Warmth",
+      "In air",
+      "After eating"
+    ],
+    highlights: [
+      "Indifference. Disinclination to mental work, to business. Ill humor. Gloomy. Discouraged. Better: Eating.",
+      "Incessant, distressing yawning, with overpowering sleepiness, with gastric symptoms. Symptoms on falling to sleep. Nightmare, with arrested breathing. Unrefreshing. Worse after."
+    ]
+  },
+  "kali-carbonicum": {
+    remedyId: "kali-carbonicum",
+    latinName: "Kali carbonicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Stooping",
+      "moving it",
+      "eyes or lower jaw",
+      "Early in morning",
+      "in cold"
+    ],
+    better: [
+      "Warmth",
+      "raising up",
+      "In warmth"
+    ],
+    highlights: [
+      "Angry and irritable. Very easily frightened. Anxious fears. Reticent.",
+      "Congestion to with throbbing and roaring therein. Unilateral headache, with nausea. Pressive pain in occiput. Stitches in temples and forehead, Headache when driving. Worse: Stooping, moving it, eyes or lower jaw. Better: Warmth, raising up.",
+      "Fullness after eating. Tension straight across. Anxiety at, Spasm of, renewed after every meal. Stitches in pit and hypochondriac, which take away his breath.",
+      "Inactivity and coldness of, Great distension after eating. Emptiness. Stitches. Heaviness. Ascites. labor - like colic with pains in lumbar region. Stitches in inguinal region.",
+      "Spasm of, when coughing. Stitches in, with inflammation of lungs. (Ant-t.) Hydrothorax. Palpitation, with ebullition of blood early in morning. Suppuration of lungs and ulcerative phthisis. Emptiness in.",
+      "Burning (and sticking) itching of. Burning itching spots, exuding a moisture when scratched. Anasarca. Bluish frost - bites. Ulcers which bleed every evening."
+    ]
+  },
+  "kali-nitricum": {
+    remedyId: "kali-nitricum",
+    latinName: "Kali nitricum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Anxious restlessness. Faint - hearted, and fear of death.",
+      "Spasmodic, contractive, cramp like stomach - ache, especially after eating veal. Burning in. Pressure in pit.",
+      "Violent pains after eating veal.",
+      "Stitches as of needles in skin, especially of face then burning. Burning vesicles containing a yellowish fluid, which cease to burn after being scratched open. Sudden, dropsical swellings.",
+      "Day sleepiness. Stupefying. Restless, especially after midnight. Nightmare."
+    ]
+  },
+  "kreosotum": {
+    remedyId: "kreosotum",
+    latinName: "Kreosotum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Emotions",
+      "Looking at anything",
+      "Pressure of clothes",
+      "Motion",
+      "Lying down",
+      "Expiration",
+      "Stooping"
+    ],
+    better: [
+      "Bathing in hot water",
+      "Wiping",
+      "Eating warm things",
+      "Stooping",
+      "Walking",
+      "Pressure",
+      "with hand"
+    ],
+    highlights: [
+      "Peevish irritability. Vexed at every trifle. Cross, wilful and obstinate. Excited, before menses. Strong disposition to tears, sometimes with moroseness or melancholy. Weak memory, thoughts vanish.",
+      "Sensation of coldness, as from ice - water in, Gnawing, soreness or burning in epigastric region, better temporarily by eating. Worse: Pressure of clothes. Better: Eating warm things.",
+      "Feels all affairs. Tettery eruptions. Intense itching. Prurigo. Pustules. Nettlerash in morning. Pimply task on face. Blue spots. Dry. Offensive ulcers which break out and heal up repeatedly. Better: Warmth.",
+      "Yawning, with chilliness and watery eyes. Anxious dreams and sweat during. Laughs in her dreams. Great sleepiness and sound sleep."
+    ]
+  },
+  "lachesis": {
+    remedyId: "lachesis",
+    latinName: "Lachesis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Stooping",
+      "external pressure",
+      "rest",
+      "ascending steps",
+      "after rising from bed",
+      "in the sun"
+    ],
+    better: [
+      "Eating",
+      "lying",
+      "after sleep",
+      "warmth",
+      "eructations"
+    ],
+    highlights: [
+      "Pit painful to pressure. Spasm of. Alternate coldness and burning in.",
+      "Distension of. Heat in. Empty sensation in. Hypochondria feel bruised.",
+      "Burning on c., at night. Anxious palpitation. Soreness in, also of sternum.",
+      "Great emaciation. Relaxation and weariness in evening. Apoplexy. The complaints are intensified at night. Aversion to motion, with inclination to lie down. Bad effects of mental exertion, wine or tobacco.",
+      "Unhealthy. Itching, after scratching skin becomes thickened and large lumps appear. Spongy ulcers which burn when touched. Bluish, black vesicles upon hands and feet. Angry ulcers.",
+      "Sleepiness with loquacity in evening. Falls to sleep late in evening. Constant sleeplessness. Many frightful or lascivious dreams. Restlessness, with many dreams and frequent waking."
+    ]
+  },
+  "laurocerasus": {
+    remedyId: "laurocerasus",
+    latinName: "Laurocerasus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Afternoon",
+      "evening",
+      "in room",
+      "stooping"
+    ],
+    better: [
+      "In open air"
+    ],
+    highlights: [
+      "Condition similar to intoxication. Stupefaction. Loss of consciousness. Blunting and insensibility of perceptive powers. Weakness of mind and memory. sad and very low spirited. Anxiety, with fear of impending evil. Peevish.",
+      "Inflammation of. Cooling burning in. Faintish stomach - ache.",
+      "Cooling, burning in. Colicky contraction and cutting in. Griping about navel.",
+      "Constriction of. Sticking in, more in ribs. Pressure upon sternum. Irregular heart beat.",
+      "Between the fingers it is raw and exfoliates, water causes it to burn.",
+      "Irresistible somnolency, especially after dinner and in evening."
+    ]
+  },
+  "ledum-palustre": {
+    remedyId: "ledum-palustre",
+    latinName: "Ledum palustre",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Vehement, angry mood. Dissatisfaction and hatred of mankind. Love for solitude. Great seriousness. Chaotic dullness, with general heat.",
+      "Stupefying ache causing mental dullness. Raging, pulsating ache. Pressive ache which renders head coverings intolerable. shattering sensation in brain when making a misstep.",
+      "Pressure in, after eating a small quantity.",
+      "Sense of fullness in upper. Bellyache like that of dysentery. cutting colic every evening. Ascites.",
+      "Sore, burning pain in. Stitches in. Shattered feeling of. Suppuration of lungs. Chicken pox on chest.",
+      "Dry, want of natural perspiration. General anasarca. Dry herpes which itches violently and burns in open air. Boils. Bluish spots like petechia."
+    ]
+  },
+  "magnes-artificialis": {
+    remedyId: "magnes-artificialis",
+    latinName: "Magnes artificialis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Irascibility and proneness to fly into a passion. Irresolution. Over activity and hurry, with great exhaustion.",
+      "Bruised headache on first awaking in morning. Sharp pressure, as from a nail or sharp body upon a single spot on brain, after vexation. Painful soreness in head after vexation.",
+      "Pressure in, with restlessness and coldness of body. Creaking in pit.",
+      "Pressure, like a stones in upper.",
+      "Intolerable, burning stitches in lateral muscles of.",
+      "Intolerable, internal burning from head to foot, without external heat or redness. Twitchings and thrusts throw body. Bruised pain in joints, especially in side on which he does not lie. Asleep feeling in limbs, Great tendency to take cold."
+    ]
+  },
+  "magnesia-carbonica": {
+    remedyId: "magnesia-carbonica",
+    latinName: "Magnesia carbonica",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Cold"
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Anxiety and fearfulness, with trembling and heat. Peevishness in evening.",
+      "Congestion to. Pressive pain over entire head, with preoccupation during mental exertion. Stitches in side upon which he lies at night. Tension in occiput. Dandruff on scalp, itching during wet weather.",
+      "Spasm of. Pressive contraction in, with sour eructations.",
+      "Spasmodic colic in, with discharge of leucorrhoea, or during menses.",
+      "Constriction of. Soreness in.",
+      "Spreading vehicles on hands and fingers. Small, red, painless herpes, which afterward desquamate. Violent itching. Small boils. Dry."
+    ]
+  },
+  "magnesia-muriatica": {
+    remedyId: "magnesia-muriatica",
+    latinName: "Magnesia muriatica",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Early on awaking",
+      "lying down"
+    ],
+    better: [
+      "Wrapping head warmly",
+      "walking in open air"
+    ],
+    highlights: [
+      "Anxious tearful mood. Peevish, ill humor.",
+      "Ulcerative and bruised pain in, also sensitive to touch externally.",
+      "Constant, violent distension of, with constipation. Tearing in. Old, painful induration of right lower a. Hysterical uterine and abdominal spasms which extend into thighs and are followed by a discharge of leucorrhoea.",
+      "Stitches at heart, which arrest breathing. Palpitation when sitting, which disappears during motion. Constriction in cardiac region. Burning soreness in. Ulcerative pain in.",
+      "Great day sleepiness, with indolence and yawning. Nightly sleeplessness on account of heat, with restlessness and violent thirst. Late falling to. Frequent waking, from cough."
+    ]
+  },
+  "magnetis-polus-arcticus": {
+    remedyId: "magnetis-polus-arcticus",
+    latinName: "Magnetis polus arcticus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "After eating",
+      "in a warm room"
+    ],
+    better: [
+      "In open air"
+    ],
+    highlights: [
+      "Anxious, fainthearted, mild mood with chilliness. Anxious, uneasy scrupulosity. Fainthearted and want of courage. Tearful.",
+      "Bruised pain in, from looking up and moving eyes. Pressure, as though upon a bruised spot. Sensation within, like the movement of a pendulum, after ascending steps. Tension in scalp, as though it adhered too tightly.",
+      "Distended. Sensitiveness of upper a region. Pressure, as upon a bruised spot, here and there in. Inguinal hernia with outward boring pains.",
+      "Excitability and trembling, great restlessness in limbs and great nervous weakness. Weariness and bruised sensation in limbs, in open air. Heaviness of single limbs, with sensation of increased strength therein.",
+      "Great day sleepiness, like sopor. Stupefied sleep. Violent, spasmodic yawning, with pain in maxillary joints, as though they would be torn out. Toward morning sound, deep sleep."
+    ]
+  },
+  "magnetis-polus-australis": {
+    remedyId: "magnetis-polus-australis",
+    latinName: "Magnetis polus australis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Unsteadiness and instability, ideas cannot be properly fixed and objects hover only half observed before the senses. Disposition to start. Vehemence and irascibility. Harshness in word and deed.",
+      "Congestion to (without heat). Crawling in brain, root of nose and temples. Headache from mental exertion.",
+      "Pressure in, from mental exertion. Pain in, as though a bruised place were pressed upon.",
+      "Pressive pain in, with anxiety. Violent palpitation.",
+      "Sleepiness with inability to sleep before midnight."
+    ]
+  },
+  "manganum-aceticum": {
+    remedyId: "manganum-aceticum",
+    latinName: "Manganum aceticum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Quiet, introverted, peevishness.",
+      "Burning in, extending up into chest, with great restlessness.",
+      "Stitches shooting upwards and downwards in sternum and chest. Unpleasant warmth in. Thrusts from above downward in heart.",
+      "Excoriation and deep cracks in flexors of joints. Itching herpes. Skin does not heal easily.",
+      "Great drowsiness and fatigue at 8 o'clock in evening. Numerous, very vivid or distinctly remembered dreams."
+    ]
+  },
+  "marum": {
+    remedyId: "marum",
+    latinName: "Marum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Indolence, with indisposition to both mental and physical exertion. Greatly increased irritability after eating. Extraordinary excitability and sensitiveness. Irresistible inclination to sing.",
+      "Pressive pain in front, stooping.",
+      "Sense of emptiness with rumbling in. Anxious oppression in pit.",
+      "Cutting in bowels after drinking beer or water.",
+      "Tight feeling in (not connected with breathing). Accumulation of mucus, with a sense of dryness in air passages.",
+      "Nightly restlessness and sleeplessness from excitement, especially before midnight. Late falling to."
+    ]
+  },
+  "menyanthes": {
+    remedyId: "menyanthes",
+    latinName: "Menyanthes",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Anxiety about heart, as though some evil impeded. Sad weeping mood.",
+      "Constant heaviness. Pressive ache, external pressure with hand, after eating and when ascending steps. Headaches pressing together from sides.",
+      "Grumbling and sensation of emptiness in.",
+      "Cold feeling in. Painful soreness of external walls.",
+      "Pressing together from both sides of, with stitches, inspiration greatly, Stitches in cardiac region."
+    ]
+  },
+  "mercurius-corrosivus": {
+    remedyId: "mercurius-corrosivus",
+    latinName: "Mercurius corrosivus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Light",
+      "Night",
+      "Slightest external pressure",
+      "Slight pressure",
+      "Sensitive to touch",
+      "pressure and the air",
+      "Walking in open air aggravates many symptoms"
+    ],
+    better: [
+      "cold water",
+      "Passing flatus",
+      "Rest"
+    ],
+    highlights: [
+      "Great agitation with anxiety, inquietude and continued jactitation. Anxiety, during sleep. Low spirited. Ill humor. Weak intellect. Indecent exposure. Delirium and stupor. disconnected speech.",
+      "Confusion, emission of flatus. Congestion to, and to face, with burning cheeks. Pains: Violent, causing screaming, as if on fire, sticking, tearing in occiput, aching, drawing in pericranium, undulating, in brain. Falling of hair.",
+      "Best, Tumultuous, intermittent. Pulse uneven.",
+      "Formication in. Desquamative dermatitis. Shriveled. Dry, burning, hot and smarting. Great coldness of. Pustules. Itching, prickling, sticking in. Rapid ulcerations.",
+      "Continual insomnia. Somnolency, frequent yawning and stretching. Starting during or on falling to sleep. Frightful dreams. Coma."
+    ]
+  },
+  "mercurius-vivus": {
+    remedyId: "mercurius-vivus",
+    latinName: "Mercurius vivus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "becoming insufferable in warmth of bed at night",
+      "touch"
+    ],
+    better: [
+      "Sitting up",
+      "after rising from bed",
+      "at rest",
+      "in a warm room",
+      "laying hand on part",
+      "dry weather",
+      "rubbing"
+    ],
+    highlights: [
+      "Pressure in, with sensation as though hanging down heavily. After every meal.",
+      "Inflammation with distension of. Cutting and pinching in, after taking cold. Feeling of something alive in. (following inflammation of the mesenteric glands). Inflammatory swelling and suppuration of inguinal glands. Erysipelas encircling abdomen.",
+      "Spasms of. Stitches extending to back, coughing. Burning pain in, Soreness. Dry feeling in. Burning in. Inflammation of lungs Palpitation. Deformed, suppurating nipples. Bad breast milk. it is repugnant to infant.",
+      "Increased itching, from warmth of bed at night. So - called fatty itch. Dry, miliary eruption bleeding when scratched. Eruptions burn after scratching. Hot inflammations with tardy formation of pus. syphilitic ulcerations. Liver spots.",
+      "Late falling to sleep on account of anxiousness and restlessness. Prevented by frightful phantasies. Very light sleep. somnolency."
+    ]
+  },
+  "mezereum": {
+    remedyId: "mezereum",
+    latinName: "Mezereum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "cold",
+      "undressing",
+      "after lying down",
+      "touch",
+      "motion"
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Mental dullness. Frequent vanishing of thought. He seems intoxicated. Peevishness. Restlessness when alone, with desire for company. Hypochondriacal disposition, with low spirits and weeping.",
+      "Headache, with shivering and chilliness in open air. Unilateral numbing, pressive ache.",
+      "Burning in. Intense pressure in.",
+      "Burning in. Tense and hard. Tearing bellyache. Pains in spleen.",
+      "Stitches in, worse during inspiration. Painful tension of pectoral muscles. Sore pain and burning in bones of.",
+      "Nightly itching, with swelling after scratching, which is quickly followed by violent itching. Desquamation of, over entire body. Burning and sticking in inflamed ulcers. Ulcerations terminating in suppuration."
+    ]
+  },
+  "millefolium": {
+    remedyId: "millefolium",
+    latinName: "millefolium",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "moschus": {
+    remedyId: "moschus",
+    latinName: "Moschus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "moving head",
+      "in room",
+      "becoming cold"
+    ],
+    better: [
+      "Walking in open air",
+      "becoming warm"
+    ],
+    highlights: [
+      "Stupefying confusion of head. Hypochondriacal peevishness and anxiety. Anxiety and dread of death.",
+      "Violent congestion to. Stupefying compressive ache, especially in forehead, with qualmishness. Heaviness of. Tension in occiput extending into nape. Worse: Evening, moving head, in room, becoming cold. Better: Walking in open air, becoming warm.",
+      "Fullness and oppression in region. Pressure in pit extending thro' to back.",
+      "Anxious fullness and oppression in, with restlessness. Tension and pressure in, coming from stomach. Hysterical spasms in, and in uterus.",
+      "Cramp in. Spasmodic constriction of, without cough, especially when becoming cold. Painful under arms when pressed upon. Anxious palpitation.",
+      "Herpes, with unbearable burning."
+    ]
+  },
+  "murex-purpurea": {
+    remedyId: "murex-purpurea",
+    latinName: "murex purpurea",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "muriaticum-acidum": {
+    remedyId: "muriaticum-acidum",
+    latinName: "Muriaticum acidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Introverted and silent with anxious solicitude. Sadness. Inclined to anger.",
+      "Heaviness in occiput, with darkness before eyes. Aches, as though' brain were torn and shattered. Sticking ache. Headache from raising up in bed or moving eyes.",
+      "Empty sensation, also in oesophagus. Disagreeably sick sensation in.",
+      "Distension of. Spasms in, with pinching in navicular region, which extends to sides. Disagreeable sensation of emptiness and discomfort in.",
+      "Drawing tearing in extremities during rest, motion. Bruised pain in all joints. Debility so extraordinary, that upon sitting down the eyes immediately close. Great sensitiveness to wet weather.",
+      "Scurfy eruptions, itching, particularly when getting warm in bed. Painful, putrid ulcers which burn at their circumference. Boils, sticking when touched. Black small - pox."
+    ]
+  },
+  "mygale-lasiodora": {
+    remedyId: "mygale-lasiodora",
+    latinName: "mygale lasiodora",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "myrica-cerifera": {
+    remedyId: "myrica-cerifera",
+    latinName: "myrica cerifera",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "naja-tripudians": {
+    remedyId: "naja-tripudians",
+    latinName: "naja tripudians",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "nanthe-crocata": {
+    remedyId: "nanthe-crocata",
+    latinName: "œnanthe crocata",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "natrum-carbonicum": {
+    remedyId: "natrum-carbonicum",
+    latinName: "Natrum carbonicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Rest",
+      "in the sun",
+      "mental exertion",
+      "stormy weather"
+    ],
+    better: [
+      "Motion",
+      "in open air",
+      "rubbing",
+      "pressure"
+    ],
+    highlights: [
+      "Extraordinary weakness of digestion, which causes ill - humor and general discomfort after the slightest dietetic errors or even after every meal. Pressure in, after every meal. Sensitiveness of pit to touch.",
+      "Distension of. Colic, with retracted navel.",
+      "Constant chilliness in left side. Nightly, anxious palpitation when lying upon left side.",
+      "Dry, but on the slightest exertion it immediately sweats profusely. Herpes which enlarge and suppurate, in yellow rings. Ulcers, with swelling and inflammatory redness of affected parts.",
+      "Irresistible day sleepiness, but late falling to sleep in evening. Nightly restlessness. Twitching and jerking during. Many vivid dreams."
+    ]
+  },
+  "natrum-muriaticum": {
+    remedyId: "natrum-muriaticum",
+    latinName: "Natrum muriaticum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Awaking from sleep: early in morning: motion",
+      "cold air",
+      "anger",
+      "reading",
+      "writing",
+      "looking fixedly",
+      "mental exertion"
+    ],
+    better: [
+      "Sitting or lying quietly",
+      "especially with head high",
+      "open air",
+      "after sweat",
+      "Sitting up"
+    ],
+    highlights: [
+      "Pressure, as of a stone in, with qualmishness. Contractive spasm in, with qualmishness. Griping in pit. Sensitiveness of pit, which is swollen. Red spots on pit. Jerks and thrusts in pit.",
+      "Distension of. Hypochondriacal discomfort in. Daily cutting and pinching in. Pressure in. Jerks and thrusts in. Disagreeable feeling in.",
+      "Hives after violent exertion. Boils. Warts. Panaritia and hang - nails.",
+      "Insufficient and unrefreshing in morning. Full of vivid fancies. Day sleepiness. Nightly sleeplessness, with ineffectual desire for. Anxious dreams."
+    ]
+  },
+  "natrum-phosphoricum": {
+    remedyId: "natrum-phosphoricum",
+    latinName: "natrum phosphoricum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "natrum-sulfuricum": {
+    remedyId: "natrum-sulfuricum",
+    latinName: "natrum sulfuricum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "natrum-sulphuricum": {
+    remedyId: "natrum-sulphuricum",
+    latinName: "Natrum sulphuricum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Walking",
+      "during menses",
+      "exerting arms",
+      "periodically",
+      "after vomiting",
+      "Near fire",
+      "Lying on left side walking"
+    ],
+    better: [
+      "Rubbing",
+      "Cold air",
+      "tobacco smoke",
+      "Eating",
+      "Open air",
+      "motion better temporarily only",
+      "Stretching"
+    ],
+    highlights: [
+      "Depressed, irritable and taciturn Despair: of recovery. Passionate Sensitive. Music causes sadness.",
+      "Pressive pain in pit. Trembling in pit, with want of breath, feels faint. Burning and pinching in. Fullness, extending into chest, with difficult breathing. Breathing pain in. Better: Eating.",
+      "Trembling in, making her irritable. Pressure as of a load on. Sticking, as of a dull instrument. Itching about nipple. Heart: Anxiety at, with rapid beats, and dim vision, better in open air.",
+      "Vesicles on, during menses. Itching: On undressing, now here, now there. Gnawing and tearing in bones.",
+      "Restless at night violent headache awakes her. Starting up on falling to. Dreams, Of falling, terrifying, fighting, of flying, beautiful, heavy. Lazy and sleepy after breakfast."
+    ]
+  },
+  "nitricum-acidum": {
+    remedyId: "nitricum-acidum",
+    latinName: "Nitricum acidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "noise",
+      "and night",
+      "external pressure",
+      "lying thereon"
+    ],
+    better: [
+      "Riding is a carriage",
+      "lying",
+      "Cool air",
+      "during a carriage ride"
+    ],
+    highlights: [
+      "Pain in cardiac orifice when swelling solid food. Stitches in pit.",
+      "Pinching, cutting and sticking in. Ulcerative pain in. Colic from talking cold. Inguinal glands.",
+      "Congestion to, with heat and anxious palpitation Stitches thro', and in sides thereof. Excoriative pain in, when coughing and breathing. Dwindling of female mammae.",
+      "Black pores. From slight cold limbs are frostbitten, inflamed and itch. Painful frostbites. Brownish - red spots and dark freckles on. Large boils. Wounds and ulcers which stick like splinters, when touched. Mercurial ulcers.",
+      "Vertiginous day sleepiness. Late falling to. Restlessness at night and frequent awaking."
+    ]
+  },
+  "nux-moschata": {
+    remedyId: "nux-moschata",
+    latinName: "Nux moschata",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Uncovering",
+      "after eating",
+      "from cold",
+      "wet weather",
+      "Light especially artificial",
+      "Cold damp air",
+      "drawing in air"
+    ],
+    better: [
+      "Wrapping up head",
+      "external heat",
+      "Darkness",
+      "Before eating",
+      "Warmth and warm air",
+      "dry weather"
+    ],
+    highlights: [
+      "Fullness of, with oppressed breathing. Weakness, especially in the age. Better: Before eating.",
+      "Relaxed, with sense of heaviness in upper. Cutting in, with twisting about navel as from worms with sleepiness. Distended by flatus, which disturb his sleep. Wind colic.",
+      "Pressure, as of a load on. constriction. Palpitation.",
+      "Sensitive. cold, and dry, wanting in natural moisture. Extraordinarily sensitive to cold damp air. Very painful ulceration of.",
+      "Irresistible desire to. Stupefying somnolency, as from intoxication. Sleepiness accompanies almost every complaint, after eating. coma."
+    ]
+  },
+  "ocimum-canum": {
+    remedyId: "ocimum-canum",
+    latinName: "ocimum canum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "oleander": {
+    remedyId: "oleander",
+    latinName: "Oleander",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Stupefying, pressive ache in forehead. Extreme heaviness, lying.",
+      "Throbbing in pit, as after being greatly heated.",
+      "Sense of emptiness and coldness in upper, and in chest. Gnawing pain in umbilical region.",
+      "Sense of emptiness and coldness in. Dull stitches in left c., and in sternum, continuous during expiration and inspiration, but worst when taking a deep breath. Stitches in diaphragm. Anxious palpitation.",
+      "Very sensitive to rubbing, which quickly causes redness and excoriation. Biting itching, when undressing, after scratching it burns.",
+      "Frequent yawning followed by shuddering and trembling. Restlessness, voluptuous dreams and frequent waking."
+    ]
+  },
+  "oleum-animale": {
+    remedyId: "oleum-animale",
+    latinName: "oleum animale",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "oleum-jecoris-aselli": {
+    remedyId: "oleum-jecoris-aselli",
+    latinName: "oleum jecoris aselli",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "onosmodium-virginianum": {
+    remedyId: "onosmodium-virginianum",
+    latinName: "onosmodium virginianum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "opium": {
+    remedyId: "opium",
+    latinName: "Opium",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Moving eyes"
+    ],
+    better: [
+      "Motion",
+      "uncovering head"
+    ],
+    highlights: [
+      "Aching in forehead. Violent congestion to. Extraordinary heaviness of. Tremulous twitching of (and of arms and hands), intermingled with jerks, as if from over - active flexor muscles. Worse: Moving eyes. Better: Motion, uncovering head.",
+      "Heaviness and pressure in. Inactive digestive organs.",
+      "Hard, distended. Heaviness. as of a load in (Pul.) Lead colic. Incarcerated inguinal hernia.",
+      "Tension and constriction of.",
+      "Dry, burning beat of. Dropsical swelling of entire body. Redness and itching of. Blue spots on.",
+      "Stupefying. unrefreshing. Stupefying, with half open eyes and snoring breathing during inhalation or exhalation. After every attack. Somnolency, with dreams, from which cannot be aroused. Early in morning it is especially difficult to awaken him."
+    ]
+  },
+  "osmium-metallicum": {
+    remedyId: "osmium-metallicum",
+    latinName: "osmium metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "oxalicum-acidum": {
+    remedyId: "oxalicum-acidum",
+    latinName: "oxalicum acidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "paeonia-officinalis": {
+    remedyId: "paeonia-officinalis",
+    latinName: "paeonia officinalis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "palladium-metallicum": {
+    remedyId: "palladium-metallicum",
+    latinName: "palladium metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "pareira-brava": {
+    remedyId: "pareira-brava",
+    latinName: "pareira brava",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "paris-quadrifolia": {
+    remedyId: "paris-quadrifolia",
+    latinName: "Paris quadrifolia",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Loquacious mania. Extraordinary loquacity, he prattles incessantly, but talks in a polish, disconnected manner. Inclination to treat others with scorn and contempt. Inclination to anger.",
+      "Pressive ache, mental exertion. Stitches in. Headache from smoking. Tension of scalp of forehead and occiput. Painful soreness of vertex to touch. Scald head. Falling of hair.",
+      "Pressure as from a stone in. Boring and cutting in side of abdomen wherein he lies, in evening in bed.",
+      "Stitches in. Palpitation during motion and when at rest.",
+      "Sticking pains in buttocks and limbs. Cramp - like dragging in joints. When moving sensation as though joints were broken. Heaviness throughout entire body.",
+      "Painful soreness of the entire skin to touch. Crawling under skin without itching. Paronychia on fingers."
+    ]
+  },
+  "petroleum": {
+    remedyId: "petroleum",
+    latinName: "Petroleum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "From anger",
+      "morning",
+      "when heated"
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Indisposed to think. Weak memory. Irritable, angry disposition, with scolding. Frightened easily. Great irresolution and solicitude concerning the futures.",
+      "Throbbing in occiput. Pressive sticking in occiput. Sensation as though' everything inside were alive.",
+      "Pressure in. Very weak digestion. Pit sensitive to touch. Pain in pit, as though' something would be torn loose.",
+      "Cutting in, soon after eating.",
+      "Extra ordinary sensitiveness of epidermis. Heals with difficulty. Easy excoriation. Moist, denuded spots. Moist herpes. Ulcers with proud flesh. Boils, corns. Frostbites.",
+      "Sleepy during day and in evening when sitting still. At night full of phantasies, with anxious beat and many dreams. Insufficient and unrefreshing in morning."
+    ]
+  },
+  "phellandrium-aquaticum": {
+    remedyId: "phellandrium-aquaticum",
+    latinName: "phellandrium aquaticum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "phosphoricum-acidum": {
+    remedyId: "phosphoricum-acidum",
+    latinName: "Phosphoricum acidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Early in morning",
+      "As night",
+      "at rest",
+      "touch"
+    ],
+    better: [
+      "Motion"
+    ],
+    highlights: [
+      "Squeezing, pressive ache, especially in side lain on. Unusual heaviness of. Tearing in. Stitches over either (often the right) eye. Headache intensified by concussion or noise, as well as by mental exertion. Worse: Early in morning.",
+      "Pressure as of a load in, with sleepiness, especially after every meal, and when touching the epigastrium.",
+      "Squeezing or contractive pain about navel. Gurgling like water in. Distension. Ascites.",
+      "Squeezing pressure or burning in.",
+      "Scarlatinous eruption. Fine miliary eruption in aggregated clusters. Eruptions, with burning or excoriating pains. Itching or smarting ulcers. Boils. frost bites, Bony exostoses. Corns with burning and sticking.",
+      "Great somnolency. sleepiness early in evening. deep, sound sleep, can scarcely be aroused. Anxious dreams."
+    ]
+  },
+  "physostigma-venenosum": {
+    remedyId: "physostigma-venenosum",
+    latinName: "physostigma venenosum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "phytolacca-decandra": {
+    remedyId: "phytolacca-decandra",
+    latinName: "Phytolacca decandra",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Stopping down",
+      "looking down",
+      "stooping",
+      "From gaslight",
+      "Hot drinks",
+      "Morning",
+      "eating"
+    ],
+    better: [
+      "Eating",
+      "open air",
+      "Liquids",
+      "Afternoon",
+      "Elevating feet",
+      "Eating: warm",
+      "dry weather"
+    ],
+    highlights: [
+      "Loss of personal delicacy. Indisposition to mental exertion. Indifference. Half stupor.",
+      "Much flatus. Boring or burning griping about navel. Weakness in.",
+      "Shocks of pain in region of, then in right arm, worse walking. Constrictive feeling in precordia with pressure in temples. Pulse slow."
+    ]
+  },
+  "picricum-acidum": {
+    remedyId: "picricum-acidum",
+    latinName: "picricum acidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "plantago-major": {
+    remedyId: "plantago-major",
+    latinName: "plantago major",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "platina": {
+    remedyId: "platina",
+    latinName: "platina",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "platina-metallicum": {
+    remedyId: "platina-metallicum",
+    latinName: "Platina metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening: Stooping: sitting or lying at rest",
+      "in room"
+    ],
+    better: [
+      "Gentle motion in open air",
+      "rubbing"
+    ],
+    highlights: [
+      "Pressure, after eating. contractive pain in pit, as though' too tightly laced. Thrusts in pit.",
+      "Dull, thrusting pressure in. Tensive, crampy pains seemingly in external chest, increasing and decreasing gradually. Anxious palpitation.",
+      "Excoriative painful biting, or prickling burning here and there.",
+      "Spasmodic yawning, in afternoon. Lascivious dreams."
+    ]
+  },
+  "plumbum-metallicum": {
+    remedyId: "plumbum-metallicum",
+    latinName: "Plumbum metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Weakness of mind and memory. Delirium, with rage and wild looks. Insanity. Great anxiety and restlessness, with frequent sighing. Dejecting and melancholy. Ennui.",
+      "Congestion, with heat ascending in to head. Heaviness, especially in occiput. sticking ache. Hair very dry, it falls from beard and eyebrows.",
+      "Violent, constrictive spasm of. Violent pressure in. Sticking extending from pit into back.",
+      "Constriction. Stitches, in female mammae. Anxious palpitation.",
+      "Sensitive to open air. Yellowish or pale bluish color. Dark brown spots on body. Denuded spots. Acute decubitus. Burning ulcers. Cold gangrene.",
+      "Great drowsiness. Stupefying somnolency. Extraordinary day sleepiness. Nightly sleeplessness on account of spasmodic colic."
+    ]
+  },
+  "podophyllum-peltatum": {
+    remedyId: "podophyllum-peltatum",
+    latinName: "Podophyllum peltatum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Lying down",
+      "after eating",
+      "rising",
+      "Swallowing liquids",
+      "Motion",
+      "Eating",
+      "Lying on back: pressure of clothes"
+    ],
+    better: [
+      "Open air",
+      "cold bathing",
+      "Doubling up"
+    ],
+    highlights: [
+      "Depressed, Hypochondriac mood.",
+      "Splitting, dull throbbing or heaviness in occiput. Headache, with heat in vertex, alternating with diarrhoea, sharp pain, soreness over seat of pain, stunning. Worse: Lying down, after eating, rising. Better: Open air, cold bathing.",
+      "Burning like hot steam in. Spasmodic, wrenching pains, which extort screams with efforts to vomit, he constantly rubs it. Cold water causes oppression and uneasiness in. Heaviness in. Sickly feeling in. Worse: Motion.",
+      "Oppression, with desire to breathe deeply, hindered by a sense of constriction. Sense of suffocation on first lying down. Snapping like a thread breaking in right lung on deep inspiration.",
+      "Palpitation. Feeling as if it were mounting into throat.",
+      "Moaning in. Sleepy: In day time, in morning, with rumbling in bowels."
+    ]
+  },
+  "polygonum-sagittatum": {
+    remedyId: "polygonum-sagittatum",
+    latinName: "polygonum sagittatum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "prunus-spinosa": {
+    remedyId: "prunus-spinosa",
+    latinName: "prunus spinosa",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "psorinum": {
+    remedyId: "psorinum",
+    latinName: "Psorinum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Mental labor",
+      "Looking intently",
+      "Evening",
+      "touch",
+      "Eating frozen things",
+      "driving",
+      "Coughing"
+    ],
+    better: [
+      "Wrapping up: nose bleed",
+      "sweat",
+      "washing face",
+      "Eating",
+      "Fresh air",
+      "Stool",
+      "Holding arms away from chest"
+    ],
+    highlights: [
+      "Anxious, full of fear, very depressed, despairing, always thinking of dying. Irritable, easily angered. Every moral impression causes trembling. Persistence of one idea. Memory lost.",
+      "Bloated, oppressed. Crampy stitch, cutting or contracting pain in pit.",
+      "Pains, cutting, as with knives, as if tearing loose, pressing in small spots, ulcerative under sternum, excoriating, boring. Oppression as of a load, on inclining head forward when stooping. Worse: Coughing. Better: Holding arms away from chest.",
+      "Very sleepy in daytime. Gnashes teeth, which wakes her. Unrefreshing. Dreams of business, anxious."
+    ]
+  },
+  "pulsatilla": {
+    remedyId: "pulsatilla",
+    latinName: "pulsatilla",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "pyrogenium": {
+    remedyId: "pyrogenium",
+    latinName: "pyrogenium",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "radium-bromatum": {
+    remedyId: "radium-bromatum",
+    latinName: "radium bromatum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "rana-bufo": {
+    remedyId: "rana-bufo",
+    latinName: "rana bufo",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "ranunculus-bulbosus": {
+    remedyId: "ranunculus-bulbosus",
+    latinName: "Ranunculus bulbosus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Toward evening",
+      "going from a warm room into the cold",
+      "or the reverse"
+    ],
+    better: [
+      "Rising from bed",
+      "in an even temperature"
+    ],
+    highlights: [
+      "When reflecting his thoughts vanish. Dull senses. Irritable and quarrel some. Fear of ghosts in evening.",
+      "Burning in cardiac orifice. Pressure and excoriative pain in pit when touched.",
+      "Pinching bellyache alternating with pains in chest. Burning, excoriative pain in. Festering pain in intestines.",
+      "Blistery eruption like that of a burn. Burning, itching, dark blue vesicles in closely aggregated groups. Flat, burning, sticking ulcers, with corrosive ichor. Horny growths. Herpes.",
+      "Late falling to, in evening. Sleeplessness, as if from too great activity. Frequent awaking at night and difficult falling to sleep again."
+    ]
+  },
+  "ranunculus-sceleratus": {
+    remedyId: "ranunculus-sceleratus",
+    latinName: "Ranunculus sceleratus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Indolence and aversion to mental exertion, early in morning. Low - spirited and depressed mood in evening.",
+      "Gnawing ache in region of vertex or temples. The head feels distended and thick. Contraction of scalp. Biting itching on scalp.",
+      "- Sore burning immediately over pit. Pressing and sensation of fullness in pit, external pressure.",
+      "Sense of a plug behind navel in morning. Nightly, screwing pressure behind navel. Twitching in walls.",
+      "Periodically recurring bruised feeling in entire chest in evening. Stitches in. and in pectoral muscles. Gnawing. Sensitive, externally and sternum.",
+      "Eating. gnawing sensations. Boring and gnawing in various parts, especially in evening and before midnight. Convulsive twitchings in limbs. Fainting during the pains. Pains are toward evening, after midnight and then are replaced by sleeplessness."
+    ]
+  },
+  "ratanhia": {
+    remedyId: "ratanhia",
+    latinName: "ratanhia",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "rheum": {
+    remedyId: "rheum",
+    latinName: "Rheum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Morose, sluggishness and silent brooding. the child desires various things with weeping and vehemence. Restless and tearful. Fear of death.",
+      "Heaviness of, with heat rising therein. Beclouding, stupefying ache with puffed eyes. Throbbing ache.",
+      "Tension in region of. Fullness, as from overloading.",
+      "Tense and bloated. Violent cutting pain, especially in loins, they compel him to double up. Cutting in compel him to double up. Cutting in before and during stool. Welling up, gurgling sensation in abdominal muscles.",
+      "Cracking or gurgling, bubbling up as from small bubbles in chest muscles. Stitches in nipples, yellow, m bitter milk of nursing women.",
+      "Bubbling gurgling sensation, as from small bubbles in muscles and joints. All joints pain when moved. Asleep sensation in parts wherein he lies. Weakness and heaviness of entire body, as after waking from a deep sleep."
+    ]
+  },
+  "rheum-officinale": {
+    remedyId: "rheum-officinale",
+    latinName: "rheum officinale",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "rhododendron": {
+    remedyId: "rhododendron",
+    latinName: "Rhododendron",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Early in morning while lying quietly in bed",
+      "wine",
+      "cold wet weather",
+      "Before storms",
+      "stormy weather",
+      "during rest Better: Dry warmth warm wraps"
+    ],
+    better: [
+      "rising",
+      "during motion",
+      "Dry warmth warm wraps"
+    ],
+    highlights: [
+      "Morose, gloomy disposition. Great indifference. Great forgetfulness.",
+      "Nightly pressure in. Pressure, after drinking cold water. Pressure in pit, with oppressed breathing.",
+      "Distension of upper, with oppressed breathing.",
+      "Pressive pain in, with tight breathing. Strong congestion of blood to. Bruised pain in external.",
+      "Dropsical swellings.",
+      "Great day sleepiness, with burning in eyes. Before midnight, good, sound sleep, but after, sleeplessness with dry heat. Restlessness and frequent awaking toward morning."
+    ]
+  },
+  "rhododendron-chrysanthum": {
+    remedyId: "rhododendron-chrysanthum",
+    latinName: "rhododendron chrysanthum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "robinia-pseudo-acacia": {
+    remedyId: "robinia-pseudo-acacia",
+    latinName: "robinia pseudo-acacia",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "rumex-crispus": {
+    remedyId: "rumex-crispus",
+    latinName: "rumex crispus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "ruta-graveolens": {
+    remedyId: "ruta-graveolens",
+    latinName: "Ruta graveolens",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Rest",
+      "lying on painful part",
+      "cold",
+      "wet weather",
+      "In cold"
+    ],
+    better: [
+      "Motion"
+    ],
+    highlights: [
+      "Apprehensive anxiety. Dejected and melancholy in afternoon and evening. Low spirits and mental relaxation.",
+      "Great heat in, with anxious restlessness. Throbbing (or tearing) pain in forehead. Ache, as of a nail being driven in. Headache after excessive indulgence in spirituous liquors.",
+      "Gnawing sensation, from emptiness thereof, as if from hunger. Weak from vomiting. Pinching, after eating bread. Stomachache from uncooked or indigestible foods.",
+      "Eating and gnawing in navicular region. Bruised pain in loins when sitting after walking. Bellyache of children, caused by worms.",
+      "Erosive eating and gnawing in. Stitches in. Ulcerative phthisis following injuries. Anxious palpitation. A painful spot on sternum, which is sore when pressed.",
+      "Eating itching on. Easy excoriation from walking or riding, also in children. Inflamed ulcers. Anasarca. Warts."
+    ]
+  },
+  "sabadilla": {
+    remedyId: "sabadilla",
+    latinName: "Sabadilla",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Morning",
+      "mental exertion",
+      "sitting in room after walking in open air"
+    ],
+    better: [
+      "Pressure",
+      "lying",
+      "after eating"
+    ],
+    highlights: [
+      "Good humor and dullness of intellect, alternating with mental excitement and insensitive disposition. Sensory illusions over body. Anxious restlessness. Easily terrified by the least noise. Peevishness and anger. Imaginary diseases.",
+      "Burning or cold sensation in. Sore pain under pit when pressed",
+      "Burning or cold sensation in. Turning and twisting in (from worms). Sticking in. Cutting, like a knife, then bright yellow diarrhoea, in forenoon. Bellyache from lumbrici or tape worm. Red spots on.",
+      "Burning in. Sticking in, coughing and taking a deep breath, without fever or thirst. Pain from right shoulder into chest, as though' a band arrested the circulation. Wheezing in.",
+      "Parchment like dryness of. Violent needle - like stitches under. Red spots and stripes which are more pronounced during the cold stage.",
+      "Great day sleepiness, especially in forenoon."
+    ]
+  },
+  "sabadilla-officinarum": {
+    remedyId: "sabadilla-officinarum",
+    latinName: "sabadilla officinarum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "sabal-serrulata": {
+    remedyId: "sabal-serrulata",
+    latinName: "sabal serrulata",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "sabina": {
+    remedyId: "sabina",
+    latinName: "Sabina",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Hypochondriacal dejection. Low spirited and joyless, with a feeling of general exhaustion.",
+      "Distensive, pressing ache, especially in frontal eminences and right temple, appearing suddenly and decreasing slowly. Sticking ache.",
+      "Pressure in. Stitches extending from pit into back.",
+      "Extraordinary distension of. Bellyache, as from taking cold, with sensation as though' diarrhoea would ensue. Labor - like abdominal pains. Contractive pain in region of uterus. Urging toward genitals. Bruised pain in muscles.",
+      "Painless trembling and creaking sensation under sternum. Sensible swelling of mammae. Crawling in nipples.",
+      "Paralytic pain in joints after exertion. Tearing sticking in joints, with swelling thereof., Red, glistening swelling of affected parts. Jerking throbbing in arteries."
+    ]
+  },
+  "sambucus-nigra": {
+    remedyId: "sambucus-nigra",
+    latinName: "Sambucus nigra",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Periodical delirium, with frightful visions and hallucinations. Unspeakable anxiety, with trembling and restlessness. Extraordinary tendency to start. Continuous peevishness. Crying and weeping. Terror. Fright followed by suffocative attacks.",
+      "Pressive, stupefying ache, as from intoxication. Congestion to. The head is bent backwards.",
+      "Dull pressure in gastric region.",
+      "Pinching in, with discharge of much flatulence, after taking cold. Pressive pain in, with qualmishness, when leaning it against a sharp edge.",
+      "Pressure, as of a heavy load on, with suffocative anxiety. Constriction of sides. Pulmonary consumption, with profuse, exhausting sweat.",
+      "General trembling from anxiety and ebullition of blood. Dropsy. Consumption. Amelioration is felt when sitting up in bed. Most symptoms appear when resting the body and disappear during motion."
+    ]
+  },
+  "sanguinaria-canadensis": {
+    remedyId: "sanguinaria-canadensis",
+    latinName: "sanguinaria canadensis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "sanicula-aqua": {
+    remedyId: "sanicula-aqua",
+    latinName: "sanicula aqua",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "sarsaparilla": {
+    remedyId: "sarsaparilla",
+    latinName: "Sarsaparilla",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Mores peevishness with inclination to work. Frequent alternations of mood. The pains greatly affect his spirits and cause great depression.",
+      "Throbbing or sticking ache with nausea and sour vomiting. Vibrations, like the striking of a bell when talking. Sensitive scalp. Falling of hair.",
+      "Burning in, especially after eating bread. Loss of feeling in after eating, as though' he had eaten nothing at all.",
+      "Sensation of emptiness and rumbling in. Sticking in (left) side of. Burning or cold sensation in.",
+      "Dry, pimply eruption, which itches in warmth only Miliary rash as soon as he goes from a warm room into cold air. Ulcers (from the abuse of mercury) deep cracks in.",
+      "Nightly sleeplessness with frequent awaking. Frightful dreams."
+    ]
+  },
+  "scilla": {
+    remedyId: "scilla",
+    latinName: "Scilla",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Great mental anxiety with fear of death. Angry over trifles. Aversion to all mental and physical activity.",
+      "Pressive heaviness in early in, morning when awaking. Drawing headache (from r. to 1. side). Throbbing, when raising up. Sticking headache. Painful sensitiveness of upper part, early in morning.",
+      "Pressure as of a stone in.",
+      "Shattering in hypogastrium and feeling as if intestines were pressed out. Contractive pains in muscles of. Cutting, pinching, as from flatulence. Bellyache in, as from diarrhoea. Painfully sensitive in region of bladder. Distended. Thrusts in.",
+      "So-called fatty itch with burning itching. Excoriated, in bends of limbs. Cold gangrene.",
+      "Restless, with much tossing about in bed. Much yawning and stretching without sleepiness. Sleeplessness."
+    ]
+  },
+  "scilla-maritima": {
+    remedyId: "scilla-maritima",
+    latinName: "scilla maritima",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "secale-cornutum": {
+    remedyId: "secale-cornutum",
+    latinName: "Secale cornutum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Crawling feeling in. Dull pain in occiput. Profuse falling of hair.",
+      "Extraordinary pressure, as from a load, in. Great anxiety and burning in pit, but still greater sensitiveness thereof to touch. Gangrene of.",
+      "Burning or cold sensation in. Colic with convulsions. Pain in region of loins, as from false labor pains.",
+      "Spasmodic palpitation.",
+      "Wrinkled, discolored, dry, Numb and insensible. Desquamation of entire cuticle. Gangrenous blisters.",
+      "Somnolency. - Deep, stupefying."
+    ]
+  },
+  "selenium": {
+    remedyId: "selenium",
+    latinName: "Selenium",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Great debility and relaxation caused by mental labor extended far into the night. Extraordinary forgetfulness when awake, but a clear recollection when half asleep. Extraordinary loquacity and talkativeness.",
+      "Heat like a direly glow in single spots on body. Spots which have been scratched open remain humid a long times. Flat ulcers",
+      "Late falling to sleep in evening. Awakened by the least noise He always awakes at the same hour."
+    ]
+  },
+  "selenium-metallicum": {
+    remedyId: "selenium-metallicum",
+    latinName: "selenium metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "senecio-aureus": {
+    remedyId: "senecio-aureus",
+    latinName: "senecio aureus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "senega": {
+    remedyId: "senega",
+    latinName: "Senega",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Vacancy and dull confusion in head, with pressure in eyes and cloudy vision. Great anxiety, with quick breathing. Melancholic mood, easily irritated by offences. Cheerfulness, with great excitability, which turns to anger and rage. Hypochondriasis.",
+      "Burning. Spasmodic pressure.",
+      "Warmth and oppression in upper, during inspiration. Boring, digging pain in upper. Drawing, as from a foreign body n wall of.",
+      "Bites of poisonous animals. Anasarca.",
+      "Sound and at same time stupefying, in evening immediately upon lying down. Frequently awakened by chest difficulties, toward morning."
+    ]
+  },
+  "sepia-officinalis": {
+    remedyId: "sepia-officinalis",
+    latinName: "sepia officinalis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "solidago-virga-aurea": {
+    remedyId: "solidago-virga-aurea",
+    latinName: "solidago virga aurea",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "spigelia-anthelmia": {
+    remedyId: "spigelia-anthelmia",
+    latinName: "Spigelia anthelmia",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "Touch"
+    ],
+    better: [
+      "Rest",
+      "lying with head high",
+      "closing eyes",
+      "uncovering head",
+      "in room",
+      "laying hand on part",
+      "external pressure"
+    ],
+    highlights: [
+      "Difficult thinking and disinclination for mental exertion. Very weak memory. Restlessness, anxiety, and solicitude for the future. Dejection even mounting to self - destruction. Uneasiness.",
+      "Pit of, sensitive to touch. Pressure as of a hard lump in.",
+      "Pressure as of a hard lump in navicular region. Stitches in. Worm colic.",
+      "Pale and wrinkled on body.",
+      "Disturbed, at night, by physical restlessness. Unrefreshing, at night, followed by sleepiness early in morning."
+    ]
+  },
+  "spongia-tosta": {
+    remedyId: "spongia-tosta",
+    latinName: "Spongia tosta",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Sitting: entering a warm room after walking in open air",
+      "looking intently"
+    ],
+    better: [
+      "Lying horizontally",
+      "especially on back/"
+    ],
+    highlights: [
+      "Attacks of anxiety. Great tendency to be easily frightened. Obstinacy. Excessive mirth. Great inclination to hum and sing. Disposition to weep.",
+      "Intolerance of tight clothing about. Stitches in, from least pressure thereon, Feeling of laxness and as if stood open.",
+      "Drawing pains in lumbo - abdominal region, starting from small of back. Swelling of inguinal glands. Grumbling and granting in.",
+      "The slightest exertion causes violent congestion to, with obstructed breathing, anxiety and qualmishness. Constriction, with violent oppression of breathing. Burning and soreness in.",
+      "Dry, hot. Itching sticking, when becoming warm in bed. Herpes.",
+      "Reveries and phantasies on falling asleep."
+    ]
+  },
+  "stannum-metallicum": {
+    remedyId: "stannum-metallicum",
+    latinName: "Stannum metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Extraordinary restlessness and anxiety. Despondency. Quickly passing ebullitions of anger. Irritability, silent peevishness, anthropophobia and aversion to talk. Hopelessness.",
+      "Pressive, stupefying ache, moving about in forehead. Burning in forehead with qualmishness in pen air. Throbbing in temples,. Painful jerks through' forehead and occiput, leaving a dull pressure behind, from motion.",
+      "Violent pressure in, with painful soreness thereof to touch. Cramps, with bitter eructations, sensation of hunger therein and diarrhoea. Bruised pain in pit. Empty sensation in.",
+      "Spasmodic colic about navel. Hysterical spasms in. Empty or full feeling in. Sensitive to touch.",
+      "Tickling itching in. Piercing and soreness in. Stitches in I., when breathing or lying thereon. Sense of emptiness and weakness in. Ulcerative phthisis. Hydrothorax. Tension and painfulness throughout entire external c.",
+      "Day sleepiness. Late falling to sleep. Nightly restlessness with very many dreams."
+    ]
+  },
+  "staphisagria": {
+    remedyId: "staphisagria",
+    latinName: "Staphisagria",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Early",
+      "on awaking",
+      "motion",
+      "stooping",
+      "Becoming warm in bed",
+      "warm wraps",
+      "touch"
+    ],
+    better: [
+      "Reclining head",
+      "rest",
+      "warmth",
+      "after much yawning",
+      "after breakfast",
+      "After breakfast",
+      "reclining it upon something"
+    ],
+    highlights: [
+      "Constricting dyspnoea. Scratching, soreness or ulcerative pain, worse coughing. Great restlessness in. Spasms of diaphragm after anger. Tremulous palpitation from least motion or music.",
+      "Itching herpes which burns, after scratching, in evening. Dry, crusty herpes upon joints. Chronic miliary eruptions, with nightly twitchings. Unhealthy, diseased s. Incised wounds Gouty nodes on joints, on finger.",
+      "Violent yawning and stretching, with tears in eyes. Extraordinary day sleepiness. Sleepless before midnight. Anxious drams full of peril, after midnight."
+    ]
+  },
+  "staphysagria": {
+    remedyId: "staphysagria",
+    latinName: "staphysagria",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "sticta-pulmonaria": {
+    remedyId: "sticta-pulmonaria",
+    latinName: "sticta pulmonaria",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "stramonium": {
+    remedyId: "stramonium",
+    latinName: "Stramonium",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Touch"
+    ],
+    better: [
+      "Lying quietly"
+    ],
+    highlights: [
+      "Anxiety in pit with oppressed breathing.",
+      "Hard, tensely distended. Painful to motion and touch. Hysterical spasm of. Bellyache, as though' navel would be torn out, and diarrhoea.",
+      "Spasm of muscles. Too profuse secretion of milk in nursing women.",
+      "Effects of suppressed eruptions.",
+      "Frightful phantasies during stupefying somnolency with snoring. Awakes frightened."
+    ]
+  },
+  "strontium": {
+    remedyId: "strontium",
+    latinName: "Strontium",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "lying with head low",
+      "in cold"
+    ],
+    better: [
+      "In warmth",
+      "especially of sun"
+    ],
+    highlights: [
+      "Uneasiness and anxiety. Peevish and inclined to anger and vehemence.",
+      "Pressure in, which disappears after eating.",
+      "Sensation of fullness. Cutting in, with diarrhoea and chill. Pains in umbilical region.",
+      "Transfixion pain, as if in mediastinum. Pressive pain in. Drawing pain in muscles of right side of. Palpitation.",
+      "Itching, worse scratching. Tension of, in many parts of body, in evening.",
+      "Starting up and jerking of body when falling to s. Frequent awaking at night, especially from coughing"
+    ]
+  },
+  "strontium-carbonicum": {
+    remedyId: "strontium-carbonicum",
+    latinName: "strontium carbonicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "strophanthus-hispidus": {
+    remedyId: "strophanthus-hispidus",
+    latinName: "strophanthus hispidus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "sulfur-iodatum": {
+    remedyId: "sulfur-iodatum",
+    latinName: "sulfur iodatum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "sulfuricum-acidum": {
+    remedyId: "sulfuricum-acidum",
+    latinName: "sulfuricum acidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "sulphur": {
+    remedyId: "sulphur",
+    latinName: "Sulphur",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Open air",
+      "during stool",
+      "talking",
+      "early on awaking and in evening",
+      "stooping",
+      "after eating",
+      "Cold"
+    ],
+    better: [
+      "In warm room",
+      "at rest",
+      "external pressure",
+      "sitting",
+      "lying with head high",
+      "Motion",
+      "cool air"
+    ],
+    highlights: [
+      "Burning in. Contractive spasms of, after eating. Burrowing in pit. Sensitive pit. Pressure and stitches in.",
+      "Great day sleepiness, especially in afternoon and after sunset, with sleeplessness at night. Late falling to. Long but unrefreshing sleep, in morning. Nightly jerking and twitching in body during. Nightmare."
+    ]
+  },
+  "sulphuricum-acidum": {
+    remedyId: "sulphuricum-acidum",
+    latinName: "Sulphuricum acidum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Forenoon and evening",
+      "walking",
+      "in open air",
+      "standing",
+      "sitting"
+    ],
+    better: [
+      "sitting quietly in a warm room"
+    ],
+    highlights: [
+      "Peevishness. Seriousness alternating with too great hilarity. Great tearfulness. Restlessness and impatience. Great irritability.",
+      "Grasping in, every evening, as after taking cold. Sensitiveness of pit. Pressure in pit. Unless mixed with a little spirits every drink chills stomach.",
+      "Sense of warmth in umbilical region. Nightly cutting in. Labor - like pains extending into hips and small of back. Flatulent colic with a feeling as though' a hernia would appear. Violent protrusion of an inguinal hernia.",
+      "Stitches. Tight. Extraordinary sense of weakness in. Stitches in heart. Palpitation with or without anxiety.",
+      "Bluish spots, like extravasation of blood after contusions. Easy excoriation from walking or riding. Red, itching spots upon skin bone. Frost bites Eating.",
+      "He falls to sleep late and awakens early. Sleeplessness, as from activity."
+    ]
+  },
+  "sumbul": {
+    remedyId: "sumbul",
+    latinName: "sumbul",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "symphytum-officinale": {
+    remedyId: "symphytum-officinale",
+    latinName: "symphytum officinale",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "tabacum": {
+    remedyId: "tabacum",
+    latinName: "Tabacum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "When alone",
+      "opening eyes",
+      "Motion",
+      "worse hawking",
+      "Lying on left side",
+      "Extremes of heat and cold",
+      "stormy weather"
+    ],
+    better: [
+      "Bathing head in cold water",
+      "weeping",
+      "vomiting",
+      "In open air",
+      "Eating",
+      "Open air",
+      "sweating"
+    ],
+    highlights: [
+      "Cramp - like retraction of navel. Intestines contracted. Painfully sensitive. Violent convulsions, head retracted and contraction of abdominal muscles, excited by pressure on abdomen. Patient desires to uncover abdomen.",
+      "Slight wounds inflame intensely, burn and are long in healing. Itching blisters. Ecchymoses. Trembling, as if being torn. Itching like flea bites.",
+      "Stupefying, with profuse sweat."
+    ]
+  },
+  "taraxacum": {
+    remedyId: "taraxacum",
+    latinName: "Taraxacum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Irresolution. Despondency and discontent. Averse to work. Loquacity, with inclination to joke and laugh.",
+      "Pressive pains. Sensation of constriction or distension of brain. Tearing in occiput. Only when walking or standing is he sensible of headache.",
+      "Appetite: Aversion to tobacco smoke.",
+      "Sticking bellyache, especially in sides of. Sensation of bubbles bursting within.",
+      "Pressive pain in. Sticking in. Twitching in intercostal muscles.",
+      "Sleepiness and falling to sleep when listening to scientific discourses. Day sleepiness and yawning when sitting."
+    ]
+  },
+  "tarentula-cubensis": {
+    remedyId: "tarentula-cubensis",
+    latinName: "tarentula cubensis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "tarentula-hispanica": {
+    remedyId: "tarentula-hispanica",
+    latinName: "tarentula hispanica",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "tellurium-metallicum": {
+    remedyId: "tellurium-metallicum",
+    latinName: "tellurium metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "terebinthinum": {
+    remedyId: "terebinthinum",
+    latinName: "terebinthinum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "teucrium-marum": {
+    remedyId: "teucrium-marum",
+    latinName: "teucrium marum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "theridion-curassavicum": {
+    remedyId: "theridion-curassavicum",
+    latinName: "theridion curassavicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "thlaspi-bursa-pastoris": {
+    remedyId: "thlaspi-bursa-pastoris",
+    latinName: "thlaspi bursa pastoris",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "thyroidinum": {
+    remedyId: "thyroidinum",
+    latinName: "thyroidinum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "tilia-europaea": {
+    remedyId: "tilia-europaea",
+    latinName: "tilia europaea",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "trillium-pendulum": {
+    remedyId: "trillium-pendulum",
+    latinName: "trillium pendulum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "tuberculinum": {
+    remedyId: "tuberculinum",
+    latinName: "tuberculinum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "urtica-urens": {
+    remedyId: "urtica-urens",
+    latinName: "urtica urens",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "ustilago-maidis": {
+    remedyId: "ustilago-maidis",
+    latinName: "ustilago maidis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "valeriana": {
+    remedyId: "valeriana",
+    latinName: "Valeriana",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Evening",
+      "open air",
+      "during rest"
+    ],
+    better: [
+      "Motion change of position",
+      "in the room"
+    ],
+    highlights: [
+      "Great weakness of digestion. Instantaneous pressure ascending from abdomen into pit of.",
+      "Hard, distended. Suppurative pain, in evening. Worm colic Bruised pain in. Hysterical colic (also after suppressed menses). Pain, as from over-lifting, in the left loin. Bloated feeling, with inclination to draw it in.",
+      "Sudden jerks and twitching stitches, with a feeling of outward pressure.",
+      "Sleeplessness, with great restlessness and tossing about."
+    ]
+  },
+  "valeriana-officinalis": {
+    remedyId: "valeriana-officinalis",
+    latinName: "valeriana officinalis",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "variolinum": {
+    remedyId: "variolinum",
+    latinName: "variolinum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "veratrum-album": {
+    remedyId: "veratrum-album",
+    latinName: "Veratrum album",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "Rising from bed",
+      "motion"
+    ],
+    better: [
+      "External pressure",
+      "bending head backward",
+      "at rest"
+    ],
+    highlights: [
+      "Great sensitiveness of pit, as though' ulcerated internally. Burning in.",
+      "Distension, with pressing pains and anxiety. Diarrhoea with cutting as from knives in. painful contraction when vomiting. Very sensitive to touch. Burning and cutting in. Sticking in groins. Protrusion of hernia.",
+      "Fullness in. Bruised feeling in. Stitches in sides of. Violent, visible, anxious palpitation with obstructed breathing.",
+      "Cold and bluish or violent color of, Loss of elasticity of, it remains in the position into which it has been drawn. Thickened, desquamating spots on. Dry, m itch - like eruptions.",
+      "Coma vigil with partial consciousness. Stupefying somnolency. Nightly anxiety and sleeplessness."
+    ]
+  },
+  "veratrum-viride": {
+    remedyId: "veratrum-viride",
+    latinName: "veratrum viride",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "verbascum": {
+    remedyId: "verbascum",
+    latinName: "Verbascum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "External pressure",
+      "going from a warm into cold place or the reverse"
+    ],
+    better: [
+      "Deep breathing"
+    ],
+    highlights: [
+      "Great distraction. Constant rush of thoughts, phantasies and voluptuous imagery. Angry and peevish with desire for work and company. Unusual cheerfulness. Great cowardice.",
+      "Appetite: Hunger without appetite. Much thirst.",
+      "Pressing pain on navel, worse bending forward. Constriction and piercing pain in umbilical region. Sticking bellyache. Tearing loose pain in umbilical region.",
+      "Constriction in. Pressure on. Benumbing, periodical stitches in. Tension over chest with stitches in cardiac region, in evening after lying down Catarrhal affections. Sticking or cutting pains at cartilages of ribs. Better: Deep breathing.",
+      "Sticking pains in limbs. Cramp-like pressure in limbs. Pins are mostly associated with a feeling of numbness. The symptoms are excited and intensified by changes of temperature, namely, when going from open air into room and vice versa.",
+      "Great sleepiness after eating. Early waking toward 4 o'clock."
+    ]
+  },
+  "verbascum-thapsus": {
+    remedyId: "verbascum-thapsus",
+    latinName: "verbascum thapsus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "viburnum-opulus": {
+    remedyId: "viburnum-opulus",
+    latinName: "viburnum opulus",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "vinca-minor": {
+    remedyId: "vinca-minor",
+    latinName: "vinca minor",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "viola-odorata": {
+    remedyId: "viola-odorata",
+    latinName: "Viola odorata",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Violent congestion to head with pricking in forehead. Heaviness and sinking down of head. Tension in scalp of forehead and occiput, which spreads over upper part of face."
+    ]
+  },
+  "viola-tricolor": {
+    remedyId: "viola-tricolor",
+    latinName: "Viola tricolor",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+      "Heaviness of, when raising up, which disappears when stooping. Outward pressing pain in. Buzzing in forehead when sitting still. Burning sticking in scalp, especially in forehead and temples.",
+      "Sticking and cutting in, with urging to stool, howling and screaming. Sticking in walls of, and in public region.",
+      "Stitches about ribs, sternum and intercostal muscles. Anxiety about heart, with pounding like the striking of waves, when lying down.",
+      "Sticking pains in limbs and joints. Sleepy relaxation of entire body.",
+      "Sticking biting miliary eruption. Dry scurfs over entire body, exuding a yellow wear when scratched.",
+      "Late falling to sleep on account of rush of ideas. Frequent awaking, as from activity. The child's hands twitch during sleep, wit flexed thumbs, general dry heat and a red face."
+    ]
+  },
+  "vipera-torva": {
+    remedyId: "vipera-torva",
+    latinName: "vipera torva",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "viscum-album": {
+    remedyId: "viscum-album",
+    latinName: "viscum album",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "xanthoxylum-fraxineum": {
+    remedyId: "xanthoxylum-fraxineum",
+    latinName: "xanthoxylum fraxineum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "zincum-arsenicicum": {
+    remedyId: "zincum-arsenicicum",
+    latinName: "zincum arsenicicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "zincum-chromatum": {
+    remedyId: "zincum-chromatum",
+    latinName: "zincum chromatum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "zincum-iodatum": {
+    remedyId: "zincum-iodatum",
+    latinName: "zincum iodatum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+
+    ],
+    better: [
+
+    ],
+    highlights: [
+
+    ]
+  },
+  "zincum-metallicum": {
+    remedyId: "zincum-metallicum",
+    latinName: "Zincum metallicum",
+    region: "Allgemeine Gewebs- und Organaffinität nach Boger.",
+    worse: [
+      "In early morning",
+      "after eating after dinner",
+      "becoming heated",
+      "indoors",
+      "after walking in open air",
+      "laughing",
+      "towards evening"
+    ],
+    better: [
+      "Walking in open air",
+      "from cold water",
+      "Fasting",
+      "when eating",
+      "rubbing",
+      "scratching",
+      "often suddenly ceases when touched"
+    ],
+    highlights: [
+      "Burning and soreness in. Disagreeable warmth at cardiac orifice orifice and up oesophagus.",
+      "Spasmodic colic about navel. Tension in distended abdomen, with rumbling. Inguinal hernia.",
+      "Burning and soreness in Accumulation of mucus in. Stitches in left side of Spasm of. Roughness and dryness in. Feeling of coldness in. Emptiness in. Heaviness and bursting pain in. Suppressed secretion of milk in lying - in women. Palpitation.",
+      "Violent, sticking itching, especially in evening in bed disappearing instantly from touch. Suppurating herpes. Cracked. Bony exostoses. Varicose veins.",
+      "Continuous desire to. Broken, at night, disturbed by fanciful dreams. Sleepiness with constant yawning."
+    ]
+  }
+};
+
+const BOGER_REMEDY_ALIASES: Record<string, string> = {
+  'acidum-nitricum': 'nitricum-acidum',
+  'nitricum-acidum': 'nitricum-acidum',
+  'acidum-phosphoricum': 'phosphoricum-acidum',
+  'phosphoricum-acidum': 'phosphoricum-acidum',
+  'nit-ac': 'nitricum-acidum',
+  'phos-ac': 'phosphoricum-acidum'
+};
+
+/**
+ * Helper to retrieve Boger Synoptic Key entry by remedy ID
+ */
+export function getBogerSynopticEntry(remedyId: string): BogerSynopticEntry | null {
+  if (!remedyId) return null;
+  const cleanId = remedyId.toLowerCase().trim();
+  const resolvedId = BOGER_REMEDY_ALIASES[cleanId] || cleanId;
+  
+  if (BOGER_SYNOPTIC_KEY_DATA[resolvedId]) {
+    return BOGER_SYNOPTIC_KEY_DATA[resolvedId];
+  }
+
+  if (BOGER_SYNOPTIC_KEY_DATA[cleanId]) {
+    return BOGER_SYNOPTIC_KEY_DATA[cleanId];
+  }
+
+  // Fallback match by matching substring (e.g. 'arnica' in 'arnica-montana')
+  for (const [key, entry] of Object.entries(BOGER_SYNOPTIC_KEY_DATA)) {
+    if (resolvedId.includes(key) || key.includes(resolvedId) || cleanId.includes(key) || key.includes(cleanId)) {
+      return entry;
+    }
+  }
+
+  return null;
+}

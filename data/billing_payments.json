@@ -1,0 +1,89 @@
+[
+  {
+    "therapistId": "th-101",
+    "therapistName": "th-101",
+    "amountEur": 20,
+    "type": "manual_reload",
+    "status": "succeeded",
+    "stripeSessionId": "cs_sandbox_topup123",
+    "note": "Sandbox-Zahlung bestätigt: +20.00 €",
+    "id": "pay-1788956406595-93754",
+    "createdAt": "2026-09-09T12:20:06.595Z",
+    "month": "2026-09"
+  },
+  {
+    "therapistId": "th-101",
+    "therapistName": "th-101",
+    "amountEur": 59,
+    "type": "package_purchase",
+    "status": "succeeded",
+    "stripeSessionId": "cs_sandbox_test123",
+    "note": "Tarif-Upgrade bestätigt: 59.00 €",
+    "id": "pay-1788956396804-8w5ft",
+    "createdAt": "2026-09-09T12:19:56.804Z",
+    "month": "2026-09"
+  },
+  {
+    "therapistId": "th-101",
+    "therapistName": "Therapeut",
+    "amountEur": 25,
+    "type": "manual_reload",
+    "status": "succeeded",
+    "stripeSessionId": "cs_sandbox_1788950063088",
+    "note": "Sandbox-Testbuchung: +25.00 €",
+    "id": "pay-1788950063088-glxba",
+    "createdAt": "2026-09-09T10:34:23.088Z",
+    "month": "2026-09"
+  },
+  {
+    "therapistId": "th-101",
+    "therapistName": "Therapeut",
+    "amountEur": 20,
+    "type": "manual_reload",
+    "status": "succeeded",
+    "stripeSessionId": "cs_sandbox_1788949889801",
+    "note": "Sandbox-Testbuchung: +20.00 €",
+    "id": "pay-1788949889801-hd2q5",
+    "createdAt": "2026-09-09T10:31:29.801Z",
+    "month": "2026-09"
+  },
+  {
+    "id": "pay-seed-1",
+    "therapistId": "th-101",
+    "therapistName": "Katharina Lindemann",
+    "therapistEmail": "k.lindemann@naturheilpraxis-berlin.de",
+    "amountEur": 50,
+    "type": "initial_deposit",
+    "status": "succeeded",
+    "stripeSessionId": "cs_test_initial_th101",
+    "createdAt": "2026-09-01T10:00:00Z",
+    "month": "2026-09",
+    "note": "Initiales Token-Guthaben Praxis-Paket"
+  },
+  {
+    "id": "pay-seed-2",
+    "therapistId": "th-102",
+    "therapistName": "Dr. med. Markus Vogel",
+    "therapistEmail": "praxis@dr-vogel-muenchen.de",
+    "amountEur": 20,
+    "type": "initial_deposit",
+    "status": "succeeded",
+    "stripeSessionId": "cs_test_initial_th102",
+    "createdAt": "2026-08-15T14:30:00Z",
+    "month": "2026-08",
+    "note": "Startguthaben-Einzahlung"
+  },
+  {
+    "id": "pay-seed-3",
+    "therapistId": "th-103",
+    "therapistName": "Sophie Brunner",
+    "therapistEmail": "sophie.brunner@homoeopathie-zuerich.ch",
+    "amountEur": 100,
+    "type": "initial_deposit",
+    "status": "succeeded",
+    "stripeSessionId": "cs_test_initial_th103",
+    "createdAt": "2026-09-02T08:15:00Z",
+    "month": "2026-09",
+    "note": "Premium Start-Guthaben"
+  }
+]

@@ -1,0 +1,19 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Disable MultiViews to prevent directory confusion
+    Options -MultiViews
+
+    # 1. API Route rewriting: Pass all /api/* requests to api/index.php?route=*
+    RewriteCond %{REQUEST_URI} ^/api/
+    RewriteRule ^api/(.*)$ api/index.php?route=$1 [QSA,L]
+
+    # 2. SPA client-side fallback: serve index.html for any route that is not an existing file or directory
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# Character encoding
+AddDefaultCharset UTF-8

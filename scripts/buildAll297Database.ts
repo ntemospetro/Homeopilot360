@@ -1,0 +1,105 @@
+import fs from 'fs';
+import path from 'path';
+import { RawRemedy, buildEntry } from './buildRemedyUtils';
+
+// Import existing parts as base if available
+import { REMEDIES_PART1_A } from './remediesPart1';
+import { REMEDIES_PART2_BC } from './remediesPart2';
+import { REMEDIES_PART3_DEFG } from './remediesPart3';
+import { REMEDIES_PART4_HIJ } from './remediesPart4';
+import { REMEDIES_PART5_KL } from './remediesPart5';
+import { REMEDIES_PART6_MN } from './remediesPart6';
+import { REMEDIES_PART7_OPQ } from './remediesPart7';
+import { REMEDIES_PART8_RS } from './remediesPart8';
+import { REMEDIES_PART9_TUVWXYZ } from './remediesPart9';
+
+// Load existing remedies into a lookup map
+const existingMap = new Map<string, RawRemedy>();
+const existingList = [
+  ...REMEDIES_PART1_A,
+  ...REMEDIES_PART2_BC,
+  ...REMEDIES_PART3_DEFG,
+  ...REMEDIES_PART4_HIJ,
+  ...REMEDIES_PART5_KL,
+  ...REMEDIES_PART6_MN,
+  ...REMEDIES_PART7_OPQ,
+  ...REMEDIES_PART8_RS,
+  ...REMEDIES_PART9_TUVWXYZ
+];
+
+for (const r of existingList) {
+  existingMap.set(r.latinName.toLowerCase(), r);
+  existingMap.set(r.id.toLowerCase(), r);
+}
+
+// Complete list of all 297 requested remedies
+export const USER_REMEDIES_NAMES = [
+  "Abies canadensis", "Abies nigra", "Abrotanum", "Absinthium", "Acalypha indica",
+  "Acidum aceticum", "Acidum benzoicum", "Acidum formicicum", "Acidum hydrofluoricum", "Acidum lacticum",
+  "Acidum nitricum", "Acidum phosphoricum", "Acidum picrinicum", "Acidum salicylicum", "Acidum sulfuricum",
+  "Aconitum", "Actaea spicata", "Adonis vernalis", "Aesculus", "Aethusa",
+  "Agaricus muscarius", "Agnus castus", "Ailanthus", "Aletris farinosa", "Alfalfa",
+  "Allium cepa", "Allium sativum", "Allium ursinum", "Aloe", "Alumina",
+  "Ambra", "Ammi visnaga", "Ammonium bromatum", "Ammonium carbonicum", "Ammonium chloratum",
+  "Anacardium", "Angelica archangelica", "Antimonium crudum", "Antimonium sulfuratum aurantiacum", "Antimonium tartaricum",
+  "Apis mellifica", "Apocynum", "Apomorphinum hydrochloricum", "Aralia racemosa", "Aranea diadema",
+  "Argentum metallicum", "Argentum nitricum", "Aristolochia", "Arnica", "Arsenicum album",
+  "Arsenicum jodatum", "Arum triphyllum", "Arundo", "Asa foetida", "Asarum europaeum",
+  "Atropinum sulfuricum", "Aurum metallicum", "Avena sativa",
+  "Badiaga", "Baptisia", "Barium carbonicum", "Barium chloratum", "Barium jodatum",
+  "Belladonna", "Bellis perennis", "Berberis", "Bismutum subnitricum", "Borax",
+  "Bovista", "Bromum", "Bryonia", "Bufo",
+  "Cactus", "Cadmium sulfuricum", "Caladium", "Calcium carbonicum", "Calcium fluoratum",
+  "Calcium jodatum", "Calcium phosphoricum", "Calcium sulfuricum", "Calendula", "Camphora",
+  "Cantharis", "Capsella bursa pastoris", "Capsicum", "Carbo animalis", "Carbo vegetabilis",
+  "Carcinosinum", "Cardiospermum", "Carduus marianus", "Castor", "Caulophyllum",
+  "Causticum", "Ceanothus americanus", "Cedron", "Chamomilla", "Chelidonium",
+  "Chimaphila", "China officinalis", "Chionanthus virginicus", "Cicuta virosa", "Cimicifuga",
+  "Cina", "Cinnabaris", "Cistus canadensis", "Clematis", "Cocculus",
+  "Coccus cacti", "Coffea", "Colchicum", "Collinsonia canadensis", "Colocynthis",
+  "Condurango", "Conium maculatum", "Convallaria majalis", "Corallium rubrum", "Crataegus",
+  "Crocus", "Crotalus", "Croton tiglium", "Cuprum arsenicosum", "Cuprum metallicum",
+  "Cyclamen", "Cypripedium pubescens",
+  "Damiana", "Digitalis", "Dioscorea villosa", "Dolichos", "Drosera", "Dulcamara",
+  "Echinacea", "Equisetum", "Erigeron canadensis", "Espeletia", "Eucalyptus",
+  "Eupatorium", "Euphorbium", "Euphrasia",
+  "Fagopyrum", "Ferrum arsenicosum", "Ferrum metallicum", "Ferrum phosphoricum", "Flor de piedra", "Fucus vesiculosus",
+  "Galphimia", "Gelsemium", "Gentiana lutea", "Glonoinum", "Gnaphalium",
+  "Graphites", "Grindelia", "Guajacum",
+  "Hamamelis", "Haplopappus", "Harpagophytum", "Hedera helix", "Hekla lava",
+  "Helleborus", "Helonias", "Hepar sulfuris", "Hydrastis canadensis", "Hyoscyamus niger", "Hypericum",
+  "Iberis amara", "Ichthyolum", "Ignatia", "Ipecacuanha", "Iris versicolor",
+  "Jaborandi", "Jodum", "Juglans regia",
+  "Kalium arsenicosum", "Kalium bichromicum", "Kalium bromatum", "Kalium carbonicum", "Kalium chloratum",
+  "Kalium jodatum", "Kalium nitricum", "Kalium phosphoricum", "Kalium sulfuricum", "Kalmia", "Kreosotum",
+  "Lac caninum", "Lac defloratum", "Lachesis", "Latrodectus mactans", "Laurocerasus",
+  "Ledum", "Lilium tigrinum", "Lithium carbonicum", "Lobelia inflata", "Luesinum",
+  "Luffa", "Lycopodium", "Lycopus virginicus",
+  "Madar", "Magnesium carbonicum", "Magnesium chloratum", "Magnesium phosphoricum", "Magnesium sulfuricum",
+  "Mahonia aquifolium", "Mandragora", "Manganum aceticum", "Manganum sulfuricum", "Marum verum",
+  "Medorrhinum", "Melilotus officinalis", "Mercurius corrosivus", "Mercurius jodatus flavus", "Mercurius solubilis",
+  "Mezereum", "Millefolium", "Moschus", "Murex", "Myristica",
+  "Naja tripudians", "Natrium carbonicum", "Natrium chloratum", "Natrium phosphoricum", "Natrium sulfuricum",
+  "Nux moschata", "Nux vomica",
+  "Okoubaka", "Oleander", "Opium", "Ornithogalum umbellatum",
+  "Paeonia officinalis", "Passiflora", "Petroleum", "Petroselinum", "Phosphorus",
+  "Phytolacca", "Piper methysticum", "Plantago major", "Platinum metallicum", "Plumbum metallicum",
+  "Podophyllum", "Psorinum", "Pulsatilla",
+  "Quassia amara",
+  "Ranunculus bulbosus", "Rauwolfia", "Rheum", "Rhododendron", "Rhus toxicodendron",
+  "Robinia", "Rumex", "Ruta",
+  "Sabadilla", "Sabal serrulatum", "Sabina", "Salvia officinalis", "Sambucus nigra",
+  "Sanguinaria", "Sarsaparilla", "Scilla", "Scutellaria lateriflora", "Secale cornutum",
+  "Selenium", "Senecio", "Senega", "Sepia", "Silicea",
+  "Solidago", "Spigelia", "Spiraea ulmaria", "Spongia", "Stannum metallicum",
+  "Staphisagria", "Stibium sulfuratum nigrum", "Sticta pulmonaria", "Stramonium", "Sulfur", "Symphytum",
+  "Tabacum", "Tarantula (hispanica)", "Tarantula cubensis", "Taraxacum", "Tellurium metallicum",
+  "Teucrium marum verum", "Thuja", "Thyreoidinum", "Tuberculinum",
+  "Urtica urens", "Ustilago maydis",
+  "Valeriana officinalis", "Veratrum album", "Veratrum viride", "Verbascum", "Viburnum opulus",
+  "Vinca minor", "Viola tricolor", "Vipera berus", "Viscum album",
+  "Wyethia",
+  "Zincum metallicum", "Zincum valerianicum"
+];
+
+console.log('Target remedies count:', USER_REMEDIES_NAMES.length);

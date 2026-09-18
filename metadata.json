@@ -1,0 +1,8 @@
+{
+  "name": "Homeopilot360",
+  "description": "Moderne Praxissoftware für Homöopathen mit Anamnese, Befunderfassung, Therapeuten- und Admin-Verwaltung.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
