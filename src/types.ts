@@ -480,6 +480,10 @@ export type ActiveView = 'landing' | 'register' | 'therapist' | 'admin' | 'organ
 export interface SiteConfig {
   logoUrl?: string;
   faviconUrl?: string;
+  maintenanceMode?: boolean;
+  maintenanceTitle?: string;
+  maintenanceMessage?: string;
+  maintenanceEta?: string;
 }
 
 export interface EmailConfig {

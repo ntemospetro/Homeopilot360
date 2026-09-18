@@ -36,7 +36,8 @@ import {
   Shield,
   Check,
   Zap,
-  Radio
+  Radio,
+  Wrench
 } from 'lucide-react';
 
 interface AdminConfigEditorProps {
@@ -62,6 +63,14 @@ export const AdminConfigEditor: React.FC<AdminConfigEditorProps> = ({ onShowToas
   // Site Branding State
   const [logoUrl, setLogoUrl] = useState(siteConfig.logoUrl || '');
   const [faviconUrl, setFaviconUrl] = useState(siteConfig.faviconUrl || '');
+
+  // Maintenance Mode State
+  const [maintenanceMode, setMaintenanceMode] = useState<boolean>(siteConfig.maintenanceMode || false);
+  const [maintenanceTitle, setMaintenanceTitle] = useState<string>(siteConfig.maintenanceTitle || 'System Maintenance & Upgrades');
+  const [maintenanceMessage, setMaintenanceMessage] = useState<string>(siteConfig.maintenanceMessage || 'We are currently performing scheduled maintenance and updates to improve your clinical experience. We will be back online shortly.');
+  const [maintenanceEta, setMaintenanceEta] = useState<string>(siteConfig.maintenanceEta || 'Estimated completion: Shortly');
+  const [isSavingMaintenance, setIsSavingMaintenance] = useState(false);
+  const [maintenanceSuccessMsg, setMaintenanceSuccessMsg] = useState<string | null>(null);
 
   // Email / SMTP State
   const [sendMethod, setSendMethod] = useState<'api' | 'smtp'>(emailConfig.sendMethod || 'api');
@@ -113,6 +122,10 @@ export const AdminConfigEditor: React.FC<AdminConfigEditorProps> = ({ onShowToas
     setSiteConfig(config);
     setLogoUrl(config.logoUrl || '');
     setFaviconUrl(config.faviconUrl || '');
+    setMaintenanceMode(!!config.maintenanceMode);
+    setMaintenanceTitle(config.maintenanceTitle || 'System Maintenance & Upgrades');
+    setMaintenanceMessage(config.maintenanceMessage || 'We are currently performing scheduled maintenance and updates to improve your clinical experience. We will be back online shortly.');
+    setMaintenanceEta(config.maintenanceEta || 'Estimated completion: Shortly');
 
     const eConfig = getEmailConfig();
     setEmailConfigState(eConfig);
@@ -235,6 +248,25 @@ export const AdminConfigEditor: React.FC<AdminConfigEditorProps> = ({ onShowToas
       setSiteConfig(updated);
       setIsSavingConfig(false);
       onShowToast('Seiten-Konfiguration erfolgreich gespeichert');
+    }, 300);
+  };
+
+  const handleSaveMaintenanceConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingMaintenance(true);
+    setMaintenanceSuccessMsg(null);
+    setTimeout(() => {
+      const updated = saveSiteConfig({
+        maintenanceMode,
+        maintenanceTitle: maintenanceTitle.trim() || 'System Maintenance & Upgrades',
+        maintenanceMessage: maintenanceMessage.trim() || 'We are currently performing scheduled maintenance and updates.',
+        maintenanceEta: maintenanceEta.trim() || 'Estimated completion: Shortly'
+      });
+      setSiteConfig(updated);
+      setIsSavingMaintenance(false);
+      setMaintenanceSuccessMsg('Maintenance mode configuration saved successfully.');
+      onShowToast('Maintenance mode settings updated successfully');
+      setTimeout(() => setMaintenanceSuccessMsg(null), 4500);
     }, 300);
   };
 
@@ -404,9 +436,103 @@ export const AdminConfigEditor: React.FC<AdminConfigEditorProps> = ({ onShowToas
       </div>
 
       {/* Main Grid: Credentials & Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form Column (2 Cols) */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-6">
+        {/* MAINTENANCE MODE CONFIGURATION CARD */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" id="admin-maintenance-card">
+          <div className="p-5 sm:p-6 border-b border-slate-100 bg-amber-50/40 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-amber-600" />
+                <span>Maintenance Mode (Wartungsmodus)</span>
+              </h3>
+              <p className="text-xs text-slate-600 mt-1">
+                Activate platform-wide maintenance mode. Normal visitors will see a professional English maintenance page. Administrators can log in using their PIN (360) or password to bypass it.
+              </p>
+            </div>
+            <div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={maintenanceMode}
+                  onChange={(e) => setMaintenanceMode(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                <span className="ml-3 text-xs font-bold text-slate-700">
+                  {maintenanceMode ? 'Active (Enabled)' : 'Inactive'}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div className="p-5 sm:p-6">
+            <form onSubmit={handleSaveMaintenanceConfig} className="space-y-4">
+              {maintenanceSuccessMsg && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>{maintenanceSuccessMsg}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Maintenance Page Title (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={maintenanceTitle}
+                    onChange={(e) => setMaintenanceTitle(e.target.value)}
+                    placeholder="e.g. System Maintenance & Upgrades"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-900 focus:outline-none focus:border-amber-600"
+                  />
+                </div>
+
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Maintenance Message (English)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={maintenanceMessage}
+                    onChange={(e) => setMaintenanceMessage(e.target.value)}
+                    placeholder="We are currently performing scheduled maintenance..."
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-900 focus:outline-none focus:border-amber-600 resize-y"
+                  />
+                </div>
+
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Estimated Time / ETA (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={maintenanceEta}
+                    onChange={(e) => setMaintenanceEta(e.target.value)}
+                    placeholder="e.g. Estimated downtime: ~30 minutes"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-900 focus:outline-none focus:border-amber-600"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSavingMaintenance}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingMaintenance ? 'Saving...' : 'Save Maintenance Mode Settings'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Main Grid: Credentials & Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Form Column (2 Cols) */}
+          <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
               <div>
@@ -1373,6 +1499,7 @@ export const AdminConfigEditor: React.FC<AdminConfigEditorProps> = ({ onShowToas
               </button>
             </div>
           </form>
+        </div>
         </div>
       </div>
     </div>
