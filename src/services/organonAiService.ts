@@ -1,3 +1,11 @@
+import {
+  EndprueferResult,
+  EndprueferCategoryDecision,
+  EndprueferAtomicClaim,
+  EndprueferAuditChange,
+  EndprueferDecisionStatus
+} from '../types';
+
 export interface OrganonSourceSpan {
   span_id: string;
   exact_text: string;
@@ -706,4 +714,281 @@ export async function analyzeOrganonText(rawText: string, language: string = 'de
     }
     return fallback;
   }
+}
+
+export function getMissingInfoPhrase(lang: string = 'de'): string {
+  const map: Record<string, string> = {
+    de: "Keine Angaben im Text.",
+    en: "No information in text.",
+    el: "Δεν υπάρχουν στοιχεία στο κείμενο.",
+    es: "Sin datos en el texto.",
+    fr: "Aucune information dans le texte.",
+    it: "Nessuna informazione nel testo.",
+    ru: "В тексте нет сведений."
+  };
+  return map[lang] || map.de;
+}
+
+export function isPseudoNormalOrNegativeFinding(text: string | null | undefined, rawText: string): boolean {
+  if (!text || typeof text !== 'string') return false;
+  const t = text.trim().toLowerCase();
+
+  const pseudoNormalPatterns = [
+    /unauffällig/i,
+    /ohne befund/i,
+    /keine vorerkrankung/i,
+    /keine veränderung/i,
+    /keine begleitsymptom/i,
+    /keine weiteren beschwerden/i,
+    /keine auffälligkeit/i,
+    /denken unauffällig/i,
+    /gemüt unauffällig/i,
+    /keine psychopathologie/i,
+    /unauffälliger befund/i,
+    /normalbefund/i,
+    /o\.b\./i
+  ];
+
+  for (const pat of pseudoNormalPatterns) {
+    if (pat.test(t)) {
+      if (!rawText.toLowerCase().includes(t)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+export function validateQuoteAgainstRawText(
+  rawText: string,
+  quote: string
+): { quote_valid: boolean; quote_cleaned: string; reason?: string } {
+  if (!quote || typeof quote !== 'string') {
+    return { quote_valid: false, quote_cleaned: '', reason: 'Empty quote' };
+  }
+
+  let cleaned = quote.trim();
+  cleaned = cleaned.replace(/^["'„»«]+|["'“»«]+$/g, '').trim();
+
+  if (!cleaned) {
+    return { quote_valid: false, quote_cleaned: '', reason: 'Quote was empty after removing quotation marks.' };
+  }
+
+  if (rawText.includes(cleaned)) {
+    return { quote_valid: true, quote_cleaned: cleaned };
+  }
+
+  const normalizedRaw = rawText.replace(/\s+/g, ' ').toLowerCase();
+  const normalizedCleaned = cleaned.replace(/\s+/g, ' ').toLowerCase();
+
+  if (normalizedRaw.includes(normalizedCleaned)) {
+    const startIdx = normalizedRaw.indexOf(normalizedCleaned);
+    return { quote_valid: true, quote_cleaned: rawText.substr(startIdx, cleaned.length) || cleaned };
+  }
+
+  return {
+    quote_valid: false,
+    quote_cleaned: cleaned,
+    reason: 'Quote does not match raw text verbatim.'
+  };
+}
+
+export function createLocalDeterministicEndpruefer(
+  rawText: string,
+  arbitratorResult: any,
+  language: string = 'de'
+): EndprueferResult {
+  const missingPhrase = getMissingInfoPhrase(language);
+  const categories = [
+    { key: 'causa', name: 'Causa' },
+    { key: 'localisatio', name: 'Localisatio' },
+    { key: 'sensatio', name: 'Sensatio' },
+    { key: 'symptoma', name: 'Symptoma' },
+    { key: 'modalitates_besserung', name: 'Modalitates – Besserung' },
+    { key: 'modalitates_verschlechterung', name: 'Modalitates – Verschlechterung' },
+    { key: 'symptomata_concomitantia', name: 'Symptomata concomitantia' },
+    { key: 'comorbiditas', name: 'Comorbiditas' },
+    { key: 'mens', name: 'Mens' },
+    { key: 'animus', name: 'Animus' }
+  ];
+
+  const arbCats = Array.isArray(arbitratorResult?.category_evaluations)
+    ? arbitratorResult.category_evaluations
+    : [];
+
+  const categoryChecks: EndprueferCategoryDecision[] = [];
+  const auditChanges: EndprueferAuditChange[] = [];
+  let correctCount = 0;
+  let flaggedCount = 0;
+
+  for (const catDef of categories) {
+    const matchedArb = arbCats.find((c: any) =>
+      (c.category && c.category.toLowerCase().includes(catDef.key)) ||
+      (c.category_key && c.category_key.toLowerCase() === catDef.key) ||
+      (c.category && c.category.toLowerCase().includes(catDef.name.toLowerCase()))
+    );
+
+    const schiedsrichterResult = (
+      matchedArb?.belegpruefer_neu ||
+      matchedArb?.schiedsrichter_result ||
+      matchedArb?.gemini_alt ||
+      matchedArb?.result_text ||
+      missingPhrase
+    ).trim();
+
+    const isPseudoNormal = isPseudoNormalOrNegativeFinding(schiedsrichterResult, rawText);
+    const isMissingPhrase = schiedsrichterResult === missingPhrase ||
+      schiedsrichterResult.toLowerCase().includes('keine angaben im text');
+
+    let decision: EndprueferDecisionStatus = 'CORRECT';
+    let issue: string | null = null;
+    let reasoning = 'Stimmt mit den Angaben im Originaltext überein.';
+    let minimalCorrection = schiedsrichterResult;
+    let severity: 'GERING' | 'MITTEL' | 'HOCH' | null = null;
+    const atomicClaims: EndprueferAtomicClaim[] = [];
+
+    if (isPseudoNormal) {
+      decision = 'MISSING_INFORMATION_TREATED_AS_NORMAL';
+      issue = 'Fehlende Information wurde als Normal- oder Negativbefund formuliert.';
+      reasoning = 'Fehlende Angaben dürfen nicht als negativer Befund interpretiert werden. Vorgabe: Keine Angaben im Text.';
+      minimalCorrection = missingPhrase;
+      severity = 'MITTEL';
+      atomicClaims.push({
+        claim: schiedsrichterResult,
+        raw_text_snippet: null,
+        is_supported: false,
+        issue: 'Fehlende Angabe im Originaltext',
+        decision: 'MISSING_INFORMATION_TREATED_AS_NORMAL'
+      });
+    } else if (isMissingPhrase) {
+      decision = 'CORRECT';
+      reasoning = 'Der Originaltext enthält hierzu keine Angaben. Korrekt als Nicht-Befund erfasst.';
+      atomicClaims.push({
+        claim: missingPhrase,
+        raw_text_snippet: null,
+        is_supported: true,
+        issue: null,
+        decision: 'CORRECT'
+      });
+    } else {
+      const parts = schiedsrichterResult.split(/[,;\n]|\bund\b/i).map((s: string) => s.trim()).filter(Boolean);
+      const claimsToTest = parts.length > 0 ? parts : [schiedsrichterResult];
+      let hasAtomicIssue = false;
+
+      for (const claim of claimsToTest) {
+        const quoteCheck = validateQuoteAgainstRawText(rawText, claim);
+        if (quoteCheck.quote_valid) {
+          atomicClaims.push({
+            claim,
+            raw_text_snippet: quoteCheck.quote_cleaned,
+            is_supported: true,
+            issue: null,
+            decision: 'CORRECT'
+          });
+        } else {
+          const words = claim.split(/\s+/).filter((w: string) => w.length > 3);
+          const foundWords = words.filter((w: string) => rawText.toLowerCase().includes(w.toLowerCase()));
+          if (foundWords.length === words.length && words.length > 0) {
+            atomicClaims.push({
+              claim,
+              raw_text_snippet: foundWords.join(' '),
+              is_supported: true,
+              issue: null,
+              decision: 'CORRECT'
+            });
+          } else {
+            hasAtomicIssue = true;
+            atomicClaims.push({
+              claim,
+              raw_text_snippet: null,
+              is_supported: false,
+              issue: 'Aussage ist nicht wörtlich im Originaltext belegt.',
+              decision: 'UNSUPPORTED_STATEMENT'
+            });
+          }
+        }
+      }
+
+      if (hasAtomicIssue) {
+        decision = 'UNSUPPORTED_STATEMENT';
+        issue = 'Mindestens ein atomarer Claim ist im Originaltext nicht belegt.';
+        reasoning = 'Die Formulierung weicht vom Wortlaut des Originaltexts ab oder fügt unbelegte Details hinzu.';
+        severity = 'MITTEL';
+      }
+    }
+
+    if (decision === 'CORRECT') {
+      correctCount++;
+    } else {
+      flaggedCount++;
+      auditChanges.push({
+        category: catDef.name,
+        original_schiedsrichter: schiedsrichterResult,
+        corrected: minimalCorrection,
+        reason: issue || 'Korrektur zur Texttreue',
+        severity: severity || 'MITTEL'
+      });
+    }
+
+    categoryChecks.push({
+      category: catDef.name,
+      schiedsrichter_result: schiedsrichterResult,
+      raw_text_snippet: atomicClaims.find(a => a.raw_text_snippet)?.raw_text_snippet || null,
+      decision,
+      issue,
+      reasoning,
+      severity,
+      minimal_correction: minimalCorrection,
+      atomic_claims: atomicClaims
+    });
+  }
+
+  const overallStatus = flaggedCount === 0 ? 'PASS' : 'CORRECTION_REQUIRED';
+  const summary = overallStatus === 'PASS'
+    ? 'Alle 10 Kategorien stimmen bei der atomaren Prüfung mit dem unveränderten Originaltext überein.'
+    : `${flaggedCount} von 10 Kategorien weisen Abweichungen, unbelegte Claims oder unzulässige Normalbefunde auf.`;
+
+  return {
+    overall_status: overallStatus,
+    summary,
+    total_categories_checked: 10,
+    correct_count: correctCount,
+    flagged_count: flaggedCount,
+    category_checks: categoryChecks,
+    audit_changes: auditChanges,
+    final_corrected_output: categoryChecks.map(c => `${c.category}: ${c.minimal_correction}`).join('\n')
+  };
+}
+
+export async function runEndprueferAnalysis(
+  rawText: string,
+  arbitratorResult: any,
+  language: string = 'de'
+): Promise<EndprueferResult> {
+  const endpoints = [
+    { url: '/api/organon/endpruefer', body: { rawText, arbitratorResult, language } },
+    { url: '/api/organon/analyze', body: { action: 'endpruefer', rawText, arbitratorResult, language } },
+    { url: '/api/organon/arbitrate', body: { action: 'endpruefer', rawText, arbitratorResult, language } }
+  ];
+
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(ep.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ep.body)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.result && typeof data.result === 'object') {
+          return data.result as EndprueferResult;
+        }
+      }
+    } catch (e) {
+      // try next endpoint
+    }
+  }
+
+  return createLocalDeterministicEndpruefer(rawText, arbitratorResult, language);
 }

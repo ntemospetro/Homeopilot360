@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation, useLanguage } from '../i18n/LanguageContext';
-import { analyzeOrganonText, OrganonAiAnalysisResult } from '../services/organonAiService';
+import { analyzeOrganonText, OrganonAiAnalysisResult, runEndprueferAnalysis } from '../services/organonAiService';
 import { EndprueferResult } from '../types';
 import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
 import { motion } from 'motion/react';
@@ -313,47 +313,10 @@ export const OrganonView: React.FC = () => {
     if (!arbRes) return;
     setIsEndpruefend(true);
     try {
-      const res = await fetch('/api/organon/endpruefer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rawText: rawTextStr,
-          arbitratorResult: arbRes,
-          language: language
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.result) {
-          setEndprueferResult(data.result);
-          setIsEndpruefend(false);
-          return;
-        }
-      }
-      throw new Error("Endprüfer server endpoint error");
+      const result = await runEndprueferAnalysis(rawTextStr, arbRes, language);
+      setEndprueferResult(result);
     } catch (e) {
-      console.warn("Endprüfer fetch fallback notice:", e);
-      // Client-side fallback if server fails
-      const fallbackEndpruefer: EndprueferResult = {
-        overall_status: 'PASS',
-        summary: 'Die Texttreueprüfung wurde erfolgreich gegen den Originaltext durchgeführt.',
-        total_categories_checked: 10,
-        correct_count: 10,
-        flagged_count: 0,
-        category_checks: (arbRes.category_evaluations || []).map((cat: any) => ({
-          category: cat.category || '',
-          schiedsrichter_result: cat.belegpruefer_neu || cat.gemini_alt || '',
-          raw_text_snippet: rawTextStr.slice(0, 80) + '...',
-          decision: 'CORRECT',
-          issue: null,
-          reasoning: 'Entspricht den Angaben im Originaltext.',
-          severity: null,
-          minimal_correction: cat.belegpruefer_neu || cat.gemini_alt || ''
-        })),
-        audit_changes: [],
-        final_corrected_output: arbRes.course_note || arbRes.consensusSummary || 'Keine Beanstandungen.'
-      };
-      setEndprueferResult(fallbackEndpruefer);
+      console.warn("Endprüfer execution notice:", e);
     } finally {
       setIsEndpruefend(false);
     }

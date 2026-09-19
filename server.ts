@@ -38,6 +38,16 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   app.use(express.json({
     limit: "50mb",
     verify: (req: any, res, buf) => {
@@ -1256,6 +1266,15 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
 
   app.post("/api/organon/analyze", async (req, res) => {
     try {
+      if (req.body?.action === "endpruefer" || req.body?.endpruefer === true) {
+        const { rawText, arbitratorResult, language = "de" } = req.body;
+        if (!rawText || !arbitratorResult) {
+          return res.status(400).json({ error: "rawText and arbitratorResult are required for endpruefer" });
+        }
+        const parsed = await processEndprueferRequest(rawText, arbitratorResult, language);
+        return res.json({ engine: "endpruefer", result: parsed });
+      }
+
       const { rawText, language = "de", engine = "gemini", compare = false } = req.body;
       if (!rawText || typeof rawText !== "string") {
         return res.status(400).json({ error: "rawText is required" });
@@ -1902,6 +1921,15 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
 
   app.post("/api/organon/arbitrate", async (req, res) => {
     try {
+      if (req.body?.action === "endpruefer" || req.body?.endpruefer === true) {
+        const { rawText, arbitratorResult, language = "de" } = req.body;
+        if (!rawText || !arbitratorResult) {
+          return res.status(400).json({ error: "rawText and arbitratorResult are required for endpruefer" });
+        }
+        const parsed = await processEndprueferRequest(rawText, arbitratorResult, language);
+        return res.json({ engine: "endpruefer", result: parsed });
+      }
+
       const { rawText, geminiResult, openaiResult, language = "de" } = req.body;
       if (!rawText || typeof rawText !== "string") {
         return res.status(400).json({ error: "rawText is required" });
@@ -2116,34 +2144,25 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
 
   // Endprüfer / Texttreue- und Auffälligkeitsprüfung (4. und letzte Prüfinstanz)
   // Erhält AUSSCHLIESSLICH rawText und arbitratorResult (keine Gemini- oder GPT-Ergebnisse!)
-  app.post("/api/organon/endpruefer", async (req, res) => {
-    try {
-      const { rawText, arbitratorResult, language = "de" } = req.body;
-      if (!rawText || typeof rawText !== "string") {
-        return res.status(400).json({ error: "rawText is required" });
-      }
-      if (!arbitratorResult || typeof arbitratorResult !== "object") {
-        return res.status(400).json({ error: "arbitratorResult is required" });
-      }
+  async function processEndprueferRequest(rawText: string, arbitratorResult: any, language: string = "de"): Promise<any> {
+    const langNames: Record<string, string> = {
+      de: "German (Deutsch)",
+      en: "English",
+      el: "Greek (Ελληνικά)",
+      es: "Spanish (Español)",
+      fr: "French (Français)",
+      it: "Italian (Italiano)",
+      ru: "Russian (Русский)"
+    };
+    const targetLanguageName = langNames[language] || "German (Deutsch)";
 
-      const langNames: Record<string, string> = {
-        de: "German (Deutsch)",
-        en: "English",
-        el: "Greek (Ελληνικά)",
-        es: "Spanish (Español)",
-        fr: "French (Français)",
-        it: "Italian (Italiano)",
-        ru: "Russian (Русский)"
-      };
-      const targetLanguageName = langNames[language] || "German (Deutsch)";
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
+    const ai = new GoogleGenAI({ apiKey });
 
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
-      const ai = new GoogleGenAI({ apiKey });
+    const missingInfoDefault = getMissingInfoPhrase(language);
 
-      const missingInfoDefault = getMissingInfoPhrase(language);
-
-      const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all texts, issues, reasonings, and final output in ${targetLanguageName} (${language}).
+    const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all texts, issues, reasonings, and final output in ${targetLanguageName} (${language}).
 
 Du bist die vierte und LETZTE UNABHÄNGIGE PRÜFINSTANZ (Endprüfer / Texttreueprüfung) einer homöopathischen Fallanalyse gemäß Organon (§§ 83–104).
 
@@ -2251,115 +2270,136 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
   "final_corrected_output": "Vollständige, endgültig geprüfte Auswertung als zusammenhängender Text in ${targetLanguageName}"
 }`;
 
-      let response;
-      try {
-        response = await ai.models.generateContent({
-          model: "gemini-3.5-flash-lite",
-          contents: prompt,
-          config: { temperature: 0.05, responseMimeType: "application/json" },
-        });
-      } catch (e) {
-        response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
-          contents: prompt,
-          config: { temperature: 0.05, responseMimeType: "application/json" },
-        });
-      }
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-3.5-flash-lite",
+        contents: prompt,
+        config: { temperature: 0.05, responseMimeType: "application/json" },
+      });
+    } catch (e) {
+      response = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: prompt,
+        config: { temperature: 0.05, responseMimeType: "application/json" },
+      });
+    }
 
-      const text = response.text || "{}";
-      const parsed = parseAiJson(text, {});
+    const text = response.text || "{}";
+    const parsed = parseAiJson(text, {});
 
-      // Deterministic validation of categories, atomic claims, and strict counts
-      if (parsed && typeof parsed === 'object') {
-        const catChecks = Array.isArray(parsed.category_checks) ? parsed.category_checks : [];
-        let correct = 0;
-        let flagged = 0;
-        const validStatuses = new Set([
-          'CORRECT',
-          'MEANING_STRENGTHENED',
-          'MEANING_WEAKENED',
-          'INFORMATION_ADDED',
-          'MEANING_CHANGED',
-          'UNSUPPORTED_STATEMENT',
-          'MISSING_INFORMATION_TREATED_AS_NORMAL',
-          'QUOTE_NOT_EXACT',
-          'CORRECTION_REQUIRED'
-        ]);
+    // Deterministic validation of categories, atomic claims, and strict counts
+    if (parsed && typeof parsed === 'object') {
+      const catChecks = Array.isArray(parsed.category_checks) ? parsed.category_checks : [];
+      let correct = 0;
+      let flagged = 0;
+      const validStatuses = new Set([
+        'CORRECT',
+        'MEANING_STRENGTHENED',
+        'MEANING_WEAKENED',
+        'INFORMATION_ADDED',
+        'MEANING_CHANGED',
+        'UNSUPPORTED_STATEMENT',
+        'MISSING_INFORMATION_TREATED_AS_NORMAL',
+        'QUOTE_NOT_EXACT',
+        'CORRECTION_REQUIRED'
+      ]);
 
-        catChecks.forEach((c: any) => {
-          if (!validStatuses.has(c.decision)) {
-            c.decision = c.issue ? 'CORRECTION_REQUIRED' : 'CORRECT';
-          }
-
-          // 1. Validate atomic claims: an unsupported claim invalidates the category
-          let hasAtomicFailure = false;
-          let atomicFailureDecision: string = 'UNSUPPORTED_STATEMENT';
-          let atomicFailureIssue: string = '';
-
-          if (Array.isArray(c.atomic_claims) && c.atomic_claims.length > 0) {
-            c.atomic_claims.forEach((ac: any) => {
-              // Validate quote in atomic claim
-              if (ac.raw_text_snippet) {
-                const val = validateQuoteAgainstRawText(rawText, ac.raw_text_snippet);
-                if (!val.quote_valid) {
-                  ac.is_supported = false;
-                  ac.decision = 'QUOTE_NOT_EXACT';
-                  ac.issue = ac.issue || 'Textstelle stimmt nicht als wörtliches Zitat mit dem Originaltext überein.';
-                }
-              }
-
-              if (ac.is_supported === false || (ac.decision && ac.decision !== 'CORRECT') || ac.issue) {
-                hasAtomicFailure = true;
-                atomicFailureDecision = ac.decision || 'UNSUPPORTED_STATEMENT';
-                atomicFailureIssue = ac.issue || 'Mindestens ein atomarer Claim ist im Originaltext nicht belegt.';
-              }
-            });
-          }
-
-          // 2. Check for pseudo-normal findings (treating missing information as negative finding)
-          if (isPseudoNormalOrNegativeFinding(c.schiedsrichter_result, rawText)) {
-            c.decision = 'MISSING_INFORMATION_TREATED_AS_NORMAL';
-            c.issue = 'Fehlende Information wurde unzulässig als Normal- oder Negativbefund formuliert. Vorgabe: Keine Angaben im Text.';
-            c.minimal_correction = missingInfoDefault;
-            c.severity = 'MITTEL';
-          } else if (hasAtomicFailure && c.decision === 'CORRECT') {
-            c.decision = atomicFailureDecision;
-            c.issue = atomicFailureIssue;
-            if (!c.severity) c.severity = 'MITTEL';
-          }
-
-          // 3. Verify category-level raw_text_snippet if given
-          if (c.raw_text_snippet && typeof c.raw_text_snippet === 'string') {
-            const val = validateQuoteAgainstRawText(rawText, c.raw_text_snippet);
-            if (!val.quote_valid && !c.raw_text_snippet.toLowerCase().includes('keine angaben')) {
-              if (c.decision === 'CORRECT') {
-                c.decision = 'QUOTE_NOT_EXACT';
-                c.issue = 'Angebliches Originalzitat kommt nicht wortwörtlich im Originaltext vor.';
-                if (!c.severity) c.severity = 'GERING';
-              }
-            } else if (val.quote_valid && val.quote_cleaned) {
-              c.raw_text_snippet = val.quote_cleaned;
-            }
-          }
-
-          if (c.decision === 'CORRECT') {
-            correct++;
-          } else {
-            flagged++;
-          }
-        });
-
-        parsed.total_categories_checked = catChecks.length || 10;
-        parsed.correct_count = correct;
-        parsed.flagged_count = flagged;
-        // Strict PASS rule: PASS ONLY when ZERO issues exist!
-        parsed.overall_status = flagged > 0 ? 'CORRECTION_REQUIRED' : 'PASS';
-
-        if (!parsed.final_corrected_output || typeof parsed.final_corrected_output !== 'string') {
-          parsed.final_corrected_output = arbitratorResult?.course_note || arbitratorResult?.consensusSummary || "Auswertung abgeschlossen.";
+      catChecks.forEach((c: any) => {
+        if (!validStatuses.has(c.decision)) {
+          c.decision = c.issue ? 'CORRECTION_REQUIRED' : 'CORRECT';
         }
+
+        // 1. Validate atomic claims: an unsupported claim invalidates the category
+        let hasAtomicFailure = false;
+        let atomicFailureDecision: string = 'UNSUPPORTED_STATEMENT';
+        let atomicFailureIssue: string = '';
+
+        if (Array.isArray(c.atomic_claims) && c.atomic_claims.length > 0) {
+          c.atomic_claims.forEach((ac: any) => {
+            // Validate quote in atomic claim
+            if (ac.raw_text_snippet) {
+              const val = validateQuoteAgainstRawText(rawText, ac.raw_text_snippet);
+              if (!val.quote_valid) {
+                ac.is_supported = false;
+                ac.decision = 'QUOTE_NOT_EXACT';
+                ac.issue = ac.issue || 'Textstelle stimmt nicht als wörtliches Zitat mit dem Originaltext überein.';
+              }
+            }
+
+            if (ac.is_supported === false || (ac.decision && ac.decision !== 'CORRECT') || ac.issue) {
+              hasAtomicFailure = true;
+              atomicFailureDecision = ac.decision || 'UNSUPPORTED_STATEMENT';
+              atomicFailureIssue = ac.issue || 'Mindestens ein atomarer Claim ist im Originaltext nicht belegt.';
+            }
+          });
+        }
+
+        // 2. Check for pseudo-normal findings (treating missing information as negative finding)
+        if (isPseudoNormalOrNegativeFinding(c.schiedsrichter_result, rawText)) {
+          c.decision = 'MISSING_INFORMATION_TREATED_AS_NORMAL';
+          c.issue = 'Fehlende Information wurde unzulässig als Normal- oder Negativbefund formuliert. Vorgabe: Keine Angaben im Text.';
+          c.minimal_correction = missingInfoDefault;
+          c.severity = 'MITTEL';
+        } else if (hasAtomicFailure && c.decision === 'CORRECT') {
+          c.decision = atomicFailureDecision;
+          c.issue = atomicFailureIssue;
+          if (!c.severity) c.severity = 'MITTEL';
+        }
+
+        // 3. Verify category-level raw_text_snippet if given
+        if (c.raw_text_snippet && typeof c.raw_text_snippet === 'string') {
+          const val = validateQuoteAgainstRawText(rawText, c.raw_text_snippet);
+          if (!val.quote_valid && !c.raw_text_snippet.toLowerCase().includes('keine angaben')) {
+            if (c.decision === 'CORRECT') {
+              c.decision = 'QUOTE_NOT_EXACT';
+              c.issue = 'Angebliches Originalzitat kommt nicht wortwörtlich im Originaltext vor.';
+              if (!c.severity) c.severity = 'GERING';
+            }
+          } else if (val.quote_valid && val.quote_cleaned) {
+            c.raw_text_snippet = val.quote_cleaned;
+          }
+        }
+
+        if (c.decision === 'CORRECT') {
+          correct++;
+        } else {
+          flagged++;
+        }
+      });
+
+      parsed.total_categories_checked = catChecks.length || 10;
+      parsed.correct_count = correct;
+      parsed.flagged_count = flagged;
+      // Strict PASS rule: PASS ONLY when ZERO issues exist!
+      parsed.overall_status = flagged > 0 ? 'CORRECTION_REQUIRED' : 'PASS';
+
+      if (!parsed.final_corrected_output || typeof parsed.final_corrected_output !== 'string') {
+        parsed.final_corrected_output = arbitratorResult?.course_note || arbitratorResult?.consensusSummary || "Auswertung abgeschlossen.";
+      }
+    }
+
+    return parsed;
+  }
+
+  // Endprüfer Endpoint supporting multiple path aliases, trailing slashes, and preflight OPTIONS
+  app.all(["/api/organon/endpruefer", "/api/organon/endpruefer/", "/api/organon/final-audit", "/api/organon/final-audit/"], async (req, res) => {
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed. Use POST." });
+    }
+    try {
+      const { rawText, arbitratorResult, language = "de" } = req.body;
+      if (!rawText || typeof rawText !== "string") {
+        return res.status(400).json({ error: "rawText is required" });
+      }
+      if (!arbitratorResult || typeof arbitratorResult !== "object") {
+        return res.status(400).json({ error: "arbitratorResult is required" });
       }
 
+      const parsed = await processEndprueferRequest(rawText, arbitratorResult, language);
       return res.json({ engine: "endpruefer", result: parsed });
     } catch (error: any) {
       console.error("Organon Endprüfer API Error:", error);
