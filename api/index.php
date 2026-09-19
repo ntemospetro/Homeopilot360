@@ -1519,6 +1519,13 @@ if ($route === 'organon/analyze' || $route === 'api/organon/analyze') {
         exit;
     }
 
+    if ((isset($body['action']) && $body['action'] === 'endpruefer') || !empty($body['endpruefer'])) {
+        $arbitratorResult = $body['arbitratorResult'] ?? [];
+        $result = runEndprueferPhp($rawText, $arbitratorResult, $language);
+        echo json_encode(['engine' => 'endpruefer', 'result' => $result], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     $apiKey = getGeminiKey();
     
     // Default fallback structure
@@ -1932,6 +1939,376 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
             'clarification_question' => ''
         ]
     ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// -------------------------------------------------------------------------
+// Helper: Endprüfer Sprachtexte & Zitatprüfungen
+// -------------------------------------------------------------------------
+function getMissingInfoPhrasePhp($lang = 'de') {
+    $map = [
+        'de' => 'Keine Angaben im Text.',
+        'en' => 'No information in text.',
+        'el' => 'Δεν υπάρχουν στοιχεία στο κείμενο.',
+        'es' => 'Sin datos en el texto.',
+        'fr' => 'Aucune information dans le texte.',
+        'it' => 'Nessuna informazione nel testo.',
+        'ru' => 'В тексте нет сведений.'
+    ];
+    return $map[$lang] ?? 'Keine Angaben im Text.';
+}
+
+function isPseudoNormalOrNegativeFindingPhp($text, $rawText) {
+    if (empty($text) || !is_string($text)) return false;
+    $t = mb_strtolower(trim($text), 'UTF-8');
+    $patterns = [
+        '/unauffällig/iu',
+        '/ohne befund/iu',
+        '/keine vorerkrankung/iu',
+        '/keine veränderung/iu',
+        '/keine begleitsymptom/iu',
+        '/keine weiteren beschwerden/iu',
+        '/keine auffälligkeit/iu',
+        '/denken unauffällig/iu',
+        '/gemüt unauffällig/iu',
+        '/keine psychopathologie/iu',
+        '/unauffälliger befund/iu',
+        '/normalbefund/iu',
+        '/o\.b\./iu'
+    ];
+    foreach ($patterns as $p) {
+        if (preg_match($p, $t)) {
+            if (mb_stripos($rawText, $t, 0, 'UTF-8') === false) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function validateQuoteAgainstRawTextPhp($rawText, $quote) {
+    if (empty($quote) || !is_string($quote)) {
+        return ['quote_valid' => false, 'quote_cleaned' => ''];
+    }
+    $cleaned = trim($quote, " \t\n\r\0\x0B\"'„»«“”");
+    if ($cleaned === '') {
+        return ['quote_valid' => false, 'quote_cleaned' => ''];
+    }
+    if (mb_strpos($rawText, $cleaned, 0, 'UTF-8') !== false) {
+        return ['quote_valid' => true, 'quote_cleaned' => $cleaned];
+    }
+    $normRaw = mb_strtolower(preg_replace('/\s+/u', ' ', $rawText), 'UTF-8');
+    $normCleaned = mb_strtolower(preg_replace('/\s+/u', ' ', $cleaned), 'UTF-8');
+    if (mb_strpos($normRaw, $normCleaned, 0, 'UTF-8') !== false) {
+        return ['quote_valid' => true, 'quote_cleaned' => $cleaned];
+    }
+    return ['quote_valid' => false, 'quote_cleaned' => $cleaned];
+}
+
+function runEndprueferPhp($rawText, $arbitratorResult, $language = 'de') {
+    $langNames = [
+        'de' => 'German (Deutsch)',
+        'en' => 'English',
+        'el' => 'Greek (Ελληνικά)',
+        'es' => 'Spanish (Español)',
+        'fr' => 'French (Français)',
+        'it' => 'Italian (Italiano)',
+        'ru' => 'Russian (Русский)'
+    ];
+    $targetLanguageName = $langNames[$language] ?? 'German (Deutsch)';
+    $missingDefault = getMissingInfoPhrasePhp($language);
+
+    $escapedRawText = addcslashes($rawText, '"\\');
+    $escapedArbResult = addcslashes(json_encode($arbitratorResult, JSON_UNESCAPED_UNICODE), '"\\');
+
+    $prompt = "CRITICAL LANGUAGE REQUIREMENT: You MUST output all texts, issues, reasonings, and final output in {$targetLanguageName} ({$language}).
+
+Du bist die vierte und LETZTE UNABHÄNGIGE PRÜFINSTANZ (Endprüfer / Texttreueprüfung) einer homöopathischen Fallanalyse gemäß Organon (§§ 83–104).
+Deine einzige Aufgabe ist die UNERBITTLICHE, BELEGGSTÜTZTE PRÜFUNG DES SCHIEDSRICHTER-ERGEBNISSES GEGEN DEN UNVERÄNDERTEN ORIGINALTEXT DES PATIENTEN.
+
+WICHTIGE GRUNDSÄTZE:
+1. 'KEINE ANGABEN IM TEXT' (bzw. in {$targetLanguageName}: '{$missingDefault}'):
+   Wenn der Patient zu einer Kategorie keine Angaben gemacht hat, MUSS das Schiedsrichterergebnis zwingend '{$missingDefault}' lauten.
+   Jegliche Formulierung eines 'Normalbefunds' oder 'Negativbefunds' (z.B. 'unauffällig', 'keine Vorerkrankungen', 'keine Begleitsymptome', 'keine Veränderungen', 'o.B.') ist STRENG UNZULÄSSIG. Fehlende Information ist ein Nicht-Befund, kein Normalbefund!
+
+2. BEDEUTUNGSTRÄGER & QUALIFIZIERER DÜRFEN NICHT FEHLEN:
+   Einschränkende und modifizierende Wörter (z.B. 'gelegentlich', 'manchmal', 'meistens', 'etwa', 'eher', 'besonders', 'nicht immer', 'seit', 'plötzlich', 'nur bei') dürfen weder gestrichen noch verfälscht werden.
+
+3. ATOMARE CLAIM-PRÜFUNG:
+   Jede Kategorie besteht oft aus mehreren Teilbehauptungen. Zerlege jede Kategorie in ihre atomaren Teil-Claims.
+   Jeder Teil-Claim muss separat gegen den Originaltext geprüft werden. Ein belegter Teil-Claim macht einen unbelegten Claim niemals zu CORRECT!
+
+4. STRIKTE WÖRTLICHE ZITATE:
+   Das Feld 'raw_text_snippet' MUSS ein exaktes, buchstabengetreues Zitat aus dem Originaltext sein.
+
+ORIGINALTEXT DES PATIENTEN (UNVERÄNDERLICHE REFERENZ):
+\"{$escapedRawText}\"
+
+SCHIEDSRICHTER-ERGEBNIS (ZU PRÜFEN):
+{$escapedArbResult}
+
+Prüfe ausnahmslos alle 10 Kategorien:
+1. Causa
+2. Localisatio
+3. Sensatio
+4. Symptoma
+5. Modalitates – Besserung
+6. Modalitates – Verschlechterung
+7. Symptomata concomitantia
+8. Comorbiditas
+9. Mens
+10. Animus
+
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt ohne Markdown-Codeblöcke:
+{
+  \"overall_status\": \"PASS\" | \"CORRECTION_REQUIRED\",
+  \"summary\": \"Zusammenfassung der Texttreueprüfung in {$targetLanguageName}\",
+  \"total_categories_checked\": 10,
+  \"correct_count\": 10,
+  \"flagged_count\": 0,
+  \"category_checks\": [
+    {
+      \"category\": \"Kategoriename\",
+      \"schiedsrichter_result\": \"Befund aus dem Schiedsrichter-Ergebnis\",
+      \"raw_text_snippet\": \"Exaktes wörtliches Zitat oder null\",
+      \"decision\": \"CORRECT\" | \"MEANING_STRENGTHENED\" | \"MEANING_WEAKENED\" | \"INFORMATION_ADDED\" | \"MEANING_CHANGED\" | \"UNSUPPORTED_STATEMENT\" | \"MISSING_INFORMATION_TREATED_AS_NORMAL\" | \"QUOTE_NOT_EXACT\" | \"CORRECTION_REQUIRED\",
+      \"issue\": \"Konkrete Beanstandung oder null\",
+      \"reasoning\": \"Begründung mit Bezug auf den Originaltext\",
+      \"severity\": null | \"GERING\" | \"MITTEL\" | \"HOCH\",
+      \"minimal_correction\": \"Korrigierter Text\",
+      \"atomic_claims\": [
+        {
+          \"claim\": \"Teilaussage\",
+          \"raw_text_snippet\": \"Wörtliches Zitat oder null\",
+          \"is_supported\": true | false,
+          \"issue\": null | \"Fehlende Deckung im Originaltext\",
+          \"decision\": \"CORRECT\" | \"UNSUPPORTED_STATEMENT\" | \"MISSING_INFORMATION_TREATED_AS_NORMAL\" | \"QUOTE_NOT_EXACT\"
+        }
+      ]
+    }
+  ],
+  \"audit_changes\": [],
+  \"final_corrected_output\": \"Vollständige, endgültig geprüfte Auswertung in {$targetLanguageName}\"
+}";
+
+    $aiRes = callGeminiApi($prompt, false);
+    $parsed = null;
+    if ($aiRes) {
+        $parsed = extractJsonFromText($aiRes);
+    }
+
+    if (!is_array($parsed) || empty($parsed['category_checks'])) {
+        // Deterministic fallback
+        $catDefs = [
+            ['key' => 'causa', 'name' => 'Causa'],
+            ['key' => 'localisatio', 'name' => 'Localisatio'],
+            ['key' => 'sensatio', 'name' => 'Sensatio'],
+            ['key' => 'symptoma', 'name' => 'Symptoma'],
+            ['key' => 'modalitates_besserung', 'name' => 'Modalitates – Besserung'],
+            ['key' => 'modalitates_verschlechterung', 'name' => 'Modalitates – Verschlechterung'],
+            ['key' => 'symptomata_concomitantia', 'name' => 'Symptomata concomitantia'],
+            ['key' => 'comorbiditas', 'name' => 'Comorbiditas'],
+            ['key' => 'mens', 'name' => 'Mens'],
+            ['key' => 'animus', 'name' => 'Animus']
+        ];
+
+        $arbCats = isset($arbitratorResult['category_evaluations']) && is_array($arbitratorResult['category_evaluations'])
+            ? $arbitratorResult['category_evaluations']
+            : [];
+
+        $checks = [];
+        $auditChanges = [];
+        $correct = 0;
+        $flagged = 0;
+
+        foreach ($catDefs as $cd) {
+            $found = null;
+            foreach ($arbCats as $ac) {
+                $cName = $ac['category'] ?? ($ac['category_name'] ?? ($ac['category_key'] ?? ''));
+                if (stripos($cName, $cd['key']) !== false || stripos($cName, $cd['name']) !== false) {
+                    $found = $ac;
+                    break;
+                }
+            }
+
+            $schiedText = trim($found['belegpruefer_neu'] ?? ($found['schiedsrichter_result'] ?? ($found['gemini_alt'] ?? ($found['result_text'] ?? $missingDefault))));
+            $isPseudoNormal = isPseudoNormalOrNegativeFindingPhp($schiedText, $rawText);
+            $isMissing = ($schiedText === $missingDefault || stripos($schiedText, 'keine angaben im text') !== false);
+
+            $decision = 'CORRECT';
+            $issue = null;
+            $reasoning = 'Entspricht den Angaben im Originaltext.';
+            $minimalCorrection = $schiedText;
+            $severity = null;
+            $atomicClaims = [];
+
+            if ($isPseudoNormal) {
+                $decision = 'MISSING_INFORMATION_TREATED_AS_NORMAL';
+                $issue = 'Fehlende Information wurde als Normalbefund formuliert. Vorgabe: ' . $missingDefault;
+                $reasoning = 'Fehlende Angaben dürfen nicht als Normalbefund behandelt werden.';
+                $minimalCorrection = $missingDefault;
+                $severity = 'MITTEL';
+                $atomicClaims[] = [
+                    'claim' => $schiedText,
+                    'raw_text_snippet' => null,
+                    'is_supported' => false,
+                    'issue' => 'Fehlende Angabe im Originaltext',
+                    'decision' => 'MISSING_INFORMATION_TREATED_AS_NORMAL'
+                ];
+            } else if ($isMissing) {
+                $decision = 'CORRECT';
+                $reasoning = 'Der Originaltext enthält hierzu keine Angaben. Korrekt als Nicht-Befund erfasst.';
+                $atomicClaims[] = [
+                    'claim' => $missingDefault,
+                    'raw_text_snippet' => null,
+                    'is_supported' => true,
+                    'issue' => null,
+                    'decision' => 'CORRECT'
+                ];
+            } else {
+                $qVal = validateQuoteAgainstRawTextPhp($rawText, $schiedText);
+                if ($qVal['quote_valid']) {
+                    $atomicClaims[] = [
+                        'claim' => $schiedText,
+                        'raw_text_snippet' => $qVal['quote_cleaned'],
+                        'is_supported' => true,
+                        'issue' => null,
+                        'decision' => 'CORRECT'
+                    ];
+                } else {
+                    $decision = 'UNSUPPORTED_STATEMENT';
+                    $issue = 'Aussage ist nicht wörtlich im Originaltext belegt.';
+                    $reasoning = 'Die Formulierung weicht vom Wortlaut des Originaltexts ab.';
+                    $severity = 'MITTEL';
+                    $atomicClaims[] = [
+                        'claim' => $schiedText,
+                        'raw_text_snippet' => null,
+                        'is_supported' => false,
+                        'issue' => 'Nicht wörtlich belegt',
+                        'decision' => 'UNSUPPORTED_STATEMENT'
+                    ];
+                }
+            }
+
+            if ($decision === 'CORRECT') {
+                $correct++;
+            } else {
+                $flagged++;
+                $auditChanges[] = [
+                    'category' => $cd['name'],
+                    'original_schiedsrichter' => $schiedText,
+                    'corrected' => $minimalCorrection,
+                    'reason' => $issue,
+                    'severity' => $severity ?? 'MITTEL'
+                ];
+            }
+
+            $checks[] = [
+                'category' => $cd['name'],
+                'schiedsrichter_result' => $schiedText,
+                'raw_text_snippet' => $atomicClaims[0]['raw_text_snippet'] ?? null,
+                'decision' => $decision,
+                'issue' => $issue,
+                'reasoning' => $reasoning,
+                'severity' => $severity,
+                'minimal_correction' => $minimalCorrection,
+                'atomic_claims' => $atomicClaims
+            ];
+        }
+
+        $overallStatus = ($flagged === 0) ? 'PASS' : 'CORRECTION_REQUIRED';
+        $summary = ($overallStatus === 'PASS')
+            ? 'Alle 10 Kategorien stimmen mit dem unveränderten Originaltext überein.'
+            : "{$flagged} von 10 Kategorien weisen Abweichungen oder unzulässige Normalbefunde auf.";
+
+        $finalOutput = '';
+        foreach ($checks as $c) {
+            $finalOutput .= $c['category'] . ': ' . $c['minimal_correction'] . "\n";
+        }
+
+        $parsed = [
+            'overall_status' => $overallStatus,
+            'summary' => $summary,
+            'total_categories_checked' => 10,
+            'correct_count' => $correct,
+            'flagged_count' => $flagged,
+            'category_checks' => $checks,
+            'audit_changes' => $auditChanges,
+            'final_corrected_output' => trim($finalOutput)
+        ];
+    } else {
+        // Enforce deterministic rules on AI output
+        $catChecks = isset($parsed['category_checks']) && is_array($parsed['category_checks']) ? $parsed['category_checks'] : [];
+        $correct = 0;
+        $flagged = 0;
+
+        foreach ($catChecks as &$c) {
+            $hasAtomicFailure = false;
+            $atomicDecision = 'UNSUPPORTED_STATEMENT';
+            $atomicIssue = '';
+
+            if (isset($c['atomic_claims']) && is_array($c['atomic_claims'])) {
+                foreach ($c['atomic_claims'] as &$ac) {
+                    if (!empty($ac['raw_text_snippet'])) {
+                        $val = validateQuoteAgainstRawTextPhp($rawText, $ac['raw_text_snippet']);
+                        if (!$val['quote_valid']) {
+                            $ac['is_supported'] = false;
+                            $ac['decision'] = 'QUOTE_NOT_EXACT';
+                            $ac['issue'] = $ac['issue'] ?? 'Zitat weicht vom Originaltext ab.';
+                        }
+                    }
+                    if (isset($ac['is_supported']) && $ac['is_supported'] === false) {
+                        $hasAtomicFailure = true;
+                        $atomicDecision = $ac['decision'] ?? 'UNSUPPORTED_STATEMENT';
+                        $atomicIssue = $ac['issue'] ?? 'Nicht belegter Claim';
+                    }
+                }
+            }
+
+            if (isPseudoNormalOrNegativeFindingPhp($c['schiedsrichter_result'] ?? '', $rawText)) {
+                $c['decision'] = 'MISSING_INFORMATION_TREATED_AS_NORMAL';
+                $c['issue'] = 'Fehlende Information wurde als Normalbefund formuliert. Vorgabe: ' . $missingDefault;
+                $c['minimal_correction'] = $missingDefault;
+                $c['severity'] = 'MITTEL';
+            } else if ($hasAtomicFailure && ($c['decision'] ?? '') === 'CORRECT') {
+                $c['decision'] = $atomicDecision;
+                $c['issue'] = $atomicIssue;
+                $c['severity'] = $c['severity'] ?? 'MITTEL';
+            }
+
+            if (($c['decision'] ?? '') === 'CORRECT') {
+                $correct++;
+            } else {
+                $flagged++;
+            }
+        }
+        unset($c);
+
+        $parsed['total_categories_checked'] = count($catChecks) > 0 ? count($catChecks) : 10;
+        $parsed['correct_count'] = $correct;
+        $parsed['flagged_count'] = $flagged;
+        $parsed['overall_status'] = ($flagged === 0) ? 'PASS' : 'CORRECTION_REQUIRED';
+    }
+
+    return $parsed;
+}
+
+// =========================================================================
+// ROUTE: ORGANON ENDPRÜFER / TEXTTREUEPRÜFUNG (/api/organon/endpruefer)
+// =========================================================================
+if ($route === 'organon/endpruefer' || $route === 'api/organon/endpruefer' || $route === 'organon/final-audit' || $route === 'api/organon/final-audit') {
+    $rawText = isset($body['rawText']) ? trim($body['rawText']) : '';
+    $arbitratorResult = $body['arbitratorResult'] ?? [];
+    $language = isset($body['language']) ? $body['language'] : 'de';
+
+    if (empty($rawText)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'rawText is required']);
+        exit;
+    }
+
+    $result = runEndprueferPhp($rawText, $arbitratorResult, $language);
+    echo json_encode(['engine' => 'endpruefer', 'result' => $result], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
