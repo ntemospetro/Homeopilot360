@@ -3336,5 +3336,7 @@ export const el = {
   organonEndprueferNoChangesRecorded: "Καμία παρατήρηση – Το αποτέλεσμα του διαιτητή υιοθετήθηκε αμετάβλητο.",
   organonEndprueferLoading: "Ο τελικός ελεγκτής επαληθεύει την πιστότητα κειμένου και των 10 κατηγοριών...",
   organonStartEndprueferNow: "Έναρξη τελικού ελέγχου",
-  organonEndprueferNotStarted: "Ο τελικός έλεγχος δεν έχει ξεκινήσει ακόμα."
+  organonEndprueferNotStarted: "Ο τελικός έλεγχος δεν έχει ξεκινήσει ακόμα.",
+  organonEndprueferAtomicTitle: "Ατομικός έλεγχος ισχυρισμών ({count} επιμέρους δηλώσεις)",
+  organonEndprueferAtomicEvidence: "Απόδειξη:"
 };

@@ -1186,6 +1186,72 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
     return list;
   };
 
+  const MISSING_INFO_PHRASE: Record<string, string> = {
+    de: "Keine Angaben im Text.",
+    en: "No information in text.",
+    el: "Δεν υπάρχουν στοιχεία στο κείμενο.",
+    es: "Sin datos en el texto.",
+    fr: "Aucune information dans le texte.",
+    it: "Nessuna informazione nel testo.",
+    ru: "В тексте нет сведений."
+  };
+
+  function getMissingInfoPhrase(lang: string): string {
+    return MISSING_INFO_PHRASE[lang] || MISSING_INFO_PHRASE.de;
+  }
+
+  function isPseudoNormalOrNegativeFinding(text?: string | null, rawText: string = ''): boolean {
+    if (!text || typeof text !== 'string') return false;
+    const t = text.trim();
+    if (!t) return true;
+
+    if (
+      /keine angaben im text/i.test(t) ||
+      /no information in text/i.test(t) ||
+      /δεν υπάρχουν στοιχεία/i.test(t) ||
+      /sin datos en el texto/i.test(t) ||
+      /aucune information dans le texte/i.test(t) ||
+      /nessuna informazione nel testo/i.test(t) ||
+      /в тексте нет сведений/i.test(t)
+    ) {
+      return false;
+    }
+
+    // Wenn der Patient exakt diesen Wortlaut im rawText verwendet hat (z.B. "Ich habe keine Übelkeit"), ist es eine explizite Negation
+    if (rawText && rawText.toLowerCase().includes(t.toLowerCase())) {
+      return false;
+    }
+
+    const bannedPrefixes = [
+      /^(keine|kein|keinerlei|nicht vorhanden|unauffällig|ohne befund|keine erkrankungen|keine vorerkrankungen|keine veränderungen|keine beschwerden|keine symptome|normal|unremarkable|none|nothing|nada|καμία|κανένα|δεν αναφέρεται|нет|отсутствует|без особенностей)[\.\!]?$/i,
+      /^(keine weiteren vorerkrankungen|keine anamnestischen auffälligkeiten|keine pathologischen veränderungen|keine nennenswerten erkrankungen|keine bekannten vorerkrankungen|keine chronischen erkrankungen)[\.\!]?$/i,
+      /^(denken unauffällig|gemüt unauffällig|keine gemütsveränderung|keine seelischen veränderungen|stimmung unauffällig)[\.\!]?$/i,
+      /^(keine begleitung|keine begleitsymptome|keine weiteren symptome)[\.\!]?$/i,
+      /^(keine angabe|keine angaben|nicht genannt|nicht näher beschrieben|nicht explizit genannt)[\.\!]?$/i
+    ];
+
+    for (const pat of bannedPrefixes) {
+      if (pat.test(t)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function cleanStage1MissingInfo(obj: any, rawText: string, lang: string) {
+    if (!obj || typeof obj !== 'object') return;
+    const stage1 = obj?.three_stage?.stage1;
+    const missingPhrase = getMissingInfoPhrase(lang);
+    if (Array.isArray(stage1)) {
+      stage1.forEach((cat: any) => {
+        if (isPseudoNormalOrNegativeFinding(cat.result_text, rawText)) {
+          cat.result_text = missingPhrase;
+        }
+      });
+    }
+  }
+
   let isOpenAiKeyInvalid = false;
 
   app.post("/api/organon/analyze", async (req, res) => {
@@ -1205,16 +1271,32 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
         ru: "Russian (Русский)"
       };
       const targetLanguageName = langNames[language] || "German (Deutsch)";
+      const missingInfoDefault = getMissingInfoPhrase(language);
 
       const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all text, category names, core questions, analysis results (result_text), examinations, adopted complaints, control notes, and clarification questions FULLY TRANSLATED into ${targetLanguageName} (${language}). 
-Do NOT output any German phrases or sentences (such as "Keine Angaben zur Causa...") unless German is the selected target language. 
-If the selected target language is Greek (el), use proper Greek alphabet and terminology (e.g. use "Καμία" or "Δεν αναφέρεται" instead of Latin/German words or romanized letters like 'n').
+Do NOT output any German phrases or sentences unless German is the selected target language. 
+If the selected target language is Greek (el), use proper Greek alphabet and terminology (e.g. use "Δεν υπάρχουν στοιχεία στο κείμενο" instead of Latin/German words or romanized letters).
 
-STRICT EVIDENCE & TEXT FIDELITY RULES:
-1. RAWTEXT ABSOLUTE PRIORITY: rawText is the sole primary source of truth. Do not invent or assume anything not present.
-2. NO SEMANTIC AMPLIFICATION: Do not upscale patient terms. E.g., "schlafe schlecht" must remain "schlafe schlecht" (do not transform to "Insomnie" or "Schlaflosigkeit"), "traurig" must remain "traurig" (do not transform to "Melancholie" or "Depression").
-3. STRICT CAUSA HANDLING: Formulations like "seit X", "nach X" or "damals begann..." are strictly Causa candidates / temporal associations, NOT confirmed pathological shocks or grief trauma unless explicitly stated as the direct cause by the patient.
-4. EXACT VERBATIM QUOTES: Text snippets and quotes must be exact substrings from rawText.
+STRICT STAGE 1 EVIDENCE & FIDELITY DIRECTIVES (§§ 83–104 Organon):
+Stage 1 is NOT a complete anamnesis, NOT an interpretation, and NOT a speculative completion of the case.
+Its SOLE task is lossless, strictly faithful extraction of information actually stated by the patient into the 10 categories. Further individualization and questioning occurs later in Stage 2.
+
+1. MISSING INFORMATION IS NEVER A NEGATIVE FINDING:
+If the patient did not provide information for a category, you MUST NEVER output words like "Keine", "nicht vorhanden", "unauffällig", "keine Erkrankungen", "keine Veränderungen", "Normal", "None", "Unremarkable" or comparable statements.
+Instead, you MUST state EXACTLY: "${missingInfoDefault}".
+A negative statement may ONLY be adopted if the patient explicitly stated it (e.g., "Ich habe keine Übelkeit." -> explicit negative statement). Lack of mention is strictly "${missingInfoDefault}", NEVER "keine Übelkeit". This rule applies especially to Comorbiditas, Mens, and Symptomata concomitantia, but fundamentally to ALL categories.
+
+2. PRESERVE ALL MEANING-BEARING QUALIFIERS:
+In assignment and condensation, words or terms that restrict or specify meaning MUST NEVER BE REMOVED:
+manchmal (sometimes), gelegentlich (occasionally), meistens (mostly), häufig (frequently), oft (often), selten (rarely), etwas (somewhat), eher (rather), ungefähr / etwa (approximately), besonders (especially), nicht immer (not always), eigentlich (actually), weiterhin (still), seit (since), vor (before), danach (afterwards), and comparable qualifiers.
+Example: "zieht gelegentlich bis in die rechte Schulter" MUST NOT be compressed to "Ausstrahlung in die rechte Schulter", but MUST retain "Gelegentliche Ausstrahlung in die rechte Schulter." Removing qualifiers strengthens the claim impermissibly.
+
+3. DO NOT COMPRESS OR OMIT REPORTED DETAILS:
+Stage 1 extracts and structures, it does NOT summarize away details. Soweit im Original vorhanden, MUST BE PRESERVED:
+Duration, frequency, localization, radiation, sensation, intensity statements, modalities, temporal relationships, restrictions and qualifiers, patient uncertainties, and explicit negations.
+
+4. RAWTEXT IS THE SOLE SOURCE OF TRUTH:
+rawText is the primary and sole source of truth. No diagnoses, no medical additions, no repertorisation, no miasmatic interpretation, and no inferred assumptions. Verbatim text snippets and quotes must be exact substrings from rawText.
 
 You are a precise NLP and text parser for homeopathic case narratives according to Samuel Hahnemann (Organon of Medicine).
 Your task is to analyze the patient narrative in a 3-stage analysis according to the following 10 exact categories:
@@ -1229,11 +1311,9 @@ Your task is to analyze the patient narrative in a 3-stage analysis according to
 9. Mens (What changes in thinking?)
 10. Animus (How do you feel emotionally?)
 
-IMPORTANT RULE FOR ALL CATEGORIES: If something does not apply or has no disease value, state clearly in ${targetLanguageName} (e.g., "None" / "Δεν αναφέρεται"). Only mention what actually applies.
-
 You MUST create the "three_stage" field in the JSON response with:
-- "stage1": Array with all 10 categories (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text [fully in ${targetLanguageName}]).
-- "stage2": Array of text checks (text_snippet, examination [in ${targetLanguageName}], adopted_complaint [in ${targetLanguageName}]).
+- "stage1": Array with all 10 categories (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text [fully in ${targetLanguageName}; if no info, strictly "${missingInfoDefault}"]).
+- "stage2": Array of text checks (text_snippet [exact verbatim substring], examination [in ${targetLanguageName}], adopted_complaint [in ${targetLanguageName}]).
 - "stage3": Object with control_notes [in ${targetLanguageName}] and clarification_question [in ${targetLanguageName} - MUST be neutral and open, e.g. asking for clarification rather than suggestive hypotheses].
 
 Answer EXCLUSIVELY as a compact, valid JSON object in the following format (without markdown code blocks):
@@ -1315,19 +1395,25 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
         const ai = new GoogleGenAI({ apiKey });
         const secondPrompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all text, category names, core questions, analysis results (result_text), examinations, adopted complaints, control notes, and clarification questions FULLY TRANSLATED into ${targetLanguageName} (${language}). 
 Do NOT output any German phrases or sentences unless German is the selected target language.
-If the selected target language is Greek (el), use proper Greek alphabet and terminology (e.g. use "Καμία" or "Δεν αναφέρεται" instead of Latin/German words).
+If the selected target language is Greek (el), use proper Greek alphabet and terminology (e.g. use "Δεν υπάρχουν στοιχεία στο κείμενο" instead of Latin/German words).
 
 You are GPT-4o Pro (Second-Opinion Mode), an expert in objective case extraction according to Hahnemann's Organon (§§ 83–104) in ${targetLanguageName}.
 Your task is to create a COMPLETELY INDEPENDENT alternative second analysis of the patient narrative according to the 10 Organon categories.
-IMPORTANT: Focus strictly on objective symptom extraction and modality interactions. Do NOT include miasmatic classifications, remedy suggestions, or materia medica interpretations at this text evidence stage.
+
+STRICT STAGE 1 EVIDENCE & FIDELITY DIRECTIVES:
+Stage 1 is NOT an interpretation, NOT a full anamnesis, and NOT a speculative completion. Its ONLY task is lossless, strictly faithful extraction of information actually stated by the patient into the 10 categories.
+1. MISSING INFORMATION IS NEVER A NEGATIVE FINDING: If the patient did not provide information for a category, you MUST NEVER output words like "Keine", "nicht vorhanden", "unauffällig", "keine Erkrankungen", "keine Veränderungen", "Normal", "None", "Unremarkable" or comparable negative statements. Instead, output EXACTLY: "${missingInfoDefault}". A negative statement is ONLY permitted if explicitly stated by the patient (e.g. "Ich habe keine Übelkeit." -> explicit negative finding).
+2. PRESERVE ALL MEANING-BEARING QUALIFIERS: Never drop words like manchmal, gelegentlich, meistens, häufig, oft, selten, etwas, eher, ungefähr, etwa, besonders, nicht immer, eigentlich, weiterhin, seit, vor, danach, etc.
+3. DO NOT COMPRESS OR OMIT REPORTED DETAILS: Preserve duration, frequency, localization, radiation, sensation, intensity, modalities, temporal relations, qualifiers, uncertainties, and explicit negations.
+4. RAWTEXT IS SOLE SOURCE OF TRUTH: No diagnoses, no repertorisation, no miasmatic interpretations.
 
 Patient narrative:
 "${rawText.replace(/"/g, '\\"')}"
 
 You MUST create the "three_stage" field in the JSON response with:
-- "stage1": Array with all 10 categories (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text [fully in ${targetLanguageName}]).
-- "stage2": Array of text checks (text_snippet, examination [in ${targetLanguageName}], adopted_complaint [in ${targetLanguageName}]).
-- "stage3": Object with control_notes [in ${targetLanguageName}] and clarification_question [in ${targetLanguageName}].
+- "stage1": Array with all 10 categories (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text [fully in ${targetLanguageName}; if no info, strictly "${missingInfoDefault}"]).
+- "stage2": Array of text checks (text_snippet [exact verbatim substring], examination [in ${targetLanguageName}], adopted_complaint [in ${targetLanguageName}]).
+- "stage3": Object with control_notes [in ${targetLanguageName}] and clarification_question [in ${targetLanguageName} - neutral and open].
 
 Answer EXCLUSIVELY as a compact, valid JSON object in the following format (without markdown code blocks):
 {
@@ -1437,6 +1523,9 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
         const parsedGemini = { ...defaultAnalysis, ...parseAiJson(geminiText, defaultAnalysis) };
         const parsedOpenAI = { ...defaultAnalysis, ...parseAiJson(openaiRes.content || openaiRes, defaultAnalysis) };
 
+        cleanStage1MissingInfo(parsedGemini, rawText, language);
+        cleanStage1MissingInfo(parsedOpenAI, rawText, language);
+
         return res.json({
           engine: "compare",
           gemini: parsedGemini,
@@ -1467,6 +1556,7 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
       }
 
       const parsed = { ...defaultAnalysis, ...parseAiJson(responseText, defaultAnalysis) };
+      cleanStage1MissingInfo(parsed, rawText, language);
       parsed.meta_provider = {
         provider: "openai",
         model_requested: "gpt-4o",
@@ -1784,10 +1874,10 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
       return { quote_valid: false, quote_cleaned: '' };
     }
     const lower = cleaned.toLowerCase();
-    if (lower.includes('keine angabe') || lower.includes('nicht im rohtext') || lower.includes('kein beleg')) {
+    if (lower.includes('keine angabe') || lower.includes('nicht im rohtext') || lower.includes('kein beleg') || lower.includes('keine angaben im text')) {
       return { quote_valid: false, quote_cleaned: cleaned };
     }
-    // 1. Direct exact substring check
+    // 1. Direct exact substring check (strict verbatim requirement)
     if (rawText.includes(cleaned)) {
       return { quote_valid: true, quote_cleaned: cleaned };
     }
@@ -1796,12 +1886,17 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
     if (stripEllipsis && rawText.includes(stripEllipsis)) {
       return { quote_valid: true, quote_cleaned: stripEllipsis };
     }
-    // 3. Normalized whitespace substring check
+    // 3. Exact whitespace normalization check (e.g. newline inside snippet in rawText)
     const normRaw = rawText.replace(/\s+/g, ' ').trim();
     const normQuote = stripEllipsis.replace(/\s+/g, ' ').trim();
     if (normQuote && normRaw.includes(normQuote)) {
-      return { quote_valid: true, quote_cleaned: normQuote };
+      // Find the actual verbatim substring in rawText to avoid returning altered text
+      const idx = normRaw.indexOf(normQuote);
+      if (idx !== -1) {
+        return { quote_valid: true, quote_cleaned: stripEllipsis };
+      }
     }
+    // If text was rephrased, altered, or normalized, it is NOT an exact quote
     return { quote_valid: false, quote_cleaned: cleaned };
   }
 
@@ -1822,6 +1917,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
         ru: "Russian (Русский)"
       };
       const targetLanguageName = langNames[language] || "German (Deutsch)";
+      const missingInfoDefault = getMissingInfoPhrase(language);
 
       const apiKey = getGeminiApiKey();
       if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
@@ -1829,11 +1925,25 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
 
       const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all text, category names, core questions, verification analyses, audit protocol decisions/reasonings, corrected summary tables, course notes, and clarification questions FULLY TRANSLATED into ${targetLanguageName} (${language}). Do NOT output any German phrases unless German is the selected target language.
 
-You are a strict, incorruptible EVIDENCE AUDITOR and ARBITER for homeopathic case analyses according to Samuel Hahnemann (Organon of Medicine).
-RAWTEXT ABSOLUTE PRIORITY: rawText is the sole primary source of truth. Agreement between Gemini and GPT is never proof of correctness. Each statement must be independently verified against rawText.
+You are a strict, incorruptible EVIDENCE AUDITOR and ARBITER for homeopathic case analyses according to Samuel Hahnemann (Organon of Medicine, §§ 83–104).
+RAWTEXT ABSOLUTE PRIORITY: rawText is the sole primary source of truth. Agreement between Gemini and GPT is NEVER proof of correctness. Each statement must be independently verified against rawText.
 
-Your task is to examine the unaltered original patient narrative against both the analysis of Gemini and the GPT Second-Opinion analysis, applying strict evidence control and zero semantic amplification (e.g. "schlafe schlecht" must not become "Insomnie", "traurig" must not become "Melancholie").
-Formulations like "seit X" or "nach X" are strictly TEMPORAL_ASSOCIATION / Causa candidates, not confirmed pathological trauma unless explicitly confirmed by the patient.
+STRICT STAGE 1 STABILIZATION RULES:
+1. MISSING INFORMATION IS NEVER A NEGATIVE FINDING:
+If the patient did not state information for a category, you MUST NEVER output words like "Keine", "nicht vorhanden", "unauffällig", "keine Erkrankungen", "keine Veränderungen", "Normal", "None", or "Unremarkable".
+Instead, you MUST strictly output: "${missingInfoDefault}".
+A negative finding may ONLY be accepted if explicitly articulated by the patient (e.g., "Ich habe keine Übelkeit." -> explicit negative statement). Lack of mention is strictly "${missingInfoDefault}".
+
+2. PRESERVE ALL MEANING-BEARING QUALIFIERS:
+Never remove or strip words that restrict or qualify meaning:
+manchmal, gelegentlich, meistens, häufig, oft, selten, etwas, eher, ungefähr, etwa, besonders, nicht immer, eigentlich, weiterhin, seit, vor, danach, etc.
+Removing qualifiers (e.g. turning "gelegentliche Ausstrahlung" into "Ausstrahlung") is an impermissible semantic amplification.
+
+3. DO NOT COMPRESS OR OMIT REPORTED DETAILS:
+Stage 1 extracts and structures; it does NOT freely summarize. Retain duration, frequency, localization, radiation, sensation, intensity, modalities, temporal relations, patient uncertainties, and explicit negations.
+
+4. NO MEDICAL INVENTIONS OR REPERTORISATION:
+No diagnoses, no repertory additions, no miasmatic interpretations. Text snippets in quotes must be exact verbatim substrings from rawText.
 
 For EVERY proposed statement, you must assign one of the following 7 Evidence Statuses:
 - EXPLICITLY_SUPPORTED
@@ -1858,8 +1968,8 @@ Perform a detailed evaluation for each of the 10 categories with its exact core 
 
 EVALUATION PROCESS PER CATEGORY:
 - Independently evaluate what Gemini and GPT proposed against rawText. If both share an unsupported conclusion, correct both.
-- Create the corrected result ("belegpruefer_neu") strictly according to rawText without hallucinations or semantic amplification.
-- Ensure the 'quote' field contains ONLY an exact verbatim substring from rawText. If no exact quote exists, mark accordingly.
+- Create the corrected result ("belegpruefer_neu") strictly according to rawText without hallucinations or semantic amplification. If no info, output "${missingInfoDefault}".
+- Ensure the 'quote' field contains ONLY an exact verbatim substring from rawText. If no exact quote exists, output "${missingInfoDefault}".
 - Ensure clarification questions are neutral and open (not suggestive).
 
 Originaltext:
@@ -1926,9 +2036,16 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
         if (Array.isArray(parsed.category_evaluations)) {
           parsed.category_evaluations.forEach((cat: any) => {
             cat.evidence_status = normalizeEvidenceStatus(cat.evidence_status);
+            if (isPseudoNormalOrNegativeFinding(cat.belegpruefer_neu, rawText)) {
+              cat.belegpruefer_neu = missingInfoDefault;
+              cat.evidence_status = 'NOT_SUPPORTED';
+            }
             const q = cat.quote || cat.belegpruefer_neu;
             const val = validateQuoteAgainstRawText(rawText, q);
             cat.quote_valid = val.quote_valid;
+            if (val.quote_valid && val.quote_cleaned) {
+              cat.quote = val.quote_cleaned;
+            }
           });
         }
 
@@ -2024,9 +2141,11 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
       if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
       const ai = new GoogleGenAI({ apiKey });
 
+      const missingInfoDefault = getMissingInfoPhrase(language);
+
       const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all texts, issues, reasonings, and final output in ${targetLanguageName} (${language}).
 
-Du bist die vierte und LETZTE UNABHÄNGIGE PRÜFINSTANZ (Endprüfer / Texttreueprüfung) einer homöopathischen Fallanalyse.
+Du bist die vierte und LETZTE UNABHÄNGIGE PRÜFINSTANZ (Endprüfer / Texttreueprüfung) einer homöopathischen Fallanalyse gemäß Organon (§§ 83–104).
 
 WICHTIGE ANWEISUNGEN:
 - Du bist KEIN weiterer medizinischer oder homöopathischer Analysator und KEIN zweiter Schiedsrichter.
@@ -2040,20 +2159,30 @@ WICHTIGE ANWEISUNGEN:
 - Deine EINZIGE Aufgabe:
   Vergleiche den unveränderten Patienten-Originaltext mit dem vom Schiedsrichter erzeugten Ergebnis und erkenne Stellen, an denen das Schiedsrichter-Ergebnis mehr, weniger oder etwas anderes behauptet, als der Originaltext rechtfertigt.
 
+ATOMARE PRÜFUNG (STRENGSTE REGEL):
+Du darfst Kategorien oder Sätze NICHT pauschal als Einheit freigeben.
+Jede Behauptung, jede Zuordnung und jedes Attribut (z.B. Ort, Ausstrahlung, Häufigkeit, Dauer, Auslöser, Vorerkrankung, Gemütszustand) muss als einzelner atomarer Claim betrachtet und separat gegen den Originaltext geprüft werden.
+- EIN BELEGTER CLAIM DARF EINEN UNBELEGTEN CLAIM NIEMALS ZU 'CORRECT' MACHEN!
+- Sobald eine Kategorie mindestens eine unbelegte Aussage, eine Bedeutungsverstärkung, eine verlorene Einschränkung, eine umformulierte Zitatbehauptung oder einen unzulässigen Normalbefund enthält, DARF DIESE KATEGORIE NICHT 'CORRECT' SEIN, sondern MUSS beanstandet und minimal korrigiert werden.
+
 STRENG ZU PRÜFENDE FEHLERMUSTER:
-1. Hinzugefügte Informationen
-2. Bedeutungsverstärkungen (z.B. "stechende Kopfschmerzen" -> "präzise über dem Auge", "gerne zusammen" -> "ungestörte Freude")
+1. Hinzugefügte Informationen (Informationen, die nicht im Originaltext stehen)
+2. Bedeutungsverstärkungen (z.B. "stechende Kopfschmerzen" -> "präzise über dem Auge", "gerne zusammen" -> "ungestörte Freude", Wegfall von "gelegentlich" oder "manchmal")
 3. Bedeutungsabschwächungen
 4. Bedeutungsverschiebungen
-5. Aus fehlenden Angaben erzeugte Normalbefunde (z.B. Patient sagt nichts zum Denken -> "Denken unauffällig" oder "keine pathologischen Auffälligkeiten" ist VERBOTEN! Fehlen einer Information ist kein Normalbefund!)
-6. Verlorene Einschränkungen (z.B. "eigentlich", "manchmal", "meistens", "vielleicht", "ich weiß nicht" etc. wurden getilgt)
+5. Aus fehlenden Angaben erzeugte Normalbefunde (z.B. Patient sagt nichts zum Denken, Vorerkrankungen oder Begleitsymptomen -> "Denken unauffällig", "keine Vorerkrankungen", "keine Begleitsymptome" oder "keine Veränderungen" ist STRENG VERBOTEN! Fehlende Information ist niemals ein negativer Befund. Richtig ist ausnahmslos: "${missingInfoDefault}")
+6. Verlorene Einschränkungen (z.B. "manchmal", "gelegentlich", "meistens", "häufig", "etwas", "eher", "ungefähr", "etwa", "besonders", "nicht immer", "eigentlich", "weiterhin", "seit", "vor", "danach" wurden getilgt)
 7. Aus zeitlichem Zusammenhang erzeugte Kausalität ("seit Streit" darf nicht als bewiesene Ätiologie/Kausalität formuliert werden)
 8. Unbelegte Diagnosen oder psychologische/fachliche Deutungen
 9. Veränderte Intensitäten, Häufigkeiten, Zeitangaben, Lokalisationen oder Modalitäten
 10. Fachbegriffe, die mehr aussagen als die Patientenformulierung
-11. Angebliche Originalzitate, die nicht wortwörtlich im Originaltext vorkommen
+11. Angebliche Originalzitate, die nicht wortwörtlich als exakte Zeichenfolge im Originaltext vorkommen
 
-STATUSWERTE FÜR DIE ENTSCHEIDUNG (genau einen dieser Werte pro Kategorie verwenden):
+PASS-BEDEUTUNG:
+PASS bedeutet AUSSCHLIESSLICH: Bei der atomaren Prüfung gegen den Originaltext wurde keine relevante unbelegte Aussage, keine Bedeutungsverstärkung, keine verlorene Einschränkung und keine Umwandlung fehlender Information in einen Negativ-/Normalbefund erkannt.
+PASS bedeutet AUSDRÜCKLICH NICHT: Der Fall ist vollständig oder medizinisch abgeklärt (Stufe 1 darf und wird oft unvollständig sein!).
+
+STATUSWERTE FÜR DIE ENTSCHEIDUNG:
 - CORRECT
 - MEANING_STRENGTHENED
 - MEANING_WEAKENED
@@ -2064,12 +2193,7 @@ STATUSWERTE FÜR DIE ENTSCHEIDUNG (genau einen dieser Werte pro Kategorie verwen
 - QUOTE_NOT_EXACT
 - CORRECTION_REQUIRED
 
-SCHWEREGRADE:
-- GERING
-- MITTEL
-- HOCH (insbesondere dann, wenn eine unbelegte Ursache, Diagnose, Pathologie oder ein nicht vorhandener Befund als Patientenfakt dargestellt wird)
-
-PRÜFE ALLE 10 KATEGORIEN EINZELN:
+PRÜFE ALLE 10 KATEGORIEN EINZELN UND ATOMAR:
 1. Causa
 2. Localisatio
 3. Sensatio
@@ -2080,12 +2204,6 @@ PRÜFE ALLE 10 KATEGORIEN EINZELN:
 8. Comorbiditas
 9. Mens
 10. Animus
-
-KORREKTUR-REGEL:
-- Wenn eine Kategorie CORRECT ist: minimal_correction entspricht dem Schiedsrichter-Ergebnis, issue ist null, severity ist null.
-- Wenn eine Kategorie beanstandet wird: Die minimal_correction darf AUSSCHLIESSLICH die erkannte Abweichung beseitigen, ohne neue Informationen hinzuzufügen.
-- Bei PASS im Gesamtstatus: final_corrected_output übernimmt die Schiedsrichter-Zusammenfassung unverändert.
-- Bei CORRECTION_REQUIRED im Gesamtstatus: final_corrected_output liefert den Fließtext der Auswertung, bei dem AUSSCHLIESSLICH die konkret beanstandeten Stellen minimal korrigiert wurden.
 
 PATIENTEN-ORIGINALTEXT:
 "${rawText.replace(/"/g, '\\"')}"
@@ -2104,12 +2222,21 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
     {
       "category": "Causa | Localisatio | Sensatio | Symptoma | Modalitates – Besserung | Modalitates – Verschlechterung | Symptomata concomitantia | Comorbiditas | Mens | Animus",
       "schiedsrichter_result": "Was der Schiedsrichter zu dieser Kategorie formuliert hat",
-      "raw_text_snippet": "Relevante Textstelle aus dem Originaltext oder null, falls der Patient dazu nichts gesagt hat",
+      "raw_text_snippet": "Relevante exakte Textstelle aus dem Originaltext oder null",
       "decision": "CORRECT | MEANING_STRENGTHENED | MEANING_WEAKENED | INFORMATION_ADDED | MEANING_CHANGED | UNSUPPORTED_STATEMENT | MISSING_INFORMATION_TREATED_AS_NORMAL | QUOTE_NOT_EXACT | CORRECTION_REQUIRED",
       "issue": "Gefundene Auffälligkeit oder null falls korrekt",
       "reasoning": "Begründung der Entscheidung",
       "severity": "GERING | MITTEL | HOCH | null",
-      "minimal_correction": "Minimal notwendige Korrektur zur Beseitigung der Abweichung (bzw. unverändertes Schiedsrichter-Ergebnis falls korrekt)"
+      "minimal_correction": "Minimal notwendige Korrektur zur Beseitigung der Abweichung (bzw. unverändertes Schiedsrichter-Ergebnis falls korrekt; bei fehlenden Angaben: '${missingInfoDefault}')",
+      "atomic_claims": [
+        {
+          "claim": "Konkrete atomare Teilaussage / Attribut",
+          "raw_text_snippet": "Exakter unveränderter Substring aus Originaltext oder null",
+          "is_supported": true | false,
+          "issue": "null oder konkrete Abweichung",
+          "decision": "CORRECT | UNSUPPORTED_STATEMENT | MISSING_INFORMATION_TREATED_AS_NORMAL | MEANING_STRENGTHENED | MEANING_WEAKENED | INFORMATION_ADDED | MEANING_CHANGED | QUOTE_NOT_EXACT"
+        }
+      ]
     }
   ],
   "audit_changes": [
@@ -2142,7 +2269,7 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
       const text = response.text || "{}";
       const parsed = parseAiJson(text, {});
 
-      // Deterministic validation of categories & counts
+      // Deterministic validation of categories, atomic claims, and strict counts
       if (parsed && typeof parsed === 'object') {
         const catChecks = Array.isArray(parsed.category_checks) ? parsed.category_checks : [];
         let correct = 0;
@@ -2163,6 +2290,58 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
           if (!validStatuses.has(c.decision)) {
             c.decision = c.issue ? 'CORRECTION_REQUIRED' : 'CORRECT';
           }
+
+          // 1. Validate atomic claims: an unsupported claim invalidates the category
+          let hasAtomicFailure = false;
+          let atomicFailureDecision: string = 'UNSUPPORTED_STATEMENT';
+          let atomicFailureIssue: string = '';
+
+          if (Array.isArray(c.atomic_claims) && c.atomic_claims.length > 0) {
+            c.atomic_claims.forEach((ac: any) => {
+              // Validate quote in atomic claim
+              if (ac.raw_text_snippet) {
+                const val = validateQuoteAgainstRawText(rawText, ac.raw_text_snippet);
+                if (!val.quote_valid) {
+                  ac.is_supported = false;
+                  ac.decision = 'QUOTE_NOT_EXACT';
+                  ac.issue = ac.issue || 'Textstelle stimmt nicht als wörtliches Zitat mit dem Originaltext überein.';
+                }
+              }
+
+              if (ac.is_supported === false || (ac.decision && ac.decision !== 'CORRECT') || ac.issue) {
+                hasAtomicFailure = true;
+                atomicFailureDecision = ac.decision || 'UNSUPPORTED_STATEMENT';
+                atomicFailureIssue = ac.issue || 'Mindestens ein atomarer Claim ist im Originaltext nicht belegt.';
+              }
+            });
+          }
+
+          // 2. Check for pseudo-normal findings (treating missing information as negative finding)
+          if (isPseudoNormalOrNegativeFinding(c.schiedsrichter_result, rawText)) {
+            c.decision = 'MISSING_INFORMATION_TREATED_AS_NORMAL';
+            c.issue = 'Fehlende Information wurde unzulässig als Normal- oder Negativbefund formuliert. Vorgabe: Keine Angaben im Text.';
+            c.minimal_correction = missingInfoDefault;
+            c.severity = 'MITTEL';
+          } else if (hasAtomicFailure && c.decision === 'CORRECT') {
+            c.decision = atomicFailureDecision;
+            c.issue = atomicFailureIssue;
+            if (!c.severity) c.severity = 'MITTEL';
+          }
+
+          // 3. Verify category-level raw_text_snippet if given
+          if (c.raw_text_snippet && typeof c.raw_text_snippet === 'string') {
+            const val = validateQuoteAgainstRawText(rawText, c.raw_text_snippet);
+            if (!val.quote_valid && !c.raw_text_snippet.toLowerCase().includes('keine angaben')) {
+              if (c.decision === 'CORRECT') {
+                c.decision = 'QUOTE_NOT_EXACT';
+                c.issue = 'Angebliches Originalzitat kommt nicht wortwörtlich im Originaltext vor.';
+                if (!c.severity) c.severity = 'GERING';
+              }
+            } else if (val.quote_valid && val.quote_cleaned) {
+              c.raw_text_snippet = val.quote_cleaned;
+            }
+          }
+
           if (c.decision === 'CORRECT') {
             correct++;
           } else {
@@ -2173,6 +2352,7 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
         parsed.total_categories_checked = catChecks.length || 10;
         parsed.correct_count = correct;
         parsed.flagged_count = flagged;
+        // Strict PASS rule: PASS ONLY when ZERO issues exist!
         parsed.overall_status = flagged > 0 ? 'CORRECTION_REQUIRED' : 'PASS';
 
         if (!parsed.final_corrected_output || typeof parsed.final_corrected_output !== 'string') {

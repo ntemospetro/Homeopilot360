@@ -3343,5 +3343,7 @@ export const de = {
   organonEndprueferNoChangesRecorded: "Keine Beanstandungen – Schiedsrichter-Ausgabe wurde unverändert als endgültige Fassung übernommen.",
   organonEndprueferLoading: "Der Endprüfer kontrolliert die Texttreue und Bedeutungsintegrität aller 10 Kategorien...",
   organonStartEndprueferNow: "Endprüfung jetzt starten",
-  organonEndprueferNotStarted: "Endprüfung noch nicht gestartet."
+  organonEndprueferNotStarted: "Endprüfung noch nicht gestartet.",
+  organonEndprueferAtomicTitle: "Atomare Claim-Prüfung ({count} Teilbehauptungen)",
+  organonEndprueferAtomicEvidence: "Beleg:"
 };

@@ -3336,5 +3336,7 @@ export const es = {
   organonEndprueferNoChangesRecorded: "Sin observaciones – El resultado del árbitro se adoptó sin cambios.",
   organonEndprueferLoading: "El auditor final está comprobando la fidelidad textual en las 10 categorías...",
   organonStartEndprueferNow: "Iniciar auditoría final",
-  organonEndprueferNotStarted: "Auditoría final aún no iniciada."
+  organonEndprueferNotStarted: "Auditoría final aún no iniciada.",
+  organonEndprueferAtomicTitle: "Verificación de afirmaciones atómicas ({count} declaraciones)",
+  organonEndprueferAtomicEvidence: "Prueba:"
 };

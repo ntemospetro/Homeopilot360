@@ -595,16 +595,16 @@ export function normalizeOrganonAnalysisResult(data: any, rawText: string): Orga
   };
 
   const defaultStage1 = [
-    { category_key: 'causa', category_name: 'Causa', core_question: 'Wodurch ausgelöst?', result_text: 'Kein Auslöser genannt.' },
-    { category_key: 'localisatio', category_name: 'Localisatio', core_question: 'Wo?', result_text: 'Nicht explizit genannt.' },
-    { category_key: 'sensatio', category_name: 'Sensatio', core_question: 'Wie fühlt es sich an?', result_text: 'Nicht näher beschrieben.' },
-    { category_key: 'symptoma', category_name: 'Symptoma', core_question: 'Was?', result_text: rawText.slice(0, 100) },
-    { category_key: 'modalitates_besserung', category_name: 'Modalitates – Besserung', core_question: 'Wann besser?', result_text: 'Keine Angabe.' },
-    { category_key: 'modalitates_verschlechterung', category_name: 'Modalitates – Verschlechterung', core_question: 'Wann schlechter?', result_text: 'Keine Angabe.' },
-    { category_key: 'symptomata_concomitantia', category_name: 'Symptomata concomitantia', core_question: 'Was tritt dazu auf?', result_text: 'Keine Angaben.' },
-    { category_key: 'comorbiditas', category_name: 'Comorbiditas', core_question: 'Welche weiteren Erkrankungen?', result_text: 'Keine bekannt.' },
-    { category_key: 'mens', category_name: 'Mens', core_question: 'Was verändert sich beim Denken?', result_text: 'Keine Angabe.' },
-    { category_key: 'animus', category_name: 'Animus', core_question: 'Wie geht es dir emotional?', result_text: 'Keine Angabe.' }
+    { category_key: 'causa', category_name: 'Causa', core_question: 'Wodurch ausgelöst?', result_text: 'Keine Angaben im Text.' },
+    { category_key: 'localisatio', category_name: 'Localisatio', core_question: 'Wo?', result_text: 'Keine Angaben im Text.' },
+    { category_key: 'sensatio', category_name: 'Sensatio', core_question: 'Wie fühlt es sich an?', result_text: 'Keine Angaben im Text.' },
+    { category_key: 'symptoma', category_name: 'Symptoma', core_question: 'Was?', result_text: rawText.slice(0, 100) || 'Keine Angaben im Text.' },
+    { category_key: 'modalitates_besserung', category_name: 'Modalitates – Besserung', core_question: 'Wann besser?', result_text: 'Keine Angaben im Text.' },
+    { category_key: 'modalitates_verschlechterung', category_name: 'Modalitates – Verschlechterung', core_question: 'Wann schlechter?', result_text: 'Keine Angaben im Text.' },
+    { category_key: 'symptomata_concomitantia', category_name: 'Symptomata concomitantia', core_question: 'Was tritt dazu auf?', result_text: 'Keine Angaben im Text.' },
+    { category_key: 'comorbiditas', category_name: 'Comorbiditas', core_question: 'Welche weiteren Erkrankungen?', result_text: 'Keine Angaben im Text.' },
+    { category_key: 'mens', category_name: 'Mens', core_question: 'Was verändert sich beim Denken?', result_text: 'Keine Angaben im Text.' },
+    { category_key: 'animus', category_name: 'Animus', core_question: 'Wie geht es dir emotional?', result_text: 'Keine Angaben im Text.' }
   ];
 
   const three_stage = data.three_stage ? {

@@ -3336,5 +3336,7 @@ export const it = {
   organonEndprueferNoChangesRecorded: "Nessun rilievo – L'output dell'arbitro è stato adottato senza modifiche.",
   organonEndprueferLoading: "Il revisore finale sta controllando la fedeltà al testo di tutte le 10 categorie...",
   organonStartEndprueferNow: "Avvia revisione finale",
-  organonEndprueferNotStarted: "Revisione finale non ancora avviata."
+  organonEndprueferNotStarted: "Revisione finale non ancora avviata.",
+  organonEndprueferAtomicTitle: "Verifica atomica dei claim ({count} sotto-asserzioni)",
+  organonEndprueferAtomicEvidence: "Riscontro:"
 };

@@ -3336,5 +3336,7 @@ export const ru = {
   organonEndprueferNoChangesRecorded: "Замечаний нет – Результат арбитра принят без изменений.",
   organonEndprueferLoading: "Окончательный аудитор проверяет точность текста для всех 10 категорий...",
   organonStartEndprueferNow: "Начать окончательный аудит",
-  organonEndprueferNotStarted: "Окончательный аудит еще не запущен."
+  organonEndprueferNotStarted: "Окончательный аудит еще не запущен.",
+  organonEndprueferAtomicTitle: "Атомарная проверка утверждений ({count} подзаявлений)",
+  organonEndprueferAtomicEvidence: "Обоснование:"
 };

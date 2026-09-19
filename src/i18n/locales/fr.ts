@@ -3336,5 +3336,7 @@ export const fr = {
   organonEndprueferNoChangesRecorded: "Aucune anomalie – La sortie de l'arbitre a été adoptée telle quelle.",
   organonEndprueferLoading: "L'auditeur final contrôle la fidélité textuelle des 10 catégories...",
   organonStartEndprueferNow: "Démarrer l'audit final",
-  organonEndprueferNotStarted: "L'audit final n'a pas encore été démarré."
+  organonEndprueferNotStarted: "L'audit final n'a pas encore été démarré.",
+  organonEndprueferAtomicTitle: "Vérification atomique des affirmations ({count} sous-déclarations)",
+  organonEndprueferAtomicEvidence: "Preuve :"
 };

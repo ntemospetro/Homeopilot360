@@ -3342,5 +3342,7 @@ export const en = {
   organonEndprueferNoChangesRecorded: "No issues found – Arbiter output adopted unchanged as final version.",
   organonEndprueferLoading: "Final auditor is verifying textual fidelity and semantic integrity for all 10 categories...",
   organonStartEndprueferNow: "Start final audit now",
-  organonEndprueferNotStarted: "Final audit has not been started yet."
+  organonEndprueferNotStarted: "Final audit has not been started yet.",
+  organonEndprueferAtomicTitle: "Atomic Claim Verification ({count} sub-statements)",
+  organonEndprueferAtomicEvidence: "Evidence:"
 };

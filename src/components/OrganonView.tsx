@@ -792,6 +792,58 @@ export const OrganonView: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Atomare Claims falls vorhanden */}
+                  {cat.atomic_claims && cat.atomic_claims.length > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                        {t('organonEndprueferAtomicTitle', { count: cat.atomic_claims.length })}
+                      </span>
+                      <div className="space-y-1.5">
+                        {cat.atomic_claims.map((ac, acIdx) => {
+                          const isClaimOk = ac.is_supported && ac.decision === 'CORRECT';
+                          return (
+                            <div
+                              key={acIdx}
+                              className={`p-2 rounded-lg text-[11px] flex items-start justify-between gap-2 border ${
+                                isClaimOk
+                                  ? 'bg-slate-50/80 border-slate-200/80 text-slate-800'
+                                  : 'bg-rose-50/70 border-rose-200 text-rose-950'
+                              }`}
+                            >
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  {isClaimOk ? (
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  ) : (
+                                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                  )}
+                                  <span className="font-medium">{ac.claim}</span>
+                                </div>
+                                {ac.raw_text_snippet && (
+                                  <p className="text-[10px] font-mono text-slate-500 pl-5">
+                                    {t('organonEndprueferAtomicEvidence')} „{ac.raw_text_snippet}“
+                                  </p>
+                                )}
+                                {ac.issue && (
+                                  <p className="text-[10px] text-rose-700 font-medium pl-5">
+                                    {ac.issue}
+                                  </p>
+                                )}
+                              </div>
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono shrink-0 border ${
+                                isClaimOk
+                                  ? 'bg-emerald-100/70 text-emerald-800 border-emerald-200'
+                                  : 'bg-rose-100 text-rose-800 border-rose-300 font-semibold'
+                              }`}>
+                                {ac.decision}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Bei Beanstandung: Problem, Begründung und minimale Korrektur */}
                   {!isCatCorrect ? (
                     <div className="mt-3 p-3 rounded-lg bg-amber-100/60 border border-amber-300/80 space-y-2 text-[11px]">

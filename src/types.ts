@@ -773,6 +773,14 @@ export type EndprueferDecisionStatus =
   | 'QUOTE_NOT_EXACT'
   | 'CORRECTION_REQUIRED';
 
+export interface EndprueferAtomicClaim {
+  claim: string;
+  raw_text_snippet: string | null;
+  is_supported: boolean;
+  issue: string | null;
+  decision: EndprueferDecisionStatus;
+}
+
 export interface EndprueferCategoryDecision {
   category: string;
   schiedsrichter_result: string;
@@ -782,6 +790,7 @@ export interface EndprueferCategoryDecision {
   reasoning: string;
   severity: 'GERING' | 'MITTEL' | 'HOCH' | null;
   minimal_correction: string;
+  atomic_claims?: EndprueferAtomicClaim[];
 }
 
 export interface EndprueferAuditChange {
