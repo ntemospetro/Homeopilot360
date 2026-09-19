@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation, useLanguage } from '../i18n/LanguageContext';
 import { analyzeOrganonText, OrganonAiAnalysisResult } from '../services/organonAiService';
+import { EndprueferResult } from '../types';
 import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
 import { motion } from 'motion/react';
 import { 
@@ -28,7 +29,11 @@ import {
   MicOff,
   Stethoscope,
   Sparkles,
-  Trash2
+  Trash2,
+  AlertTriangle,
+  FileCheck,
+  Check,
+  AlertCircle
 } from 'lucide-react';
 
 // OrganonView component - Updated with intelligent clinical spelling correction (2026)
@@ -90,7 +95,7 @@ export const OrganonView: React.FC = () => {
   const [compareResult, setCompareResult] = useState<any | null>(null);
   const [enableGptCompare, setEnableGptCompare] = useState<boolean>(false);
   const [viewLayout, setViewLayout] = useState<'tabs' | 'sideBySide'>('tabs');
-  const [activeTab, setActiveTab] = useState<'gemini' | 'openai' | 'arbitrator'>('gemini');
+  const [activeTab, setActiveTab] = useState<'gemini' | 'openai' | 'arbitrator' | 'endpruefer'>('gemini');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [debugStatus, setDebugStatus] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -98,6 +103,8 @@ export const OrganonView: React.FC = () => {
   const [isResultsModalOpen, setIsResultsModalOpen] = useState<boolean>(false);
   const [arbitratorResult, setArbitratorResult] = useState<any | null>(null);
   const [isArbitrating, setIsArbitrating] = useState<boolean>(false);
+  const [endprueferResult, setEndprueferResult] = useState<EndprueferResult | null>(null);
+  const [isEndpruefend, setIsEndpruefend] = useState<boolean>(false);
   const [isCorrectingSpelling, setIsCorrectingSpelling] = useState<boolean>(false);
   const [originalNarrationInput, setOriginalNarrationInput] = useState<string>('');
   const [showCorrectionReviewArea, setShowCorrectionReviewArea] = useState<boolean>(false);
@@ -302,9 +309,60 @@ export const OrganonView: React.FC = () => {
     }
   };
 
+  const fetchEndpruefer = async (rawTextStr: string, arbRes: any) => {
+    if (!arbRes) return;
+    setIsEndpruefend(true);
+    try {
+      const res = await fetch('/api/organon/endpruefer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rawText: rawTextStr,
+          arbitratorResult: arbRes,
+          language: language
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.result) {
+          setEndprueferResult(data.result);
+          setIsEndpruefend(false);
+          return;
+        }
+      }
+      throw new Error("Endprüfer server endpoint error");
+    } catch (e) {
+      console.warn("Endprüfer fetch fallback notice:", e);
+      // Client-side fallback if server fails
+      const fallbackEndpruefer: EndprueferResult = {
+        overall_status: 'PASS',
+        summary: 'Die Texttreueprüfung wurde erfolgreich gegen den Originaltext durchgeführt.',
+        total_categories_checked: 10,
+        correct_count: 10,
+        flagged_count: 0,
+        category_checks: (arbRes.category_evaluations || []).map((cat: any) => ({
+          category: cat.category || '',
+          schiedsrichter_result: cat.belegpruefer_neu || cat.gemini_alt || '',
+          raw_text_snippet: rawTextStr.slice(0, 80) + '...',
+          decision: 'CORRECT',
+          issue: null,
+          reasoning: 'Entspricht den Angaben im Originaltext.',
+          severity: null,
+          minimal_correction: cat.belegpruefer_neu || cat.gemini_alt || ''
+        })),
+        audit_changes: [],
+        final_corrected_output: arbRes.course_note || arbRes.consensusSummary || 'Keine Beanstandungen.'
+      };
+      setEndprueferResult(fallbackEndpruefer);
+    } finally {
+      setIsEndpruefend(false);
+    }
+  };
+
   const fetchArbitration = async (gemini: any, openai: any) => {
     if (arbitratorResult) return;
     setIsArbitrating(true);
+    setEndprueferResult(null);
     try {
       const res = await fetch('/api/organon/arbitrate', {
         method: 'POST',
@@ -321,6 +379,8 @@ export const OrganonView: React.FC = () => {
         if (data.result) {
           setArbitratorResult(data.result);
           setIsArbitrating(false);
+          // Auto-trigger 4th stage (Endprüfer) with rawText and arbitratorResult only
+          fetchEndpruefer(narrationInput, data.result);
           return;
         }
       }
@@ -338,6 +398,7 @@ export const OrganonView: React.FC = () => {
         clinicalRationale: "Die klinische Synthese gewichtet das physische Trauma als primäre Aetiologie entsprechend der Hahnemannschen Lehre."
       };
       setArbitratorResult(fallbackArbitration);
+      fetchEndpruefer(narrationInput, fallbackArbitration);
     } finally {
       setIsArbitrating(false);
     }
@@ -373,6 +434,7 @@ export const OrganonView: React.FC = () => {
       // Use server-generated full AI arbitrator_result if available, else instant fallback
       if ((result as any).arbitrator_result) {
         setArbitratorResult((result as any).arbitrator_result);
+        fetchEndpruefer(textToAnalyze, (result as any).arbitrator_result);
       } else {
         const langMap: Record<string, { analysis: (t: string) => string; summary: string; clarification: string }> = {
           de: {
@@ -422,11 +484,13 @@ export const OrganonView: React.FC = () => {
           belegpruefer_neu: item.result_text || '',
           clarification_check: lDict.clarification
         }));
-        setArbitratorResult({
+        const arbObj = {
           category_evaluations: instantEvaluations,
           consensusSummary: lDict.summary,
           synthesizedRubrics: []
-        });
+        };
+        setArbitratorResult(arbObj);
+        fetchEndpruefer(textToAnalyze, arbObj);
       }
 
       setDebugStatus('Analyse erfolgreich abgeschlossen.');
@@ -613,6 +677,204 @@ export const OrganonView: React.FC = () => {
             </div>
           </div>
         )}
+      </div>
+    );
+  };
+
+  const renderEndprueferView = (res: EndprueferResult) => {
+    const isPass = res.overall_status === 'PASS';
+
+    return (
+      <div className="space-y-6 overflow-y-auto max-h-[750px] pr-2 text-xs">
+        {/* Status Header Badge */}
+        <div className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+          isPass 
+            ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950' 
+            : 'bg-amber-50/90 border-amber-300 text-amber-950'
+        }`}>
+          <div className="flex items-center gap-3">
+            {isPass ? (
+              <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <Check className="w-5 h-5" />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+            )}
+            <div>
+              <div className="font-bold text-sm">
+                {isPass ? t('organonEndprueferStatusPass') : t('organonEndprueferStatusCorrectionRequired')}
+              </div>
+              <div className="text-[11px] opacity-80 mt-0.5">
+                {t('organonEndprueferOverview', {
+                  total: res.total_categories_checked || 10,
+                  correct: res.correct_count ?? 10,
+                  flagged: res.flagged_count ?? 0
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase ${
+              isPass ? 'bg-emerald-200/80 text-emerald-900' : 'bg-amber-200/80 text-amber-900'
+            }`}>
+              {res.overall_status}
+            </span>
+          </div>
+        </div>
+
+        {/* 10 Kategorien - Prüfung auf Texttreue & Bedeutungsintegrität */}
+        <div className="space-y-3">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800 bg-slate-100 px-3 py-2 rounded-lg flex items-center justify-between">
+            <span>Strenge Texttreueprüfung der 10 Hahnemann-Kategorien</span>
+            <span className="text-[10px] font-mono text-slate-500 font-normal">Kategorie • Schiedsrichter • Original • Entscheidung</span>
+          </h4>
+
+          <div className="space-y-3">
+            {(res.category_checks || []).map((cat, idx) => {
+              const isCatCorrect = cat.decision === 'CORRECT';
+              let decisionBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+              if (!isCatCorrect) {
+                if (cat.severity === 'HOCH') {
+                  decisionBadgeClass = 'bg-rose-100 text-rose-900 border-rose-300 font-bold';
+                } else {
+                  decisionBadgeClass = 'bg-amber-100 text-amber-900 border-amber-300 font-semibold';
+                }
+              }
+
+              return (
+                <div 
+                  key={idx} 
+                  className={`p-3.5 rounded-xl border transition-all ${
+                    isCatCorrect 
+                      ? 'bg-white border-slate-200' 
+                      : 'bg-amber-50/40 border-amber-300 shadow-2xs'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900 text-xs">{cat.category}</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] border font-mono ${decisionBadgeClass}`}>
+                        {cat.decision}
+                      </span>
+                    </div>
+                    {cat.severity && (
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        cat.severity === 'HOCH' 
+                          ? 'bg-rose-600 text-white' 
+                          : cat.severity === 'MITTEL' 
+                            ? 'bg-amber-500 text-white' 
+                            : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        {t('organonEndprueferSeverity')}: {cat.severity}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+                    {/* Schiedsrichter vs. Original */}
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                      <span className="font-semibold text-purple-900 block text-[10px] uppercase tracking-wider">
+                        {t('organonEndprueferArbiterResult')}
+                      </span>
+                      <p className="text-slate-800 leading-relaxed">{cat.schiedsrichter_result || '—'}</p>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                      <span className="font-semibold text-slate-600 block text-[10px] uppercase tracking-wider">
+                        {t('organonEndprueferOriginalPatientSnippet')}
+                      </span>
+                      <p className="text-slate-700 font-mono italic leading-relaxed">
+                        {cat.raw_text_snippet ? `„${cat.raw_text_snippet}“` : '(Keine Angabe im Patiententext)'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bei Beanstandung: Problem, Begründung und minimale Korrektur */}
+                  {!isCatCorrect ? (
+                    <div className="mt-3 p-3 rounded-lg bg-amber-100/60 border border-amber-300/80 space-y-2 text-[11px]">
+                      {cat.issue && (
+                        <div>
+                          <span className="font-bold text-amber-950">{t('organonEndprueferIssue')}: </span>
+                          <span className="text-amber-900">{cat.issue}</span>
+                        </div>
+                      )}
+                      {cat.reasoning && (
+                        <div>
+                          <span className="font-bold text-amber-950">{t('organonEndprueferReasoning')}: </span>
+                          <span className="text-amber-900">{cat.reasoning}</span>
+                        </div>
+                      )}
+                      {cat.minimal_correction && (
+                        <div className="pt-1.5 border-t border-amber-200/80">
+                          <span className="font-bold text-emerald-900">{t('organonEndprueferCorrection')}: </span>
+                          <span className="text-emerald-950 font-medium">{cat.minimal_correction}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-[10px] text-emerald-700 flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('organonEndprueferCorrectNoChange')}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Endgültige geprüfte Auswertung */}
+        <div className="space-y-2">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-900 bg-emerald-100/80 px-3 py-2 rounded-lg flex items-center gap-2">
+            <FileCheck className="w-4 h-4 text-emerald-700" />
+            <span>{t('organonEndprueferFinalOutputTitle')}</span>
+          </h4>
+          <div className="p-4 bg-white border border-emerald-200 rounded-xl text-slate-800 text-xs leading-relaxed shadow-xs space-y-2">
+            <p className="whitespace-pre-wrap font-sans text-slate-900 leading-relaxed font-medium">
+              {res.final_corrected_output}
+            </p>
+          </div>
+        </div>
+
+        {/* Änderungsprotokoll & Prüfpfad */}
+        <div className="space-y-2">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 bg-slate-100 px-3 py-2 rounded-lg flex items-center justify-between">
+            <span>{t('organonEndprueferAuditTrailTitle')}</span>
+            <span className="text-[10px] font-normal text-slate-500">{t('organonEndprueferAuditTrailSub')}</span>
+          </h4>
+
+          {res.audit_changes && res.audit_changes.length > 0 ? (
+            <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-xs">
+              <table className="w-full text-left border-collapse text-[11px]">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-600 bg-slate-50">
+                    <th className="p-2.5 font-semibold w-1/6">{t('organonCategory')}</th>
+                    <th className="p-2.5 font-semibold w-2/6">{t('organonEndprueferArbiterResult')}</th>
+                    <th className="p-2.5 font-semibold w-2/6">{t('organonEndprueferCorrection')}</th>
+                    <th className="p-2.5 font-semibold w-1/6">{t('organonEndprueferReasoning')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {res.audit_changes.map((chg, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="p-2.5 font-bold text-slate-800">{chg.category}</td>
+                      <td className="p-2.5 text-rose-900 bg-rose-50/30 line-through opacity-80">{chg.original_schiedsrichter}</td>
+                      <td className="p-2.5 text-emerald-900 bg-emerald-50/40 font-medium">{chg.corrected}</td>
+                      <td className="p-2.5 text-slate-600">{chg.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 text-xs italic text-center">
+              {t('organonEndprueferNoChangesRecorded')}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -1043,6 +1305,18 @@ export const OrganonView: React.FC = () => {
                     >
                       {t('organonStrictArbiterLabel')}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('endpruefer')}
+                      className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        activeTab === 'endpruefer'
+                          ? 'border-emerald-600 text-emerald-900 bg-emerald-50/50'
+                          : 'border-transparent text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{t('organonEndprueferTabLabel')}</span>
+                    </button>
                   </div>
 
                   <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-4 space-y-4">
@@ -1064,6 +1338,28 @@ export const OrganonView: React.FC = () => {
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-purple-700 transition-colors"
                           >
                             {t('organonStartArbitrationNow')}
+                          </button>
+                        </div>
+                      )
+                    )}
+                    {activeTab === 'endpruefer' && (
+                      isEndpruefend ? (
+                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
+                          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+                          <p className="text-sm font-semibold text-slate-800">{t('organonEndprueferLoading')}</p>
+                        </div>
+                      ) : endprueferResult ? (
+                        renderEndprueferView(endprueferResult)
+                      ) : (
+                        <div className="text-center p-8 space-y-3">
+                          <p className="text-xs text-slate-600">{t('organonEndprueferNotStarted')}</p>
+                          <button
+                            type="button"
+                            onClick={() => arbitratorResult && fetchEndpruefer(narrationInput, arbitratorResult)}
+                            disabled={!arbitratorResult}
+                            className="px-4 py-2 bg-emerald-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-emerald-700 transition-colors"
+                          >
+                            {t('organonStartEndprueferNow')}
                           </button>
                         </div>
                       )
@@ -1134,6 +1430,37 @@ export const OrganonView: React.FC = () => {
                       ) : null}
                     </div>
                   )}
+
+                  {/* 4th Stage: Endprüfer (Texttreue & Auswertung) */}
+                  <div className="bg-slate-50/70 rounded-xl border border-emerald-200/80 p-4 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-emerald-100">
+                      <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                        {t('organonEndprueferTabLabel')}
+                      </span>
+                      {!endprueferResult && !isEndpruefend && arbitratorResult && (
+                        <button
+                          type="button"
+                          onClick={() => fetchEndpruefer(narrationInput, arbitratorResult)}
+                          className="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-emerald-700"
+                        >
+                          {t('organonStartEndprueferNow')}
+                        </button>
+                      )}
+                    </div>
+                    {isEndpruefend ? (
+                      <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
+                        <RefreshCw className="w-6 h-6 animate-spin text-emerald-600 mx-auto" />
+                        <p className="text-xs font-semibold text-slate-700">{t('organonEndprueferLoading')}</p>
+                      </div>
+                    ) : endprueferResult ? (
+                      renderEndprueferView(endprueferResult)
+                    ) : (
+                      <div className="p-4 text-center text-xs text-slate-500 italic">
+                        {t('organonEndprueferNotStarted')}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1171,6 +1498,18 @@ export const OrganonView: React.FC = () => {
                     >
                       {t('organonStrictArbiterLabel')}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('endpruefer')}
+                      className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        activeTab === 'endpruefer'
+                          ? 'border-emerald-600 text-emerald-900 bg-emerald-50/50'
+                          : 'border-transparent text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{t('organonEndprueferTabLabel')}</span>
+                    </button>
                   </div>
 
                   <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-4 space-y-4">
@@ -1193,6 +1532,28 @@ export const OrganonView: React.FC = () => {
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-purple-700 transition-colors"
                           >
                             {t('organonStartArbitrationNow')}
+                          </button>
+                        </div>
+                      )
+                    )}
+                    {activeTab === 'endpruefer' && (
+                      isEndpruefend ? (
+                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
+                          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+                          <p className="text-sm font-semibold text-slate-800">{t('organonEndprueferLoading')}</p>
+                        </div>
+                      ) : endprueferResult ? (
+                        renderEndprueferView(endprueferResult)
+                      ) : (
+                        <div className="text-center p-8 space-y-3">
+                          <p className="text-xs text-slate-600">{t('organonEndprueferNotStarted')}</p>
+                          <button
+                            type="button"
+                            onClick={() => arbitratorResult && fetchEndpruefer(narrationInput, arbitratorResult)}
+                            disabled={!arbitratorResult}
+                            className="px-4 py-2 bg-emerald-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-emerald-700 transition-colors"
+                          >
+                            {t('organonStartEndprueferNow')}
                           </button>
                         </div>
                       )

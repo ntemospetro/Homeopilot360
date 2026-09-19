@@ -1210,9 +1210,15 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
 Do NOT output any German phrases or sentences (such as "Keine Angaben zur Causa...") unless German is the selected target language. 
 If the selected target language is Greek (el), use proper Greek alphabet and terminology (e.g. use "Καμία" or "Δεν αναφέρεται" instead of Latin/German words or romanized letters like 'n').
 
+STRICT EVIDENCE & TEXT FIDELITY RULES:
+1. RAWTEXT ABSOLUTE PRIORITY: rawText is the sole primary source of truth. Do not invent or assume anything not present.
+2. NO SEMANTIC AMPLIFICATION: Do not upscale patient terms. E.g., "schlafe schlecht" must remain "schlafe schlecht" (do not transform to "Insomnie" or "Schlaflosigkeit"), "traurig" must remain "traurig" (do not transform to "Melancholie" or "Depression").
+3. STRICT CAUSA HANDLING: Formulations like "seit X", "nach X" or "damals begann..." are strictly Causa candidates / temporal associations, NOT confirmed pathological shocks or grief trauma unless explicitly stated as the direct cause by the patient.
+4. EXACT VERBATIM QUOTES: Text snippets and quotes must be exact substrings from rawText.
+
 You are a precise NLP and text parser for homeopathic case narratives according to Samuel Hahnemann (Organon of Medicine).
 Your task is to analyze the patient narrative in a 3-stage analysis according to the following 10 exact categories:
-1. Causa (What triggered it? Important: Distinguish strictly between mere actions/temporal context and real triggers. If no causal event is mentioned, state this clearly in ${targetLanguageName}.)
+1. Causa (What triggered it? Strict distinction between temporal context/candidate and confirmed triggers.)
 2. Localisatio (Where?)
 3. Sensatio (What does it feel like?)
 4. Symptoma (What?)
@@ -1228,7 +1234,7 @@ IMPORTANT RULE FOR ALL CATEGORIES: If something does not apply or has no disease
 You MUST create the "three_stage" field in the JSON response with:
 - "stage1": Array with all 10 categories (category_key, category_name [translated to ${targetLanguageName}], core_question [translated to ${targetLanguageName}], result_text [fully in ${targetLanguageName}]).
 - "stage2": Array of text checks (text_snippet, examination [in ${targetLanguageName}], adopted_complaint [in ${targetLanguageName}]).
-- "stage3": Object with control_notes [in ${targetLanguageName}] and clarification_question [in ${targetLanguageName}].
+- "stage3": Object with control_notes [in ${targetLanguageName}] and clarification_question [in ${targetLanguageName} - MUST be neutral and open, e.g. asking for clarification rather than suggestive hypotheses].
 
 Answer EXCLUSIVELY as a compact, valid JSON object in the following format (without markdown code blocks):
 {
@@ -1311,9 +1317,9 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
 Do NOT output any German phrases or sentences unless German is the selected target language.
 If the selected target language is Greek (el), use proper Greek alphabet and terminology (e.g. use "Καμία" or "Δεν αναφέρεται" instead of Latin/German words).
 
-You are GPT-4o Pro (Second-Opinion Mode), an internationally recognized clinical expert in classical homeopathy and miasmatic constitutional analysis according to Hahnemann, Bönninghausen, and Kent.
-Your task is to create a COMPLETELY INDEPENDENT alternative second analysis of the patient narrative according to the 10 Organon categories (§§ 83–104) in ${targetLanguageName}.
-IMPORTANT: Clearly differentiate in clinical weighting and terminology from a first analysis. Focus strongly on constitutional general symptoms and modality interactions.
+You are GPT-4o Pro (Second-Opinion Mode), an expert in objective case extraction according to Hahnemann's Organon (§§ 83–104) in ${targetLanguageName}.
+Your task is to create a COMPLETELY INDEPENDENT alternative second analysis of the patient narrative according to the 10 Organon categories.
+IMPORTANT: Focus strictly on objective symptom extraction and modality interactions. Do NOT include miasmatic classifications, remedy suggestions, or materia medica interpretations at this text evidence stage.
 
 Patient narrative:
 "${rawText.replace(/"/g, '\\"')}"
@@ -1752,6 +1758,53 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
     }
   });
 
+  const VALID_EVIDENCE_STATUSES = new Set([
+    'EXPLICITLY_SUPPORTED',
+    'PARTIALLY_SUPPORTED',
+    'TEMPORAL_ASSOCIATION',
+    'INTERPRETATION',
+    'NOT_SUPPORTED',
+    'CONTRADICTED',
+    'CLARIFICATION_REQUIRED'
+  ]);
+
+  function normalizeEvidenceStatus(status?: string | null): string {
+    if (!status || typeof status !== 'string') return 'CLARIFICATION_REQUIRED';
+    const upper = status.trim().toUpperCase();
+    if (VALID_EVIDENCE_STATUSES.has(upper)) return upper;
+    return 'CLARIFICATION_REQUIRED';
+  }
+
+  function validateQuoteAgainstRawText(rawText: string, quote?: string | null): { quote_valid: boolean; quote_cleaned: string } {
+    if (!quote || typeof quote !== 'string') {
+      return { quote_valid: false, quote_cleaned: '' };
+    }
+    let cleaned = quote.trim().replace(/^["'„“»«]+|["'„“»«]+$/g, '').trim();
+    if (!cleaned) {
+      return { quote_valid: false, quote_cleaned: '' };
+    }
+    const lower = cleaned.toLowerCase();
+    if (lower.includes('keine angabe') || lower.includes('nicht im rohtext') || lower.includes('kein beleg')) {
+      return { quote_valid: false, quote_cleaned: cleaned };
+    }
+    // 1. Direct exact substring check
+    if (rawText.includes(cleaned)) {
+      return { quote_valid: true, quote_cleaned: cleaned };
+    }
+    // 2. Trailing/leading ellipsis strip check
+    const stripEllipsis = cleaned.replace(/^\.{2,}\s*/, '').replace(/\s*\.{2,}$/, '').trim();
+    if (stripEllipsis && rawText.includes(stripEllipsis)) {
+      return { quote_valid: true, quote_cleaned: stripEllipsis };
+    }
+    // 3. Normalized whitespace substring check
+    const normRaw = rawText.replace(/\s+/g, ' ').trim();
+    const normQuote = stripEllipsis.replace(/\s+/g, ' ').trim();
+    if (normQuote && normRaw.includes(normQuote)) {
+      return { quote_valid: true, quote_cleaned: normQuote };
+    }
+    return { quote_valid: false, quote_cleaned: cleaned };
+  }
+
   app.post("/api/organon/arbitrate", async (req, res) => {
     try {
       const { rawText, geminiResult, openaiResult, language = "de" } = req.body;
@@ -1776,11 +1829,22 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
 
       const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all text, category names, core questions, verification analyses, audit protocol decisions/reasonings, corrected summary tables, course notes, and clarification questions FULLY TRANSLATED into ${targetLanguageName} (${language}). Do NOT output any German phrases unless German is the selected target language.
 
-You are a strict and incorruptible EVIDENCE ARBITER for homeopathic case analyses according to Samuel Hahnemann (Organon of Medicine).
-Your task is to examine the unaltered original patient narrative against the analysis of Gemini 3.8 Flash.
-Critically evaluate Gemini 3.8 Flash and build the corrections.
+You are a strict, incorruptible EVIDENCE AUDITOR and ARBITER for homeopathic case analyses according to Samuel Hahnemann (Organon of Medicine).
+RAWTEXT ABSOLUTE PRIORITY: rawText is the sole primary source of truth. Agreement between Gemini and GPT is never proof of correctness. Each statement must be independently verified against rawText.
 
-Perform a detailed evaluation for each of the following 10 categories with its exact core question (fully translated into ${targetLanguageName}):
+Your task is to examine the unaltered original patient narrative against both the analysis of Gemini and the GPT Second-Opinion analysis, applying strict evidence control and zero semantic amplification (e.g. "schlafe schlecht" must not become "Insomnie", "traurig" must not become "Melancholie").
+Formulations like "seit X" or "nach X" are strictly TEMPORAL_ASSOCIATION / Causa candidates, not confirmed pathological trauma unless explicitly confirmed by the patient.
+
+For EVERY proposed statement, you must assign one of the following 7 Evidence Statuses:
+- EXPLICITLY_SUPPORTED
+- PARTIALLY_SUPPORTED
+- TEMPORAL_ASSOCIATION
+- INTERPRETATION
+- NOT_SUPPORTED
+- CONTRADICTED
+- CLARIFICATION_REQUIRED
+
+Perform a detailed evaluation for each of the 10 categories with its exact core question (fully translated into ${targetLanguageName}):
 1. Causa | What triggered it?
 2. Localisatio | Where?
 3. Sensatio | What does it feel like?
@@ -1793,15 +1857,15 @@ Perform a detailed evaluation for each of the following 10 categories with its e
 10. Animus | How do you feel emotionally?
 
 EVALUATION PROCESS PER CATEGORY:
-- Take the proposed result from Gemini 3.8 Flash ("Old").
-- Check each core question against the original text.
-- Create the corrected result ("New") strictly according to the original text without hallucinations.
-- Write the 'verification_analysis' in ${targetLanguageName} (e.g. checked against original text, adherence to Hahnemann's categories).
+- Independently evaluate what Gemini and GPT proposed against rawText. If both share an unsupported conclusion, correct both.
+- Create the corrected result ("belegpruefer_neu") strictly according to rawText without hallucinations or semantic amplification.
+- Ensure the 'quote' field contains ONLY an exact verbatim substring from rawText. If no exact quote exists, mark accordingly.
+- Ensure clarification questions are neutral and open (not suggestive).
 
 Originaltext:
 "${rawText.replace(/"/g, '\\\\"')}"
 
-Gemini 3.8 Flash Analyse:
+Gemini Analyse:
 ${JSON.stringify(geminiResult || {})}
 
 GPT / Zweit-Analyse:
@@ -1815,6 +1879,7 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
       "core_question": "Core question in ${targetLanguageName}",
       "gemini_alt": "string",
       "verification_analysis": "string in ${targetLanguageName}",
+      "evidence_status": "EXPLICITLY_SUPPORTED | TEMPORAL_ASSOCIATION | INTERPRETATION | NOT_SUPPORTED | etc.",
       "belegpruefer_neu": "string",
       "clarification_check": "string in ${targetLanguageName}"
     },
@@ -1824,16 +1889,17 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
     {
       "proposed_statement": "string",
       "decision": "string in ${targetLanguageName} (e.g. Accept, Correct, Reject)",
-      "quote": "string",
+      "evidence_status": "EXPLICITLY_SUPPORTED | TEMPORAL_ASSOCIATION | INTERPRETATION | NOT_SUPPORTED | etc.",
+      "quote": "string (exact verbatim substring from rawText)",
       "reasoning": "string in ${targetLanguageName}"
     }
   ],
   "corrected_summary": [
-    { "category": "Category name in ${targetLanguageName}", "result": "string", "quote_or_clarification": "string" }
+    { "category": "Category name in ${targetLanguageName}", "evidence_status": "EXPLICITLY_SUPPORTED | TEMPORAL_ASSOCIATION | INTERPRETATION | NOT_SUPPORTED | etc.", "result": "string", "quote_or_clarification": "string" }
     ... (all 10 categories)
   ],
   "course_note": "string in ${targetLanguageName}",
-  "clarification_question": "string in ${targetLanguageName}"
+  "clarification_question": "string in ${targetLanguageName} (neutral and open)"
 }`;
 
       let response;
@@ -1853,10 +1919,271 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
 
       const text = response.text || "{}";
       const parsed = parseAiJson(text, {});
+
+      // Deterministic validation & post-processing
+      if (parsed && typeof parsed === 'object') {
+        // 1. Category evaluations
+        if (Array.isArray(parsed.category_evaluations)) {
+          parsed.category_evaluations.forEach((cat: any) => {
+            cat.evidence_status = normalizeEvidenceStatus(cat.evidence_status);
+            const q = cat.quote || cat.belegpruefer_neu;
+            const val = validateQuoteAgainstRawText(rawText, q);
+            cat.quote_valid = val.quote_valid;
+          });
+        }
+
+        // 2. Audit protocol
+        if (Array.isArray(parsed.audit_protocol)) {
+          parsed.audit_protocol.forEach((item: any) => {
+            item.evidence_status = normalizeEvidenceStatus(item.evidence_status);
+            const val = validateQuoteAgainstRawText(rawText, item.quote);
+            item.quote_valid = val.quote_valid;
+          });
+        }
+
+        // 3. Map categories to evidence status
+        const catMap: Record<string, string> = {};
+        if (Array.isArray(parsed.category_evaluations)) {
+          parsed.category_evaluations.forEach((cat: any) => {
+            if (cat.category) {
+              catMap[cat.category.toLowerCase()] = cat.evidence_status;
+            }
+          });
+        }
+
+        // 4. Corrected summary
+        if (Array.isArray(parsed.corrected_summary)) {
+          parsed.corrected_summary.forEach((item: any) => {
+            const catName = (item.category || '').toLowerCase();
+            let st = item.evidence_status ? normalizeEvidenceStatus(item.evidence_status) : null;
+            if (!st) {
+              for (const [k, v] of Object.entries(catMap)) {
+                if (catName.includes(k) || k.includes(catName)) {
+                  st = v;
+                  break;
+                }
+              }
+            }
+            item.evidence_status = st || 'CLARIFICATION_REQUIRED';
+
+            const quoteCandidate = item.quote || item.quote_or_clarification;
+            const val = validateQuoteAgainstRawText(rawText, quoteCandidate);
+            item.quote_valid = val.quote_valid;
+
+            // Separate confirmed fact vs. unconfirmed/interpretation
+            item.is_confirmed_fact = (item.evidence_status === 'EXPLICITLY_SUPPORTED' || item.evidence_status === 'PARTIALLY_SUPPORTED');
+
+            // Explicitly label TEMPORAL_ASSOCIATION in result text if not already formatted
+            if (item.evidence_status === 'TEMPORAL_ASSOCIATION' && item.result && !item.result.toLowerCase().includes('zeitlich')) {
+              item.result = `[Zeitlicher Zusammenhang / Causa-Kandidat] ${item.result}`;
+            }
+          });
+        }
+
+        // 5. Neutralize suggestive clarification questions if Causa is only temporal association
+        const causaItem = (parsed.category_evaluations || []).find((c: any) => (c.category || '').toLowerCase().includes('causa'));
+        if (causaItem && causaItem.evidence_status === 'TEMPORAL_ASSOCIATION' && typeof parsed.clarification_question === 'string') {
+          const qLower = parsed.clarification_question.toLowerCase();
+          if (qLower.includes('wie wirkt sich der verlust') || qLower.includes('wie wirkt sich der umzug') || qLower.includes('in welchem zusammenhang') || qLower.includes('inwiefern')) {
+            parsed.clarification_question = 'Können Sie die Beschwerden, ihren genauen Verlauf und eventuelle Begleitumstände näher beschreiben?';
+          }
+        }
+      }
+
       return res.json({ engine: "belegpruefer", result: parsed });
     } catch (error: any) {
       console.error("Organon Belegpruefer API Error:", error);
       res.status(500).json({ error: "Failed to perform Belegprüfung.", details: error?.message });
+    }
+  });
+
+  // Endprüfer / Texttreue- und Auffälligkeitsprüfung (4. und letzte Prüfinstanz)
+  // Erhält AUSSCHLIESSLICH rawText und arbitratorResult (keine Gemini- oder GPT-Ergebnisse!)
+  app.post("/api/organon/endpruefer", async (req, res) => {
+    try {
+      const { rawText, arbitratorResult, language = "de" } = req.body;
+      if (!rawText || typeof rawText !== "string") {
+        return res.status(400).json({ error: "rawText is required" });
+      }
+      if (!arbitratorResult || typeof arbitratorResult !== "object") {
+        return res.status(400).json({ error: "arbitratorResult is required" });
+      }
+
+      const langNames: Record<string, string> = {
+        de: "German (Deutsch)",
+        en: "English",
+        el: "Greek (Ελληνικά)",
+        es: "Spanish (Español)",
+        fr: "French (Français)",
+        it: "Italian (Italiano)",
+        ru: "Russian (Русский)"
+      };
+      const targetLanguageName = langNames[language] || "German (Deutsch)";
+
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
+      const ai = new GoogleGenAI({ apiKey });
+
+      const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all texts, issues, reasonings, and final output in ${targetLanguageName} (${language}).
+
+Du bist die vierte und LETZTE UNABHÄNGIGE PRÜFINSTANZ (Endprüfer / Texttreueprüfung) einer homöopathischen Fallanalyse.
+
+WICHTIGE ANWEISUNGEN:
+- Du bist KEIN weiterer medizinischer oder homöopathischer Analysator und KEIN zweiter Schiedsrichter.
+- Du darfst den Fall NICHT neu analysieren:
+  * KEINE neue Causa bestimmen
+  * Symptome NICHT neu interpretieren
+  * KEINE neuen Kategorien hinzufügen
+  * KEINE Diagnosen stellen
+  * NICHT repertorisieren und KEINE Arzneimittel vorschlagen
+  * KEINE miasmatische Deutung
+- Deine EINZIGE Aufgabe:
+  Vergleiche den unveränderten Patienten-Originaltext mit dem vom Schiedsrichter erzeugten Ergebnis und erkenne Stellen, an denen das Schiedsrichter-Ergebnis mehr, weniger oder etwas anderes behauptet, als der Originaltext rechtfertigt.
+
+STRENG ZU PRÜFENDE FEHLERMUSTER:
+1. Hinzugefügte Informationen
+2. Bedeutungsverstärkungen (z.B. "stechende Kopfschmerzen" -> "präzise über dem Auge", "gerne zusammen" -> "ungestörte Freude")
+3. Bedeutungsabschwächungen
+4. Bedeutungsverschiebungen
+5. Aus fehlenden Angaben erzeugte Normalbefunde (z.B. Patient sagt nichts zum Denken -> "Denken unauffällig" oder "keine pathologischen Auffälligkeiten" ist VERBOTEN! Fehlen einer Information ist kein Normalbefund!)
+6. Verlorene Einschränkungen (z.B. "eigentlich", "manchmal", "meistens", "vielleicht", "ich weiß nicht" etc. wurden getilgt)
+7. Aus zeitlichem Zusammenhang erzeugte Kausalität ("seit Streit" darf nicht als bewiesene Ätiologie/Kausalität formuliert werden)
+8. Unbelegte Diagnosen oder psychologische/fachliche Deutungen
+9. Veränderte Intensitäten, Häufigkeiten, Zeitangaben, Lokalisationen oder Modalitäten
+10. Fachbegriffe, die mehr aussagen als die Patientenformulierung
+11. Angebliche Originalzitate, die nicht wortwörtlich im Originaltext vorkommen
+
+STATUSWERTE FÜR DIE ENTSCHEIDUNG (genau einen dieser Werte pro Kategorie verwenden):
+- CORRECT
+- MEANING_STRENGTHENED
+- MEANING_WEAKENED
+- INFORMATION_ADDED
+- MEANING_CHANGED
+- UNSUPPORTED_STATEMENT
+- MISSING_INFORMATION_TREATED_AS_NORMAL
+- QUOTE_NOT_EXACT
+- CORRECTION_REQUIRED
+
+SCHWEREGRADE:
+- GERING
+- MITTEL
+- HOCH (insbesondere dann, wenn eine unbelegte Ursache, Diagnose, Pathologie oder ein nicht vorhandener Befund als Patientenfakt dargestellt wird)
+
+PRÜFE ALLE 10 KATEGORIEN EINZELN:
+1. Causa
+2. Localisatio
+3. Sensatio
+4. Symptoma
+5. Modalitates – Besserung
+6. Modalitates – Verschlechterung
+7. Symptomata concomitantia
+8. Comorbiditas
+9. Mens
+10. Animus
+
+KORREKTUR-REGEL:
+- Wenn eine Kategorie CORRECT ist: minimal_correction entspricht dem Schiedsrichter-Ergebnis, issue ist null, severity ist null.
+- Wenn eine Kategorie beanstandet wird: Die minimal_correction darf AUSSCHLIESSLICH die erkannte Abweichung beseitigen, ohne neue Informationen hinzuzufügen.
+- Bei PASS im Gesamtstatus: final_corrected_output übernimmt die Schiedsrichter-Zusammenfassung unverändert.
+- Bei CORRECTION_REQUIRED im Gesamtstatus: final_corrected_output liefert den Fließtext der Auswertung, bei dem AUSSCHLIESSLICH die konkret beanstandeten Stellen minimal korrigiert wurden.
+
+PATIENTEN-ORIGINALTEXT:
+"${rawText.replace(/"/g, '\\"')}"
+
+SCHIEDSRICHTER-ERGEBNIS:
+${JSON.stringify(arbitratorResult)}
+
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöcke) folgender Struktur:
+{
+  "overall_status": "PASS" | "CORRECTION_REQUIRED",
+  "summary": "Kurze Gesamtbewertung in ${targetLanguageName}",
+  "total_categories_checked": 10,
+  "correct_count": number,
+  "flagged_count": number,
+  "category_checks": [
+    {
+      "category": "Causa | Localisatio | Sensatio | Symptoma | Modalitates – Besserung | Modalitates – Verschlechterung | Symptomata concomitantia | Comorbiditas | Mens | Animus",
+      "schiedsrichter_result": "Was der Schiedsrichter zu dieser Kategorie formuliert hat",
+      "raw_text_snippet": "Relevante Textstelle aus dem Originaltext oder null, falls der Patient dazu nichts gesagt hat",
+      "decision": "CORRECT | MEANING_STRENGTHENED | MEANING_WEAKENED | INFORMATION_ADDED | MEANING_CHANGED | UNSUPPORTED_STATEMENT | MISSING_INFORMATION_TREATED_AS_NORMAL | QUOTE_NOT_EXACT | CORRECTION_REQUIRED",
+      "issue": "Gefundene Auffälligkeit oder null falls korrekt",
+      "reasoning": "Begründung der Entscheidung",
+      "severity": "GERING | MITTEL | HOCH | null",
+      "minimal_correction": "Minimal notwendige Korrektur zur Beseitigung der Abweichung (bzw. unverändertes Schiedsrichter-Ergebnis falls korrekt)"
+    }
+  ],
+  "audit_changes": [
+    {
+      "category": "string",
+      "original_schiedsrichter": "string",
+      "corrected": "string",
+      "reason": "string",
+      "severity": "GERING | MITTEL | HOCH"
+    }
+  ],
+  "final_corrected_output": "Vollständige, endgültig geprüfte Auswertung als zusammenhängender Text in ${targetLanguageName}"
+}`;
+
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-3.5-flash-lite",
+          contents: prompt,
+          config: { temperature: 0.05, responseMimeType: "application/json" },
+        });
+      } catch (e) {
+        response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+          config: { temperature: 0.05, responseMimeType: "application/json" },
+        });
+      }
+
+      const text = response.text || "{}";
+      const parsed = parseAiJson(text, {});
+
+      // Deterministic validation of categories & counts
+      if (parsed && typeof parsed === 'object') {
+        const catChecks = Array.isArray(parsed.category_checks) ? parsed.category_checks : [];
+        let correct = 0;
+        let flagged = 0;
+        const validStatuses = new Set([
+          'CORRECT',
+          'MEANING_STRENGTHENED',
+          'MEANING_WEAKENED',
+          'INFORMATION_ADDED',
+          'MEANING_CHANGED',
+          'UNSUPPORTED_STATEMENT',
+          'MISSING_INFORMATION_TREATED_AS_NORMAL',
+          'QUOTE_NOT_EXACT',
+          'CORRECTION_REQUIRED'
+        ]);
+
+        catChecks.forEach((c: any) => {
+          if (!validStatuses.has(c.decision)) {
+            c.decision = c.issue ? 'CORRECTION_REQUIRED' : 'CORRECT';
+          }
+          if (c.decision === 'CORRECT') {
+            correct++;
+          } else {
+            flagged++;
+          }
+        });
+
+        parsed.total_categories_checked = catChecks.length || 10;
+        parsed.correct_count = correct;
+        parsed.flagged_count = flagged;
+        parsed.overall_status = flagged > 0 ? 'CORRECTION_REQUIRED' : 'PASS';
+
+        if (!parsed.final_corrected_output || typeof parsed.final_corrected_output !== 'string') {
+          parsed.final_corrected_output = arbitratorResult?.course_note || arbitratorResult?.consensusSummary || "Auswertung abgeschlossen.";
+        }
+      }
+
+      return res.json({ engine: "endpruefer", result: parsed });
+    } catch (error: any) {
+      console.error("Organon Endprüfer API Error:", error);
+      res.status(500).json({ error: "Failed to perform Endprüfung.", details: error?.message });
     }
   });
 

@@ -761,3 +761,45 @@ export interface TokenBillingSummary {
   rates: TokenPricingRates;
   lastUpdated: string;
 }
+
+export type EndprueferDecisionStatus =
+  | 'CORRECT'
+  | 'MEANING_STRENGTHENED'
+  | 'MEANING_WEAKENED'
+  | 'INFORMATION_ADDED'
+  | 'MEANING_CHANGED'
+  | 'UNSUPPORTED_STATEMENT'
+  | 'MISSING_INFORMATION_TREATED_AS_NORMAL'
+  | 'QUOTE_NOT_EXACT'
+  | 'CORRECTION_REQUIRED';
+
+export interface EndprueferCategoryDecision {
+  category: string;
+  schiedsrichter_result: string;
+  raw_text_snippet: string | null;
+  decision: EndprueferDecisionStatus;
+  issue: string | null;
+  reasoning: string;
+  severity: 'GERING' | 'MITTEL' | 'HOCH' | null;
+  minimal_correction: string;
+}
+
+export interface EndprueferAuditChange {
+  category: string;
+  original_schiedsrichter: string;
+  corrected: string;
+  reason: string;
+  severity: 'GERING' | 'MITTEL' | 'HOCH';
+}
+
+export interface EndprueferResult {
+  overall_status: 'PASS' | 'CORRECTION_REQUIRED';
+  summary?: string;
+  total_categories_checked: number;
+  correct_count: number;
+  flagged_count: number;
+  category_checks: EndprueferCategoryDecision[];
+  audit_changes: EndprueferAuditChange[];
+  final_corrected_output: string;
+}
+
