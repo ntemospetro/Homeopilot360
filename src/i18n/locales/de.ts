@@ -3345,5 +3345,8 @@ export const de = {
   organonStartEndprueferNow: "Endprüfung jetzt starten",
   organonEndprueferNotStarted: "Endprüfung noch nicht gestartet.",
   organonEndprueferAtomicTitle: "Atomare Claim-Prüfung ({count} Teilbehauptungen)",
-  organonEndprueferAtomicEvidence: "Beleg:"
+  organonEndprueferAtomicEvidence: "Beleg:",
+  organonEndprueferHeading: "Strenge Texttreueprüfung der 10 Hahnemann-Kategorien",
+  organonEndprueferSubHeading: "Kategorie • Schiedsrichter • Original • Entscheidung",
+  organonEndprueferNoPatientData: "(Keine Angabe im Patiententext)"
 };

@@ -691,8 +691,8 @@ export const OrganonView: React.FC = () => {
         {/* 10 Kategorien - Prüfung auf Texttreue & Bedeutungsintegrität */}
         <div className="space-y-3">
           <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800 bg-slate-100 px-3 py-2 rounded-lg flex items-center justify-between">
-            <span>Strenge Texttreueprüfung der 10 Hahnemann-Kategorien</span>
-            <span className="text-[10px] font-mono text-slate-500 font-normal">Kategorie • Schiedsrichter • Original • Entscheidung</span>
+            <span>{t('organonEndprueferHeading')}</span>
+            <span className="text-[10px] font-mono text-slate-500 font-normal">{t('organonEndprueferSubHeading')}</span>
           </h4>
 
           <div className="space-y-3">
@@ -750,7 +750,7 @@ export const OrganonView: React.FC = () => {
                         {t('organonEndprueferOriginalPatientSnippet')}
                       </span>
                       <p className="text-slate-700 font-mono italic leading-relaxed">
-                        {cat.raw_text_snippet ? `„${cat.raw_text_snippet}“` : '(Keine Angabe im Patiententext)'}
+                        {cat.raw_text_snippet ? `„${cat.raw_text_snippet}“` : t('organonEndprueferNoPatientData')}
                       </p>
                     </div>
                   </div>

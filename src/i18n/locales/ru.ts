@@ -3338,5 +3338,8 @@ export const ru = {
   organonStartEndprueferNow: "Начать окончательный аудит",
   organonEndprueferNotStarted: "Окончательный аудит еще не запущен.",
   organonEndprueferAtomicTitle: "Атомарная проверка утверждений ({count} подзаявлений)",
-  organonEndprueferAtomicEvidence: "Обоснование:"
+  organonEndprueferAtomicEvidence: "Обоснование:",
+  organonEndprueferHeading: "Строгая проверка точности текста 10 категорий Ганемана",
+  organonEndprueferSubHeading: "Категория • Арбитр • Оригинал • Решение",
+  organonEndprueferNoPatientData: "(В тексте пациента нет сведений)"
 };

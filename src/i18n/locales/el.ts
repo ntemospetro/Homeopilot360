@@ -3338,5 +3338,8 @@ export const el = {
   organonStartEndprueferNow: "Έναρξη τελικού ελέγχου",
   organonEndprueferNotStarted: "Ο τελικός έλεγχος δεν έχει ξεκινήσει ακόμα.",
   organonEndprueferAtomicTitle: "Ατομικός έλεγχος ισχυρισμών ({count} επιμέρους δηλώσεις)",
-  organonEndprueferAtomicEvidence: "Απόδειξη:"
+  organonEndprueferAtomicEvidence: "Απόδειξη:",
+  organonEndprueferHeading: "Αυστηρός έλεγχος πιστότητας κειμένου των 10 κατηγοριών Hahnemann",
+  organonEndprueferSubHeading: "Κατηγορία • Διαιτητής • Αρχικό • Απόφαση",
+  organonEndprueferNoPatientData: "(Δεν υπάρχουν στοιχεία στο κείμενο του ασθενούς)"
 };

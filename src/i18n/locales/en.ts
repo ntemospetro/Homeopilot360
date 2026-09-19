@@ -3344,5 +3344,8 @@ export const en = {
   organonStartEndprueferNow: "Start final audit now",
   organonEndprueferNotStarted: "Final audit has not been started yet.",
   organonEndprueferAtomicTitle: "Atomic Claim Verification ({count} sub-statements)",
-  organonEndprueferAtomicEvidence: "Evidence:"
+  organonEndprueferAtomicEvidence: "Evidence:",
+  organonEndprueferHeading: "Strict text fidelity check of the 10 Hahnemann categories",
+  organonEndprueferSubHeading: "Category • Arbitrator • Original • Decision",
+  organonEndprueferNoPatientData: "(No information in patient text)"
 };

@@ -3338,5 +3338,8 @@ export const fr = {
   organonStartEndprueferNow: "Démarrer l'audit final",
   organonEndprueferNotStarted: "L'audit final n'a pas encore été démarré.",
   organonEndprueferAtomicTitle: "Vérification atomique des affirmations ({count} sous-déclarations)",
-  organonEndprueferAtomicEvidence: "Preuve :"
+  organonEndprueferAtomicEvidence: "Preuve :",
+  organonEndprueferHeading: "Vérification stricte de la fidélité textuelle des 10 catégories de Hahnemann",
+  organonEndprueferSubHeading: "Catégorie • Arbitre • Original • Décision",
+  organonEndprueferNoPatientData: "(Aucune information dans le texte du patient)"
 };
