@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Check,
@@ -27,7 +27,6 @@ import {
 import { CausaVertiefungModal } from './CausaVertiefungModal';
 import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
 import { OrganonGlobalReviewView } from './OrganonGlobalReviewView';
-import { OrganonProcessingStatus } from './OrganonProcessingStatus';
 
 // Dimension lists for the 8 frozen Stage 2 categories
 const FROZEN_DIMENSIONS_MAP: Record<string, { code: string; title: string; desc: string }[]> = {
@@ -153,42 +152,63 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   // Local editing text for slot categories (S3..S10)
   const [slotNoteInput, setSlotNoteInput] = useState<string>('');
   const [confirmExitOpen, setConfirmExitOpen] = useState<boolean>(false);
-  const [isProcessingCategory, setIsProcessingCategory] = useState<boolean>(false);
-  const [processingCategoryTitle, setProcessingCategoryTitle] = useState<string>('');
 
   // Synchronize initial hahnemann check
   useEffect(() => {
     setGlobalHahnemannCrossCheck(initialHahnemannCrossCheck);
   }, [initialHahnemannCrossCheck]);
 
-  // When workflow opens or resets
+  const prevIsOpenRef = useRef<boolean>(false);
+
+  // When workflow opens (true transition) or closes
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      prevIsOpenRef.current = true;
+      setConfirmExitOpen(false);
+
+      let resumeIndex = 0;
+      const initialRecords: Partial<Record<Stage2Category, CategoryResultRecord>> = {};
+      STAGE2_CATEGORY_SEQUENCE.forEach((cat, idx) => {
+        const text = stage1Values[cat] || '';
+        const isDone = Boolean(text && text.trim().length > 0);
+        initialRecords[cat] = {
+          category: cat,
+          status: isDone ? 'COMPLETED' : 'PENDING',
+          text
+        };
+        if (isDone && resumeIndex === idx) {
+          resumeIndex = Math.min(idx + 1, STAGE2_CATEGORY_SEQUENCE.length - 1);
+        }
+      });
+      setRecords(initialRecords as Record<Stage2Category, CategoryResultRecord>);
+      setCurrentStepIndex(resumeIndex);
+    } else if (!isOpen) {
+      prevIsOpenRef.current = false;
+    }
+  }, [isOpen]);
+
+  // Synchronize stage1Values updates during active workflow without resetting step index
   useEffect(() => {
     if (isOpen) {
-      setCurrentStepIndex(0);
-      setConfirmExitOpen(false);
-      // Initialize seed values
       setRecords((prev) => {
+        let changed = false;
         const updated = { ...prev };
         STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
           const s1Text = stage1Values[cat] || '';
-          if (!updated[cat] || updated[cat].status === 'PENDING') {
-            updated[cat] = {
-              category: cat,
-              status: s1Text ? 'COMPLETED' : 'PENDING',
-              text: s1Text || updated[cat]?.text || ''
-            };
-          } else if (s1Text && s1Text !== updated[cat].text) {
-            // Keep synchronized with updated stage1Values from previous workflow/review
+          if (s1Text && s1Text !== updated[cat]?.text) {
+            changed = true;
             updated[cat] = {
               ...updated[cat],
+              category: cat,
+              status: updated[cat]?.status === 'COMPLETED' ? 'COMPLETED' : (s1Text ? 'COMPLETED' : 'PENDING'),
               text: s1Text
             };
           }
         });
-        return updated;
+        return changed ? updated : prev;
       });
     }
-  }, [isOpen, stage1Values]);
+  }, [stage1Values, isOpen]);
 
   // Current active category
   const activeCategory: Stage2Category | null = useMemo(() => {
@@ -217,36 +237,23 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   };
 
   // Handler when a category finishes and adopts findings
-  const handleCompleteCategory = async (cat: Stage2Category, summaryText: string, skipped = false) => {
-    if (isProcessingCategory) return;
-    setIsProcessingCategory(true);
-    setProcessingCategoryTitle(t(STAGE2_CATEGORIES_METADATA[cat]?.labelKey || 'stage2StepCausa'));
-
-    try {
-      // Real processing pause to ensure OrganonProcessingStatus is clearly visible during actual evaluation and state update time
-      await new Promise((r) => setTimeout(r, 650));
-
-      setRecords((prev) => ({
-        ...prev,
-        [cat]: {
-          category: cat,
-          status: skipped ? 'SKIPPED_SUFFICIENT' : 'COMPLETED',
-          text: summaryText,
-          timestamp: new Date().toISOString()
-        }
-      }));
-
-      if (onAdoptCategoryResult && summaryText) {
-        onAdoptCategoryResult(cat, summaryText);
+  const handleCompleteCategory = (cat: Stage2Category, summaryText: string, skipped = false) => {
+    setRecords((prev) => ({
+      ...prev,
+      [cat]: {
+        category: cat,
+        status: skipped ? 'SKIPPED_SUFFICIENT' : 'COMPLETED',
+        text: summaryText,
+        timestamp: new Date().toISOString()
       }
+    }));
 
-      // Advance automatically to the next step
-      setCurrentStepIndex((prev) => Math.min(prev + 1, STAGE2_CATEGORY_SEQUENCE.length));
-    } catch (err) {
-      console.error('[OrganonStage2WorkflowModal] Error completing category:', err);
-    } finally {
-      setIsProcessingCategory(false);
+    if (onAdoptCategoryResult && summaryText) {
+      onAdoptCategoryResult(cat, summaryText);
     }
+
+    // Advance automatically to the next step
+    setCurrentStepIndex((prev) => Math.min(prev + 1, STAGE2_CATEGORY_SEQUENCE.length));
   };
 
   const handleFinalizeWorkflow = (customRecords?: Record<Stage2Category, CategoryResultRecord>) => {
@@ -414,223 +421,193 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
 
         {/* ================= WORKFLOW BODY ================= */}
         <div className="flex-1 overflow-hidden flex flex-col bg-slate-900">
-          {isProcessingCategory ? (
-            <div className="flex-1 flex items-center justify-center p-6 bg-slate-900">
-              <div className="w-full max-w-xl">
-                <OrganonProcessingStatus
-                  title={t('organonProcessingStage2Title')}
-                  subtitle={t('organonProcessingStage2Subtitle')}
-                  steps={[
-                    {
-                      id: 'step-eval',
-                      label: `Antwort und Fallzusammenhang für ${processingCategoryTitle} werden analysiert …`,
-                      status: 'active'
-                    },
-                    {
-                      id: 'step-update',
-                      label: 'Organon-Fallzustand aktualisieren',
-                      status: 'pending'
-                    }
-                  ]}
-                  methodologicalNote={t('organonProcessingMethodNote1')}
-                  theme="dark"
-                />
+          {/* STEP 1: CAUSA VERTIEFUNG */}
+          {activeCategory === 'CAUSA' && (
+            <CausaVertiefungModal
+              isOpen={true}
+              onClose={() => {}}
+              rawText={rawText}
+              existingCausaText={records.CAUSA?.text || stage1Values.causa || ''}
+              endprueferResult={endprueferResult}
+              hahnemannCrossCheck={globalHahnemannCrossCheck}
+              isEmbedded={true}
+              onAdoptCausa={(causaSummary) => {
+                handleCompleteCategory('CAUSA', causaSummary);
+              }}
+              onWorkflowComplete={(causaSummary) => {
+                handleCompleteCategory('CAUSA', causaSummary);
+              }}
+            />
+          )}
+
+          {/* STEP 2: LOCALISATIO VERTIEFUNG */}
+          {activeCategory === 'LOCALISATIO' && (
+            <LocalisatioVertiefungModal
+              isOpen={true}
+              onClose={() => {}}
+              rawText={rawText}
+              existingLocalisatioText={records.LOCALISATIO?.text || stage1Values.localisatio || ''}
+              endprueferResult={endprueferResult}
+              hahnemannCrossCheck={globalHahnemannCrossCheck}
+              isEmbedded={true}
+              onAdoptLocalisatio={(locSummary) => {
+                handleCompleteCategory('LOCALISATIO', locSummary);
+              }}
+              onWorkflowComplete={(locSummary) => {
+                handleCompleteCategory('LOCALISATIO', locSummary);
+              }}
+            />
+          )}
+
+          {/* STEPS 3..10: FROZEN CATEGORIES (Sensatio ... Animus) */}
+          {activeCategory && activeCategory !== 'CAUSA' && activeCategory !== 'LOCALISATIO' && (
+            <div
+              id={`stage2-category-slot-${activeCategory}`}
+              className="w-full flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-slate-900"
+            >
+              {/* Category Header Card */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-850 border border-slate-700/80 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center shrink-0">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-white tracking-tight">
+                        {t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)}
+                      </h3>
+                      <span className="px-2 py-0.5 text-[11px] font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full">
+                        {STAGE2_CATEGORIES_METADATA[activeCategory].dimensionsCode}
+                      </span>
+                    </div>
+                    <p className="text-xs text-teal-200/80 italic mt-0.5">
+                      {t(STAGE2_CATEGORIES_METADATA[activeCategory].questionKey)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-slate-400">
+                    Kategorie {currentStepIndex + 1} von 10 im geführten Gesamtprozess
+                  </span>
+                </div>
               </div>
-            </div>
-          ) : (
-            <>
-              {/* STEP 1: CAUSA VERTIEFUNG */}
-              {activeCategory === 'CAUSA' && (
-                <CausaVertiefungModal
-                  isOpen={true}
-                  onClose={() => {}}
-                  rawText={rawText}
-                  existingCausaText={records.CAUSA?.text || stage1Values.causa || ''}
-                  endprueferResult={endprueferResult}
-                  hahnemannCrossCheck={globalHahnemannCrossCheck}
-                  isEmbedded={true}
-                  onAdoptCausa={(causaSummary) => {
-                    handleCompleteCategory('CAUSA', causaSummary);
-                  }}
-                  onWorkflowComplete={(causaSummary) => {
-                    handleCompleteCategory('CAUSA', causaSummary);
-                  }}
-                />
-              )}
 
-              {/* STEP 2: LOCALISATIO VERTIEFUNG */}
-              {activeCategory === 'LOCALISATIO' && (
-                <LocalisatioVertiefungModal
-                  isOpen={true}
-                  onClose={() => {}}
-                  rawText={rawText}
-                  existingLocalisatioText={records.LOCALISATIO?.text || stage1Values.localisatio || ''}
-                  endprueferResult={endprueferResult}
-                  hahnemannCrossCheck={globalHahnemannCrossCheck}
-                  isEmbedded={true}
-                  onAdoptLocalisatio={(locSummary) => {
-                    handleCompleteCategory('LOCALISATIO', locSummary);
-                  }}
-                  onWorkflowComplete={(locSummary) => {
-                    handleCompleteCategory('LOCALISATIO', locSummary);
-                  }}
-                />
-              )}
+              {/* Stage 1 Seed Data Card */}
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5 text-teal-400">
+                    <FileText className="w-3.5 h-3.5" />
+                    {t('stage2Stage1SeedData')}
+                  </span>
+                  {stage1Values[activeCategory] && (
+                    <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                      Erfasst in Stage 1
+                    </span>
+                  )}
+                </div>
+                {stage1Values[activeCategory] ? (
+                  <p className="text-xs text-slate-200 bg-slate-900/90 p-3 rounded-lg border border-slate-800 leading-relaxed font-sans">
+                    {stage1Values[activeCategory]}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">
+                    {t('stage2NoStage1SeedData')}
+                  </p>
+                )}
+              </div>
 
-              {/* STEPS 3..10: FROZEN CATEGORIES (Sensatio ... Animus) */}
-              {activeCategory && activeCategory !== 'CAUSA' && activeCategory !== 'LOCALISATIO' && (
-                <div
-                  id={`stage2-category-slot-${activeCategory}`}
-                  className="w-full flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-slate-900"
-                >
-                  {/* Category Header Card */}
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-850 border border-slate-700/80 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center shrink-0">
-                        <Layers className="w-5 h-5" />
-                      </div>
-                      <div>
+              {/* Frozen Specification Dimensions Grid */}
+              {FROZEN_DIMENSIONS_MAP[activeCategory] && (
+                <div className="space-y-2.5">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Compass className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Fachliche Dimensionen ({STAGE2_CATEGORIES_METADATA[activeCategory].dimensionsCode})</span>
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {FROZEN_DIMENSIONS_MAP[activeCategory].map((dim) => (
+                      <div
+                        key={dim.code}
+                        className="p-3 rounded-xl bg-slate-850 border border-slate-800 space-y-1"
+                      >
                         <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-white tracking-tight">
-                            {t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)}
-                          </h3>
-                          <span className="px-2 py-0.5 text-[11px] font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full">
-                            {STAGE2_CATEGORIES_METADATA[activeCategory].dimensionsCode}
+                          <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-mono font-bold">
+                            {dim.code}
+                          </span>
+                          <span className="text-xs font-bold text-slate-200">
+                            {dim.title}
                           </span>
                         </div>
-                        <p className="text-xs text-teal-200/80 italic mt-0.5">
-                          {t(STAGE2_CATEGORIES_METADATA[activeCategory].questionKey)}
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          {dim.desc}
                         </p>
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-slate-400">
-                        Kategorie {currentStepIndex + 1} von 10 im geführten Gesamtprozess
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Stage 1 Seed Data Card */}
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-300 uppercase tracking-wider">
-                      <span className="flex items-center gap-1.5 text-teal-400">
-                        <FileText className="w-3.5 h-3.5" />
-                        {t('stage2Stage1SeedData')}
-                      </span>
-                      {stage1Values[activeCategory] && (
-                        <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
-                          Erfasst in Stage 1
-                        </span>
-                      )}
-                    </div>
-                    {stage1Values[activeCategory] ? (
-                      <p className="text-xs text-slate-200 bg-slate-900/90 p-3 rounded-lg border border-slate-800 leading-relaxed font-sans">
-                        {stage1Values[activeCategory]}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-slate-500 italic">
-                        {t('stage2NoStage1SeedData')}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Frozen Specification Dimensions Grid */}
-                  {FROZEN_DIMENSIONS_MAP[activeCategory] && (
-                    <div className="space-y-2.5">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Compass className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>Fachliche Dimensionen ({STAGE2_CATEGORIES_METADATA[activeCategory].dimensionsCode})</span>
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                        {FROZEN_DIMENSIONS_MAP[activeCategory].map((dim) => (
-                          <div
-                            key={dim.code}
-                            className="p-3 rounded-xl bg-slate-850 border border-slate-800 space-y-1"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-mono font-bold">
-                                {dim.code}
-                              </span>
-                              <span className="text-xs font-bold text-slate-200">
-                                {dim.title}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 leading-relaxed">
-                              {dim.desc}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Patient Text & Findings Input */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                      Ergebnis / Vertiefungstext für {t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)}:
-                    </label>
-                    <textarea
-                      id={`stage2-input-${activeCategory}`}
-                      disabled={isProcessingCategory}
-                      value={slotNoteInput}
-                      onChange={(e) => setSlotNoteInput(e.target.value)}
-                      placeholder={`Erfasste Phänomene, Nuancen und Patientenaussagen zu ${t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)} hier eingeben...`}
-                      rows={3}
-                      className="w-full px-4 py-3 bg-slate-950 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 text-sm resize-none disabled:opacity-50"
-                    />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800">
-                    <button
-                      id={`stage2-skip-btn-${activeCategory}`}
-                      type="button"
-                      disabled={isProcessingCategory}
-                      onClick={() => handleCompleteCategory(activeCategory, slotNoteInput.trim() || stage1Values[activeCategory] || '', true)}
-                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {t('stage2SkipCategoryBtn')}
-                    </button>
-
-                    <button
-                      id={`stage2-adopt-btn-${activeCategory}`}
-                      type="button"
-                      disabled={isProcessingCategory}
-                      onClick={() => handleCompleteCategory(activeCategory, slotNoteInput.trim() || stage1Values[activeCategory] || '')}
-                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>{t('stage2AdoptAndContinueBtn')}</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* ORGANON-GESAMTPRÜFUNG & DYNAMISCHE RESTKLÄRUNG (Prüf- und Klärungsinstanz) */}
-              {isGlobalReview && (
-                <OrganonGlobalReviewView
-                  rawText={rawText}
-                  stage1Values={stage1Values}
-                  endprueferResult={endprueferResult}
-                  records={records}
-                  hahnemannCrossCheck={globalHahnemannCrossCheck}
-                  onUpdateRecords={(newRecords) => {
-                    setRecords(newRecords);
-                    if (onAdoptCategoryResult) {
-                      STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
-                        const txt = newRecords[cat]?.text;
-                        if (txt && txt !== records[cat]?.text) {
-                          onAdoptCategoryResult(cat, txt);
-                        }
-                      });
-                    }
-                  }}
-                  onFinalizeWorkflow={handleFinalizeWorkflow}
+              {/* Patient Text & Findings Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  Ergebnis / Vertiefungstext für {t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)}:
+                </label>
+                <textarea
+                  id={`stage2-input-${activeCategory}`}
+                  value={slotNoteInput}
+                  onChange={(e) => setSlotNoteInput(e.target.value)}
+                  placeholder={`Erfasste Phänomene, Nuancen und Patientenaussagen zu ${t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)} hier eingeben...`}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-950 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 text-sm resize-none"
                 />
-              )}
-            </>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800">
+                <button
+                  id={`stage2-skip-btn-${activeCategory}`}
+                  type="button"
+                  onClick={() => handleCompleteCategory(activeCategory, slotNoteInput.trim() || stage1Values[activeCategory] || '', true)}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition-colors cursor-pointer"
+                >
+                  {t('stage2SkipCategoryBtn')}
+                </button>
+
+                <button
+                  id={`stage2-adopt-btn-${activeCategory}`}
+                  type="button"
+                  onClick={() => handleCompleteCategory(activeCategory, slotNoteInput.trim() || stage1Values[activeCategory] || '')}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{t('stage2AdoptAndContinueBtn')}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ORGANON-GESAMTPRÜFUNG & DYNAMISCHE RESTKLÄRUNG (Prüf- und Klärungsinstanz) */}
+          {isGlobalReview && (
+            <OrganonGlobalReviewView
+              rawText={rawText}
+              stage1Values={stage1Values}
+              endprueferResult={endprueferResult}
+              records={records}
+              hahnemannCrossCheck={globalHahnemannCrossCheck}
+              onUpdateRecords={(newRecords) => {
+                setRecords(newRecords);
+                if (onAdoptCategoryResult) {
+                  STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
+                    const txt = newRecords[cat]?.text;
+                    if (txt && txt !== records[cat]?.text) {
+                      onAdoptCategoryResult(cat, txt);
+                    }
+                  });
+                }
+              }}
+              onFinalizeWorkflow={handleFinalizeWorkflow}
+            />
           )}
         </div>
       </motion.div>
