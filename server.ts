@@ -2721,6 +2721,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     terminalPaths,
     openAspects,
     historyLength,
+    history,
     rawText
   }: {
     candidateQuestion: any | null;
@@ -2728,6 +2729,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     terminalPaths: string[];
     openAspects: any[];
     historyLength: number;
+    history: any[];
     rawText: string;
   }) {
     if (!candidateQuestion || openAspects.length === 0) {
@@ -2736,6 +2738,62 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
 
     const qText = (candidateQuestion.questionText || '').toLowerCase();
     const qTarget = candidateQuestion.targetDimension || 'C1';
+
+    // 0. Historien-Duplikatsprüfung (Atomare Identität: dimensionId/targetDimension + semanticTarget + symptomId + episodeId)
+    if (Array.isArray(history) && history.length > 0) {
+      const isDuplicateQuestion = history.some(h => {
+        const hTarget = h.targetDimension || h.dimensionId || '';
+        const qTargetDim = qTarget || '';
+
+        const hSemantic = h.semanticTarget || '';
+        const qSemantic = candidateQuestion.semanticTarget || '';
+
+        const hSymptom = h.symptomId || '';
+        const qSymptom = candidateQuestion.symptomId || '';
+
+        const hEpisode = h.episodeId || '';
+        const qEpisode = candidateQuestion.episodeId || '';
+
+        // Falls weder Kandidat noch History atomare Merkmale (semanticTarget, symptomId, episodeId) besitzen (Legacy),
+        // greift KEIN unsicheres Keyword- oder Dimensions-Matching. Es gilt ausschließlich exakte Fragetext-Gleichheit.
+        if (!hSemantic && !qSemantic && !hSymptom && !qSymptom && !hEpisode && !qEpisode) {
+          const hQ = (h.question || '').toLowerCase();
+          return hQ === qText;
+        }
+
+        const dimMatch = !hTarget || !qTargetDim || hTarget === qTargetDim;
+        const semanticMatch = Boolean(hSemantic && qSemantic && hSemantic === qSemantic);
+        const symptomMatch = !hSymptom || !qSymptom || hSymptom === qSymptom;
+        const episodeMatch = !hEpisode || !qEpisode || hEpisode === qEpisode;
+
+        return dimMatch && semanticMatch && symptomMatch && episodeMatch;
+      });
+
+      if (isDuplicateQuestion) {
+        console.log('[CausaPlanner] Duplicate question detected from history (atomic identity match) - switching to next open aspect or stopping!');
+        const nextOpenAspect = openAspects.find(a => {
+          const dim = a.dimension || a.targetDimension || 'C3';
+          const alreadyAsked = history.some(h => (h.question || '').toLowerCase().includes((a.text || '').toLowerCase().slice(0, 15)));
+          return !alreadyAsked && !terminalPaths.some(tp => tp.toLowerCase().includes(dim.toLowerCase()));
+        });
+
+        if (nextOpenAspect) {
+          candidateQuestion = {
+            questionId: `q_${historyLength + 1}`,
+            questionText: nextOpenAspect.text ? `Können Sie Näheres zu "${nextOpenAspect.text}" erläutern?` : "Welche weiteren Umstände oder Begleiterscheinungen traten auf?",
+            orientationExample: nextOpenAspect.reason || "Begleitumstände, Modalitäten oder zeitlicher Verlauf.",
+            targetDimension: nextOpenAspect.dimension || nextOpenAspect.targetDimension || 'C3',
+            semanticTarget: nextOpenAspect.semanticTarget,
+            symptomId: nextOpenAspect.symptomId,
+            episodeId: nextOpenAspect.episodeId,
+            reason: "Ausweichen auf nächstes offenes semantisches Ziel, da vorheriges atomares Ziel bereits behandelt wurde.",
+            questionStage: 1
+          };
+        } else {
+          return { question: null, isFinished: true, stoppingReason: "Causa-Klärung abgeschlossen: Alle relevanten atomaren Informationsziele und offenen Aspekte wurden geprüft (§§ 83–104)." };
+        }
+      }
+    }
 
     // 1. C1-Schleifen-Verhinderung (Punkt 4): Belegtes atomares Ziel nicht erneut abfragen!
     const hasC1Factual = knownFacts.some(f => (f.dimension === 'C1' || f.dimensionId === 'C1') && (f.status === 'BELEGT_FAKTISCH' || f.status === 'EXPLICIT'));
@@ -2791,7 +2849,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       }
     }
 
-    // KEIN fester oder faktischer Fragen-/Turn-Cap (historyLength >= 2 entfernt). Weitere Fragen sind zulässig, solange ungedeckte relevante offene Aspekte existieren.
+    // KEIN fester oder faktischer Fragen-/Turn-Cap. Weitere Fragen sind zulässig, solange ungedeckte relevante offene Aspekte existieren.
 
     return { question: candidateQuestion, isFinished: false, stoppingReason: undefined };
   }
@@ -2965,6 +3023,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       terminalPaths: canonicalState.terminalPaths || [],
       openAspects: baseOpenAspects,
       historyLength: currentHistory.length,
+      history: currentHistory,
       rawText
     });
 
@@ -3273,6 +3332,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       terminalPaths: canonicalState.terminalPaths || [],
       openAspects: baseOpenAspects,
       historyLength: currentHistory.length,
+      history: currentHistory,
       rawText
     });
 
