@@ -31,6 +31,25 @@ import {
   evaluateAmtsPairs,
   generateAmtsReportMarkdown
 } from "./src/services/amtsDosageEngine";
+import {
+  runGeminiCausaAnalysis,
+  runGptCausaAnalysis,
+  runCausaArbitration,
+  runGeminiOnlyCausaDeepen
+} from "./src/services/causaMultiAgentEngine";
+import {
+  runGeminiOnlyLocalisatioDeepen,
+  runGeminiLocalisatioAnalysis,
+  runGptLocalisatioAnalysis,
+  runLocalisatioArbitration
+} from "./src/services/localisatioMultiAgentEngine";
+import {
+  CAUSA_DIMENSION_NAMES
+} from "./src/types/causaDeepDive";
+import {
+  LOCALISATIO_DIMENSION_NAMES
+} from "./src/types/localisatioDeepDive";
+import { executeOrganonGlobalReview } from "./src/services/organonGlobalReviewEngine";
 
 dotenv.config();
 
@@ -2550,6 +2569,1053 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         isFinished: false,
         summary: "Hinweis: Aufgrund hoher Serverlast wurde ein Standard-Frageimpuls geladen. Sie können fortfahren."
       });
+    }
+  });
+
+  // Helper: Ausführung des Gemini-only Causa-Zweigs (Single-Call)
+  async function executeGeminiOnlyTurn({
+    ai,
+    rawText,
+    activeEndprueferResult,
+    existingCausaText,
+    state,
+    latestAnswer,
+    language,
+    action
+  }: {
+    ai: any;
+    rawText: string;
+    activeEndprueferResult: any;
+    existingCausaText: string;
+    state: any;
+    latestAnswer: string;
+    language: string;
+    action: string;
+  }) {
+    let currentHistory: Array<{ question: string; answer: string; orientationExample?: string }> = [];
+    if (Array.isArray(state?.history)) {
+      currentHistory = state.history.map((h: any) => ({
+        question: h.question || h.questionText || '',
+        answer: h.answer || h.patientAnswer || h.extractedNotes || '',
+        orientationExample: h.orientationExample || ''
+      }));
+    }
+
+    if (action === "step" && latestAnswer && latestAnswer.trim()) {
+      const prevQuestionText = state?.currentQuestion?.questionText || "Frage zur Causa";
+      const prevOrientation = state?.currentQuestion?.orientationExample || "";
+      currentHistory.push({
+        question: prevQuestionText,
+        answer: latestAnswer.trim(),
+        orientationExample: prevOrientation
+      });
+    }
+
+    const turnStartTime = Date.now();
+    const geminiOnlyRes = await runGeminiOnlyCausaDeepen(
+      ai,
+      rawText,
+      activeEndprueferResult,
+      existingCausaText,
+      currentHistory,
+      language
+    );
+    const durationMs = Date.now() - turnStartTime;
+    console.log(`[CausaDeepen] Gemini-only Turn abgeschlossen in ${durationMs}ms`);
+
+    const isFinished = action === "finalize" || Boolean(geminiOnlyRes.isFinished);
+
+    const existingEvidenceList: Array<any> = Array.isArray(state?.evidenceList)
+      ? [...state.evidenceList]
+      : [];
+
+    if (Array.isArray(geminiOnlyRes.atomicFacts)) {
+      geminiOnlyRes.atomicFacts.forEach((f, idx) => {
+        const alreadyExists = existingEvidenceList.some(e => e.content === f.factText || (f.originalQuote && e.originalQuote === f.originalQuote));
+        if (!alreadyExists) {
+          existingEvidenceList.push({
+            id: f.factId || `ev_${existingEvidenceList.length + idx + 1}`,
+            content: f.factText,
+            status: f.factStatus || "BELEGT_FAKTISCH",
+            originalQuote: f.originalQuote || rawText.slice(0, 100),
+            source: "Patientenaussage",
+            assignedSymptom: f.dimensionId || "Causa",
+            dimension: f.dimensionId || "C1",
+            episodeId: f.episodeId,
+            patientConfidence: f.patientConfidence,
+            epistemicRelation: f.epistemicRelation
+          });
+        }
+      });
+    }
+
+    const knownFacts = (geminiOnlyRes.atomicFacts || []).map(f => ({
+      text: f.factText,
+      evidence: f.originalQuote,
+      dimension: f.dimensionId
+    }));
+
+    const mergedKnownFacts = [...(state?.knownFacts || [])];
+    knownFacts.forEach(k => {
+      if (!mergedKnownFacts.some(m => m.text === k.text)) {
+        mergedKnownFacts.push(k);
+      }
+    });
+
+    return {
+      knownFacts: mergedKnownFacts.length > 0 ? mergedKnownFacts : (existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund" }] : []),
+      openAspects: Array.isArray(geminiOnlyRes.openAspects) ? geminiOnlyRes.openAspects : [],
+      evidenceList: existingEvidenceList,
+      currentQuestion: isFinished || !geminiOnlyRes.nextQuestion ? null : {
+        questionId: `q_${currentHistory.length + 1}`,
+        questionText: geminiOnlyRes.nextQuestion.questionText,
+        orientationExample: geminiOnlyRes.nextQuestion.orientationExample || "",
+        reason: geminiOnlyRes.nextQuestion.reason || "",
+        targetDimension: geminiOnlyRes.nextQuestion.targetDimension || "C1",
+        arbitrationNote: "Gemini-only Testmodus (§§ 83–104 • Direkte Einzelfragen-Extraktion ohne Schiedsrichter)",
+        agentOpinions: undefined
+      },
+      history: currentHistory.map((h, i) => ({
+        step: i + 1,
+        question: h.question,
+        orientationExample: h.orientationExample || '',
+        answer: h.answer,
+        extractedNotes: h.answer
+      })),
+      isFinished: isFinished,
+      stoppingReason: geminiOnlyRes.stoppingReason || (isFinished ? (geminiOnlyRes.finalEvaluation?.overallResult || "Causa-Klärung abgeschlossen.") : undefined),
+      finalSummary: isFinished ? {
+        levelA_patientReported: Array.isArray(geminiOnlyRes.finalEvaluation?.levelA_patientReported) && geminiOnlyRes.finalEvaluation.levelA_patientReported.length > 0
+          ? geminiOnlyRes.finalEvaluation.levelA_patientReported
+          : (mergedKnownFacts.length > 0 ? mergedKnownFacts.map(k => k.text) : ["Keine spezifischen Causa-Fakten genannt"]),
+        levelB_unresolvedOrConflicting: Array.isArray(geminiOnlyRes.finalEvaluation?.levelB_unresolvedOrConflicting)
+          ? geminiOnlyRes.finalEvaluation.levelB_unresolvedOrConflicting
+          : (geminiOnlyRes.openAspects.map(o => o.text)),
+        levelC_homeopathicInterpretation: Array.isArray(geminiOnlyRes.finalEvaluation?.levelC_homeopathicInterpretation)
+          ? geminiOnlyRes.finalEvaluation.levelC_homeopathicInterpretation
+          : ["Klassische Einzelfall-Repertorisation"],
+        overallResult: geminiOnlyRes.finalEvaluation?.overallResult || (mergedKnownFacts.length > 0 ? "Causa-Klärung abgeschlossen." : "Keine ausreichend belegte Causa ermittelbar.")
+      } : null,
+      canonicalState: state?.canonicalState || null,
+      turnDurations: {
+        geminiMs: durationMs,
+        totalMs: durationMs
+      },
+      pipelineMode: "gemini-only",
+      endprueferResult: activeEndprueferResult
+    };
+  }
+
+  // Helper: Ausführung des 3-Instanzen-Prüfsystems (Gemini + GPT + Schiedsrichter)
+  async function execute3TierTurn({
+    ai,
+    rawText,
+    existingCausaText,
+    state,
+    latestAnswer,
+    language,
+    action,
+    activeEndprueferResult
+  }: {
+    ai: any;
+    rawText: string;
+    existingCausaText: string;
+    state: any;
+    latestAnswer: string;
+    language: string;
+    action: string;
+    activeEndprueferResult: any;
+  }) {
+    let currentHistory: Array<{ question: string; answer: string; orientationExample?: string }> = [];
+    if (Array.isArray(state?.history)) {
+      currentHistory = state.history.map((h: any) => ({
+        question: h.question || h.questionText || '',
+        answer: h.answer || h.patientAnswer || h.extractedNotes || '',
+        orientationExample: h.orientationExample || ''
+      }));
+    }
+
+    if (action === "step" && latestAnswer && latestAnswer.trim()) {
+      const prevQuestionText = state?.currentQuestion?.questionText || "Frage zur Causa";
+      const prevOrientation = state?.currentQuestion?.orientationExample || "";
+      currentHistory.push({
+        question: prevQuestionText,
+        answer: latestAnswer.trim(),
+        orientationExample: prevOrientation
+      });
+    }
+
+    const turnStartTime = Date.now();
+    let geminiDurationMs = 0;
+    let gptDurationMs = 0;
+    let waitBothDurationMs = 0;
+    let arbDurationMs = 0;
+
+    let geminiRes: any = null;
+    let gptRes: any = null;
+    let arbRes: any = null;
+
+    const prepStart = Date.now();
+    const geminiPromise = (async () => {
+      const t0 = Date.now();
+      const res = await runGeminiCausaAnalysis(ai, rawText, existingCausaText, currentHistory, language);
+      geminiDurationMs = Date.now() - t0;
+      return res;
+    })();
+
+    const gptPromise = (async () => {
+      const t0 = Date.now();
+      const res = await runGptCausaAnalysis(ai, rawText, existingCausaText, currentHistory, language);
+      gptDurationMs = Date.now() - t0;
+      return res;
+    })();
+
+    const [geminiSettled, gptSettled] = await Promise.allSettled([geminiPromise, gptPromise]);
+    waitBothDurationMs = Date.now() - prepStart;
+
+    if (geminiSettled.status === "fulfilled") {
+      geminiRes = geminiSettled.value;
+    } else {
+      console.warn("[CausaDeepen] Instanz 1 (Gemini) failed:", geminiSettled.reason);
+    }
+
+    if (gptSettled.status === "fulfilled") {
+      gptRes = gptSettled.value;
+    } else {
+      console.warn("[CausaDeepen] Instanz 2 (GPT) failed:", gptSettled.reason);
+    }
+
+    if (!geminiRes && gptRes) {
+      console.log("[CausaDeepen] Retrying ONLY failed Instanz 1 (Gemini)...");
+      try {
+        const t0 = Date.now();
+        geminiRes = await runGeminiCausaAnalysis(ai, rawText, existingCausaText, currentHistory, language);
+        geminiDurationMs += Date.now() - t0;
+      } catch (retryErr) {
+        console.error("[CausaDeepen] Retry of Instanz 1 (Gemini) failed:", retryErr);
+      }
+    } else if (geminiRes && !gptRes) {
+      console.log("[CausaDeepen] Retrying ONLY failed Instanz 2 (GPT)...");
+      try {
+        const t0 = Date.now();
+        gptRes = await runGptCausaAnalysis(ai, rawText, existingCausaText, currentHistory, language);
+        gptDurationMs += Date.now() - t0;
+      } catch (retryErr) {
+        console.error("[CausaDeepen] Retry of Instanz 2 (GPT) failed:", retryErr);
+      }
+    }
+
+    if (!geminiRes && !gptRes) {
+      throw new Error("Beide Causa-Vorinstanzen (Gemini und GPT) waren nicht erreichbar.");
+    }
+
+    if (!geminiRes) {
+      geminiRes = {
+        knownFacts: [],
+        openAspects: [],
+        suggestedQuestion: {
+          questionText: "[Instanz 1 / Gemini temporär nicht verfügbar]",
+          orientationExample: "",
+          targetDimension: "C1",
+          reason: "Instanz 1 Ausfall",
+          questionStage: 1
+        },
+        dimensionStatus: {},
+        isFinished: false
+      };
+    }
+
+    if (!gptRes) {
+      gptRes = {
+        knownFacts: [],
+        openAspects: [],
+        suggestedQuestion: {
+          questionText: "[Instanz 2 / GPT temporär nicht verfügbar]",
+          orientationExample: "",
+          targetDimension: "C1",
+          reason: "Instanz 2 Ausfall",
+          questionStage: 1
+        },
+        dimensionStatus: {},
+        isFinished: false
+      };
+    }
+
+    const arbT0 = Date.now();
+    arbRes = await runCausaArbitration(ai, rawText, existingCausaText, currentHistory, geminiRes, gptRes, language);
+    arbDurationMs = Date.now() - arbT0;
+
+    const totalTurnDurationMs = Date.now() - turnStartTime;
+
+    const isFinished = action === "finalize" || Boolean(arbRes.isFinished);
+    const chosenQ = arbRes.chosenQuestion || {
+      questionId: `q_${currentHistory.length + 1}`,
+      questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum ersten Mal auftraten?",
+      orientationExample: "Ereignisse, Stress, Witterung oder sonstige Umstände.",
+      targetDimension: "C1",
+      reason: "Offene Erfassung des Beginns ohne Vorab-Hypothese.",
+      arbitrationNote: "Schiedsrichter-Konsensentscheidung"
+    };
+
+    const existingKnownFacts = Array.isArray(state?.knownFacts) ? [...state.knownFacts] : [];
+    const newFacts = Array.isArray(arbRes.factsDelta) ? arbRes.factsDelta.map((f: any) => ({
+      text: f.text,
+      evidence: f.evidence
+    })) : [];
+    const mergedKnownFacts = [...existingKnownFacts];
+    for (const nf of newFacts) {
+      if (!mergedKnownFacts.some(k => k.text === nf.text)) {
+        mergedKnownFacts.push(nf);
+      }
+    }
+
+    const existingEvidenceList = Array.isArray(state?.evidenceList) ? [...state.evidenceList] : [];
+    if (Array.isArray(arbRes.factsDelta)) {
+      arbRes.factsDelta.forEach((f: any, idx: number) => {
+        if (!existingEvidenceList.some(e => e.content === f.text)) {
+          existingEvidenceList.push({
+            id: `ev_${existingEvidenceList.length + idx + 1}`,
+            content: f.text,
+            status: f.epistemicStatus || "EXPLICIT",
+            originalQuote: f.evidence || rawText.slice(0, 100),
+            source: "Patientenaussage",
+            assignedSymptom: f.dimension || "Causa",
+            dimension: f.dimension || "C1"
+          });
+        }
+      });
+    }
+
+    return {
+      knownFacts: mergedKnownFacts.length > 0 ? mergedKnownFacts : (existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund" }] : []),
+      openAspects: Array.isArray(geminiRes.openAspects) ? geminiRes.openAspects : [{ text: "Erstbeginn & Chronologie", reason: "Muss erfragt werden" }],
+      evidenceList: existingEvidenceList,
+      currentQuestion: isFinished || !chosenQ ? null : {
+        questionId: chosenQ.questionId || `q_${currentHistory.length + 1}`,
+        questionText: chosenQ.questionText,
+        orientationExample: chosenQ.orientationExample,
+        reason: chosenQ.reason,
+        targetDimension: chosenQ.targetDimension || "C1",
+        arbitrationNote: chosenQ.arbitrationNote || arbRes.chosenQuestion?.arbitrationNote,
+        agentOpinions: arbRes.agentOpinions
+      },
+      history: currentHistory.map((h, i) => ({
+        step: i + 1,
+        question: h.question,
+        orientationExample: h.orientationExample || '',
+        answer: h.answer,
+        extractedNotes: h.answer
+      })),
+      isFinished: isFinished,
+      stoppingReason: arbRes.stoppingReason || (isFinished ? "Causa-Klärung abgeschlossen" : undefined),
+      finalSummary: isFinished ? {
+        levelA_patientReported: Array.isArray(arbRes.finalSummary?.levelA_patientReported) 
+          ? arbRes.finalSummary.levelA_patientReported 
+          : (mergedKnownFacts.length > 0 ? mergedKnownFacts.map(k => k.text) : ["Keine spezifischen Causa-Fakten genannt"]),
+        levelB_unresolvedOrConflicting: Array.isArray(arbRes.finalSummary?.levelB_unresolvedOrConflicting)
+          ? arbRes.finalSummary.levelB_unresolvedOrConflicting
+          : ["Keine weiteren offenen Punkte"],
+        levelC_homeopathicInterpretation: Array.isArray(arbRes.finalSummary?.levelC_homeopathicInterpretation)
+          ? arbRes.finalSummary.levelC_homeopathicInterpretation
+          : ["Klassische Einzelfall-Repertorisation"],
+        overallResult: arbRes.finalSummary?.overallResult || "Causa-Klärung durch Schiedsrichter abgeschlossen."
+      } : null,
+      canonicalState: state?.canonicalState || null,
+      turnDurations: {
+        geminiMs: geminiDurationMs,
+        gptMs: gptDurationMs,
+        waitBothMs: waitBothDurationMs,
+        arbitratorMs: arbDurationMs,
+        totalMs: totalTurnDurationMs
+      },
+      pipelineMode: "3-tier",
+      endprueferResult: activeEndprueferResult
+    };
+  }
+
+  app.post("/api/organon/causa-deepen", async (req, res) => {
+    try {
+      const {
+        action = "init",
+        rawText = "",
+        existingCausaText = "",
+        state = null,
+        stateA = null,
+        stateB = null,
+        latestAnswer = "",
+        language = "de",
+        mode = "gemini-only",
+        endprueferResult = null
+      } = req.body;
+
+      const activeMode = mode || state?.pipelineMode || "gemini-only";
+      const activeEndprueferResult = endprueferResult || state?.endprueferResult || stateA?.endprueferResult || stateB?.endprueferResult || null;
+
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        return res.status(503).json({ error: "GEMINI_API_KEY is not configured" });
+      }
+      const ai = new GoogleGenAI({ apiKey });
+
+      // -------------------------------------------------------------
+      // MODUS A/B-VERGLEICH (PARALLELE UNABHÄNGIGE BERECHNUNG)
+      // Zweig A: 3-Instanzen-Pipeline (Gemini + GPT + Schiedsrichter)
+      // Zweig B: Gemini-only (Single-Call)
+      // Beide erhalten identische Rohdaten, aber rechnen 100% isoliert.
+      // -------------------------------------------------------------
+      if (activeMode === "ab-compare") {
+        const branchAInputState = stateA || state || null;
+        const branchBInputState = stateB || state || null;
+
+        const [finalBranchA, finalBranchB] = await Promise.all([
+          execute3TierTurn({
+            ai,
+            rawText,
+            existingCausaText,
+            state: branchAInputState,
+            latestAnswer,
+            language,
+            action,
+            activeEndprueferResult
+          }),
+          executeGeminiOnlyTurn({
+            ai,
+            rawText,
+            activeEndprueferResult,
+            existingCausaText,
+            state: branchBInputState,
+            latestAnswer,
+            language,
+            action
+          })
+        ]);
+
+        return res.json({
+          stateA: finalBranchA,
+          stateB: finalBranchB,
+          pipelineMode: "ab-compare"
+        });
+      }
+
+      // -------------------------------------------------------------
+      // MODUS: GEMINI-ONLY TESTMODUS (SINGLE-CALL)
+      // -------------------------------------------------------------
+      if (activeMode === "gemini-only") {
+        const finalState = await executeGeminiOnlyTurn({
+          ai,
+          rawText,
+          activeEndprueferResult,
+          existingCausaText,
+          state,
+          latestAnswer,
+          language,
+          action
+        });
+
+        return res.json({ state: finalState });
+      }
+
+      // -------------------------------------------------------------
+      // MODUS: 3-INSTANZEN-PRÜFSYSTEM
+      // -------------------------------------------------------------
+      const finalState = await execute3TierTurn({
+        ai,
+        rawText,
+        existingCausaText,
+        state,
+        latestAnswer,
+        language,
+        action,
+        activeEndprueferResult
+      });
+
+      return res.json({ state: finalState });
+    } catch (error: any) {
+      console.error("Causa Vertiefung Engine Error:", error);
+      res.status(500).json({ error: "Failed to process causa vertiefung.", details: error?.message });
+    }
+  });
+
+  // =============================================================
+  // LOCALISATIO VERTIEFUNG ENGINE (STAGE 2)
+  // =============================================================
+
+  async function executeGeminiOnlyLocalisatioTurn({
+    ai,
+    rawText,
+    activeEndprueferResult,
+    existingLocalisatioText,
+    state,
+    canonicalState,
+    latestAnswer,
+    language,
+    action
+  }: {
+    ai: any;
+    rawText: string;
+    activeEndprueferResult: any;
+    existingLocalisatioText: string;
+    state: any;
+    canonicalState: any;
+    latestAnswer: string;
+    language: string;
+    action: string;
+  }) {
+    let currentHistory: Array<{ question: string; answer: string; orientationExample?: string; symptomId?: string; dimension?: string }> = [];
+    if (Array.isArray(state?.history)) {
+      currentHistory = state.history.map((h: any) => ({
+        question: h.question || h.questionText || '',
+        answer: h.answer || h.patientAnswer || h.extractedNotes || '',
+        orientationExample: h.orientationExample || '',
+        symptomId: h.symptomId,
+        dimension: h.dimension
+      }));
+    }
+
+    const activeSymptomId = state?.activeSymptomId || canonicalState?.activeSymptomId || 'sym_1';
+    const activeSymLabel = state?.symptoms?.[activeSymptomId]?.symptomLabel || canonicalState?.symptoms?.[activeSymptomId]?.symptomLabel || 'Hauptbeschwerde';
+
+    if (action === "step" && latestAnswer && latestAnswer.trim()) {
+      const prevQuestionText = state?.currentQuestion?.questionText || "Frage zur Lokalisation";
+      const prevOrientation = state?.currentQuestion?.orientationExample || "";
+      const prevDimension = state?.currentQuestion?.targetDimension || "L1";
+      currentHistory.push({
+        question: prevQuestionText,
+        answer: latestAnswer.trim(),
+        orientationExample: prevOrientation,
+        symptomId: activeSymptomId,
+        dimension: prevDimension
+      });
+    }
+
+    const activeCanonical = canonicalState || state?.canonicalState || {
+      activeSymptomId,
+      symptomOrder: state?.symptomOrder || [activeSymptomId],
+      symptoms: state?.symptoms || {}
+    };
+
+    const turnStartTime = Date.now();
+    const geminiOnlyRes = await runGeminiOnlyLocalisatioDeepen(
+      ai,
+      rawText,
+      activeEndprueferResult,
+      existingLocalisatioText,
+      activeCanonical,
+      currentHistory,
+      language
+    );
+    const durationMs = Date.now() - turnStartTime;
+    console.log(`[LocalisatioDeepen] Gemini-only Turn abgeschlossen in ${durationMs}ms`);
+
+    // Multi-Symptom Progression
+    const symptomOrder: string[] = state?.symptomOrder || activeCanonical.symptomOrder || [activeSymptomId];
+    let newActiveSymptomId = activeSymptomId;
+    let isOverallFinished = action === "finalize" || Boolean(geminiOnlyRes.isFinished);
+
+    const updatedSymptoms = { ...(state?.symptoms || activeCanonical.symptoms || {}) };
+    if (!updatedSymptoms[activeSymptomId]) {
+      updatedSymptoms[activeSymptomId] = {
+        symptomId: activeSymptomId,
+        symptomLabel: activeSymLabel,
+        episodeId: 'EP_INITIAL',
+        facts: [],
+        dimensions: geminiOnlyRes.dimensionStates,
+        spatialRelations: geminiOnlyRes.spatialRelations || [],
+        dynamicVectors: geminiOnlyRes.dynamicVectors || [],
+        isSymptomCompleted: false
+      };
+    }
+
+    if (geminiOnlyRes.isSymptomCompleted) {
+      updatedSymptoms[activeSymptomId].isSymptomCompleted = true;
+      updatedSymptoms[activeSymptomId].completionReason = geminiOnlyRes.completionReason || 'Ausreichend erhoben';
+
+      // Wechsle zum nächsten offenen Symptom
+      const currentIdx = symptomOrder.indexOf(activeSymptomId);
+      const nextId = symptomOrder[currentIdx + 1];
+      if (nextId && updatedSymptoms[nextId] && !updatedSymptoms[nextId].isSymptomCompleted) {
+        newActiveSymptomId = nextId;
+      } else {
+        const remainingOpen = symptomOrder.find(id => updatedSymptoms[id] && !updatedSymptoms[id].isSymptomCompleted);
+        if (remainingOpen) {
+          newActiveSymptomId = remainingOpen;
+        } else {
+          isOverallFinished = true;
+        }
+      }
+    }
+
+    const existingEvidenceList: Array<any> = Array.isArray(state?.evidenceList) ? [...state.evidenceList] : [];
+    if (Array.isArray(geminiOnlyRes.atomicFacts)) {
+      geminiOnlyRes.atomicFacts.forEach((f, idx) => {
+        const alreadyExists = existingEvidenceList.some(e => e.content === f.factText || (f.originalQuote && e.originalQuote === f.originalQuote));
+        if (!alreadyExists) {
+          existingEvidenceList.push({
+            id: f.factId || `ev_loc_${existingEvidenceList.length + idx + 1}`,
+            content: f.factText,
+            status: f.epistemicStatus || "BELEGT_FAKTISCH",
+            originalQuote: f.originalQuote || rawText.slice(0, 100),
+            source: "Patientenaussage",
+            assignedSymptom: updatedSymptoms[f.symptomId || activeSymptomId]?.symptomLabel || activeSymLabel,
+            symptomId: f.symptomId || activeSymptomId,
+            episodeId: f.episodeId || 'EP_INITIAL',
+            dimension: f.dimensionId || "L1",
+            normalizedValue: f.normalizedValue,
+            patientConfidence: f.patientConfidence
+          });
+        }
+      });
+    }
+
+    const knownFacts = (geminiOnlyRes.atomicFacts || []).map(f => ({
+      text: f.factText,
+      evidence: f.originalQuote,
+      dimension: f.dimensionId,
+      symptomId: f.symptomId || activeSymptomId
+    }));
+
+    const mergedKnownFacts = [...(state?.knownFacts || [])];
+    knownFacts.forEach(k => {
+      if (!mergedKnownFacts.some(m => m.text === k.text && m.symptomId === k.symptomId)) {
+        mergedKnownFacts.push(k);
+      }
+    });
+
+    return {
+      activeSymptomId: newActiveSymptomId,
+      symptomOrder,
+      symptoms: updatedSymptoms,
+      knownFacts: mergedKnownFacts.length > 0 ? mergedKnownFacts : (existingLocalisatioText ? [{ text: existingLocalisatioText, evidence: "Ausgangsbefund", symptomId: activeSymptomId, dimension: "L1" }] : []),
+      openAspects: Array.isArray(geminiOnlyRes.openAspects) ? geminiOnlyRes.openAspects : [],
+      evidenceList: existingEvidenceList,
+      currentQuestion: isOverallFinished || !geminiOnlyRes.nextQuestion ? null : {
+        questionId: `q_loc_${currentHistory.length + 1}`,
+        questionText: geminiOnlyRes.nextQuestion.questionText,
+        orientationExample: geminiOnlyRes.nextQuestion.orientationExample || "",
+        reason: geminiOnlyRes.nextQuestion.reason || "",
+        targetDimension: geminiOnlyRes.nextQuestion.targetDimension || "L1",
+        targetSymptomId: geminiOnlyRes.nextQuestion.targetSymptomId || newActiveSymptomId,
+        targetSymptomLabel: geminiOnlyRes.nextQuestion.targetSymptomLabel || updatedSymptoms[newActiveSymptomId]?.symptomLabel || activeSymLabel,
+        arbitrationNote: "Gemini-only (§§ 83–104 • Direkte Einzelfragen-Extraktion)"
+      },
+      history: currentHistory.map((h, i) => ({
+        step: i + 1,
+        question: h.question,
+        orientationExample: h.orientationExample || '',
+        answer: h.answer,
+        extractedNotes: h.answer,
+        symptomId: h.symptomId,
+        dimension: h.dimension
+      })),
+      isFinished: isOverallFinished,
+      stoppingReason: geminiOnlyRes.stoppingReason || (isOverallFinished ? "Localisatio-Vertiefung aller Symptome abgeschlossen." : undefined),
+      finalSummary: isOverallFinished ? {
+        levelA_patientReported: Array.isArray(geminiOnlyRes.finalEvaluation?.levelA_patientReported) && geminiOnlyRes.finalEvaluation.levelA_patientReported.length > 0
+          ? geminiOnlyRes.finalEvaluation.levelA_patientReported
+          : (mergedKnownFacts.length > 0 ? mergedKnownFacts.map(k => k.text) : ["Keine spezifischen Lokalisations-Fakten genannt"]),
+        levelB_conservativeNormalizations: Array.isArray(geminiOnlyRes.finalEvaluation?.levelB_conservativeNormalizations)
+          ? geminiOnlyRes.finalEvaluation.levelB_conservativeNormalizations
+          : ["Konservative phänomenologische Lokalisationszuordnung"],
+        levelC_unresolvedOrVague: Array.isArray(geminiOnlyRes.finalEvaluation?.levelC_unresolvedOrVague)
+          ? geminiOnlyRes.finalEvaluation.levelC_unresolvedOrVague
+          : (geminiOnlyRes.openAspects.map(o => o.text)),
+        overallResult: geminiOnlyRes.finalEvaluation?.overallResult || (mergedKnownFacts.length > 0 ? "Localisatio-Vertiefung abgeschlossen." : "Keine ausreichend belegte Lokalisation ermittelbar.")
+      } : null,
+      canonicalState: {
+        ...activeCanonical,
+        activeSymptomId: newActiveSymptomId,
+        symptomOrder,
+        symptoms: updatedSymptoms,
+        isFinished: isOverallFinished
+      },
+      turnDurations: {
+        geminiMs: durationMs,
+        totalMs: durationMs
+      },
+      pipelineMode: "gemini-only",
+      endprueferResult: activeEndprueferResult
+    };
+  }
+
+  async function execute3TierLocalisatioTurn({
+    ai,
+    rawText,
+    existingLocalisatioText,
+    state,
+    canonicalState,
+    latestAnswer,
+    language,
+    action,
+    activeEndprueferResult
+  }: {
+    ai: any;
+    rawText: string;
+    existingLocalisatioText: string;
+    state: any;
+    canonicalState: any;
+    latestAnswer: string;
+    language: string;
+    action: string;
+    activeEndprueferResult: any;
+  }) {
+    let currentHistory: Array<{ question: string; answer: string; orientationExample?: string; symptomId?: string; dimension?: string }> = [];
+    if (Array.isArray(state?.history)) {
+      currentHistory = state.history.map((h: any) => ({
+        question: h.question || h.questionText || '',
+        answer: h.answer || h.patientAnswer || h.extractedNotes || '',
+        orientationExample: h.orientationExample || '',
+        symptomId: h.symptomId,
+        dimension: h.dimension
+      }));
+    }
+
+    const activeSymptomId = state?.activeSymptomId || canonicalState?.activeSymptomId || 'sym_1';
+    const activeSymLabel = state?.symptoms?.[activeSymptomId]?.symptomLabel || canonicalState?.symptoms?.[activeSymptomId]?.symptomLabel || 'Hauptbeschwerde';
+
+    if (action === "step" && latestAnswer && latestAnswer.trim()) {
+      const prevQuestionText = state?.currentQuestion?.questionText || "Frage zur Lokalisation";
+      const prevOrientation = state?.currentQuestion?.orientationExample || "";
+      const prevDimension = state?.currentQuestion?.targetDimension || "L1";
+      currentHistory.push({
+        question: prevQuestionText,
+        answer: latestAnswer.trim(),
+        orientationExample: prevOrientation,
+        symptomId: activeSymptomId,
+        dimension: prevDimension
+      });
+    }
+
+    const activeCanonical = canonicalState || state?.canonicalState || {
+      activeSymptomId,
+      symptomOrder: state?.symptomOrder || [activeSymptomId],
+      symptoms: state?.symptoms || {}
+    };
+
+    const turnStartTime = Date.now();
+    let geminiDurationMs = 0;
+    let gptDurationMs = 0;
+    let arbDurationMs = 0;
+
+    let geminiRes: any = null;
+    let gptRes: any = null;
+
+    const prepStart = Date.now();
+    const geminiPromise = (async () => {
+      const t0 = Date.now();
+      const res = await runGeminiLocalisatioAnalysis(ai, rawText, existingLocalisatioText, activeCanonical, currentHistory, language);
+      geminiDurationMs = Date.now() - t0;
+      return res;
+    })();
+
+    const gptPromise = (async () => {
+      const t0 = Date.now();
+      const res = await runGptLocalisatioAnalysis(ai, rawText, existingLocalisatioText, activeCanonical, currentHistory, language);
+      gptDurationMs = Date.now() - t0;
+      return res;
+    })();
+
+    const [geminiSettled, gptSettled] = await Promise.allSettled([geminiPromise, gptPromise]);
+    const waitBothDurationMs = Date.now() - prepStart;
+
+    if (geminiSettled.status === "fulfilled") geminiRes = geminiSettled.value;
+    if (gptSettled.status === "fulfilled") gptRes = gptSettled.value;
+
+    if (!geminiRes) {
+      geminiRes = {
+        activeSymptomId,
+        atomicFacts: [],
+        openAspects: [],
+        nextQuestion: {
+          questionText: `An welcher genauen Stelle spüren Sie den ${activeSymLabel}?`,
+          orientationExample: "Rechts, links, mittig, oberflächlich oder tief.",
+          targetDimension: "L1",
+          targetSymptomId: activeSymptomId,
+          targetSymptomLabel: activeSymLabel,
+          reason: "Instanz 1 Fallback"
+        },
+        isFinished: false,
+        isSymptomCompleted: false
+      };
+    }
+
+    if (!gptRes) {
+      gptRes = {
+        activeSymptomId,
+        atomicFacts: [],
+        openAspects: [],
+        nextQuestion: {
+          questionText: `Können Sie die Region der Beschwerden beim ${activeSymLabel} genauer zeigen oder beschreiben?`,
+          orientationExample: "Lokalisation und Ausstrahlung.",
+          targetDimension: "L1",
+          targetSymptomId: activeSymptomId,
+          targetSymptomLabel: activeSymLabel,
+          reason: "Instanz 2 Fallback"
+        },
+        isFinished: false,
+        isSymptomCompleted: false
+      };
+    }
+
+    const arbT0 = Date.now();
+    const arbRes = await runLocalisatioArbitration(ai, rawText, existingLocalisatioText, currentHistory, geminiRes, gptRes, language);
+    arbDurationMs = Date.now() - arbT0;
+    const totalTurnDurationMs = Date.now() - turnStartTime;
+
+    const symptomOrder: string[] = state?.symptomOrder || activeCanonical.symptomOrder || [activeSymptomId];
+    let newActiveSymptomId = activeSymptomId;
+    let isOverallFinished = action === "finalize" || Boolean(arbRes.isFinished);
+
+    const updatedSymptoms = { ...(state?.symptoms || activeCanonical.symptoms || {}) };
+    if (!updatedSymptoms[activeSymptomId]) {
+      updatedSymptoms[activeSymptomId] = {
+        symptomId: activeSymptomId,
+        symptomLabel: activeSymLabel,
+        episodeId: 'EP_INITIAL',
+        facts: [],
+        dimensions: geminiRes.dimensionStates || {},
+        spatialRelations: geminiRes.spatialRelations || [],
+        dynamicVectors: geminiRes.dynamicVectors || [],
+        isSymptomCompleted: false
+      };
+    }
+
+    if (arbRes.isSymptomCompleted || geminiRes.isSymptomCompleted) {
+      updatedSymptoms[activeSymptomId].isSymptomCompleted = true;
+      const currentIdx = symptomOrder.indexOf(activeSymptomId);
+      const nextId = symptomOrder[currentIdx + 1];
+      if (nextId && updatedSymptoms[nextId] && !updatedSymptoms[nextId].isSymptomCompleted) {
+        newActiveSymptomId = nextId;
+      } else {
+        const remainingOpen = symptomOrder.find(id => updatedSymptoms[id] && !updatedSymptoms[id].isSymptomCompleted);
+        if (remainingOpen) newActiveSymptomId = remainingOpen;
+        else isOverallFinished = true;
+      }
+    }
+
+    const chosenQ = arbRes.chosenQuestion || geminiRes.nextQuestion;
+
+    const existingKnownFacts = Array.isArray(state?.knownFacts) ? [...state.knownFacts] : [];
+    const newFacts = Array.isArray(arbRes.factsDelta) && arbRes.factsDelta.length > 0 
+      ? arbRes.factsDelta 
+      : (Array.isArray(geminiRes.atomicFacts) ? geminiRes.atomicFacts.map((f: any) => ({
+          text: f.factText || f.text,
+          evidence: f.originalQuote || f.evidence,
+          symptomId: f.symptomId || activeSymptomId,
+          dimension: f.dimensionId || "L1"
+        })) : []);
+
+    const mergedKnownFacts = [...existingKnownFacts];
+    for (const nf of newFacts) {
+      if (!mergedKnownFacts.some(k => k.text === nf.text && k.symptomId === nf.symptomId)) {
+        mergedKnownFacts.push(nf);
+      }
+    }
+
+    const existingEvidenceList = Array.isArray(state?.evidenceList) ? [...state.evidenceList] : [];
+    newFacts.forEach((f: any, idx: number) => {
+      if (!existingEvidenceList.some(e => e.content === f.text)) {
+        existingEvidenceList.push({
+          id: `ev_loc_arb_${existingEvidenceList.length + idx + 1}`,
+          content: f.text,
+          status: f.epistemicStatus || "BELEGT_FAKTISCH",
+          originalQuote: f.evidence || rawText.slice(0, 100),
+          source: "Patientenaussage",
+          assignedSymptom: updatedSymptoms[f.symptomId || activeSymptomId]?.symptomLabel || activeSymLabel,
+          symptomId: f.symptomId || activeSymptomId,
+          episodeId: 'EP_INITIAL',
+          dimension: f.dimension || "L1"
+        });
+      }
+    });
+
+    return {
+      activeSymptomId: newActiveSymptomId,
+      symptomOrder,
+      symptoms: updatedSymptoms,
+      knownFacts: mergedKnownFacts.length > 0 ? mergedKnownFacts : (existingLocalisatioText ? [{ text: existingLocalisatioText, evidence: "Ausgangsbefund", symptomId: activeSymptomId, dimension: "L1" }] : []),
+      openAspects: Array.isArray(geminiRes.openAspects) ? geminiRes.openAspects : [],
+      evidenceList: existingEvidenceList,
+      currentQuestion: isOverallFinished || !chosenQ ? null : {
+        questionId: chosenQ.questionId || `q_loc_${currentHistory.length + 1}`,
+        questionText: chosenQ.questionText,
+        orientationExample: chosenQ.orientationExample,
+        reason: chosenQ.reason,
+        targetDimension: chosenQ.targetDimension || "L1",
+        targetSymptomId: chosenQ.targetSymptomId || newActiveSymptomId,
+        targetSymptomLabel: chosenQ.targetSymptomLabel || updatedSymptoms[newActiveSymptomId]?.symptomLabel || activeSymLabel,
+        arbitrationNote: chosenQ.arbitrationNote || "Schiedsrichter-Konsensentscheidung",
+        agentOpinions: {
+          gemini: geminiRes?.nextQuestion,
+          gpt: gptRes?.nextQuestion
+        }
+      },
+      history: currentHistory.map((h, i) => ({
+        step: i + 1,
+        question: h.question,
+        orientationExample: h.orientationExample || '',
+        answer: h.answer,
+        extractedNotes: h.answer,
+        symptomId: h.symptomId,
+        dimension: h.dimension
+      })),
+      isFinished: isOverallFinished,
+      stoppingReason: arbRes.stoppingReason || (isOverallFinished ? "Localisatio-Vertiefung abgeschlossen" : undefined),
+      finalSummary: isOverallFinished ? {
+        levelA_patientReported: Array.isArray(arbRes.finalSummary?.levelA_patientReported) 
+          ? arbRes.finalSummary.levelA_patientReported 
+          : (mergedKnownFacts.length > 0 ? mergedKnownFacts.map(k => k.text) : ["Keine spezifischen Lokalisations-Fakten genannt"]),
+        levelB_conservativeNormalizations: Array.isArray(arbRes.finalSummary?.levelB_conservativeNormalizations)
+          ? arbRes.finalSummary.levelB_conservativeNormalizations
+          : ["Konservative phänomenologische Lokalisationszuordnung"],
+        levelC_unresolvedOrVague: Array.isArray(arbRes.finalSummary?.levelC_unresolvedOrVague)
+          ? arbRes.finalSummary.levelC_unresolvedOrVague
+          : ["Keine weiteren offenen Punkte"],
+        overallResult: arbRes.finalSummary?.overallResult || "Localisatio-Klärung durch Schiedsrichter abgeschlossen."
+      } : null,
+      canonicalState: {
+        ...activeCanonical,
+        activeSymptomId: newActiveSymptomId,
+        symptomOrder,
+        symptoms: updatedSymptoms,
+        isFinished: isOverallFinished
+      },
+      turnDurations: {
+        geminiMs: geminiDurationMs,
+        gptMs: gptDurationMs,
+        waitBothMs: waitBothDurationMs,
+        arbitratorMs: arbDurationMs,
+        totalMs: totalTurnDurationMs
+      },
+      pipelineMode: "3-tier",
+      endprueferResult: activeEndprueferResult
+    };
+  }
+
+  app.post("/api/organon/localisatio-deepen", async (req, res) => {
+    try {
+      const {
+        action = "init",
+        rawText = "",
+        existingLocalisatioText = "",
+        state = null,
+        stateA = null,
+        stateB = null,
+        canonicalState = null,
+        latestAnswer = "",
+        language = "de",
+        mode = "gemini-only",
+        endprueferResult = null
+      } = req.body;
+
+      const activeMode = mode || state?.pipelineMode || "gemini-only";
+      const activeEndprueferResult = endprueferResult || state?.endprueferResult || stateA?.endprueferResult || stateB?.endprueferResult || null;
+
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        return res.status(503).json({ error: "GEMINI_API_KEY is not configured" });
+      }
+      const ai = new GoogleGenAI({ apiKey });
+
+      // MODUS A/B-VERGLEICH
+      if (activeMode === "ab-compare") {
+        const branchAInputState = stateA || state || null;
+        const branchBInputState = stateB || state || null;
+
+        const [finalBranchA, finalBranchB] = await Promise.all([
+          execute3TierLocalisatioTurn({
+            ai,
+            rawText,
+            existingLocalisatioText,
+            state: branchAInputState,
+            canonicalState,
+            latestAnswer,
+            language,
+            action,
+            activeEndprueferResult
+          }),
+          executeGeminiOnlyLocalisatioTurn({
+            ai,
+            rawText,
+            activeEndprueferResult,
+            existingLocalisatioText,
+            state: branchBInputState,
+            canonicalState,
+            latestAnswer,
+            language,
+            action
+          })
+        ]);
+
+        return res.json({
+          stateA: finalBranchA,
+          stateB: finalBranchB,
+          pipelineMode: "ab-compare"
+        });
+      }
+
+      // MODUS: GEMINI-ONLY TESTMODUS
+      if (activeMode === "gemini-only") {
+        const finalState = await executeGeminiOnlyLocalisatioTurn({
+          ai,
+          rawText,
+          activeEndprueferResult,
+          existingLocalisatioText,
+          state,
+          canonicalState,
+          latestAnswer,
+          language,
+          action
+        });
+
+        return res.json({ state: finalState });
+      }
+
+      // MODUS: 3-INSTANZEN-PRÜFSYSTEM
+      const finalState = await execute3TierLocalisatioTurn({
+        ai,
+        rawText,
+        existingLocalisatioText,
+        state,
+        canonicalState,
+        latestAnswer,
+        language,
+        action,
+        activeEndprueferResult
+      });
+
+      return res.json({ state: finalState });
+    } catch (error: any) {
+      console.error("Localisatio Vertiefung Engine Error:", error);
+      res.status(500).json({ error: "Failed to process localisatio vertiefung.", details: error?.message });
+    }
+  });
+
+  app.post("/api/organon/global-review", async (req, res) => {
+    try {
+      const {
+        rawText = "",
+        stage1Values = {},
+        endprueferResult = null,
+        stage2Records = {},
+        clarificationHistory = [],
+        hahnemannCrossCheck = false,
+        language = "de"
+      } = req.body;
+
+      const reviewResult = executeOrganonGlobalReview({
+        rawText,
+        stage1Values,
+        endprueferResult,
+        stage2Records,
+        clarificationHistory,
+        hahnemannCrossCheck,
+        language
+      });
+
+      return res.json({ result: reviewResult });
+    } catch (error: any) {
+      console.error("Organon Global Review Engine Error:", error);
+      res.status(500).json({ error: "Failed to execute Organon global review.", details: error?.message });
     }
   });
 

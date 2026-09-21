@@ -3,6 +3,11 @@ import { useTranslation, useLanguage } from '../i18n/LanguageContext';
 import { analyzeOrganonText, OrganonAiAnalysisResult, runEndprueferAnalysis } from '../services/organonAiService';
 import { EndprueferResult } from '../types';
 import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
+import { CausaVertiefungModal } from './CausaVertiefungModal';
+import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
+import { OrganonStage2WorkflowModal } from './OrganonStage2WorkflowModal';
+import { Stage2Category } from '../types/organonStage2Workflow';
+import { OrganonProcessingStatus } from './OrganonProcessingStatus';
 import { motion } from 'motion/react';
 import { 
   isSpeechRecognitionSupported, 
@@ -33,7 +38,8 @@ import {
   AlertTriangle,
   FileCheck,
   Check,
-  AlertCircle
+  AlertCircle,
+  MapPin
 } from 'lucide-react';
 
 // OrganonView component - Updated with intelligent clinical spelling correction (2026)
@@ -93,7 +99,45 @@ export const OrganonView: React.FC = () => {
   const [narrationInput, setNarrationInput] = useState<string>('');
   const [analysisResult, setAnalysisResult] = useState<OrganonAiAnalysisResult | null>(null);
   const [compareResult, setCompareResult] = useState<any | null>(null);
-  const [enableGptCompare, setEnableGptCompare] = useState<boolean>(false);
+  const [enableGptCompare, setEnableGptCompare] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('organon_enable_gpt_compare');
+      if (saved !== null) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // ignore
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('organon_enable_gpt_compare', JSON.stringify(enableGptCompare));
+    } catch {
+      // ignore
+    }
+  }, [enableGptCompare]);
+
+  const [enableHahnemannCrossCheck, setEnableHahnemannCrossCheck] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('organon_enable_hahnemann_crosscheck');
+      if (saved !== null) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // ignore
+    }
+    return false; // Standardmäßig AUS
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('organon_enable_hahnemann_crosscheck', JSON.stringify(enableHahnemannCrossCheck));
+    } catch {
+      // ignore
+    }
+  }, [enableHahnemannCrossCheck]);
   const [viewLayout, setViewLayout] = useState<'tabs' | 'sideBySide'>('tabs');
   const [activeTab, setActiveTab] = useState<'gemini' | 'openai' | 'arbitrator' | 'endpruefer'>('gemini');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -101,6 +145,12 @@ export const OrganonView: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState<boolean>(false);
   const [isResultsModalOpen, setIsResultsModalOpen] = useState<boolean>(false);
+  const [isCausaModalOpen, setIsCausaModalOpen] = useState<boolean>(false);
+  const [isCausaTriggered, setIsCausaTriggered] = useState<boolean>(false);
+  const [isLocalisatioModalOpen, setIsLocalisatioModalOpen] = useState<boolean>(false);
+  const [isLocalisatioTriggered, setIsLocalisatioTriggered] = useState<boolean>(false);
+  const [isStage2WorkflowModalOpen, setIsStage2WorkflowModalOpen] = useState<boolean>(false);
+  const [isStage2WorkflowTriggered, setIsStage2WorkflowTriggered] = useState<boolean>(false);
   const [arbitratorResult, setArbitratorResult] = useState<any | null>(null);
   const [isArbitrating, setIsArbitrating] = useState<boolean>(false);
   const [endprueferResult, setEndprueferResult] = useState<EndprueferResult | null>(null);
@@ -367,7 +417,12 @@ export const OrganonView: React.FC = () => {
     }
   };
 
-  const handleAnalyze = async (textOverride?: string) => {
+  const handleAnalyze = async (
+    textOverride?: string, 
+    openCausaPopup: boolean = false, 
+    openLocalisatioPopup: boolean = false,
+    openStage2Workflow: boolean = false
+  ) => {
     const textToAnalyze = textOverride !== undefined ? textOverride : narrationInput;
     if (!textToAnalyze.trim()) return;
     if (textOverride !== undefined) {
@@ -375,6 +430,9 @@ export const OrganonView: React.FC = () => {
     }
     setArbitratorResult(null);
     setIsProcessing(true);
+    setIsCausaTriggered(openCausaPopup);
+    setIsLocalisatioTriggered(openLocalisatioPopup);
+    setIsStage2WorkflowTriggered(openStage2Workflow || openCausaPopup || openLocalisatioPopup);
     setErrorMessage('');
     setDebugStatus('Analysiere Text...');
     try {
@@ -459,11 +517,284 @@ export const OrganonView: React.FC = () => {
       setDebugStatus('Analyse erfolgreich abgeschlossen.');
       setActiveTab('gemini');
       setIsResultsModalOpen(true);
+      if (openStage2Workflow || openCausaPopup || openLocalisatioPopup) {
+        setIsStage2WorkflowModalOpen(true);
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Fehler bei der KI-Analyse');
       setDebugStatus('Fehler aufgetreten.');
     } finally {
       setIsProcessing(false);
+      setIsCausaTriggered(false);
+      setIsLocalisatioTriggered(false);
+      setIsStage2WorkflowTriggered(false);
+    }
+  };
+
+  const getExistingLocalisatioText = (): string => {
+    if (analysisResult?.three_stage?.stage1) {
+      const locItem = analysisResult.three_stage.stage1.find((i: any) => i.category_key === 'localisatio');
+      if (locItem && locItem.result_text) {
+        return locItem.result_text;
+      }
+    }
+    if (compareResult?.gemini?.three_stage?.stage1) {
+      const locItem = compareResult.gemini.three_stage.stage1.find((i: any) => i.category_key === 'localisatio');
+      if (locItem && locItem.result_text) {
+        return locItem.result_text;
+      }
+    }
+    return '';
+  };
+
+  const handleAdoptLocalisatio = (finalLocalisatioText: string) => {
+    if (!finalLocalisatioText.trim()) return;
+    if (analysisResult?.three_stage?.stage1) {
+      const updatedStage1 = analysisResult.three_stage.stage1.map((item: any) => {
+        if (item.category_key === 'localisatio') {
+          return { ...item, result_text: finalLocalisatioText };
+        }
+        return item;
+      });
+      setAnalysisResult({
+        ...analysisResult,
+        three_stage: {
+          ...analysisResult.three_stage,
+          stage1: updatedStage1
+        }
+      });
+    }
+    if (compareResult?.gemini?.three_stage?.stage1) {
+      const updatedGStage1 = compareResult.gemini.three_stage.stage1.map((item: any) => {
+        if (item.category_key === 'localisatio') {
+          return { ...item, result_text: finalLocalisatioText };
+        }
+        return item;
+      });
+      setCompareResult({
+        ...compareResult,
+        gemini: {
+          ...compareResult.gemini,
+          three_stage: {
+            ...compareResult.gemini.three_stage,
+            stage1: updatedGStage1
+          }
+        }
+      });
+    }
+  };
+
+  const getExistingCausaText = (): string => {
+    if (analysisResult?.three_stage?.stage1) {
+      const causaItem = analysisResult.three_stage.stage1.find((i: any) => i.category_key === 'causa');
+      if (causaItem && causaItem.result_text) {
+        return causaItem.result_text;
+      }
+    }
+    if (compareResult?.gemini?.three_stage?.stage1) {
+      const causaItem = compareResult.gemini.three_stage.stage1.find((i: any) => i.category_key === 'causa');
+      if (causaItem && causaItem.result_text) {
+        return causaItem.result_text;
+      }
+    }
+    return '';
+  };
+
+  const handleAdoptCausa = (finalCausaText: string) => {
+    if (!finalCausaText.trim()) return;
+    if (analysisResult?.three_stage?.stage1) {
+      const updatedStage1 = analysisResult.three_stage.stage1.map((item: any) => {
+        if (item.category_key === 'causa') {
+          return { ...item, result_text: finalCausaText };
+        }
+        return item;
+      });
+      setAnalysisResult({
+        ...analysisResult,
+        three_stage: {
+          ...analysisResult.three_stage,
+          stage1: updatedStage1
+        }
+      });
+    }
+    if (compareResult?.gemini?.three_stage?.stage1) {
+      const updatedGStage1 = compareResult.gemini.three_stage.stage1.map((item: any) => {
+        if (item.category_key === 'causa') {
+          return { ...item, result_text: finalCausaText };
+        }
+        return item;
+      });
+      setCompareResult({
+        ...compareResult,
+        gemini: {
+          ...compareResult.gemini,
+          three_stage: {
+            ...compareResult.gemini.three_stage,
+            stage1: updatedGStage1
+          }
+        }
+      });
+    }
+  };
+
+  const getStage1ValuesMap = (): Record<string, string> => {
+    const s1List = analysisResult?.three_stage?.stage1 || compareResult?.gemini?.three_stage?.stage1 || [];
+    const map: Record<string, string> = {};
+    s1List.forEach((item: any) => {
+      const k = (item.category_key || item.category_name || '').toLowerCase();
+      const txt = item.result_text || '';
+      if (k.includes('causa')) {
+        map['CAUSA'] = txt;
+        map['causa'] = txt;
+      } else if (k.includes('localisatio')) {
+        map['LOCALISATIO'] = txt;
+        map['localisatio'] = txt;
+      } else if (k.includes('sensatio')) {
+        map['SENSATIO'] = txt;
+        map['sensatio'] = txt;
+      } else if (k.includes('symptom') && !k.includes('concomitant')) {
+        map['SYMPTOMA'] = txt;
+        map['symptoma'] = txt;
+      } else if (k.includes('besser')) {
+        map['MODALITATES_BESSERUNG'] = txt;
+        map['modalitates_besserung'] = txt;
+      } else if (k.includes('schlecht')) {
+        map['MODALITATES_VERSCHLECHTERUNG'] = txt;
+        map['modalitates_verschlechterung'] = txt;
+      } else if (k.includes('concomitant') || k.includes('begleit')) {
+        map['SYMPTOMATA_CONCOMITANTIA'] = txt;
+        map['symptomata_concomitantia'] = txt;
+        map['CONCOMITANTIA'] = txt;
+        map['concomitantia'] = txt;
+      } else if (k.includes('comorbid') || k.includes('vorerkrank')) {
+        map['COMORBIDITAS'] = txt;
+        map['comorbiditas'] = txt;
+      } else if (k.includes('mens') || k.includes('denken') || k.includes('geist')) {
+        map['MENS'] = txt;
+        map['mens'] = txt;
+      } else if (k.includes('animus') || k.includes('gemüt') || k.includes('gemuet')) {
+        map['ANIMUS'] = txt;
+        map['animus'] = txt;
+      }
+    });
+    return map;
+  };
+
+  const handleAdoptStage2Result = (category: Stage2Category, text: string) => {
+    if (!text.trim()) return;
+    const catKeyMap: Record<Stage2Category, string[]> = {
+      CAUSA: ['causa'],
+      LOCALISATIO: ['localisatio'],
+      SENSATIO: ['sensatio'],
+      SYMPTOMA: ['symptoma', 'symptom'],
+      MODALITATES_BESSERUNG: ['modalitates_besserung', 'modalitaet_besserung', 'besserung'],
+      MODALITATES_VERSCHLECHTERUNG: ['modalitates_verschlechterung', 'modalitaet_verschlechterung', 'verschlechterung'],
+      SYMPTOMATA_CONCOMITANTIA: ['concomitantia', 'symptomata_concomitantia', 'begleit'],
+      COMORBIDITAS: ['comorbiditas', 'vorerkrankung'],
+      MENS: ['mens', 'denken', 'geist'],
+      ANIMUS: ['animus', 'gemüt', 'gemuet']
+    };
+
+    const targetKeys = catKeyMap[category] || [];
+
+    if (analysisResult?.three_stage?.stage1) {
+      const updatedStage1 = analysisResult.three_stage.stage1.map((item: any) => {
+        const itemKey = (item.category_key || item.category_name || '').toLowerCase();
+        if (targetKeys.some(k => itemKey.includes(k))) {
+          return { ...item, result_text: text };
+        }
+        return item;
+      });
+      setAnalysisResult({
+        ...analysisResult,
+        three_stage: {
+          ...analysisResult.three_stage,
+          stage1: updatedStage1
+        }
+      });
+    }
+
+    if (compareResult?.gemini?.three_stage?.stage1) {
+      const updatedGStage1 = compareResult.gemini.three_stage.stage1.map((item: any) => {
+        const itemKey = (item.category_key || item.category_name || '').toLowerCase();
+        if (targetKeys.some(k => itemKey.includes(k))) {
+          return { ...item, result_text: text };
+        }
+        return item;
+      });
+      setCompareResult({
+        ...compareResult,
+        gemini: {
+          ...compareResult.gemini,
+          three_stage: {
+            ...compareResult.gemini.three_stage,
+            stage1: updatedGStage1
+          }
+        }
+      });
+    }
+  };
+
+  const handleStage2WorkflowCompleted = (allResults: Record<Stage2Category, string>) => {
+    if (!allResults) return;
+    const catKeyMap: Record<Stage2Category, string[]> = {
+      CAUSA: ['causa'],
+      LOCALISATIO: ['localisatio'],
+      SENSATIO: ['sensatio'],
+      SYMPTOMA: ['symptoma', 'symptom'],
+      MODALITATES_BESSERUNG: ['modalitates_besserung', 'modalitaet_besserung', 'besserung'],
+      MODALITATES_VERSCHLECHTERUNG: ['modalitates_verschlechterung', 'modalitaet_verschlechterung', 'verschlechterung'],
+      SYMPTOMATA_CONCOMITANTIA: ['concomitantia', 'symptomata_concomitantia', 'begleit'],
+      COMORBIDITAS: ['comorbiditas', 'vorerkrankung'],
+      MENS: ['mens', 'denken', 'geist'],
+      ANIMUS: ['animus', 'gemüt', 'gemuet']
+    };
+
+    if (analysisResult?.three_stage?.stage1) {
+      const updatedStage1 = analysisResult.three_stage.stage1.map((item: any) => {
+        const itemKey = (item.category_key || item.category_name || '').toLowerCase();
+        for (const [cat, keys] of Object.entries(catKeyMap)) {
+          if (keys.some(k => itemKey.includes(k))) {
+            const newText = allResults[cat as Stage2Category];
+            if (newText && newText.trim()) {
+              return { ...item, result_text: newText };
+            }
+          }
+        }
+        return item;
+      });
+      setAnalysisResult({
+        ...analysisResult,
+        three_stage: {
+          ...analysisResult.three_stage,
+          stage1: updatedStage1
+        }
+      });
+    }
+
+    if (compareResult?.gemini?.three_stage?.stage1) {
+      const updatedGStage1 = compareResult.gemini.three_stage.stage1.map((item: any) => {
+        const itemKey = (item.category_key || item.category_name || '').toLowerCase();
+        for (const [cat, keys] of Object.entries(catKeyMap)) {
+          if (keys.some(k => itemKey.includes(k))) {
+            const newText = allResults[cat as Stage2Category];
+            if (newText && newText.trim()) {
+              return { ...item, result_text: newText };
+            }
+          }
+        }
+        return item;
+      });
+      setCompareResult({
+        ...compareResult,
+        gemini: {
+          ...compareResult.gemini,
+          three_stage: {
+            ...compareResult.gemini.three_stage,
+            stage1: updatedGStage1
+          }
+        }
+      });
     }
   };
 
@@ -1204,37 +1535,116 @@ export const OrganonView: React.FC = () => {
               </div>
             )}
 
+            {/* Real Organon Processing Status for Stage 1 */}
+            {isProcessing && (
+              <div className="pt-2">
+                <OrganonProcessingStatus
+                  title={t('organonProcessingStage1Title')}
+                  subtitle={t('organonProcessingStage1Subtitle')}
+                  steps={
+                    enableHahnemannCrossCheck
+                      ? [
+                          {
+                            id: 'analysis',
+                            label: t('organonProcessingAnalysisStep'),
+                            status: 'active'
+                          },
+                          {
+                            id: 'crosscheck',
+                            label: t('organonProcessingCrossCheckStep'),
+                            status: 'active'
+                          },
+                          {
+                            id: 'arbitration',
+                            label: t('organonProcessingArbitrationStep'),
+                            status: 'pending'
+                          }
+                        ]
+                      : [
+                          {
+                            id: 'analysis',
+                            label: t('organonProcessingAnalysisStep'),
+                            status: 'active'
+                          }
+                        ]
+                  }
+                  error={errorMessage || null}
+                  methodologicalNote={t('organonProcessingMethodNote1')}
+                  theme="light"
+                />
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-slate-100 gap-4">
-              <div className="flex items-center gap-3">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={enableGptCompare}
-                    onChange={(e) => setEnableGptCompare(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
-                </label>
-                <div className="text-left">
-                  <span className="text-xs font-semibold text-slate-700 block">{t('organonGptCompareLabel')}</span>
-                  <span className="text-[10px] text-slate-400 block">
-                    {enableGptCompare ? t('organonGptActive') : t('organonGptInactive')}
-                  </span>
+              <div className="flex flex-col gap-2.5">
+                {/* Switch 1: GPT-4o Pro Vergleich (Zweitmeinung) */}
+                <div className="flex items-center gap-3">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={enableGptCompare}
+                      onChange={(e) => setEnableGptCompare(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
+                  </label>
+                  <div className="text-left">
+                    <span className="text-xs font-semibold text-slate-700 block">{t('organonGptCompareLabel')}</span>
+                    <span className="text-[10px] text-slate-400 block">
+                      {enableGptCompare ? t('organonGptActive') : t('organonGptInactive')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Switch 2: Hahnemann-Gegenprüfung (direkt darunter, standardmäßig AUS) */}
+                <div className="flex items-center gap-3">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={enableHahnemannCrossCheck}
+                      onChange={(e) => setEnableHahnemannCrossCheck(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
+                  </label>
+                  <div className="text-left">
+                    <span className="text-xs font-semibold text-slate-700 block">{t('organonHahnemannCrossCheckLabel')}</span>
+                    <span className="text-[10px] text-slate-400 block">
+                      {enableHahnemannCrossCheck ? t('organonHahnemannCrossCheckActive') : t('organonHahnemannCrossCheckInactive')}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleAnalyze()}
-                disabled={!narrationInput.trim() || isProcessing}
-                className="px-6 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer ml-auto"
-              >
-                {isProcessing ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                <span>{t('organonStartAnalysis')}</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-3 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => handleAnalyze(undefined, false)}
+                  disabled={!narrationInput.trim() || isProcessing}
+                  className="px-5 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+                >
+                  {isProcessing && !isCausaTriggered ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  <span>{t('organonStartAnalysis')}</span>
+                </button>
+
+                <button
+                  id="organon-start-stage2-workflow-btn"
+                  type="button"
+                  onClick={() => handleAnalyze(undefined, false, false, true)}
+                  disabled={!narrationInput.trim() || isProcessing}
+                  className="px-5 py-3 bg-gradient-to-r from-emerald-700 via-teal-700 to-indigo-800 hover:from-emerald-800 hover:via-teal-800 hover:to-indigo-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer border border-emerald-500/30"
+                >
+                  {isProcessing && isStage2WorkflowTriggered ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-emerald-300" />
+                  )}
+                  <span>{t('organonStartStage2Workflow')}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1284,6 +1694,15 @@ export const OrganonView: React.FC = () => {
                     {t('organonViewSideBySide')}
                   </button>
                 </div>
+                <button
+                  id="organon-open-stage2-workflow-modal-btn"
+                  type="button"
+                  onClick={() => setIsStage2WorkflowModalOpen(true)}
+                  className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600/40 via-teal-600/40 to-indigo-600/40 hover:from-emerald-600/60 hover:via-teal-600/60 hover:to-indigo-600/60 text-emerald-200 border border-emerald-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>{t('organonStartStage2Workflow')}</span>
+                </button>
                 <button 
                   onClick={() => setIsResultsModalOpen(false)}
                   className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
@@ -1338,9 +1757,19 @@ export const OrganonView: React.FC = () => {
                     {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
                     {activeTab === 'arbitrator' && (
                       isArbitrating ? (
-                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
-                          <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
-                          <p className="text-sm font-semibold text-slate-800">{t('organonArbitrationLoading')}</p>
+                        <div className="p-4">
+                          <OrganonProcessingStatus
+                            title={t('organonStrictArbiterLabel')}
+                            subtitle={t('organonArbitrationLoading')}
+                            steps={[
+                              {
+                                id: 'arb-step',
+                                label: t('organonProcessingArbitrationStep'),
+                                status: 'active'
+                              }
+                            ]}
+                            theme="light"
+                          />
                         </div>
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
@@ -1359,9 +1788,19 @@ export const OrganonView: React.FC = () => {
                     )}
                     {activeTab === 'endpruefer' && (
                       isEndpruefend ? (
-                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
-                          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
-                          <p className="text-sm font-semibold text-slate-800">{t('organonEndprueferLoading')}</p>
+                        <div className="p-4">
+                          <OrganonProcessingStatus
+                            title={t('organonEndprueferTabLabel')}
+                            subtitle={t('organonEndprueferLoading')}
+                            steps={[
+                              {
+                                id: 'endpruefer-step',
+                                label: t('organonProcessingArbitrationStep'),
+                                status: 'active'
+                              }
+                            ]}
+                            theme="light"
+                          />
                         </div>
                       ) : endprueferResult ? (
                         renderEndprueferView(endprueferResult)
@@ -1436,9 +1875,19 @@ export const OrganonView: React.FC = () => {
                         )}
                       </div>
                       {isArbitrating ? (
-                        <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
-                          <RefreshCw className="w-6 h-6 animate-spin text-purple-600 mx-auto" />
-                          <p className="text-xs font-semibold text-slate-700">{t('organonArbitrationLoading')}</p>
+                        <div className="p-4">
+                          <OrganonProcessingStatus
+                            title={t('organonStrictArbiterLabel')}
+                            subtitle={t('organonArbitrationLoading')}
+                            steps={[
+                              {
+                                id: 'arb-step-side',
+                                label: t('organonProcessingArbitrationStep'),
+                                status: 'active'
+                              }
+                            ]}
+                            theme="light"
+                          />
                         </div>
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
@@ -1464,9 +1913,19 @@ export const OrganonView: React.FC = () => {
                       )}
                     </div>
                     {isEndpruefend ? (
-                      <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
-                        <RefreshCw className="w-6 h-6 animate-spin text-emerald-600 mx-auto" />
-                        <p className="text-xs font-semibold text-slate-700">{t('organonEndprueferLoading')}</p>
+                      <div className="p-4">
+                        <OrganonProcessingStatus
+                          title={t('organonEndprueferTabLabel')}
+                          subtitle={t('organonEndprueferLoading')}
+                          steps={[
+                            {
+                              id: 'endpruefer-step-side',
+                              label: t('organonProcessingArbitrationStep'),
+                              status: 'active'
+                            }
+                          ]}
+                          theme="light"
+                        />
                       </div>
                     ) : endprueferResult ? (
                       renderEndprueferView(endprueferResult)
@@ -1532,9 +1991,19 @@ export const OrganonView: React.FC = () => {
                     {activeTab === 'openai' && renderThreeStageView(compareResult.openai, "GPT-4o Pro")}
                     {activeTab === 'arbitrator' && (
                       isArbitrating ? (
-                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
-                          <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
-                          <p className="text-sm font-semibold text-slate-800">{t('organonArbitrationLoading')}</p>
+                        <div className="p-4">
+                          <OrganonProcessingStatus
+                            title={t('organonStrictArbiterLabel')}
+                            subtitle={t('organonArbitrationLoading')}
+                            steps={[
+                              {
+                                id: 'arb-step-tab2',
+                                label: t('organonProcessingArbitrationStep'),
+                                status: 'active'
+                              }
+                            ]}
+                            theme="light"
+                          />
                         </div>
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
@@ -1553,9 +2022,19 @@ export const OrganonView: React.FC = () => {
                     )}
                     {activeTab === 'endpruefer' && (
                       isEndpruefend ? (
-                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
-                          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
-                          <p className="text-sm font-semibold text-slate-800">{t('organonEndprueferLoading')}</p>
+                        <div className="p-4">
+                          <OrganonProcessingStatus
+                            title={t('organonEndprueferTabLabel')}
+                            subtitle={t('organonEndprueferLoading')}
+                            steps={[
+                              {
+                                id: 'endpruefer-step-tab2',
+                                label: t('organonProcessingArbitrationStep'),
+                                status: 'active'
+                              }
+                            ]}
+                            theme="light"
+                          />
                         </div>
                       ) : endprueferResult ? (
                         renderEndprueferView(endprueferResult)
@@ -1600,6 +2079,37 @@ export const OrganonView: React.FC = () => {
         rawText={analysisResult?.raw_text || narrationInput}
         initialMatrices={analysisResult?.complaint_matrices || []}
         initialRelations={analysisResult?.complaint_relations || []}
+      />
+
+      <CausaVertiefungModal
+        isOpen={isCausaModalOpen}
+        onClose={() => setIsCausaModalOpen(false)}
+        rawText={analysisResult?.raw_text || narrationInput}
+        existingCausaText={getExistingCausaText()}
+        endprueferResult={endprueferResult}
+        onAdoptCausa={handleAdoptCausa}
+        hahnemannCrossCheck={enableHahnemannCrossCheck}
+      />
+
+      <LocalisatioVertiefungModal
+        isOpen={isLocalisatioModalOpen}
+        onClose={() => setIsLocalisatioModalOpen(false)}
+        rawText={analysisResult?.raw_text || narrationInput}
+        existingLocalisatioText={getExistingLocalisatioText()}
+        endprueferResult={endprueferResult}
+        onAdoptLocalisatio={handleAdoptLocalisatio}
+        hahnemannCrossCheck={enableHahnemannCrossCheck}
+      />
+
+      <OrganonStage2WorkflowModal
+        isOpen={isStage2WorkflowModalOpen}
+        onClose={() => setIsStage2WorkflowModalOpen(false)}
+        rawText={analysisResult?.raw_text || narrationInput}
+        stage1Values={getStage1ValuesMap()}
+        endprueferResult={endprueferResult}
+        hahnemannCrossCheck={enableHahnemannCrossCheck}
+        onAdoptCategoryResult={handleAdoptStage2Result}
+        onWorkflowCompleted={handleStage2WorkflowCompleted}
       />
     </div>
   );

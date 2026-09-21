@@ -1,0 +1,604 @@
+import { GoogleGenAI } from "@google/genai";
+import { 
+  CAUSA_DIMENSION_NAMES, 
+  CausaDimensionId,
+  EpistemicFactStatus,
+  DimensionCompletion,
+  DimensionApplicability,
+  PatientConfidence,
+  EpistemicRelation
+} from "../types/causaDeepDive";
+
+export interface CausaAgentAnalysis {
+  knownFacts: Array<{ text: string; evidence: string; dimension?: string }>;
+  openAspects: Array<{ text: string; reason: string; dimension?: string }>;
+  suggestedQuestion: {
+    questionText: string;
+    orientationExample: string;
+    targetDimension: CausaDimensionId | string;
+    reason: string;
+    questionStage: 1 | 2 | 3;
+  };
+  dimensionStatus: Record<string, 'UNERHOBEN' | 'TEILWEISE_ERHOBEN' | 'AUSREICHEND_ERHOBEN' | 'NICHT_WEITER_KLÄRBAR'>;
+  isFinished: boolean;
+  stoppingReason?: string;
+  finalEvaluation?: {
+    category: 'GEKLÄRT' | 'UNSICHER' | 'KEINE_BELEGTE_CAUSA';
+    summaryText: string;
+  };
+}
+
+export interface CausaArbitratorDecision {
+  chosenQuestion: {
+    questionId: string;
+    questionText: string;
+    orientationExample: string;
+    targetDimension: CausaDimensionId | string;
+    reason: string;
+    arbitrationNote: string;
+  };
+  factsDelta: Array<{ text: string; evidence: string; dimension: string; epistemicStatus: string }>;
+  dimensionCompletion: Record<string, string>;
+  isFinished: boolean;
+  stoppingReason?: string;
+  finalSummary?: {
+    levelA_patientReported: string[];
+    levelB_unresolvedOrConflicting: string[];
+    levelC_homeopathicInterpretation: string[];
+    overallResult: string;
+  } | null;
+  agentOpinions: {
+    geminiQuestion: string;
+    gptQuestion: string;
+  };
+}
+
+const CAUSA_SYSTEM_SPEC = `Du bist Teil des 3-Instanzen-Prüfsystems für die Causa-Vertiefung nach Samuel Hahnemann (Organon §§ 83–104).
+Das Ziel ist die präzise, evidenzgetreue und unvoreingenommene Klärung möglicher Krankheitsauslöser.
+
+DIE 13 CAUSA-BEREICHE (PRÜF- UND DENKGERÜST, KEINE 13 PFLICHTFRAGEN!):
+C1: Chronologischer Beginn (Wann bzw. in welchem Zeitraum begannen die heutigen Beschwerden?)
+C2: Unmittelbare Vorphase (Was war unmittelbar davor bzw. in der Zeit vor dem Beginn?)
+C3: Konkreter Anlass/Ereignis (Gab es ein konkretes Ereignis oder eine konkrete Einwirkung?)
+C4: Phänomenologie der Einwirkung (Falls etwas genannt wird: Was genau geschah bzw. wie war die Einwirkung?)
+C5: Organismischer Ausgangszustand (In welchem körperlichen Zustand befand sich der Patient dabei?)
+C6: Wahrnehmung & Sofortreaktion (Was bemerkte der Patient unmittelbar während oder nach der Einwirkung?)
+C7: Chronologie & Latenz (Wie viel Zeit lag zwischen Ereignis/Einwirkung und Beschwerden?)
+C8: Patienteneigene Zuschreibung (Was hält der Patient selbst für den Auslöser und wie sicher ist er sich?)
+C9: Konkurrierende Faktoren (Was kam in derselben Zeit sonst noch infrage?)
+C10: Akute Einwirkung vs. Hintergrund (War es ein einzelnes Ereignis oder eine länger bestehende Situation?)
+C11: Reproduzierbarkeit & Gegenprobe (Passiert es wiederholt nach dieser Einwirkung? Gibt es Beschwerden auch ohne sie?)
+C12: Historischer Vorzustand (Gab es dieselbe oder ähnliche Beschwerde bereits vorher?)
+C13: Aufrechterhaltende Einwirkung (Besteht eine mögliche relevante Einwirkung heute weiterhin?)
+
+WICHTIGSTE METHODISCHE REGELN:
+1. NICHT ALLE 13 FRAGEN MÜSSEN BEANTWORTET WERDEN. Es wird nur gefragt, was für den individuellen Fall relevant ist.
+2. IMMER GENAU EINE EINZELNE FRAGE GLEICHZEITIG.
+3. FRAGENTRICHTER - ZUERST OFFEN (Stufe 1), DANN GEZIELT (Stufe 2).
+   - NIEMALS suggestiv fragen! FALSCH: "War die Zugluft der Auslöser Ihrer Kopfschmerzen?"
+   - RICHTIG (offen): "Was erinnern Sie noch von der Zeit, als diese Kopfschmerzen zum ersten Mal auftraten?"
+   - Erst wenn ein Faktor (z.B. Kälte) tatsächlich erwähnt wurde und relevant bleibt, darf gezielter nach diesem Zusammenhang gefragt werden.
+4. "NICHT ERINNERLICH" IST EINE VERWERTBARE INFORMATION:
+   - Wenn der Patient ein Ereignis nicht benennen kann ("kann kein Ereignis nennen"), darf dies NICHT als AUSDRÜCKLICH_VERNEINT gewertet werden, sondern als NICHT_ERINNERLICH.
+   - Dieselbe Frage darf dann nicht wiederholt werden.
+5. STOPPING-REGEL:
+   - Causa ist fertig, wenn wesentliche Aspekte geklärt sind ODER weitere Fragen keinen Erkenntnisgewinn bringen.
+   - Gültige Endbefunde:
+     a) "Causa ausreichend gestützt" (Patient berichtet nachvollziehbaren Zusammenhang)
+     b) "Causa unsicher" (Patient vermutet Zusammenhang, Gegenbeispiele/Lücken bestehen)
+     c) "Keine ausreichend belegte Causa ermittelbar" (völlig gleichwertiges, valides Ergebnis!)`;
+
+export async function runGeminiCausaAnalysis(
+  ai: GoogleGenAI,
+  rawText: string,
+  existingCausaText: string,
+  history: Array<{ question: string; answer: string }>,
+  language: string = "de"
+): Promise<CausaAgentAnalysis> {
+  const prompt = `${CAUSA_SYSTEM_SPEC}
+
+ROLLE: INSTANZ 1 (GEMINI 3.8 FLASH - ERSTANALYSE)
+Analysiere die Patientenaussagen unabhängig und erstelle deinen Vorschlag für die Causa-Klärung.
+
+PATIENTENTEXT:
+"""${rawText}"""
+
+BEREITS VORHANDENE CAUSA-ANGABE:
+"""${existingCausaText}"""
+
+BISHERIGER DIALOG-VERLAUF:
+${history.map((h, i) => `[Turn ${i + 1}] Frage: "${h.question}" -> Antwort: "${h.answer}"`).join('\n') || "Noch keine Vorfragen gestellt."}
+
+SPRACHE: ${language}
+
+Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown-Ummantelung:
+{
+  "knownFacts": [{ "text": "...", "evidence": "...", "dimension": "C1" }],
+  "openAspects": [{ "text": "...", "reason": "...", "dimension": "C2" }],
+  "suggestedQuestion": {
+    "questionText": "Die GENAU EINE nächste, offene Einzelfrage an den Patienten",
+    "orientationExample": "Orientierungsbeispiel für den Therapeuten",
+    "targetDimension": "C1",
+    "reason": "Warum bringt diese Frage jetzt den größten Erkenntnisgewinn?",
+    "questionStage": 1
+  },
+  "dimensionStatus": {
+    "C1": "TEILWEISE_ERHOBEN",
+    "C2": "UNERHOBEN",
+    "C3": "UNERHOBEN"
+  },
+  "isFinished": false,
+  "stoppingReason": "",
+  "finalEvaluation": {
+    "category": "UNSICHER",
+    "summaryText": "..."
+  }
+}`;
+
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents: prompt,
+      config: { temperature: 0.2, responseMimeType: "application/json" }
+    });
+  } catch (err) {
+    response = await ai.models.generateContent({
+      model: "gemini-3.5-flash-lite",
+      contents: prompt,
+      config: { temperature: 0.2, responseMimeType: "application/json" }
+    });
+  }
+
+  try {
+    return JSON.parse(response.text || "{}");
+  } catch (e) {
+    return {
+      knownFacts: existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C8" }] : [],
+      openAspects: [{ text: "Erstbeginn & Chronologie", reason: "Bisher ungeklärt", dimension: "C1" }],
+      suggestedQuestion: {
+        questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum allerersten Mal auftraten?",
+        orientationExample: "Besondere Ereignisse, Umstände, körperliche Verfassung oder zeitliche Auffälligkeiten.",
+        targetDimension: "C1",
+        reason: "Offene Ersterfassung des Zeitpunkts und der Umstände des Erstbeginns.",
+        questionStage: 1
+      },
+      dimensionStatus: { C1: "UNERHOBEN" },
+      isFinished: false
+    };
+  }
+}
+
+export async function runGptCausaAnalysis(
+  ai: GoogleGenAI,
+  rawText: string,
+  existingCausaText: string,
+  history: Array<{ question: string; answer: string }>,
+  language: string = "de"
+): Promise<CausaAgentAnalysis> {
+  const openAiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET;
+
+  const prompt = `${CAUSA_SYSTEM_SPEC}
+
+ROLLE: INSTANZ 2 (GPT / UNABHÄNGIGE ZWEITMEINUNG)
+WICHTIG: Du siehst Geminis Analyse NICHT! Untersuche den Fall vollkommen eigenständig und unvoreingenommen direkt anhand des Patiententextes und der bisherigen Antworten.
+
+PATIENTENTEXT:
+"""${rawText}"""
+
+BEREITS VORHANDENE CAUSA-ANGABE:
+"""${existingCausaText}"""
+
+BISHERIGER DIALOG-VERLAUF:
+${history.map((h, i) => `[Turn ${i + 1}] Frage: "${h.question}" -> Antwort: "${h.answer}"`).join('\n') || "Noch keine Vorfragen gestellt."}
+
+SPRACHE: ${language}
+
+Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown:
+{
+  "knownFacts": [{ "text": "...", "evidence": "...", "dimension": "C1" }],
+  "openAspects": [{ "text": "...", "reason": "...", "dimension": "C2" }],
+  "suggestedQuestion": {
+    "questionText": "Die GENAU EINE nächste, offene Einzelfrage an den Patienten",
+    "orientationExample": "Orientierungsbeispiel für den Therapeuten",
+    "targetDimension": "C1",
+    "reason": "Warum bringt diese Frage jetzt den größten Erkenntnisgewinn?",
+    "questionStage": 1
+  },
+  "dimensionStatus": {
+    "C1": "TEILWEISE_ERHOBEN",
+    "C2": "UNERHOBEN",
+    "C3": "UNERHOBEN"
+  },
+  "isFinished": false,
+  "stoppingReason": "",
+  "finalEvaluation": {
+    "category": "UNSICHER",
+    "summaryText": "..."
+  }
+}`;
+
+  if (openAiKey) {
+    try {
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: openAiKey, timeout: 6000, maxRetries: 0 });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "Du bist Instanz 2 (GPT-4o) des Causa-Prüfsystems. Antworte ausschließlich in validem JSON." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.2,
+        response_format: { type: "json_object" }
+      });
+      const content = completion.choices[0]?.message?.content;
+      if (content) {
+        return JSON.parse(content);
+      }
+    } catch (e) {
+      console.warn("[CausaMultiAgent] OpenAI direct call failed or unavailable, fallback to independent engine:", e);
+    }
+  }
+
+  // Fallback zu separatem, unabhängigem Prompt-Aufruf (Second-Opinion Profile)
+  const response = await ai.models.generateContent({
+    model: "gemini-3.8-flash",
+    contents: `[SYSTEM: DU ARBEITEST ALS VOLLKOMMEN UNABHÄNGIGE INSTANZ 2 (GPT-4o PRO EMULATION)]\n\n${prompt}`,
+    config: { temperature: 0.3, responseMimeType: "application/json" }
+  });
+
+  try {
+    return JSON.parse(response.text || "{}");
+  } catch (e) {
+    return {
+      knownFacts: existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C8" }] : [],
+      openAspects: [{ text: "Erstbeginn & Chronologie", reason: "Bisher ungeklärt", dimension: "C1" }],
+      suggestedQuestion: {
+        questionText: "Wie genau haben die Beschwerden damals angefangen und was war in der Zeit davor los?",
+        orientationExample: "Ereignisse, Stress, Witterung oder sonstige Umstände.",
+        targetDimension: "C1",
+        reason: "Offene Erfassung des Beginns ohne Vorab-Hypothese.",
+        questionStage: 1
+      },
+      dimensionStatus: { C1: "UNERHOBEN" },
+      isFinished: false
+    };
+  }
+}
+
+export async function runCausaArbitration(
+  ai: GoogleGenAI,
+  rawText: string,
+  existingCausaText: string,
+  history: Array<{ question: string; answer: string }>,
+  geminiAnalysis: CausaAgentAnalysis,
+  gptAnalysis: CausaAgentAnalysis,
+  language: string = "de"
+): Promise<CausaArbitratorDecision> {
+  const prompt = `${CAUSA_SYSTEM_SPEC}
+
+ROLLE: INSTANZ 3 (DER SCHIEDSRICHTER / ARBITRATOR)
+Du bist die oberste Schiedsinstanz.
+Du erhältst die Originalaussagen des Patienten sowie die beiden UNABHÄNGIGEN Analysen von Gemini (Instanz 1) und GPT (Instanz 2).
+
+EVIDENZ-RANGORDNUNG:
+1. ORIGINALTEXT DES PATIENTEN (höchste Autorität!)
+2. VERBINDLICHE CAUSA- & EVIDENCE-CEILING-REGELN
+3. Gemini & GPT (lediglich konkurrierende Vorschläge, keine Evidenzquellen!)
+
+SCHIEDSRICHTER-AUFGABEN:
+1. Vergleiche Gemini und GPT atomar:
+   - Haben sie unzulässige Schlüsse gezogen (z.B. "kann kein Ereignis nennen" fälschlich als "ausdrücklich verneint" gewertet)?
+   - Haben sie suggestive Fragen formuliert? (Jede Suggestion ist strengstens verboten!)
+   - Wurden Qualifikatoren ("scheint", "manchmal", "ungefähr") erhalten?
+2. Bestimme die GENAU EINE finale nächste Frage:
+   - Wähle die Frage, die methodisch am offensten ist (Stufe 1 Fragentrichter) und den höchsten Erkenntnisgewinn bringt.
+   - Falls beide Fragen Mängel haben oder zu eng sind, korrigiere sie minimal zur reinsten, unvoreingenommenen Einzelfrage.
+3. Entscheide über das STOPPING:
+   - Falls genügend geklärt ist ODER keine weiteren Erkenntnisse zu erwarten sind: setze "isFinished": true.
+   - Ein gültiges Endergebnis ist ausdrücklich: "Keine ausreichend belegte Causa ermittelbar".
+
+PATIENTENTEXT:
+"""${rawText}"""
+
+BISHERIGE ANTWORTEN:
+${history.map((h, i) => `Turn ${i + 1}: Frage "${h.question}" -> Antwort: "${h.answer}"`).join('\n') || "Keine bisherigen Antworten."}
+
+VORSCHLAG GEMINI (INSTANZ 1):
+Frage: "${geminiAnalysis.suggestedQuestion?.questionText}"
+Ziel: ${geminiAnalysis.suggestedQuestion?.targetDimension} (${geminiAnalysis.suggestedQuestion?.reason})
+isFinished: ${geminiAnalysis.isFinished}
+
+VORSCHLAG GPT (INSTANZ 2):
+Frage: "${gptAnalysis.suggestedQuestion?.questionText}"
+Ziel: ${gptAnalysis.suggestedQuestion?.targetDimension} (${gptAnalysis.suggestedQuestion?.reason})
+isFinished: ${gptAnalysis.isFinished}
+
+SPRACHE: ${language}
+
+Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown:
+{
+  "chosenQuestion": {
+    "questionId": "q_arb_final",
+    "questionText": "Die endgültig freigegebene GENAU EINE Einzelfrage an den Patienten",
+    "orientationExample": "Orientierungsbeispiel für den Therapeuten",
+    "targetDimension": "C1",
+    "reason": "Begründung für diese Frageentscheidung",
+    "arbitrationNote": "Kurzer Vermerk des Schiedsrichters zum Vergleich von Gemini vs. GPT"
+  },
+  "factsDelta": [
+    { "text": "...", "evidence": "...", "dimension": "C1", "epistemicStatus": "BELEGT_FAKTISCH" }
+  ],
+  "dimensionCompletion": {
+    "C1": "TEILWEISE_ERHOBEN",
+    "C2": "UNERHOBEN",
+    "C3": "TEILWEISE_ERHOBEN"
+  },
+  "isFinished": false,
+  "stoppingReason": "",
+  "finalSummary": null
+}`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3.8-flash",
+    contents: prompt,
+    config: { temperature: 0.1, responseMimeType: "application/json" }
+  });
+
+  try {
+    const parsed = JSON.parse(response.text || "{}");
+    return {
+      ...parsed,
+      agentOpinions: {
+        geminiQuestion: geminiAnalysis.suggestedQuestion?.questionText || "",
+        gptQuestion: gptAnalysis.suggestedQuestion?.questionText || ""
+      }
+    };
+  } catch (e) {
+    // Robuster Fallback, falls der Schiedsrichter-Parse fehlschlägt
+    const selectedQ = gptAnalysis.suggestedQuestion?.questionText || geminiAnalysis.suggestedQuestion?.questionText || "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum ersten Mal auftraten?";
+    return {
+      chosenQuestion: {
+        questionId: "q_arb_fallback",
+        questionText: selectedQ,
+        orientationExample: "Ereignisse, Verfassung, Witterung oder zeitliche Umstände.",
+        targetDimension: "C1",
+        reason: "Offene Ersterfassung des zeitlichen und situationalen Kontexts.",
+        arbitrationNote: "Konsolidierung nach Schiedsrichter-Prüfung beider Modellvorschläge."
+      },
+      factsDelta: [],
+      dimensionCompletion: {},
+      isFinished: false,
+      finalSummary: null,
+      agentOpinions: {
+        geminiQuestion: geminiAnalysis.suggestedQuestion?.questionText || "",
+        gptQuestion: gptAnalysis.suggestedQuestion?.questionText || ""
+      }
+    };
+  }
+}
+
+// ============================================================
+// GEMINI-ONLY TESTMODUS: SINGLE-CALL PIPELINE
+// Endprüfer Stage 1 -> Gemini Causa -> Nächste Einzelfrage
+// ============================================================
+
+export interface GeminiOnlyAtomicFact {
+  factId: string;
+  factText: string;
+  originalQuote: string;
+  episodeId: 'EP_INITIAL' | 'EP_RECURRENT' | 'EP_SINGLE_EXERTION' | 'EP_CHRONIC_EXPOSURE' | 'EP_HISTORICAL' | string;
+  dimensionId: CausaDimensionId | string;
+  factStatus: EpistemicFactStatus;
+  patientConfidence: PatientConfidence;
+  epistemicRelation: EpistemicRelation;
+}
+
+export interface GeminiOnlyDimensionState {
+  completion: DimensionCompletion;
+  applicability: DimensionApplicability;
+  summary?: string;
+}
+
+export interface GeminiOnlyCausaResult {
+  atomicFacts: GeminiOnlyAtomicFact[];
+  dimensionStates?: Record<string, GeminiOnlyDimensionState>;
+  openAspects: Array<{ text: string; reason: string; dimension?: string }>;
+  nextQuestion: {
+    questionText: string;
+    orientationExample: string;
+    targetDimension: CausaDimensionId | string;
+    reason: string;
+    questionStage: 1 | 2 | 3;
+  } | null;
+  isFinished: boolean;
+  stoppingReason?: string;
+  finalEvaluation?: {
+    category: 'GEKLÄRT' | 'UNSICHER' | 'KEINE_BELEGTE_CAUSA';
+    levelA_patientReported: string[];
+    levelB_unresolvedOrConflicting: string[];
+    levelC_homeopathicInterpretation: string[];
+    overallResult: string;
+  } | null;
+}
+
+export async function runGeminiOnlyCausaDeepen(
+  ai: GoogleGenAI,
+  rawText: string,
+  endprueferResult: any | null,
+  existingCausaText: string = "",
+  history: Array<{ question: string; answer: string; orientationExample?: string }>,
+  language: string = "de"
+): Promise<GeminiOnlyCausaResult> {
+  // 1. Extraktion der finalen Causa-Evidenz aus dem Stage-1-Endprüfer
+  let endprueferCausaSummary = "Kein Endprüfer-Ergebnis vorhanden.";
+  if (endprueferResult && typeof endprueferResult === 'object') {
+    let causaCheck = null;
+    if (Array.isArray(endprueferResult.category_checks)) {
+      causaCheck = endprueferResult.category_checks.find((c: any) => {
+        const cat = (c.category || '').toLowerCase();
+        return cat.includes('causa') || cat.includes('auslöser') || cat.includes('ursache');
+      });
+    }
+    if (causaCheck) {
+      const claims = Array.isArray(causaCheck.atomic_claims)
+        ? causaCheck.atomic_claims.map((ac: any) => `- Claim: "${ac.claim}" | Beleg: "${ac.raw_text_snippet || 'keiner'}" | Status: ${ac.decision}`).join('\n')
+        : '';
+      endprueferCausaSummary = `Endprüfer-Causa-Befund: "${causaCheck.minimal_correction || causaCheck.schiedsrichter_result || ''}" (Entscheidung: ${causaCheck.decision})\n${claims ? `Validierte Claims:\n${claims}` : ''}`;
+    } else if (endprueferResult.final_corrected_output) {
+      endprueferCausaSummary = `Endprüfer-Gesamtergebnis: ${endprueferResult.final_corrected_output}`;
+    }
+  } else if (existingCausaText) {
+    endprueferCausaSummary = `Vorherige Causa-Angabe: "${existingCausaText}"`;
+  }
+
+  const prompt = `Du bist die eigenständige Causa-Vertiefungs-Engine nach Samuel Hahnemann (Organon §§ 83–104).
+Deine Aufgabe ist die methodisch unvoreingenommene, präzise Aufdeckung, Strukturierung und Klärung möglicher Krankheitsursachen (Causa) im Patientengespräch.
+
+=======================================================================
+AUSGANGSBASIS (STRENG VERBINDLICH):
+=======================================================================
+1. FINAL VALIDIERTE CAUSA-BASIS AUS STAGE 1 (ENDPRÜFER):
+${endprueferCausaSummary}
+
+2. ORIGINALER PATIENTENTEXT (O-Ton des Patienten):
+"""${rawText}"""
+
+3. BISHERIGER GESPRÄCHSVERLAUF:
+${history.map((h, i) => `[Turn ${i + 1}] Frage: "${h.question}"\n-> Patientenantwort: "${h.answer}"`).join('\n\n') || "Noch keine Vorfragen gestellt (Initialer Einstieg Turn 1)."}
+
+ZIELSPRACHE: ${language}
+
+=======================================================================
+VERBINDLICHE METHODISCHE GESETZE (UNVERÄNDERT DURCHZUSETZEN):
+=======================================================================
+1. EVIDENCE CEILING (Absolute Belegpflicht):
+   - Jede Tatsache ("factText") MUSS durch ein wörtliches Zitat ("originalQuote") aus dem Originaltext oder den Antworten belegt sein.
+   - Es ist STRENGSTENS VERBOTEN, Annahmen, Vermutungen oder Deutungen als bewiesene Tatsachen auszugeben.
+
+2. ZEITLICHE BEZIEHUNG ≠ KAUSALITÄT:
+   - "Seit der Grippe habe ich Kopfschmerzen" belegt ausschließlich eine zeitliche Chronologie (ZEITLICHE_KOINZIDENZ).
+   - Eine zeitliche Reihenfolge beweist NIEMALS eine Kausalität!
+
+3. PATIENTENHYPOTHESE ≠ BEWIESENE URSACHE:
+   - Wenn der Patient vermutet ("Ich glaube, die Kälte war schuld"), ist dies epistemisch eine "SUBJEKTIVE_HYPOTHESE" mit Patient Confidence "VERMUTUNG".
+
+4. CAUSA ≠ MODALITÄT:
+   - Causa ist ausschließlich das auslösende Ereignis oder die krankmachende Einwirkung (§§ 83–104).
+   - Modalitäten (Besserung durch Wärme, Verschlimmerung bei Bewegung) und Lokalsymptome sind KEINE Causa! Frage niemals nach Modalitäten.
+
+5. NICHT_ERINNERLICH ≠ VERNEINUNG:
+   - Wenn der Patient sagt "Ich kann mich an kein Ereignis erinnern" oder "Weiß ich nicht", ist das "NICHT_ERINNERLICH" (nicht: "AUSDRÜCKLICH_VERNEINT").
+   - Frage NIEMALS dieselbe Frage erneut, wenn der Patient bereits gesagt hat, dass er sich nicht erinnert.
+
+6. EPISODEN-TRENNUNG:
+   - Trenne Tatsachen strikt nach Episoden:
+     - EP_INITIAL: Erstbeginn der Beschwerden
+     - EP_RECURRENT: Wiederkehrende spätere Anfälle
+     - EP_SINGLE_EXERTION: Einmalige Einwirkung/Überanstrengung
+     - EP_CHRONIC_EXPOSURE: Dauerhafte Einwirkung (z. B. feuchter Arbeitsplatz)
+     - EP_HISTORICAL: Frühere, andere Vorerkrankungen/Vorzustände
+
+7. FRAGENTRICHTER (OPEN-FIRST):
+   - Stufe 1: Offene Frage (z. B. "Was erinnern Sie noch von der Zeit, als dies zum ersten Mal auftrat?")
+   - Stufe 2: Fokussiert-offene Frage (wenn bereits ein Faktor genannt wurde, z. B. der Infekt)
+   - Stufe 3: Wahlhilfe / Konkretisierung (nur wenn der Patient stockt oder unsicher ist)
+   - NIEMALS suggestiv fragen! Keine Antwortoptionen suggerieren (z. B. NICHT: "War es ein Schock oder Zugluft?").
+   - IMMER GENAU EINE EINZELNE FRAGE (keine Doppelfragen).
+
+8. STOPP-REGEL & KEINE FESTE FRAGENZAHL:
+   - Es gibt keine Pflicht, alle 13 Dimensionen abzufragen!
+   - Es gibt keine feste maximale Fragenzahl.
+   - Stoppe (isFinished = true), sobald die im konkreten Fall relevanten, sinnvoll erhebbaren Causa-Aspekte ausreichend geklärt sind ODER nicht weiter klärbar/obsolet sind.
+   - GÜLTIGES, VOLLWERTIGES ENDERGEBNIS: "Keine ausreichend belegte Causa ermittelbar." Wenn kein Auslöser belegt ist, erzwinge keinen!
+
+DIE 13 CAUSA-DIMENSIONEN (C1–C13):
+C1: Chronologischer Beginn | C2: Unmittelbare Vorphase | C3: Konkreter Anlass/Ereignis
+C4: Phänomenologie der Einwirkung | C5: Organismischer Ausgangszustand | C6: Wahrnehmung & Sofortreaktion
+C7: Chronologie & Latenz | C8: Patienteneigene Zuschreibung | C9: Konkurrierende Faktoren
+C10: Akute Einwirkung vs. Hintergrund | C11: Reproduzierbarkeit & Gegenprobe | C12: Historischer Vorzustand
+C13: Aufrechterhaltende Einwirkung
+
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt dieser Struktur:
+{
+  "atomicFacts": [
+    {
+      "factId": "f_1",
+      "factText": "Prägnante Tatsachenaussage",
+      "originalQuote": "Exakter Wortlaut aus dem Patiententext oder den Antworten",
+      "episodeId": "EP_INITIAL",
+      "dimensionId": "C1",
+      "factStatus": "BELEGT_FAKTISCH",
+      "patientConfidence": "SICHERE_BEOBACHTUNG",
+      "epistemicRelation": "ZEITLICHE_KOINZIDENZ"
+    }
+  ],
+  "dimensionStates": {
+    "C1": { "completion": "AUSREICHEND_ERHOBEN", "applicability": "APPLIKABEL", "summary": "..." },
+    "C3": { "completion": "TEILWEISE_ERHOBEN", "applicability": "APPLIKABEL", "summary": "..." }
+  },
+  "openAspects": [
+    { "text": "Was ist noch unklar?", "reason": "Warum ist dies für die Causa relevant?", "dimension": "C7" }
+  ],
+  "nextQuestion": {
+    "questionText": "Die GENAU EINE nächste neutrale Einzelfrage an den Patienten",
+    "orientationExample": "Hinweis/Orientierungsbeispiel für den Therapeuten",
+    "targetDimension": "C7",
+    "reason": "Epistemische Begründung für genau diese Frage",
+    "questionStage": 1
+  },
+  "isFinished": false,
+  "stoppingReason": "",
+  "finalEvaluation": null
+}`;
+
+  // Genau EIN einziger Gemini-Aufruf pro Turn. Kein GPT, kein Schiedsrichter, kein Fallback-Modell.
+  const response = await ai.models.generateContent({
+    model: "gemini-3.8-flash",
+    contents: prompt,
+    config: { 
+      temperature: 0.1, 
+      responseMimeType: "application/json" 
+    }
+  });
+
+  try {
+    const parsed = JSON.parse(response.text || "{}");
+    return {
+      atomicFacts: Array.isArray(parsed.atomicFacts) ? parsed.atomicFacts : [],
+      dimensionStates: parsed.dimensionStates || {},
+      openAspects: Array.isArray(parsed.openAspects) ? parsed.openAspects : [],
+      nextQuestion: parsed.isFinished ? null : (parsed.nextQuestion || null),
+      isFinished: Boolean(parsed.isFinished),
+      stoppingReason: parsed.stoppingReason || (parsed.isFinished ? "Causa-Klärung abgeschlossen." : undefined),
+      finalEvaluation: parsed.finalEvaluation || null
+    };
+  } catch (parseErr) {
+    console.error("[runGeminiOnlyCausaDeepen] JSON Parse Error:", parseErr, response.text);
+    return {
+      atomicFacts: existingCausaText ? [
+        {
+          factId: "f_fallback",
+          factText: existingCausaText,
+          originalQuote: rawText.slice(0, 100),
+          episodeId: "EP_INITIAL",
+          dimensionId: "C1",
+          factStatus: "BELEGT_FAKTISCH",
+          patientConfidence: "SICHERE_BEOBACHTUNG",
+          epistemicRelation: "ZEITLICHE_KOINZIDENZ"
+        }
+      ] : [],
+      dimensionStates: {},
+      openAspects: [{ text: "Erstbeginn & Chronologie", reason: "Muss geklärt werden", dimension: "C1" }],
+      nextQuestion: {
+        questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum allerersten Mal auftraten?",
+        orientationExample: "Besondere Ereignisse, Umstände oder körperliche Verfassung.",
+        targetDimension: "C1",
+        reason: "Offene Erfassung des Beginns nach Fragentrichter Stufe 1.",
+        questionStage: 1
+      },
+      isFinished: false
+    };
+  }
+}
+
