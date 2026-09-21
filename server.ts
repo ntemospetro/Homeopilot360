@@ -38,6 +38,10 @@ import {
   runGeminiOnlyCausaDeepen
 } from "./src/services/causaMultiAgentEngine";
 import {
+  seedCausaStateFromOrganonEndpruefer,
+  sanitizeCausaPatientText
+} from "./src/services/causaSeedService";
+import {
   runGeminiOnlyLocalisatioDeepen,
   runGeminiLocalisatioAnalysis,
   runGptLocalisatioAnalysis,
@@ -2572,6 +2576,226 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     }
   });
 
+  // =============================================================
+  // CAUSA VERTIEFUNG: DEDUPLIZIERUNG & PLANNER-KONVERGENZ
+  // =============================================================
+
+  function deduplicateAndConsolidateCausaFacts(
+    existingFacts: any[],
+    incomingFacts: any[],
+    existingEvidence: any[],
+    rawText: string
+  ) {
+    const mergedFacts = [...existingFacts];
+    const mergedEvidence = [...existingEvidence];
+    const contradictions: Array<{ text: string; reason: string; dimension?: string; priority?: string }> = [];
+
+    for (const inc of incomingFacts) {
+      const incText = (inc.text || inc.factText || '').trim();
+      if (!incText) continue;
+      const incDim = inc.dimension || inc.dimensionId || 'C1';
+      const incTarget = inc.semanticTarget || inc.targetDimension || incDim;
+      const incSymptom = inc.symptomId || '';
+      const incEpisode = inc.episodeId;
+      const incQuote = inc.evidence || inc.originalQuote || rawText.slice(0, 100);
+      const incStatus = inc.status || inc.factStatus || 'BELEGT_FAKTISCH';
+
+      // 1. Widerspruchserkennung (z.B. Stress-Widerspruch gem. Punkt 7)
+      const lowerInc = incText.toLowerCase();
+      const isNegativeStress = lowerInc.includes('kein stress') || lowerInc.includes('nicht gestresst') || lowerInc.includes('keinen stress') || lowerInc.includes('ohne stress');
+      const isPositiveStress = (lowerInc.includes('stress') || lowerInc.includes('überlastung') || lowerInc.includes('viel zu tun')) && !isNegativeStress;
+
+      const stressConflictIdx = mergedFacts.findIndex(f => {
+        const fLower = (f.text || '').toLowerCase();
+        const fDim = f.dimension || f.dimensionId || 'C1';
+        if (fDim !== incDim) return false;
+        if (isNegativeStress) {
+          return (fLower.includes('stress') || fLower.includes('überlastung')) && !(fLower.includes('kein') || fLower.includes('nicht') || fLower.includes('ohne'));
+        }
+        if (isPositiveStress) {
+          return fLower.includes('kein stress') || fLower.includes('nicht gestresst') || fLower.includes('keinen stress');
+        }
+        return false;
+      });
+
+      if (stressConflictIdx !== -1) {
+        // Beide Einträge auf WIDERSPRÜCHLICH setzen
+        mergedFacts[stressConflictIdx].status = 'WIDERSPRÜCHLICH';
+        const existingEvIdx = mergedEvidence.findIndex(e => e.content === mergedFacts[stressConflictIdx].text);
+        if (existingEvIdx !== -1) {
+          mergedEvidence[existingEvIdx].status = 'WIDERSPRÜCHLICH';
+        }
+        contradictions.push({
+          text: 'Widerspruch bezüglich Stressbelastung',
+          reason: 'Patient nannte zunächst Stress, verneinte diesen jedoch auf Nachfrage (§ 98 Organon).',
+          dimension: incDim,
+          priority: 'MITTEL'
+        });
+        mergedFacts.push({
+          text: incText,
+          evidence: incQuote,
+          dimension: incDim,
+          semanticTarget: incTarget,
+          symptomId: incSymptom,
+          episodeId: incEpisode,
+          status: 'WIDERSPRÜCHLICH'
+        });
+        continue;
+      }
+
+      // 2. Atomare Identitäts-Deduplizierung (stabil anhand dimensionId + semanticTarget + symptomId + episodeId, KEINE rein textbasierte includes-Verschmelzung verschiedener Sachverhalte)
+      const existingFactIndex = mergedFacts.findIndex(f => {
+        const fDim = f.dimension || f.dimensionId || 'C1';
+        const fTarget = f.semanticTarget || f.targetDimension || fDim;
+        const fSymptom = f.symptomId || '';
+        const fEpisode = f.episodeId;
+
+        if (fDim !== incDim) return false;
+        if (fEpisode && incEpisode && fEpisode !== incEpisode) return false;
+
+        const fText = (f.text || '').toLowerCase().trim();
+        const iText = incText.toLowerCase().trim();
+
+        // Zeitbezug- oder Sachverhaltskonflikte verhindern
+        const timeWords = ['gestern', 'vorgestern', 'letzte woche', 'heute', 'morgen', 'vor jahren', 'seit monaten', 'vor tagen'];
+        for (const tw of timeWords) {
+          const fHasTime = fText.includes(tw);
+          const iHasTime = iText.includes(tw);
+          if (fHasTime && iHasTime && fText !== iText) {
+            return false;
+          }
+        }
+
+        if (fTarget && incTarget && fTarget === incTarget && fTarget !== fDim && incTarget !== incDim) {
+          return true;
+        }
+        if (fSymptom && incSymptom && fSymptom === incSymptom) {
+          return true;
+        }
+
+        if (fText === iText) {
+          return true;
+        }
+
+        return false;
+      });
+
+      if (existingFactIndex === -1) {
+        mergedFacts.push({
+          text: incText,
+          evidence: incQuote,
+          dimension: incDim,
+          semanticTarget: incTarget,
+          symptomId: incSymptom,
+          episodeId: incEpisode,
+          status: incStatus
+        });
+        mergedEvidence.push({
+          id: `ev_${mergedEvidence.length + 1}`,
+          content: incText,
+          status: incStatus,
+          originalQuote: incQuote,
+          source: 'Patientenaussage',
+          assignedSymptom: incDim,
+          dimension: incDim,
+          episodeId: incEpisode,
+          patientConfidence: inc.patientConfidence,
+          epistemicRelation: inc.epistemicRelation
+        });
+      } else {
+        if (incQuote && (!mergedFacts[existingFactIndex].evidence || mergedFacts[existingFactIndex].evidence === 'Ausgangsbefund' || mergedFacts[existingFactIndex].evidence === 'Befund')) {
+          mergedFacts[existingFactIndex].evidence = incQuote;
+        }
+        if (incStatus && incStatus !== 'UNERHOBEN') {
+          mergedFacts[existingFactIndex].status = incStatus;
+        }
+      }
+    }
+
+    return { mergedFacts, mergedEvidence, contradictions };
+  }
+
+  function enforceCausaConvergenceAndPlannerRules({
+    candidateQuestion,
+    knownFacts,
+    terminalPaths,
+    openAspects,
+    historyLength,
+    rawText
+  }: {
+    candidateQuestion: any | null;
+    knownFacts: any[];
+    terminalPaths: string[];
+    openAspects: any[];
+    historyLength: number;
+    rawText: string;
+  }) {
+    if (!candidateQuestion || openAspects.length === 0) {
+      return { question: null, isFinished: true, stoppingReason: "Causa-Klärung abgeschlossen: Keine weiteren offenen Aspekte oder Fragen vorhanden (§§ 83–104)." };
+    }
+
+    const qText = (candidateQuestion.questionText || '').toLowerCase();
+    const qTarget = candidateQuestion.targetDimension || 'C1';
+
+    // 1. C1-Schleifen-Verhinderung (Punkt 4): Belegtes atomares Ziel nicht erneut abfragen!
+    const hasC1Factual = knownFacts.some(f => (f.dimension === 'C1' || f.dimensionId === 'C1') && (f.status === 'BELEGT_FAKTISCH' || f.status === 'EXPLICIT'));
+    const isC1BeginningQuestion = qTarget === 'C1' || qText.includes('allerersten mal') || qText.includes('ersten mal') || qText.includes('wann fing es an') || qText.includes('erstbeginn');
+
+    if (hasC1Factual && isC1BeginningQuestion) {
+      console.log('[CausaPlanner] Re-asking C1 suppressed because onset is already factual!');
+      const nonC1Aspect = openAspects.find(a => {
+        const dim = a.dimension || a.targetDimension;
+        return dim && dim !== 'C1' && !terminalPaths.some(tp => tp.toLowerCase().includes(dim.toLowerCase()));
+      });
+
+      if (nonC1Aspect) {
+        candidateQuestion = {
+          questionId: `q_${historyLength + 1}`,
+          questionText: nonC1Aspect.text ? `Können Sie Näheres zu "${nonC1Aspect.text}" erläutern?` : "Welche konkreten Einwirkungen oder außergewöhnlichen Umstände fielen Ihnen rund um diesen Beginn auf?",
+          orientationExample: nonC1Aspect.reason || "Witterungseinflüsse, Zugluft, Durchnässung oder körperliche Belastung.",
+          targetDimension: nonC1Aspect.dimension || nonC1Aspect.targetDimension || 'C3',
+          reason: "Offene Vertiefung der Umstände (§§ 83–104), da Beginnzeitpunkt bereits belegt ist.",
+          questionStage: 1
+        };
+      } else {
+        return { question: null, isFinished: true, stoppingReason: "Causa-Klärung abgeschlossen: Beginn und relevante Begleitumstände hinreichend erfasst (§ 104)." };
+      }
+    }
+
+    // 2. Terminal-Path-Schutz (Punkt 8: NICHT_ERINNERLICH)
+    const isTerminalPath = terminalPaths.some(tp => {
+      const tpLower = tp.toLowerCase();
+      return (qTarget && tpLower.includes(qTarget.toLowerCase())) ||
+        (qText.includes('vorzustand') && tpLower.includes('c12')) ||
+        (qText.includes('frühere') && tpLower.includes('c12')) ||
+        (qText.includes('ereignis') && tpLower.includes('c3'));
+    });
+
+    if (isTerminalPath) {
+      console.log(`[CausaPlanner] Candidate question targets terminal path (${qTarget}) - suppressed!`);
+      const nonTerminalAspect = openAspects.find(a => {
+        const dim = a.dimension || a.targetDimension;
+        return dim && !terminalPaths.some(tp => tp.toLowerCase().includes(dim.toLowerCase()));
+      });
+      if (nonTerminalAspect) {
+        candidateQuestion = {
+          questionId: `q_${historyLength + 1}`,
+          questionText: nonTerminalAspect.text ? `Bitte erläutern Sie: ${nonTerminalAspect.text}` : "Gibt es sonstige äußere Einflüsse oder Umstände, die für den Verlauf bedeutsam sein könnten?",
+          orientationExample: nonTerminalAspect.reason || "Klima, Arbeitsplatz, Ernährung oder Lebensweise.",
+          targetDimension: nonTerminalAspect.dimension || nonTerminalAspect.targetDimension || 'C13',
+          reason: "Ausweichen auf verbleibenden offenen Aspekt (§§ 83–104).",
+          questionStage: 1
+        };
+      } else {
+        return { question: null, isFinished: true, stoppingReason: "Pfad nicht weiter klärbar (keine weiteren offenen ungedeckten Aspekte)." };
+      }
+    }
+
+    // KEIN fester oder faktischer Fragen-/Turn-Cap (historyLength >= 2 entfernt). Weitere Fragen sind zulässig, solange ungedeckte relevante offene Aspekte existieren.
+
+    return { question: candidateQuestion, isFinished: false, stoppingReason: undefined };
+  }
+
   // Helper: Ausführung des Gemini-only Causa-Zweigs (Single-Call)
   async function executeGeminiOnlyTurn({
     ai,
@@ -2581,7 +2805,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     state,
     latestAnswer,
     language,
-    action
+    action,
+    canonicalSeed
   }: {
     ai: any;
     rawText: string;
@@ -2591,6 +2816,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     latestAnswer: string;
     language: string;
     action: string;
+    canonicalSeed?: any;
   }) {
     let currentHistory: Array<{ question: string; answer: string; orientationExample?: string }> = [];
     if (Array.isArray(state?.history)) {
@@ -2611,6 +2837,79 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       });
     }
 
+    // Punkt 1 & 2: Kanonischer State-Fluss & Vollständiger Datenimport aus Endprüfer
+    let canonicalState = state?.canonicalState || canonicalSeed || seedCausaStateFromOrganonEndpruefer(rawText, activeEndprueferResult, existingCausaText);
+    if (!canonicalState.terminalPaths) canonicalState.terminalPaths = [];
+
+    let initialKnownFacts: Array<any> = Array.isArray(state?.knownFacts) && state.knownFacts.length > 0
+      ? [...state.knownFacts]
+      : [];
+    let initialEvidenceList: Array<any> = Array.isArray(state?.evidenceList) && state.evidenceList.length > 0
+      ? [...state.evidenceList]
+      : [];
+
+    // Bei Init: Fakten aus kanonischem Seed übernehmen
+    if (initialKnownFacts.length === 0 && Array.isArray(canonicalState?.facts) && canonicalState.facts.length > 0) {
+      canonicalState.facts.forEach((f: any, idx: number) => {
+        const text = f.normalizedValue?.text || f.evidenceText;
+        if (text) {
+          initialKnownFacts.push({
+            text: text,
+            evidence: f.evidenceText || "Befund",
+            dimension: f.dimensionId || "C1",
+            status: f.epistemicStatus || "BELEGT_FAKTISCH"
+          });
+          initialEvidenceList.push({
+            id: f.factId || `ev_${idx + 1}`,
+            content: text,
+            status: f.epistemicStatus || "BELEGT_FAKTISCH",
+            originalQuote: f.evidenceText || rawText.slice(0, 100),
+            source: "Patientenaussage",
+            assignedSymptom: f.dimensionId || "Causa",
+            dimension: f.dimensionId || "C1",
+            episodeId: f.episodeId
+          });
+        }
+      });
+    }
+
+    // Punkt 8: Verbindlicher Pfadabschluss bei NICHT_ERINNERLICH
+    if (action === "step" && latestAnswer && latestAnswer.trim()) {
+      const lowerAns = latestAnswer.toLowerCase();
+      const isNotRemembered = lowerAns.includes("weiß nicht") || lowerAns.includes("nicht erinnerlich") || lowerAns.includes("kann mich nicht erinnern") || lowerAns.includes("keine ahnung") || lowerAns.includes("daran erinnere ich mich nicht");
+      if (isNotRemembered) {
+        const prevQTarget = state?.currentQuestion?.targetDimension || "C1";
+        const termEntry = `${prevQTarget}: Patient erinnert Sachverhalt nicht`;
+        if (!canonicalState.terminalPaths.includes(termEntry)) {
+          canonicalState.terminalPaths.push(termEntry);
+        }
+        initialKnownFacts.push({
+          text: `Patient erinnert keine weiteren Details zu ${prevQTarget}`,
+          evidence: latestAnswer.trim(),
+          dimension: prevQTarget,
+          status: "NICHT_ERINNERLICH"
+        });
+        initialEvidenceList.push({
+          id: `ev_${initialEvidenceList.length + 1}`,
+          content: `Patient erinnert keine weiteren Details zu ${prevQTarget}`,
+          status: "NICHT_ERINNERLICH",
+          originalQuote: latestAnswer.trim(),
+          source: "Patientenaussage",
+          assignedSymptom: prevQTarget,
+          dimension: prevQTarget
+        });
+        if (canonicalState.dimensions && canonicalState.dimensions[prevQTarget]) {
+          const dimFacts = initialKnownFacts.filter(f => f.dimension === prevQTarget || f.dimensionId === prevQTarget);
+          const allNotRemembered = dimFacts.length > 0 && dimFacts.every(f => f.status === 'NICHT_ERINNERLICH');
+          if (allNotRemembered) {
+            canonicalState.dimensions[prevQTarget].completion = "NICHT_WEITER_KLÄRBAR";
+          } else {
+            canonicalState.dimensions[prevQTarget].completion = "TEILWEISE_ERHOBEN";
+          }
+        }
+      }
+    }
+
     const turnStartTime = Date.now();
     const geminiOnlyRes = await runGeminiOnlyCausaDeepen(
       ai,
@@ -2618,63 +2917,79 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       activeEndprueferResult,
       existingCausaText,
       currentHistory,
-      language
+      language,
+      canonicalState
     );
     const durationMs = Date.now() - turnStartTime;
     console.log(`[CausaDeepen] Gemini-only Turn abgeschlossen in ${durationMs}ms`);
 
-    const isFinished = action === "finalize" || Boolean(geminiOnlyRes.isFinished);
-
-    const existingEvidenceList: Array<any> = Array.isArray(state?.evidenceList)
-      ? [...state.evidenceList]
-      : [];
-
-    if (Array.isArray(geminiOnlyRes.atomicFacts)) {
-      geminiOnlyRes.atomicFacts.forEach((f, idx) => {
-        const alreadyExists = existingEvidenceList.some(e => e.content === f.factText || (f.originalQuote && e.originalQuote === f.originalQuote));
-        if (!alreadyExists) {
-          existingEvidenceList.push({
-            id: f.factId || `ev_${existingEvidenceList.length + idx + 1}`,
-            content: f.factText,
-            status: f.factStatus || "BELEGT_FAKTISCH",
-            originalQuote: f.originalQuote || rawText.slice(0, 100),
-            source: "Patientenaussage",
-            assignedSymptom: f.dimensionId || "Causa",
-            dimension: f.dimensionId || "C1",
-            episodeId: f.episodeId,
-            patientConfidence: f.patientConfidence,
-            epistemicRelation: f.epistemicRelation
-          });
-        }
-      });
-    }
-
-    const knownFacts = (geminiOnlyRes.atomicFacts || []).map(f => ({
+    // Punkt 3 & 7: Semantische Deduplizierung und Widerspruchsbehandlung
+    const incomingFacts = Array.isArray(geminiOnlyRes.atomicFacts) ? geminiOnlyRes.atomicFacts.map(f => ({
       text: f.factText,
       evidence: f.originalQuote,
-      dimension: f.dimensionId
-    }));
+      dimension: f.dimensionId,
+      status: f.factStatus || "BELEGT_FAKTISCH",
+      episodeId: f.episodeId,
+      patientConfidence: f.patientConfidence,
+      epistemicRelation: f.epistemicRelation
+    })) : [];
 
-    const mergedKnownFacts = [...(state?.knownFacts || [])];
-    knownFacts.forEach(k => {
-      if (!mergedKnownFacts.some(m => m.text === k.text)) {
-        mergedKnownFacts.push(k);
+    const { mergedFacts, mergedEvidence, contradictions } = deduplicateAndConsolidateCausaFacts(
+      initialKnownFacts,
+      incomingFacts,
+      initialEvidenceList,
+      rawText
+    );
+
+    const baseOpenAspects = Array.isArray(geminiOnlyRes.openAspects) ? [...geminiOnlyRes.openAspects] : [];
+    contradictions.forEach(c => {
+      if (!baseOpenAspects.some(a => a.text === c.text)) {
+        baseOpenAspects.unshift(c);
       }
     });
 
+    // Punkt 4 & 5: Deterministischer Konvergenz- und Stop-Planner (C1-Schleifen-Verhinderung)
+    const rawCandidateQ = geminiOnlyRes.nextQuestion ? {
+      questionId: `q_${currentHistory.length + 1}`,
+      questionText: geminiOnlyRes.nextQuestion.questionText,
+      orientationExample: geminiOnlyRes.nextQuestion.orientationExample || "",
+      reason: geminiOnlyRes.nextQuestion.reason || "",
+      targetDimension: geminiOnlyRes.nextQuestion.targetDimension || "C1",
+      arbitrationNote: "Gemini-only Testmodus (§§ 83–104 • Direkte Einzelfragen-Extraktion ohne Schiedsrichter)",
+      agentOpinions: undefined
+    } : null;
+
+    const plannerDecision = enforceCausaConvergenceAndPlannerRules({
+      candidateQuestion: rawCandidateQ,
+      knownFacts: mergedFacts,
+      terminalPaths: canonicalState.terminalPaths || [],
+      openAspects: baseOpenAspects,
+      historyLength: currentHistory.length,
+      rawText
+    });
+
+    const isFinished = action === "finalize" || plannerDecision.isFinished || Boolean(geminiOnlyRes.isFinished);
+    const effectiveQuestion = isFinished ? null : plannerDecision.question;
+    const effectiveStoppingReason = geminiOnlyRes.stoppingReason || plannerDecision.stoppingReason || (isFinished ? "Causa-Klärung abgeschlossen nach Organon §§ 83–104." : undefined);
+
+    // Punkt 9: Bereinigung von Repertorisations-Fremdtexten
+    const cleanedLevelC = Array.isArray(geminiOnlyRes.finalEvaluation?.levelC_homeopathicInterpretation)
+      ? geminiOnlyRes.finalEvaluation.levelC_homeopathicInterpretation.filter((s: string) => !s.includes("Klassische Einzelfall-Repertorisation") && !s.includes("Homöopathische Interpretation"))
+      : [];
+
+    canonicalState.facts = mergedFacts.map((f, i) => ({
+      factId: `f_${i + 1}`,
+      dimensionId: f.dimension || "C1",
+      evidenceText: f.evidence || f.text,
+      epistemicStatus: f.status || "BELEGT_FAKTISCH",
+      normalizedValue: { text: f.text }
+    }));
+
     return {
-      knownFacts: mergedKnownFacts.length > 0 ? mergedKnownFacts : (existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund" }] : []),
-      openAspects: Array.isArray(geminiOnlyRes.openAspects) ? geminiOnlyRes.openAspects : [],
-      evidenceList: existingEvidenceList,
-      currentQuestion: isFinished || !geminiOnlyRes.nextQuestion ? null : {
-        questionId: `q_${currentHistory.length + 1}`,
-        questionText: geminiOnlyRes.nextQuestion.questionText,
-        orientationExample: geminiOnlyRes.nextQuestion.orientationExample || "",
-        reason: geminiOnlyRes.nextQuestion.reason || "",
-        targetDimension: geminiOnlyRes.nextQuestion.targetDimension || "C1",
-        arbitrationNote: "Gemini-only Testmodus (§§ 83–104 • Direkte Einzelfragen-Extraktion ohne Schiedsrichter)",
-        agentOpinions: undefined
-      },
+      knownFacts: mergedFacts.length > 0 ? mergedFacts : (existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C1", status: "BELEGT_FAKTISCH" }] : []),
+      openAspects: isFinished ? [] : baseOpenAspects,
+      evidenceList: mergedEvidence,
+      currentQuestion: effectiveQuestion,
       history: currentHistory.map((h, i) => ({
         step: i + 1,
         question: h.question,
@@ -2683,20 +2998,18 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         extractedNotes: h.answer
       })),
       isFinished: isFinished,
-      stoppingReason: geminiOnlyRes.stoppingReason || (isFinished ? (geminiOnlyRes.finalEvaluation?.overallResult || "Causa-Klärung abgeschlossen.") : undefined),
+      stoppingReason: effectiveStoppingReason,
       finalSummary: isFinished ? {
         levelA_patientReported: Array.isArray(geminiOnlyRes.finalEvaluation?.levelA_patientReported) && geminiOnlyRes.finalEvaluation.levelA_patientReported.length > 0
           ? geminiOnlyRes.finalEvaluation.levelA_patientReported
-          : (mergedKnownFacts.length > 0 ? mergedKnownFacts.map(k => k.text) : ["Keine spezifischen Causa-Fakten genannt"]),
+          : (mergedFacts.length > 0 ? mergedFacts.map(k => k.text) : ["Keine spezifischen Causa-Fakten genannt"]),
         levelB_unresolvedOrConflicting: Array.isArray(geminiOnlyRes.finalEvaluation?.levelB_unresolvedOrConflicting)
           ? geminiOnlyRes.finalEvaluation.levelB_unresolvedOrConflicting
-          : (geminiOnlyRes.openAspects.map(o => o.text)),
-        levelC_homeopathicInterpretation: Array.isArray(geminiOnlyRes.finalEvaluation?.levelC_homeopathicInterpretation)
-          ? geminiOnlyRes.finalEvaluation.levelC_homeopathicInterpretation
-          : ["Klassische Einzelfall-Repertorisation"],
-        overallResult: geminiOnlyRes.finalEvaluation?.overallResult || (mergedKnownFacts.length > 0 ? "Causa-Klärung abgeschlossen." : "Keine ausreichend belegte Causa ermittelbar.")
+          : (baseOpenAspects.map(o => o.text)),
+        levelC_homeopathicInterpretation: cleanedLevelC,
+        overallResult: geminiOnlyRes.finalEvaluation?.overallResult || (mergedFacts.length > 0 ? "Causa-Klärung abgeschlossen." : "Keine ausreichend belegte Causa ermittelbar.")
       } : null,
-      canonicalState: state?.canonicalState || null,
+      canonicalState: canonicalState,
       turnDurations: {
         geminiMs: durationMs,
         totalMs: durationMs
@@ -2715,7 +3028,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     latestAnswer,
     language,
     action,
-    activeEndprueferResult
+    activeEndprueferResult,
+    canonicalSeed
   }: {
     ai: any;
     rawText: string;
@@ -2725,6 +3039,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     language: string;
     action: string;
     activeEndprueferResult: any;
+    canonicalSeed?: any;
   }) {
     let currentHistory: Array<{ question: string; answer: string; orientationExample?: string }> = [];
     if (Array.isArray(state?.history)) {
@@ -2743,6 +3058,78 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         answer: latestAnswer.trim(),
         orientationExample: prevOrientation
       });
+    }
+
+    // Punkt 1 & 2: Kanonischer State-Fluss & Vollständiger Datenimport aus Endprüfer
+    let canonicalState = state?.canonicalState || canonicalSeed || seedCausaStateFromOrganonEndpruefer(rawText, activeEndprueferResult, existingCausaText);
+    if (!canonicalState.terminalPaths) canonicalState.terminalPaths = [];
+
+    let initialKnownFacts: Array<any> = Array.isArray(state?.knownFacts) && state.knownFacts.length > 0
+      ? [...state.knownFacts]
+      : [];
+    let initialEvidenceList: Array<any> = Array.isArray(state?.evidenceList) && state.evidenceList.length > 0
+      ? [...state.evidenceList]
+      : [];
+
+    if (initialKnownFacts.length === 0 && Array.isArray(canonicalState?.facts) && canonicalState.facts.length > 0) {
+      canonicalState.facts.forEach((f: any, idx: number) => {
+        const text = f.normalizedValue?.text || f.evidenceText;
+        if (text) {
+          initialKnownFacts.push({
+            text: text,
+            evidence: f.evidenceText || "Befund",
+            dimension: f.dimensionId || "C1",
+            status: f.epistemicStatus || "BELEGT_FAKTISCH"
+          });
+          initialEvidenceList.push({
+            id: f.factId || `ev_${idx + 1}`,
+            content: text,
+            status: f.epistemicStatus || "BELEGT_FAKTISCH",
+            originalQuote: f.evidenceText || rawText.slice(0, 100),
+            source: "Patientenaussage",
+            assignedSymptom: f.dimensionId || "Causa",
+            dimension: f.dimensionId || "C1",
+            episodeId: f.episodeId
+          });
+        }
+      });
+    }
+
+    // Punkt 8: Verbindlicher Pfadabschluss bei NICHT_ERINNERLICH
+    if (action === "step" && latestAnswer && latestAnswer.trim()) {
+      const lowerAns = latestAnswer.toLowerCase();
+      const isNotRemembered = lowerAns.includes("weiß nicht") || lowerAns.includes("nicht erinnerlich") || lowerAns.includes("kann mich nicht erinnern") || lowerAns.includes("keine ahnung") || lowerAns.includes("daran erinnere ich mich nicht");
+      if (isNotRemembered) {
+        const prevQTarget = state?.currentQuestion?.targetDimension || "C1";
+        const termEntry = `${prevQTarget}: Patient erinnert Sachverhalt nicht`;
+        if (!canonicalState.terminalPaths.includes(termEntry)) {
+          canonicalState.terminalPaths.push(termEntry);
+        }
+        initialKnownFacts.push({
+          text: `Patient erinnert keine weiteren Details zu ${prevQTarget}`,
+          evidence: latestAnswer.trim(),
+          dimension: prevQTarget,
+          status: "NICHT_ERINNERLICH"
+        });
+        initialEvidenceList.push({
+          id: `ev_${initialEvidenceList.length + 1}`,
+          content: `Patient erinnert keine weiteren Details zu ${prevQTarget}`,
+          status: "NICHT_ERINNERLICH",
+          originalQuote: latestAnswer.trim(),
+          source: "Patientenaussage",
+          assignedSymptom: prevQTarget,
+          dimension: prevQTarget
+        });
+        if (canonicalState.dimensions && canonicalState.dimensions[prevQTarget]) {
+          const dimFacts = initialKnownFacts.filter(f => f.dimension === prevQTarget || f.dimensionId === prevQTarget);
+          const allNotRemembered = dimFacts.length > 0 && dimFacts.every(f => f.status === 'NICHT_ERINNERLICH');
+          if (allNotRemembered) {
+            canonicalState.dimensions[prevQTarget].completion = "NICHT_WEITER_KLÄRBAR";
+          } else {
+            canonicalState.dimensions[prevQTarget].completion = "TEILWEISE_ERHOBEN";
+          }
+        }
+      }
     }
 
     const turnStartTime = Date.now();
@@ -2847,58 +3234,70 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
 
     const totalTurnDurationMs = Date.now() - turnStartTime;
 
-    const isFinished = action === "finalize" || Boolean(arbRes.isFinished);
-    const chosenQ = arbRes.chosenQuestion || {
-      questionId: `q_${currentHistory.length + 1}`,
-      questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum ersten Mal auftraten?",
-      orientationExample: "Ereignisse, Stress, Witterung oder sonstige Umstände.",
-      targetDimension: "C1",
-      reason: "Offene Erfassung des Beginns ohne Vorab-Hypothese.",
-      arbitrationNote: "Schiedsrichter-Konsensentscheidung"
-    };
-
-    const existingKnownFacts = Array.isArray(state?.knownFacts) ? [...state.knownFacts] : [];
-    const newFacts = Array.isArray(arbRes.factsDelta) ? arbRes.factsDelta.map((f: any) => ({
+    // Punkt 3 & 7: Semantische Deduplizierung und Widerspruchsbehandlung
+    const incomingArbFacts = Array.isArray(arbRes.factsDelta) ? arbRes.factsDelta.map((f: any) => ({
       text: f.text,
-      evidence: f.evidence
+      evidence: f.evidence,
+      dimension: f.dimension || "C1",
+      status: f.epistemicStatus || "BELEGT_FAKTISCH"
     })) : [];
-    const mergedKnownFacts = [...existingKnownFacts];
-    for (const nf of newFacts) {
-      if (!mergedKnownFacts.some(k => k.text === nf.text)) {
-        mergedKnownFacts.push(nf);
-      }
-    }
 
-    const existingEvidenceList = Array.isArray(state?.evidenceList) ? [...state.evidenceList] : [];
-    if (Array.isArray(arbRes.factsDelta)) {
-      arbRes.factsDelta.forEach((f: any, idx: number) => {
-        if (!existingEvidenceList.some(e => e.content === f.text)) {
-          existingEvidenceList.push({
-            id: `ev_${existingEvidenceList.length + idx + 1}`,
-            content: f.text,
-            status: f.epistemicStatus || "EXPLICIT",
-            originalQuote: f.evidence || rawText.slice(0, 100),
-            source: "Patientenaussage",
-            assignedSymptom: f.dimension || "Causa",
-            dimension: f.dimension || "C1"
-          });
-        }
-      });
-    }
+    const { mergedFacts, mergedEvidence, contradictions } = deduplicateAndConsolidateCausaFacts(
+      initialKnownFacts,
+      incomingArbFacts,
+      initialEvidenceList,
+      rawText
+    );
+
+    const baseOpenAspects = Array.isArray(geminiRes.openAspects) ? [...geminiRes.openAspects] : [{ text: "Mögliche Auslöser & Umstände", reason: "Klärung eventueller Einwirkungen", dimension: "C3" }];
+    contradictions.forEach(c => {
+      if (!baseOpenAspects.some(a => a.text === c.text)) {
+        baseOpenAspects.unshift(c);
+      }
+    });
+
+    const chosenQ = arbRes.chosenQuestion ? {
+      questionId: arbRes.chosenQuestion.questionId || `q_${currentHistory.length + 1}`,
+      questionText: arbRes.chosenQuestion.questionText,
+      orientationExample: arbRes.chosenQuestion.orientationExample || "",
+      reason: arbRes.chosenQuestion.reason || "",
+      targetDimension: arbRes.chosenQuestion.targetDimension || "C1",
+      arbitrationNote: arbRes.chosenQuestion.arbitrationNote || "Schiedsrichter-Konsensentscheidung",
+      agentOpinions: arbRes.agentOpinions
+    } : null;
+
+    // Punkt 4 & 5: Planner-Prüfung & Stopp-Regeln
+    const plannerDecision = enforceCausaConvergenceAndPlannerRules({
+      candidateQuestion: chosenQ,
+      knownFacts: mergedFacts,
+      terminalPaths: canonicalState.terminalPaths || [],
+      openAspects: baseOpenAspects,
+      historyLength: currentHistory.length,
+      rawText
+    });
+
+    const isFinished = action === "finalize" || plannerDecision.isFinished || Boolean(arbRes.isFinished);
+    const effectiveQuestion = isFinished ? null : plannerDecision.question;
+    const effectiveStoppingReason = arbRes.stoppingReason || plannerDecision.stoppingReason || (isFinished ? "Causa-Klärung durch Schiedsrichter abgeschlossen." : undefined);
+
+    // Punkt 9: Bereinigung von Repertorisations-Fremdtexten
+    const cleanedLevelC = Array.isArray(arbRes.finalSummary?.levelC_homeopathicInterpretation)
+      ? arbRes.finalSummary.levelC_homeopathicInterpretation.filter((s: string) => !s.includes("Klassische Einzelfall-Repertorisation") && !s.includes("Homöopathische Interpretation"))
+      : [];
+
+    canonicalState.facts = mergedFacts.map((f, i) => ({
+      factId: `f_${i + 1}`,
+      dimensionId: f.dimension || "C1",
+      evidenceText: f.evidence || f.text,
+      epistemicStatus: f.status || "BELEGT_FAKTISCH",
+      normalizedValue: { text: f.text }
+    }));
 
     return {
-      knownFacts: mergedKnownFacts.length > 0 ? mergedKnownFacts : (existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund" }] : []),
-      openAspects: Array.isArray(geminiRes.openAspects) ? geminiRes.openAspects : [{ text: "Erstbeginn & Chronologie", reason: "Muss erfragt werden" }],
-      evidenceList: existingEvidenceList,
-      currentQuestion: isFinished || !chosenQ ? null : {
-        questionId: chosenQ.questionId || `q_${currentHistory.length + 1}`,
-        questionText: chosenQ.questionText,
-        orientationExample: chosenQ.orientationExample,
-        reason: chosenQ.reason,
-        targetDimension: chosenQ.targetDimension || "C1",
-        arbitrationNote: chosenQ.arbitrationNote || arbRes.chosenQuestion?.arbitrationNote,
-        agentOpinions: arbRes.agentOpinions
-      },
+      knownFacts: mergedFacts.length > 0 ? mergedFacts : (existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C1", status: "BELEGT_FAKTISCH" }] : []),
+      openAspects: isFinished ? [] : baseOpenAspects,
+      evidenceList: mergedEvidence,
+      currentQuestion: effectiveQuestion,
       history: currentHistory.map((h, i) => ({
         step: i + 1,
         question: h.question,
@@ -2907,20 +3306,18 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         extractedNotes: h.answer
       })),
       isFinished: isFinished,
-      stoppingReason: arbRes.stoppingReason || (isFinished ? "Causa-Klärung abgeschlossen" : undefined),
+      stoppingReason: effectiveStoppingReason,
       finalSummary: isFinished ? {
         levelA_patientReported: Array.isArray(arbRes.finalSummary?.levelA_patientReported) 
           ? arbRes.finalSummary.levelA_patientReported 
-          : (mergedKnownFacts.length > 0 ? mergedKnownFacts.map(k => k.text) : ["Keine spezifischen Causa-Fakten genannt"]),
+          : (mergedFacts.length > 0 ? mergedFacts.map(k => k.text) : ["Keine spezifischen Causa-Fakten genannt"]),
         levelB_unresolvedOrConflicting: Array.isArray(arbRes.finalSummary?.levelB_unresolvedOrConflicting)
           ? arbRes.finalSummary.levelB_unresolvedOrConflicting
-          : ["Keine weiteren offenen Punkte"],
-        levelC_homeopathicInterpretation: Array.isArray(arbRes.finalSummary?.levelC_homeopathicInterpretation)
-          ? arbRes.finalSummary.levelC_homeopathicInterpretation
-          : ["Klassische Einzelfall-Repertorisation"],
+          : (baseOpenAspects.map(o => o.text)),
+        levelC_homeopathicInterpretation: cleanedLevelC,
         overallResult: arbRes.finalSummary?.overallResult || "Causa-Klärung durch Schiedsrichter abgeschlossen."
       } : null,
-      canonicalState: state?.canonicalState || null,
+      canonicalState: canonicalState,
       turnDurations: {
         geminiMs: geminiDurationMs,
         gptMs: gptDurationMs,
@@ -2945,7 +3342,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         latestAnswer = "",
         language = "de",
         mode = "gemini-only",
-        endprueferResult = null
+        endprueferResult = null,
+        canonicalSeed = null
       } = req.body;
 
       const activeMode = mode || state?.pipelineMode || "gemini-only";
@@ -2976,7 +3374,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
             latestAnswer,
             language,
             action,
-            activeEndprueferResult
+            activeEndprueferResult,
+            canonicalSeed
           }),
           executeGeminiOnlyTurn({
             ai,
@@ -2986,7 +3385,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
             state: branchBInputState,
             latestAnswer,
             language,
-            action
+            action,
+            canonicalSeed
           })
         ]);
 
@@ -3009,7 +3409,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
           state,
           latestAnswer,
           language,
-          action
+          action,
+          canonicalSeed
         });
 
         return res.json({ state: finalState });
@@ -3026,7 +3427,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         latestAnswer,
         language,
         action,
-        activeEndprueferResult
+        activeEndprueferResult,
+        canonicalSeed
       });
 
       return res.json({ state: finalState });

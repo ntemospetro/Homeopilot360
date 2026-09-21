@@ -21,7 +21,8 @@ export async function initCausaVertiefung(
         existingCausaText,
         language,
         mode,
-        endprueferResult: endprueferResult || null
+        endprueferResult: endprueferResult || null,
+        canonicalSeed
       })
     });
 

@@ -1,4 +1,17 @@
-export type CausaEvidenceStatus = 'EXPLICIT' | 'DENIED' | 'UNCERTAIN' | 'AMBIGUOUS' | 'UNKNOWN' | 'CONFLICT';
+export type CausaEvidenceStatus = 
+  | 'EXPLICIT' 
+  | 'DENIED' 
+  | 'UNCERTAIN' 
+  | 'AMBIGUOUS' 
+  | 'UNKNOWN' 
+  | 'CONFLICT'
+  | 'BELEGT_FAKTISCH'
+  | 'UNSICHER'
+  | 'NICHT_ERINNERLICH'
+  | 'AUSDRÜCKLICH_VERNEINT'
+  | 'WIDERSPRÜCHLICH'
+  | 'MEHRDEUTIG'
+  | 'UNERHOBEN';
 
 export interface CausaEvidenceItem {
   id: string;
@@ -8,16 +21,33 @@ export interface CausaEvidenceItem {
   source: string;
   assignedSymptom: string;
   dimension?: string;
+  dimensionId?: string;
+  episodeId?: string;
+  patientConfidence?: string;
+  epistemicRelation?: string;
+  semanticTarget?: string;
 }
 
 export interface CausaKnownItem {
   text: string;
   evidence: string;
+  dimension?: string;
+  dimensionId?: string;
+  factId?: string;
+  semanticTarget?: string;
+  status?: CausaEvidenceStatus;
 }
 
 export interface CausaOpenItem {
+  id?: string;
   text: string;
   reason: string;
+  dimensionId?: string;
+  dimension?: string;
+  semanticTarget?: string;
+  clarifiable?: boolean;
+  priority?: 'HOCH' | 'MITTEL' | 'NIEDRIG';
+  existingEvidenceSnippet?: string;
 }
 
 export interface CausaQuestion {

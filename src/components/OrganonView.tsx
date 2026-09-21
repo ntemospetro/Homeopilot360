@@ -7,7 +7,6 @@ import { CausaVertiefungModal } from './CausaVertiefungModal';
 import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
 import { OrganonStage2WorkflowModal } from './OrganonStage2WorkflowModal';
 import { Stage2Category } from '../types/organonStage2Workflow';
-import { OrganonProcessingStatus } from './OrganonProcessingStatus';
 import { motion } from 'motion/react';
 import { 
   isSpeechRecognitionSupported, 
@@ -1535,46 +1534,6 @@ export const OrganonView: React.FC = () => {
               </div>
             )}
 
-            {/* Real Organon Processing Status for Stage 1 */}
-            {isProcessing && (
-              <div className="pt-2">
-                <OrganonProcessingStatus
-                  title={t('organonProcessingStage1Title')}
-                  subtitle={t('organonProcessingStage1Subtitle')}
-                  steps={
-                    enableHahnemannCrossCheck
-                      ? [
-                          {
-                            id: 'analysis',
-                            label: t('organonProcessingAnalysisStep'),
-                            status: 'active'
-                          },
-                          {
-                            id: 'crosscheck',
-                            label: t('organonProcessingCrossCheckStep'),
-                            status: 'active'
-                          },
-                          {
-                            id: 'arbitration',
-                            label: t('organonProcessingArbitrationStep'),
-                            status: 'pending'
-                          }
-                        ]
-                      : [
-                          {
-                            id: 'analysis',
-                            label: t('organonProcessingAnalysisStep'),
-                            status: 'active'
-                          }
-                        ]
-                  }
-                  error={errorMessage || null}
-                  methodologicalNote={t('organonProcessingMethodNote1')}
-                  theme="light"
-                />
-              </div>
-            )}
-
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-slate-100 gap-4">
               <div className="flex flex-col gap-2.5">
                 {/* Switch 1: GPT-4o Pro Vergleich (Zweitmeinung) */}
@@ -1757,19 +1716,9 @@ export const OrganonView: React.FC = () => {
                     {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
                     {activeTab === 'arbitrator' && (
                       isArbitrating ? (
-                        <div className="p-4">
-                          <OrganonProcessingStatus
-                            title={t('organonStrictArbiterLabel')}
-                            subtitle={t('organonArbitrationLoading')}
-                            steps={[
-                              {
-                                id: 'arb-step',
-                                label: t('organonProcessingArbitrationStep'),
-                                status: 'active'
-                              }
-                            ]}
-                            theme="light"
-                          />
+                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
+                          <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
+                          <p className="text-sm font-semibold text-slate-800">{t('organonArbitrationLoading')}</p>
                         </div>
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
@@ -1788,19 +1737,9 @@ export const OrganonView: React.FC = () => {
                     )}
                     {activeTab === 'endpruefer' && (
                       isEndpruefend ? (
-                        <div className="p-4">
-                          <OrganonProcessingStatus
-                            title={t('organonEndprueferTabLabel')}
-                            subtitle={t('organonEndprueferLoading')}
-                            steps={[
-                              {
-                                id: 'endpruefer-step',
-                                label: t('organonProcessingArbitrationStep'),
-                                status: 'active'
-                              }
-                            ]}
-                            theme="light"
-                          />
+                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
+                          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+                          <p className="text-sm font-semibold text-slate-800">{t('organonEndprueferLoading')}</p>
                         </div>
                       ) : endprueferResult ? (
                         renderEndprueferView(endprueferResult)
@@ -1875,19 +1814,9 @@ export const OrganonView: React.FC = () => {
                         )}
                       </div>
                       {isArbitrating ? (
-                        <div className="p-4">
-                          <OrganonProcessingStatus
-                            title={t('organonStrictArbiterLabel')}
-                            subtitle={t('organonArbitrationLoading')}
-                            steps={[
-                              {
-                                id: 'arb-step-side',
-                                label: t('organonProcessingArbitrationStep'),
-                                status: 'active'
-                              }
-                            ]}
-                            theme="light"
-                          />
+                        <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
+                          <RefreshCw className="w-6 h-6 animate-spin text-purple-600 mx-auto" />
+                          <p className="text-xs font-semibold text-slate-700">{t('organonArbitrationLoading')}</p>
                         </div>
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
@@ -1913,19 +1842,9 @@ export const OrganonView: React.FC = () => {
                       )}
                     </div>
                     {isEndpruefend ? (
-                      <div className="p-4">
-                        <OrganonProcessingStatus
-                          title={t('organonEndprueferTabLabel')}
-                          subtitle={t('organonEndprueferLoading')}
-                          steps={[
-                            {
-                              id: 'endpruefer-step-side',
-                              label: t('organonProcessingArbitrationStep'),
-                              status: 'active'
-                            }
-                          ]}
-                          theme="light"
-                        />
+                      <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
+                        <RefreshCw className="w-6 h-6 animate-spin text-emerald-600 mx-auto" />
+                        <p className="text-xs font-semibold text-slate-700">{t('organonEndprueferLoading')}</p>
                       </div>
                     ) : endprueferResult ? (
                       renderEndprueferView(endprueferResult)
@@ -1991,19 +1910,9 @@ export const OrganonView: React.FC = () => {
                     {activeTab === 'openai' && renderThreeStageView(compareResult.openai, "GPT-4o Pro")}
                     {activeTab === 'arbitrator' && (
                       isArbitrating ? (
-                        <div className="p-4">
-                          <OrganonProcessingStatus
-                            title={t('organonStrictArbiterLabel')}
-                            subtitle={t('organonArbitrationLoading')}
-                            steps={[
-                              {
-                                id: 'arb-step-tab2',
-                                label: t('organonProcessingArbitrationStep'),
-                                status: 'active'
-                              }
-                            ]}
-                            theme="light"
-                          />
+                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
+                          <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
+                          <p className="text-sm font-semibold text-slate-800">{t('organonArbitrationLoading')}</p>
                         </div>
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
@@ -2022,19 +1931,9 @@ export const OrganonView: React.FC = () => {
                     )}
                     {activeTab === 'endpruefer' && (
                       isEndpruefend ? (
-                        <div className="p-4">
-                          <OrganonProcessingStatus
-                            title={t('organonEndprueferTabLabel')}
-                            subtitle={t('organonEndprueferLoading')}
-                            steps={[
-                              {
-                                id: 'endpruefer-step-tab2',
-                                label: t('organonProcessingArbitrationStep'),
-                                status: 'active'
-                              }
-                            ]}
-                            theme="light"
-                          />
+                        <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
+                          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+                          <p className="text-sm font-semibold text-slate-800">{t('organonEndprueferLoading')}</p>
                         </div>
                       ) : endprueferResult ? (
                         renderEndprueferView(endprueferResult)

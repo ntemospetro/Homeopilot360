@@ -25,7 +25,6 @@ import {
   OrganonOpenIssueType
 } from '../types/organonGlobalReview';
 import { runOrganonGlobalReview, processClarificationResponse } from '../services/organonGlobalReviewService';
-import { OrganonProcessingStatus } from './OrganonProcessingStatus';
 
 export interface OrganonGlobalReviewViewProps {
   rawText: string;
@@ -54,7 +53,6 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
   const [clarificationInput, setClarificationInput] = useState<string>('');
   const [activeIssue, setActiveIssue] = useState<OrganonOpenIssue | null>(null);
   const [isReviewLoading, setIsReviewLoading] = useState<boolean>(false);
-  const [isClarificationSubmitting, setIsClarificationSubmitting] = useState<boolean>(false);
 
   // Trigger review execution
   const executeReview = async (
@@ -102,24 +100,19 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
     const answerToUse = customAnswer !== undefined ? customAnswer : clarificationInput;
     if (!activeIssue || (!answerToUse.trim() && customAnswer === undefined)) return;
 
-    setIsClarificationSubmitting(true);
-    try {
-      const { updatedRecords, clarificationTurn } = processClarificationResponse(
-        records as any,
-        activeIssue,
-        answerToUse
-      );
+    const { updatedRecords, clarificationTurn } = processClarificationResponse(
+      records as any,
+      activeIssue,
+      answerToUse
+    );
 
-      const nextHistory = [...clarificationHistory, clarificationTurn];
-      onUpdateRecords(updatedRecords);
-      setClarificationHistory(nextHistory);
-      setClarificationInput('');
+    const nextHistory = [...clarificationHistory, clarificationTurn];
+    onUpdateRecords(updatedRecords);
+    setClarificationHistory(nextHistory);
+    setClarificationInput('');
 
-      // Re-check after updating state
-      await executeReview(updatedRecords as any, nextHistory);
-    } finally {
-      setIsClarificationSubmitting(false);
-    }
+    // Re-check after updating state
+    await executeReview(updatedRecords as any, nextHistory);
   };
 
   const getIssueTypeLabel = (type: OrganonOpenIssueType): string => {
@@ -156,33 +149,38 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
     <div id="organon-stage2-global-review" className="w-full flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-900">
       {/* ================= STATE 1: GLOBAL REVIEW RUNNING ================= */}
       {reviewStepState === 'GLOBAL_REVIEW_RUNNING' && (
-        <OrganonProcessingStatus
-          title={t('organonProcessingGlobalReviewTitle')}
-          subtitle={t('organonProcessingGlobalReviewSubtitle')}
-          steps={[
-            {
-              id: 'global-review-eval',
-              label: isReviewLoading ? t('organonProcessingGlobalReviewStep') : t('organonProcessingGlobalReviewStepDone'),
-              status: isReviewLoading ? 'active' : 'completed',
-              subtext: t('stage2ReviewRunningDesc')
-            }
-          ]}
-          methodologicalNote={t('organonProcessingMethodNote2')}
-          fallbackNotice={reviewResult?.meta?.isLocalFallback ? t('organonProcessingFallbackNotice') : undefined}
-          theme="dark"
-        />
+        <div className="p-8 rounded-2xl bg-gradient-to-br from-slate-850 to-indigo-950/40 border border-indigo-500/30 shadow-xl flex flex-col items-center text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-7 h-7 animate-pulse text-indigo-400" />
+          </div>
+          <div className="space-y-1 max-w-lg">
+            <h3 className="text-lg font-bold text-white tracking-tight">
+              {t('stage2ReviewRunningTitle')}
+            </h3>
+            <p className="text-xs text-indigo-200/80 leading-relaxed">
+              {t('stage2ReviewRunningDesc')}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+            <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
+              Vollständigkeit (§§ 84–86)
+            </span>
+            <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
+              Konsistenzprüfung
+            </span>
+            <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
+              Eindeutige Zuordnung
+            </span>
+            <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
+              Evidence-Ceiling-Treue
+            </span>
+          </div>
+        </div>
       )}
 
       {/* ================= STATE 2: GLOBAL REVIEW COMPLETE (ISSUES DETECTED) ================= */}
       {reviewStepState === 'GLOBAL_REVIEW_COMPLETE' && reviewResult && (
         <div className="space-y-6">
-          {reviewResult.meta?.isLocalFallback && (
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-amber-200/90 text-xs">
-              <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <span className="leading-relaxed">{t('organonProcessingFallbackNotice')}</span>
-            </div>
-          )}
-
           <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-850 to-amber-950/30 border border-amber-500/30 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center justify-center shrink-0">
@@ -338,70 +336,54 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
             </p>
           </div>
 
-          {/* Input & Action Area or Processing Status */}
-          {isClarificationSubmitting ? (
-            <OrganonProcessingStatus
-              title={t('organonProcessingClarificationTitle')}
-              subtitle={t('organonProcessingClarificationSubtitle')}
-              steps={[
-                {
-                  id: 'clarification-step',
-                  label: t('organonProcessingClarificationStep'),
-                  status: 'active'
-                }
-              ]}
-              methodologicalNote={t('organonProcessingMethodNote1')}
-              theme="dark"
+          {/* Input & Action Area */}
+          <div className="space-y-3">
+            <textarea
+              id="organon-clarification-input"
+              rows={3}
+              value={clarificationInput}
+              onChange={(e) => setClarificationInput(e.target.value)}
+              placeholder={t('stage2ClarificationInputPlaceholder')}
+              className="w-full p-3.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 resize-none leading-relaxed"
             />
-          ) : (
-            <div className="space-y-3">
-              <textarea
-                id="organon-clarification-input"
-                rows={3}
-                value={clarificationInput}
-                onChange={(e) => setClarificationInput(e.target.value)}
-                placeholder={t('stage2ClarificationInputPlaceholder')}
-                className="w-full p-3.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 resize-none leading-relaxed"
-              />
 
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                <div className="flex items-center gap-2">
-                  {/* Das weiß ich nicht mehr / Nicht erinnerlich */}
-                  <button
-                    id="organon-clarification-not-remembered-btn"
-                    type="button"
-                    onClick={() => handleSubmitClarification('Das weiß ich nicht mehr')}
-                    className="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors cursor-pointer"
-                    title="Weg als nicht weiter klärbar schließen und als Restunsicherheit dokumentieren"
-                  >
-                    {t('stage2NotRememberedBtn')}
-                  </button>
-
-                  {/* Als Restunsicherheit belassen */}
-                  <button
-                    id="organon-clarification-skip-btn"
-                    type="button"
-                    onClick={() => handleSubmitClarification('Als unlösbare Restunsicherheit belassen')}
-                    className="px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
-                  >
-                    {t('stage2SkipClarificationBtn')}
-                  </button>
-                </div>
-
-                {/* Submit Answer & Re-Check */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div className="flex items-center gap-2">
+                {/* Das weiß ich nicht mehr / Nicht erinnerlich */}
                 <button
-                  id="organon-clarification-submit-btn"
+                  id="organon-clarification-not-remembered-btn"
                   type="button"
-                  disabled={!clarificationInput.trim()}
-                  onClick={() => handleSubmitClarification()}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                  onClick={() => handleSubmitClarification('Das weiß ich nicht mehr')}
+                  className="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors cursor-pointer"
+                  title="Weg als nicht weiter klärbar schließen und als Restunsicherheit dokumentieren"
                 >
-                  <span>{t('stage2SubmitClarificationBtn')}</span>
-                  <Send className="w-3.5 h-3.5" />
+                  {t('stage2NotRememberedBtn')}
+                </button>
+
+                {/* Als Restunsicherheit belassen */}
+                <button
+                  id="organon-clarification-skip-btn"
+                  type="button"
+                  onClick={() => handleSubmitClarification('Als unlösbare Restunsicherheit belassen')}
+                  className="px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                >
+                  {t('stage2SkipClarificationBtn')}
                 </button>
               </div>
+
+              {/* Submit Answer & Re-Check */}
+              <button
+                id="organon-clarification-submit-btn"
+                type="button"
+                disabled={!clarificationInput.trim()}
+                onClick={() => handleSubmitClarification()}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span>{t('stage2SubmitClarificationBtn')}</span>
+                <Send className="w-3.5 h-3.5" />
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
 

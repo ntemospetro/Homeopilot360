@@ -428,7 +428,8 @@ export async function runGeminiOnlyCausaDeepen(
   endprueferResult: any | null,
   existingCausaText: string = "",
   history: Array<{ question: string; answer: string; orientationExample?: string }>,
-  language: string = "de"
+  language: string = "de",
+  canonicalState?: any
 ): Promise<GeminiOnlyCausaResult> {
   // 1. Extraktion der finalen Causa-Evidenz aus dem Stage-1-Endprüfer
   let endprueferCausaSummary = "Kein Endprüfer-Ergebnis vorhanden.";
@@ -452,6 +453,16 @@ export async function runGeminiOnlyCausaDeepen(
     endprueferCausaSummary = `Vorherige Causa-Angabe: "${existingCausaText}"`;
   }
 
+  const knownFactsList = Array.isArray(canonicalState?.facts) && canonicalState.facts.length > 0
+    ? canonicalState.facts.map((f: any) => `- [${f.dimensionId}] "${f.normalizedValue?.text || f.evidenceText}" (Evidenz: "${f.evidenceText || ''}", Status: ${f.epistemicStatus})`).join('\n')
+    : (Array.isArray(canonicalState?.knownFacts) && canonicalState.knownFacts.length > 0
+        ? canonicalState.knownFacts.map((k: any) => `- [${k.dimension || 'C1'}] "${k.text}" (Evidenz: "${k.evidence || ''}")`).join('\n')
+        : "Noch keine vorvalidierten Einzelfakten vorhanden.");
+
+  const terminalPathsList = Array.isArray(canonicalState?.terminalPaths) && canonicalState.terminalPaths.length > 0
+    ? canonicalState.terminalPaths.map((tp: string) => `- GESPERRT: ${tp}`).join('\n')
+    : "Keine gesperrten Pfade.";
+
   const prompt = `Du bist die eigenständige Causa-Vertiefungs-Engine nach Samuel Hahnemann (Organon §§ 83–104).
 Deine Aufgabe ist die methodisch unvoreingenommene, präzise Aufdeckung, Strukturierung und Klärung möglicher Krankheitsursachen (Causa) im Patientengespräch.
 
@@ -464,7 +475,13 @@ ${endprueferCausaSummary}
 2. ORIGINALER PATIENTENTEXT (O-Ton des Patienten):
 """${rawText}"""
 
-3. BISHERIGER GESPRÄCHSVERLAUF:
+3. BEREITS EVIDENZBELEGTE FAKTEN (NICHT ERNEUT ERFRAGEN!):
+${knownFactsList}
+
+4. GESPERRTE PFADE (TERMINAL PATHS / NICHT ERINNERLICH / VOLLSTÄNDIG ABGESCHLOSSEN):
+${terminalPathsList}
+
+5. BISHERIGER GESPRÄCHSVERLAUF:
 ${history.map((h, i) => `[Turn ${i + 1}] Frage: "${h.question}"\n-> Patientenantwort: "${h.answer}"`).join('\n\n') || "Noch keine Vorfragen gestellt (Initialer Einstieg Turn 1)."}
 
 ZIELSPRACHE: ${language}
@@ -476,40 +493,30 @@ VERBINDLICHE METHODISCHE GESETZE (UNVERÄNDERT DURCHZUSETZEN):
    - Jede Tatsache ("factText") MUSS durch ein wörtliches Zitat ("originalQuote") aus dem Originaltext oder den Antworten belegt sein.
    - Es ist STRENGSTENS VERBOTEN, Annahmen, Vermutungen oder Deutungen als bewiesene Tatsachen auszugeben.
 
-2. ZEITLICHE BEZIEHUNG ≠ KAUSALITÄT:
+2. STRENGES FRAGEVERBOT FÜR BEREITS BELEGTE FAKTEN:
+   - Wenn ein atomares Informationsziel (z. B. Beginnzeitpunkt in C1 wie 'vorgestern' oder 'nach Spaziergang') bereits unter BEREITS EVIDENZBELEGTE FAKTEN steht, ist es STRENGSTENS VERBOTEN, diesen Sachverhalt erneut abzufragen!
+   - Frage NIEMALS: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum ersten Mal auftraten?", wenn der Beginn bereits belegt ist!
+
+3. KEINE FRAGE ZU GESPERRTEN PFADEN (NICHT_ERINNERLICH):
+   - Wenn der Patient sagt "Ich kann mich an kein Ereignis erinnern" oder "Weiß ich nicht", oder der Pfad unter GESPERRTE PFADE steht, ist dies endgültig. Frage NIEMALS dieselbe Frage erneut, sondern schließe den Pfad ab.
+
+4. ZEITLICHE BEZIEHUNG ≠ KAUSALITÄT:
    - "Seit der Grippe habe ich Kopfschmerzen" belegt ausschließlich eine zeitliche Chronologie (ZEITLICHE_KOINZIDENZ).
    - Eine zeitliche Reihenfolge beweist NIEMALS eine Kausalität!
 
-3. PATIENTENHYPOTHESE ≠ BEWIESENE URSACHE:
+5. PATIENTENHYPOTHESE ≠ BEWIESENE URSACHE:
    - Wenn der Patient vermutet ("Ich glaube, die Kälte war schuld"), ist dies epistemisch eine "SUBJEKTIVE_HYPOTHESE" mit Patient Confidence "VERMUTUNG".
 
-4. CAUSA ≠ MODALITÄT:
+6. CAUSA ≠ MODALITÄT:
    - Causa ist ausschließlich das auslösende Ereignis oder die krankmachende Einwirkung (§§ 83–104).
    - Modalitäten (Besserung durch Wärme, Verschlimmerung bei Bewegung) und Lokalsymptome sind KEINE Causa! Frage niemals nach Modalitäten.
 
-5. NICHT_ERINNERLICH ≠ VERNEINUNG:
-   - Wenn der Patient sagt "Ich kann mich an kein Ereignis erinnern" oder "Weiß ich nicht", ist das "NICHT_ERINNERLICH" (nicht: "AUSDRÜCKLICH_VERNEINT").
-   - Frage NIEMALS dieselbe Frage erneut, wenn der Patient bereits gesagt hat, dass er sich nicht erinnert.
+7. EPISODEN-TRENNUNG:
+   - Trenne Tatsachen strikt nach Episoden (EP_INITIAL, EP_RECURRENT, EP_SINGLE_EXERTION, EP_CHRONIC_EXPOSURE, EP_HISTORICAL).
 
-6. EPISODEN-TRENNUNG:
-   - Trenne Tatsachen strikt nach Episoden:
-     - EP_INITIAL: Erstbeginn der Beschwerden
-     - EP_RECURRENT: Wiederkehrende spätere Anfälle
-     - EP_SINGLE_EXERTION: Einmalige Einwirkung/Überanstrengung
-     - EP_CHRONIC_EXPOSURE: Dauerhafte Einwirkung (z. B. feuchter Arbeitsplatz)
-     - EP_HISTORICAL: Frühere, andere Vorerkrankungen/Vorzustände
-
-7. FRAGENTRICHTER (OPEN-FIRST):
-   - Stufe 1: Offene Frage (z. B. "Was erinnern Sie noch von der Zeit, als dies zum ersten Mal auftrat?")
-   - Stufe 2: Fokussiert-offene Frage (wenn bereits ein Faktor genannt wurde, z. B. der Infekt)
-   - Stufe 3: Wahlhilfe / Konkretisierung (nur wenn der Patient stockt oder unsicher ist)
-   - NIEMALS suggestiv fragen! Keine Antwortoptionen suggerieren (z. B. NICHT: "War es ein Schock oder Zugluft?").
-   - IMMER GENAU EINE EINZELNE FRAGE (keine Doppelfragen).
-
-8. STOPP-REGEL & KEINE FESTE FRAGENZAHL:
-   - Es gibt keine Pflicht, alle 13 Dimensionen abzufragen!
-   - Es gibt keine feste maximale Fragenzahl.
-   - Stoppe (isFinished = true), sobald die im konkreten Fall relevanten, sinnvoll erhebbaren Causa-Aspekte ausreichend geklärt sind ODER nicht weiter klärbar/obsolet sind.
+8. STOPP-REGEL & DETERMINISTISCHE KONVERGENZ:
+   - Es gibt KEINE Pflicht, alle 13 Dimensionen abzufragen! UNERHOBEN allein ist KEIN Fragegrund!
+   - Stoppe (isFinished = true, nextQuestion = null), sobald die im konkreten Fall relevanten, sinnvoll erhebbaren Causa-Aspekte erhoben sind ODER keine weiteren sachdienlichen Fragen offen sind ODER keine Causa ermittelbar ist (§ 104).
    - GÜLTIGES, VOLLWERTIGES ENDERGEBNIS: "Keine ausreichend belegte Causa ermittelbar." Wenn kein Auslöser belegt ist, erzwinge keinen!
 
 DIE 13 CAUSA-DIMENSIONEN (C1–C13):
@@ -534,16 +541,15 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt dieser Struktur:
     }
   ],
   "dimensionStates": {
-    "C1": { "completion": "AUSREICHEND_ERHOBEN", "applicability": "APPLIKABEL", "summary": "..." },
-    "C3": { "completion": "TEILWEISE_ERHOBEN", "applicability": "APPLIKABEL", "summary": "..." }
+    "C1": { "completion": "TEILWEISE_ERHOBEN", "applicability": "APPLIKABEL", "summary": "..." }
   },
   "openAspects": [
-    { "text": "Was ist noch unklar?", "reason": "Warum ist dies für die Causa relevant?", "dimension": "C7" }
+    { "text": "Was ist noch unklar?", "reason": "Warum ist dies für die Causa relevant?", "dimension": "C3" }
   ],
   "nextQuestion": {
-    "questionText": "Die GENAU EINE nächste neutrale Einzelfrage an den Patienten",
+    "questionText": "Die GENAU EINE nächste neutrale Einzelfrage an den Patienten (oder null falls isFinished=true)",
     "orientationExample": "Hinweis/Orientierungsbeispiel für den Therapeuten",
-    "targetDimension": "C7",
+    "targetDimension": "C3",
     "reason": "Epistemische Begründung für genau diese Frage",
     "questionStage": 1
   },
@@ -575,6 +581,9 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt dieser Struktur:
     };
   } catch (parseErr) {
     console.error("[runGeminiOnlyCausaDeepen] JSON Parse Error:", parseErr, response.text);
+    const hasC1Evidence = (Array.isArray(canonicalState?.facts) && canonicalState.facts.some((f: any) => f.dimensionId === 'C1')) ||
+      (Array.isArray(canonicalState?.knownFacts) && canonicalState.knownFacts.some((k: any) => k.dimension === 'C1'));
+
     return {
       atomicFacts: existingCausaText ? [
         {
@@ -582,22 +591,24 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt dieser Struktur:
           factText: existingCausaText,
           originalQuote: rawText.slice(0, 100),
           episodeId: "EP_INITIAL",
-          dimensionId: "C1",
+          dimensionId: hasC1Evidence ? "C3" : "C1",
           factStatus: "BELEGT_FAKTISCH",
           patientConfidence: "SICHERE_BEOBACHTUNG",
           epistemicRelation: "ZEITLICHE_KOINZIDENZ"
         }
       ] : [],
       dimensionStates: {},
-      openAspects: [{ text: "Erstbeginn & Chronologie", reason: "Muss geklärt werden", dimension: "C1" }],
-      nextQuestion: {
+      openAspects: hasC1Evidence 
+        ? [{ text: "Mögliche Auslöser & Umstände", reason: "Klärung eventueller Einwirkungen", dimension: "C3" }]
+        : [{ text: "Erstbeginn & Chronologie", reason: "Ersterfassung des Beginns", dimension: "C1" }],
+      nextQuestion: hasC1Evidence ? null : {
         questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum allerersten Mal auftraten?",
         orientationExample: "Besondere Ereignisse, Umstände oder körperliche Verfassung.",
         targetDimension: "C1",
         reason: "Offene Erfassung des Beginns nach Fragentrichter Stufe 1.",
         questionStage: 1
       },
-      isFinished: false
+      isFinished: Boolean(hasC1Evidence)
     };
   }
 }

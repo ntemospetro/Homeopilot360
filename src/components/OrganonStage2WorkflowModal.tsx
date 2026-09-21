@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Check,
@@ -158,57 +158,34 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
     setGlobalHahnemannCrossCheck(initialHahnemannCrossCheck);
   }, [initialHahnemannCrossCheck]);
 
-  const prevIsOpenRef = useRef<boolean>(false);
-
-  // When workflow opens (true transition) or closes
-  useEffect(() => {
-    if (isOpen && !prevIsOpenRef.current) {
-      prevIsOpenRef.current = true;
-      setConfirmExitOpen(false);
-
-      let resumeIndex = 0;
-      const initialRecords: Partial<Record<Stage2Category, CategoryResultRecord>> = {};
-      STAGE2_CATEGORY_SEQUENCE.forEach((cat, idx) => {
-        const text = stage1Values[cat] || '';
-        const isDone = Boolean(text && text.trim().length > 0);
-        initialRecords[cat] = {
-          category: cat,
-          status: isDone ? 'COMPLETED' : 'PENDING',
-          text
-        };
-        if (isDone && resumeIndex === idx) {
-          resumeIndex = Math.min(idx + 1, STAGE2_CATEGORY_SEQUENCE.length - 1);
-        }
-      });
-      setRecords(initialRecords as Record<Stage2Category, CategoryResultRecord>);
-      setCurrentStepIndex(resumeIndex);
-    } else if (!isOpen) {
-      prevIsOpenRef.current = false;
-    }
-  }, [isOpen]);
-
-  // Synchronize stage1Values updates during active workflow without resetting step index
+  // When workflow opens or resets
   useEffect(() => {
     if (isOpen) {
+      setCurrentStepIndex(0);
+      setConfirmExitOpen(false);
+      // Initialize seed values
       setRecords((prev) => {
-        let changed = false;
         const updated = { ...prev };
         STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
           const s1Text = stage1Values[cat] || '';
-          if (s1Text && s1Text !== updated[cat]?.text) {
-            changed = true;
+          if (!updated[cat] || updated[cat].status === 'PENDING') {
+            updated[cat] = {
+              category: cat,
+              status: s1Text ? 'COMPLETED' : 'PENDING',
+              text: s1Text || updated[cat]?.text || ''
+            };
+          } else if (s1Text && s1Text !== updated[cat].text) {
+            // Keep synchronized with updated stage1Values from previous workflow/review
             updated[cat] = {
               ...updated[cat],
-              category: cat,
-              status: updated[cat]?.status === 'COMPLETED' ? 'COMPLETED' : (s1Text ? 'COMPLETED' : 'PENDING'),
               text: s1Text
             };
           }
         });
-        return changed ? updated : prev;
+        return updated;
       });
     }
-  }, [stage1Values, isOpen]);
+  }, [isOpen, stage1Values]);
 
   // Current active category
   const activeCategory: Stage2Category | null = useMemo(() => {

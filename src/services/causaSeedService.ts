@@ -99,15 +99,29 @@ export function determineFactStatusForStatement(text: string): EpistemicFactStat
 }
 
 /**
+ * Bereinigt Fallback-Text von homöopathischen Interpretationen oder Repertorisationstexten.
+ * Reines Patientenmaterial darf nicht mit Repertorisationen vermengt werden.
+ */
+export function sanitizeCausaPatientText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\(?\s*Homöopathische Interpretation:[^)]*\)?/gi, '')
+    .replace(/Klassische Einzelfall-Repertorisation/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/**
  * Überführt ein validiertes Organon-Endprüfer-Ergebnis (und den unveränderten Patienten-Rohtext)
  * in einen initialen, konsistenten CanonicalCausaState (Causa-Seed).
  * 
- * WICHTIG (Evidence Ceiling & No-Hallucination):
- * - Nur Claims, die vom Endprüfer als gestützt (is_supported !== false bzw. freigegeben) bewertet wurden,
- *   werden als belegte Facts übernommen.
- * - Liegt in der Voranalyse noch keine belegte Causa vor, wird ein sauberer Causa-State mit C1-C13
- *   initialisiert, ohne eine Ursache zu halluzinieren.
- * - C3 bleibt bei Unbenennbarkeit ("kann kein Ereignis nennen") TEILWEISE_ERHOBEN / NICHT_ERINNERLICH.
+ * BINDENDE REGELN:
+ * 1. Vollständiger Datenimport: Liest alle relevanten Endprüfer-Kategorien (Causa, Localisatio,
+ *    Modalitates, Comorbiditas, Symptomata concomitantia, Animus/Mens) aus.
+ * 2. FactStatus und DimensionCompletion bleiben getrennt:
+ *    Ein Fact kann BELEGT_FAKTISCH sein, die DimensionCompletion bleibt dennoch TEILWEISE_ERHOBEN.
+ * 3. Keine Repertorisationstexte in Patientenfakten.
+ * 4. NICHT_ERINNERLICH erzeugt einen Eintrag in terminalPaths.
  */
 export function seedCausaStateFromOrganonEndpruefer(
   rawText: string,
@@ -120,104 +134,186 @@ export function seedCausaStateFromOrganonEndpruefer(
   const terminalPaths: string[] = [];
 
   const cleanRaw = (rawText || '').trim();
+  const sanitizedFallback = sanitizeCausaPatientText(existingCausaFallbackText);
 
-  // 1. Suche die Causa-Kategorie im Endprüfer
-  let causaCategoryDecision: EndprueferCategoryDecision | null = null;
-  if (endprueferResult && Array.isArray(endprueferResult.category_checks)) {
-    causaCategoryDecision = endprueferResult.category_checks.find((c) => {
-      const catLower = (c.category || '').toLowerCase();
-      return catLower.includes('causa') || catLower.includes('auslöser') || catLower.includes('ursache');
-    }) || null;
-  }
+  // Helper zum Hinzufügen von atomaren Fakten mit semantischer Deduplizierung
+  const addFact = (
+    dimId: CausaDimensionId,
+    factType: string,
+    evidenceText: string,
+    claimText: string,
+    semanticTarget: string,
+    forceStatus?: EpistemicFactStatus
+  ) => {
+    if (!claimText || !claimText.trim()) return;
+    const cleanClaim = claimText.trim();
+    // Prüfen, ob für dieses semantische Ziel bereits ein identischer oder gleichwertiger Fakt vorliegt
+    const isDuplicate = facts.some(f => 
+      f.dimensionId === dimId && 
+      (f.normalizedValue?.semanticTarget === semanticTarget || f.evidenceText === evidenceText || f.normalizedValue?.text === cleanClaim)
+    );
+    if (isDuplicate) return;
 
-  // 2. Extrahiere validierte atomare Claims oder nutze die freigegebene/korrigierte Causa
-  if (causaCategoryDecision) {
-    const isCorrectionReq = causaCategoryDecision.decision === 'CORRECTION_REQUIRED';
-    const approvedText = isCorrectionReq && causaCategoryDecision.minimal_correction
-      ? causaCategoryDecision.minimal_correction
-      : causaCategoryDecision.schiedsrichter_result;
-
-    const atomicClaims = causaCategoryDecision.atomic_claims || [];
-    const supportedClaims = atomicClaims.filter(ac => ac.is_supported !== false && ac.decision === 'CORRECT');
-
-    if (supportedClaims.length > 0) {
-      // Wenn der Endprüfer bereits atomare Claims validiert hat:
-      supportedClaims.forEach((ac, idx) => {
-        const snippet = ac.raw_text_snippet || cleanRaw.slice(0, 80);
-        const status = determineFactStatusForStatement(ac.claim + ' ' + (snippet || ''));
-        const confidence = detectEpistemicConfidence(ac.claim + ' ' + (snippet || ''));
-
-        // C3-Check: Wenn unbenennbar, C3 teil-erheben
-        const isC3Mention = ac.claim.toLowerCase().includes('ereignis') || ac.claim.toLowerCase().includes('anlass');
-        const dimId: CausaDimensionId = isC3Mention ? 'C3' : 'C8';
-
-        facts.push({
-          factId: `SEED_F0${idx + 1}`,
-          dimensionId: dimId,
-          factType: isC3Mention ? 'konkretes_ereignis' : 'voranalyse_causa_claim',
-          evidenceText: snippet || ac.claim,
-          sourceTurn: 0,
-          episodeId: 'EP_INITIAL',
-          normalizedValue: {
-            text: ac.claim,
-            epistemischerQualifikator: confidence === 'UNSICHER_SCHWANKEND' ? 'unsicher' : undefined
-          },
-          epistemicStatus: status,
-          patientConfidence: confidence,
-          epistemicLink: status === 'BELEGT_FAKTISCH' ? 'ZEITLICHE_KOINZIDENZ' : 'SUBJEKTIVE_HYPOTHESE'
-        });
-
-        if (status === 'NICHT_ERINNERLICH') {
-          terminalPaths.push(`${dimId}: Konkreter Anlass/Ereignis vom Patienten nicht erinnerlich / nicht benennbar.`);
-        }
-      });
-    } else if (approvedText && !approvedText.toLowerCase().includes('keine angabe') && !approvedText.toLowerCase().includes('nicht angegeben')) {
-      // Einzelner validierter Causa-Text aus Endprüfer
-      const snippet = causaCategoryDecision.raw_text_snippet || cleanRaw.slice(0, 100);
-      const status = determineFactStatusForStatement(approvedText + ' ' + (snippet || ''));
-      const confidence = detectEpistemicConfidence(approvedText + ' ' + (snippet || ''));
-
-      facts.push({
-        factId: 'SEED_F01',
-        dimensionId: 'C8',
-        factType: 'organon_voranalyse_befund',
-        evidenceText: snippet || approvedText,
-        sourceTurn: 0,
-        episodeId: 'EP_INITIAL',
-        normalizedValue: {
-          text: approvedText
-        },
-        epistemicStatus: status,
-        patientConfidence: confidence,
-        epistemicLink: status === 'BELEGT_FAKTISCH' ? 'ZEITLICHE_KOINZIDENZ' : 'SUBJEKTIVE_HYPOTHESE'
-      });
-    }
-  } else if (existingCausaFallbackText && !existingCausaFallbackText.toLowerCase().includes('nicht angegeben') && !existingCausaFallbackText.toLowerCase().includes('keine angabe')) {
-    // Fallback: Text aus vorheriger Organon-Stufe vorhanden
-    const status = determineFactStatusForStatement(existingCausaFallbackText);
-    const confidence = detectEpistemicConfidence(existingCausaFallbackText);
+    const status = forceStatus || determineFactStatusForStatement(cleanClaim + ' ' + (evidenceText || ''));
+    const confidence = detectEpistemicConfidence(cleanClaim + ' ' + (evidenceText || ''));
 
     facts.push({
-      factId: 'SEED_FALLBACK_F01',
-      dimensionId: 'C8',
-      factType: 'organon_voranalyse_fallback',
-      evidenceText: existingCausaFallbackText,
+      factId: `SEED_F0${facts.length + 1}`,
+      dimensionId: dimId,
+      factType,
+      evidenceText: evidenceText || cleanClaim,
       sourceTurn: 0,
       episodeId: 'EP_INITIAL',
       normalizedValue: {
-        text: existingCausaFallbackText
+        text: cleanClaim,
+        semanticTarget,
+        epistemischerQualifikator: confidence === 'UNSICHER_SCHWANKEND' ? 'unsicher' : undefined
       },
       epistemicStatus: status,
       patientConfidence: confidence,
-      epistemicLink: 'SUBJEKTIVE_HYPOTHESE'
+      epistemicLink: status === 'BELEGT_FAKTISCH' ? 'ZEITLICHE_KOINZIDENZ' : 'SUBJEKTIVE_HYPOTHESE'
     });
+
+    if (status === 'NICHT_ERINNERLICH') {
+      const termEntry = `${dimId}:${semanticTarget} - Patient erinnert den Sachverhalt nicht. Nicht erneut erfragen.`;
+      if (!terminalPaths.includes(termEntry)) {
+        terminalPaths.push(termEntry);
+      }
+    }
+  };
+
+  // 1. Kategorien aus Endprüfer analysieren
+  if (endprueferResult && Array.isArray(endprueferResult.category_checks)) {
+    for (const catDecision of endprueferResult.category_checks) {
+      const catName = (catDecision.category || '').toLowerCase();
+      const isCorrectionReq = catDecision.decision === 'CORRECTION_REQUIRED';
+      const approvedText = isCorrectionReq && catDecision.minimal_correction
+        ? catDecision.minimal_correction
+        : catDecision.schiedsrichter_result;
+      const snippet = catDecision.raw_text_snippet || cleanRaw.slice(0, 100);
+
+      const atomicClaims = catDecision.atomic_claims || [];
+      const supportedClaims = atomicClaims.filter(ac => ac.is_supported !== false && ac.decision === 'CORRECT');
+
+      // A. CAUSA / AUSLÖSER
+      if (catName.includes('causa') || catName.includes('auslöser') || catName.includes('ursache')) {
+        if (supportedClaims.length > 0) {
+          supportedClaims.forEach(ac => {
+            const claimLower = ac.claim.toLowerCase();
+            const snip = ac.raw_text_snippet || snippet;
+            if (claimLower.includes('ereignis') || claimLower.includes('anlass') || claimLower.includes('vorfall')) {
+              addFact('C3', 'konkretes_ereignis', snip, ac.claim, 'c3_ereignis');
+            } else if (claimLower.includes('kälte') || claimLower.includes('wind') || claimLower.includes('nässe') || claimLower.includes('zugluft') || claimLower.includes('spaziergang')) {
+              addFact('C4', 'phaenomenologie_einwirkung', snip, ac.claim, 'c4_einwirkung');
+            } else if (claimLower.includes('glaube') || claimLower.includes('vermute') || claimLower.includes('unsicher')) {
+              addFact('C8', 'patienteneigene_zuschreibung', snip, ac.claim, 'c8_zuschreibung');
+            } else {
+              addFact('C8', 'causa_voranalyse_claim', snip, ac.claim, 'c8_zuschreibung');
+            }
+          });
+        } else if (approvedText && !approvedText.toLowerCase().includes('nicht angegeben') && !approvedText.toLowerCase().includes('keine angabe')) {
+          addFact('C8', 'causa_voranalyse_befund', snippet, approvedText, 'c8_zuschreibung');
+        }
+      }
+
+      // B. LOCALISATIO / SYMPTOM (Zeitlicher Beginn C1 & Chronologie C7)
+      if (catName.includes('localisatio') || catName.includes('symptom') || catName.includes('hauptbeschwerde')) {
+        const statementsToCheck = supportedClaims.length > 0 ? supportedClaims.map(ac => ({ text: ac.claim, snip: ac.raw_text_snippet || snippet })) : [{ text: approvedText, snip: snippet }];
+        for (const stmt of statementsToCheck) {
+          if (!stmt.text) continue;
+          const textLower = stmt.text.toLowerCase();
+          // C1: Chronologischer Erstbeginn
+          if (
+            textLower.includes('seit') ||
+            textLower.includes('vorgestern') ||
+            textLower.includes('gestern') ||
+            textLower.includes('tage') ||
+            textLower.includes('wochen') ||
+            textLower.includes('monate') ||
+            textLower.includes('stunden') ||
+            textLower.includes('plötzlich') ||
+            textLower.includes('allmählich') ||
+            textLower.includes('beginn')
+          ) {
+            addFact('C1', 'chronologischer_beginn', stmt.snip, stmt.text, 'c1_zeitpunkt_beginn');
+          }
+          // C7: Chronologie & Latenz (Reihenfolge nach Einwirkung)
+          if (
+            textLower.includes('nach rückkehr') ||
+            textLower.includes('nach dem spaziergang') ||
+            textLower.includes('zeitlich danach') ||
+            textLower.includes('danach') ||
+            textLower.includes('später') ||
+            textLower.includes('zunächst') ||
+            textLower.includes('erst nach')
+          ) {
+            addFact('C7', 'chronologie_latenz', stmt.snip, stmt.text, 'c7_latenz_reihenfolge');
+          }
+        }
+      }
+
+      // C. MODALITATES (Einwirkung & Begleitumstände C4 / C2)
+      if (catName.includes('modalit')) {
+        const statementsToCheck = supportedClaims.length > 0 ? supportedClaims.map(ac => ({ text: ac.claim, snip: ac.raw_text_snippet || snippet })) : [{ text: approvedText, snip: snippet }];
+        for (const stmt of statementsToCheck) {
+          if (!stmt.text) continue;
+          const textLower = stmt.text.toLowerCase();
+          if (textLower.includes('kälte') || textLower.includes('wind') || textLower.includes('wetter') || textLower.includes('zugluft') || textLower.includes('spaziergang')) {
+            addFact('C4', 'modalitaet_einwirkung', stmt.snip, stmt.text, 'c4_einwirkung');
+          }
+        }
+      }
+
+      // D. COMORBIDITAS / VORERKRANKUNGEN (Historischer Vorzustand C12)
+      if (catName.includes('comorbidit') || catName.includes('vorerkrankung') || catName.includes('anamnese')) {
+        const statementsToCheck = supportedClaims.length > 0 ? supportedClaims.map(ac => ({ text: ac.claim, snip: ac.raw_text_snippet || snippet })) : [{ text: approvedText, snip: snippet }];
+        for (const stmt of statementsToCheck) {
+          if (!stmt.text) continue;
+          const textLower = stmt.text.toLowerCase();
+          if (textLower.includes('früher') || textLower.includes('vorher') || textLower.includes('schon mal') || textLower.includes('erstmalig') || textLower.includes('noch nie')) {
+            addFact('C12', 'historischer_vorzustand', stmt.snip, stmt.text, 'c12_fruehere_beschwerden');
+          }
+        }
+      }
+
+      // E. ANIMUS / MENS (Organismischer Ausgangszustand C5 / Konkurrierende Faktoren C9)
+      if (catName.includes('animus') || catName.includes('mens') || catName.includes('gemüt')) {
+        const statementsToCheck = supportedClaims.length > 0 ? supportedClaims.map(ac => ({ text: ac.claim, snip: ac.raw_text_snippet || snippet })) : [{ text: approvedText, snip: snippet }];
+        for (const stmt of statementsToCheck) {
+          if (!stmt.text) continue;
+          const textLower = stmt.text.toLowerCase();
+          if (textLower.includes('stress') || textLower.includes('belastung') || textLower.includes('ärger') || textLower.includes('überarbeitung')) {
+            addFact('C9', 'konkurrierender_faktor_stress', stmt.snip, stmt.text, 'c9_stress_belastung');
+          }
+          if (textLower.includes('erschöpfung') || textLower.includes('müdigkeit') || textLower.includes('ausgelaugt')) {
+            addFact('C5', 'organismischer_ausgangszustand', stmt.snip, stmt.text, 'c5_organismischer_zustand');
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Bereinigten Fallback-Text berücksichtigen (falls noch keine Causa-Fakten vorliegen)
+  if (sanitizedFallback && !sanitizedFallback.toLowerCase().includes('nicht angegeben') && !sanitizedFallback.toLowerCase().includes('keine angabe')) {
+    addFact('C8', 'organon_voranalyse_fallback', sanitizedFallback, sanitizedFallback, 'c8_voranalyse_fallback');
   }
 
   // 3. Dimension Completion anhand der Seed-Facts aktualisieren
+  // WICHTIGE REGEL: FactStatus und DimensionCompletion bleiben strikt getrennt!
+  // Ein Fact kann BELEGT_FAKTISCH sein, die DimensionCompletion bleibt TEILWEISE_ERHOBEN.
+  // NICHT_WEITER_KLÄRBAR ist nur zulässig, wenn alle Fakten in dieser Dimension NICHT_ERINNERLICH sind.
   for (const fact of facts) {
     const dim = dimensions[fact.dimensionId];
     if (dim) {
-      if (dim.completion === 'UNERHOBEN') {
+      if (fact.epistemicStatus === 'NICHT_ERINNERLICH') {
+        const dimFacts = facts.filter(f => f.dimensionId === fact.dimensionId);
+        const allNotRemembered = dimFacts.length > 0 && dimFacts.every(f => f.epistemicStatus === 'NICHT_ERINNERLICH');
+        if (allNotRemembered) {
+          dim.completion = 'NICHT_WEITER_KLÄRBAR';
+        } else {
+          dim.completion = 'TEILWEISE_ERHOBEN';
+        }
+      } else if (dim.completion === 'UNERHOBEN') {
         dim.completion = 'TEILWEISE_ERHOBEN';
       }
     }

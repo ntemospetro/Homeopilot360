@@ -96,7 +96,6 @@ export interface OrganonGlobalReviewResult {
     noDiagnosticInference: boolean;
     noRepertorisationInference: boolean;
     crossCheckMode: 'gemini-only' | 'hahnemann-crosscheck';
-    isLocalFallback?: boolean;
   };
 }
 

@@ -30,13 +30,7 @@ export async function runOrganonGlobalReview(
     if (res.ok) {
       const data = await res.json();
       if (data && data.result) {
-        return {
-          ...(data.result as OrganonGlobalReviewResult),
-          meta: {
-            ...data.result.meta,
-            isLocalFallback: false
-          }
-        };
+        return data.result as OrganonGlobalReviewResult;
       }
     }
   } catch (err) {
@@ -44,14 +38,7 @@ export async function runOrganonGlobalReview(
   }
 
   // Lokaler deterministischer Fallback
-  const fallbackResult = executeOrganonGlobalReview(input);
-  return {
-    ...fallbackResult,
-    meta: {
-      ...fallbackResult.meta,
-      isLocalFallback: true
-    }
-  };
+  return executeOrganonGlobalReview(input);
 }
 
 /**

@@ -92,7 +92,6 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const recognitionRef = useRef<SpeechRecognitionSession | null>(null);
   const timerIntervalRef = useRef<number | null>(null);
   const recordingBaseTextRef = useRef<string>('');
-  const [hasStarted, setHasStarted] = useState<boolean>(false);
   const lastSpokenTranscriptRef = useRef<string>('');
   const isFinalizingRef = useRef<boolean>(false);
 
@@ -104,17 +103,9 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
       setShowHistory(false);
       setShowEvidence(false);
       setShowAgentProposals(true);
-      setHasStarted(false);
-      setState(null);
-      setStateA(null);
-      setStateB(null);
+      loadInitialState(mode);
     }
   }, [isOpen, rawText, existingCausaText, endprueferResult, hahnemannCrossCheck]);
-
-  const handleStartAnalysis = () => {
-    setHasStarted(true);
-    loadInitialState(activeMode);
-  };
 
   const loadInitialState = async (modeToUse: 'gemini-only' | '3-tier' | 'ab-compare' = activeMode) => {
     setLoading(true);
@@ -280,8 +271,10 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const handleAdopt = () => {
     if (state?.finalSummary) {
       const summaryA = (state.finalSummary.levelA_patientReported || []).join('; ');
-      const summaryC = (state.finalSummary.levelC_homeopathicInterpretation || []).join('; ');
-      const textToAdopt = `${summaryA}${summaryC ? ` (Homöopathische Interpretation: ${summaryC})` : ''}`;
+      const rawC = (state.finalSummary.levelC_homeopathicInterpretation || [])
+        .filter(c => c && !c.includes('Klassische Einzelfall-Repertorisation'))
+        .join('; ');
+      const textToAdopt = rawC ? `${summaryA} (${rawC})` : summaryA;
       if (onAdoptCausa) {
         onAdoptCausa(textToAdopt);
       }
@@ -297,8 +290,10 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const handleAdoptBranch = (branchState: CausaVertiefungState | null) => {
     if (branchState?.finalSummary) {
       const summaryA = (branchState.finalSummary.levelA_patientReported || []).join('; ');
-      const summaryC = (branchState.finalSummary.levelC_homeopathicInterpretation || []).join('; ');
-      const textToAdopt = `${summaryA}${summaryC ? ` (Homöopathische Interpretation: ${summaryC})` : ''}`;
+      const rawC = (branchState.finalSummary.levelC_homeopathicInterpretation || [])
+        .filter(c => c && !c.includes('Klassische Einzelfall-Repertorisation'))
+        .join('; ');
+      const textToAdopt = rawC ? `${summaryA} (${rawC})` : summaryA;
       if (onAdoptCausa) {
         onAdoptCausa(textToAdopt);
       }
@@ -314,30 +309,41 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const renderStatusBadge = (status: CausaEvidenceStatus) => {
     switch (status) {
       case 'EXPLICIT':
+      case 'BELEGT_FAKTISCH':
         return (
           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
             {t('causaStatusExplicit')}
           </span>
         );
       case 'DENIED':
+      case 'AUSDRÜCKLICH_VERNEINT':
         return (
           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
             {t('causaStatusDenied')}
           </span>
         );
       case 'UNCERTAIN':
+      case 'UNSICHER':
         return (
           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
             {t('causaStatusUncertain')}
           </span>
         );
+      case 'NICHT_ERINNERLICH':
+        return (
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-800 border border-slate-300">
+            {t('stage2NotRememberedBtn')}
+          </span>
+        );
       case 'AMBIGUOUS':
+      case 'MEHRDEUTIG':
         return (
           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
             {t('causaStatusAmbiguous')}
           </span>
         );
       case 'CONFLICT':
+      case 'WIDERSPRÜCHLICH':
         return (
           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
             {t('causaStatusConflict')}
@@ -765,57 +771,6 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   };
 
   if (!isOpen) return null;
-
-  if (!hasStarted) {
-    const startPromptContent = (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center space-y-6 bg-slate-900 text-slate-100 min-h-[400px] rounded-2xl border border-slate-800 m-4 shadow-xl">
-        <div className="w-16 h-16 rounded-2xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center mx-auto shadow-inner">
-          <Sparkles className="w-8 h-8" />
-        </div>
-        <div className="max-w-md space-y-2">
-          <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-            {t('causaModalTitle')}
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            {t('causaModalSubtitle')}
-          </p>
-          <div className="pt-3">
-            <div className="inline-block p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-teal-200">
-              {t('causaReadyToStartSub')}
-            </div>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={handleStartAnalysis}
-          className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold shadow-md transition-colors flex items-center gap-2 cursor-pointer"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>{t('causaStartAnalysisBtn')}</span>
-        </button>
-      </div>
-    );
-    if (isEmbedded) {
-      return (
-        <div id="causa-embedded-view" className="w-full flex flex-col flex-1 bg-slate-900 overflow-y-auto">
-          {startPromptContent}
-        </div>
-      );
-    }
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-        <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden text-slate-100">
-          <div className="px-5 py-3.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
-            <span className="text-xs font-bold text-white">{t('causaModalTitle')}</span>
-            <button type="button" onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white cursor-pointer">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          {startPromptContent}
-        </div>
-      </div>
-    );
-  }
 
   const modalBody = (
     <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/50">
