@@ -1171,7 +1171,7 @@ Input JSON:
 // =========================================================================
 // ROUTE 4: MEDICATION TRANSLATE (/api/medications/translate)
 // =========================================================================
-if ($route === 'medications/translate' || $route === 'translate') {
+if ($route === 'medications/translate' || $route === 'translate' || $route === 'materia-medica/translate') {
     $text = isset($body['text']) ? $body['text'] : '';
     $targetLang = isset($body['targetLang']) ? $body['targetLang'] : 'de';
     $medName = isset($body['medName']) ? $body['medName'] : 'text';
