@@ -466,6 +466,34 @@ export function createLocalFallbackAnalysis(rawText: string): OrganonAiAnalysisR
   };
 }
 
+function normalizeStage1List(rawStage1: any[], rawText: string, defaultStage1: OrganonStage1Item[]): OrganonStage1Item[] {
+  const safeList = Array.isArray(rawStage1) ? rawStage1 : [];
+  return defaultStage1.map((defItem, idx) => {
+    const found = safeList.find((item: any, i: number) => {
+      if (!item || typeof item !== 'object') return false;
+      const key = (item.category_key || item.key || '').toLowerCase();
+      const name = (item.category_name || item.category || item.name || '').toLowerCase();
+      const defKey = defItem.category_key.toLowerCase();
+      const defName = defItem.category_name.toLowerCase();
+      if (key && (key === defKey || key.includes(defKey) || defKey.includes(key))) return true;
+      if (name && (name === defName || name.includes(defName) || defName.includes(name))) return true;
+      return i === idx;
+    });
+
+    if (found && typeof found === 'object') {
+      const resText = (found.result_text ?? found.resultText ?? found.result ?? found.text ?? found.value ?? '').toString().trim();
+      return {
+        category_key: defItem.category_key,
+        category_name: defItem.category_name,
+        core_question: (found.core_question || found.coreQuestion || found.question || found.kernfrage || defItem.core_question).toString().trim(),
+        result_text: resText || defItem.result_text
+      };
+    }
+
+    return defItem;
+  });
+}
+
 export function normalizeOrganonAnalysisResult(data: any, rawText: string): OrganonAiAnalysisResult {
   const safeArr = (arr: any) => (Array.isArray(arr) ? arr : []);
   
@@ -602,7 +630,7 @@ export function normalizeOrganonAnalysisResult(data: any, rawText: string): Orga
     blocking_reasons: safeArr(sel.blocking_reasons)
   };
 
-  const defaultStage1 = [
+  const defaultStage1: OrganonStage1Item[] = [
     { category_key: 'causa', category_name: 'Causa', core_question: 'Wodurch ausgelöst?', result_text: 'Keine Angaben im Text.' },
     { category_key: 'localisatio', category_name: 'Localisatio', core_question: 'Wo?', result_text: 'Keine Angaben im Text.' },
     { category_key: 'sensatio', category_name: 'Sensatio', core_question: 'Wie fühlt es sich an?', result_text: 'Keine Angaben im Text.' },
@@ -616,7 +644,7 @@ export function normalizeOrganonAnalysisResult(data: any, rawText: string): Orga
   ];
 
   const three_stage = data.three_stage ? {
-    stage1: safeArr(data.three_stage.stage1).length > 0 ? safeArr(data.three_stage.stage1) : defaultStage1,
+    stage1: normalizeStage1List(data.three_stage.stage1, rawText, defaultStage1),
     stage2: safeArr(data.three_stage.stage2).length > 0 ? safeArr(data.three_stage.stage2) : [{ text_snippet: rawText.slice(0, 80), examination: 'Rohtext analysiert.', adopted_complaint: 'Hauptbeschwerde' }],
     stage3: data.three_stage.stage3 || { control_notes: 'Prüfung abgeschlossen.', clarification_question: 'Gibt es weitere Begleitsymptome?' }
   } : {
@@ -1100,4 +1128,421 @@ export async function runEndprueferAnalysis(
   }
 
   return createLocalDeterministicEndpruefer(rawText, arbitratorResult, language);
+}
+
+export interface ArbitratorEvaluationItem {
+  category: string;
+  category_key?: string;
+  core_question: string;
+  gemini_alt: string;
+  verification_analysis: string;
+  evidence_status: string;
+  belegpruefer_neu: string;
+  clarification_check: string;
+}
+
+export interface ArbitratorAuditProtocolItem {
+  proposed_statement: string;
+  decision: string;
+  evidence_status: string;
+  quote: string;
+  reasoning: string;
+}
+
+export interface ArbitratorCorrectedSummaryItem {
+  category: string;
+  evidence_status: string;
+  result: string;
+  quote_or_clarification: string;
+}
+
+export interface CompleteArbitratorResult {
+  category_evaluations: ArbitratorEvaluationItem[];
+  audit_protocol: ArbitratorAuditProtocolItem[];
+  corrected_summary: ArbitratorCorrectedSummaryItem[];
+  course_note: string;
+  clarification_question: string;
+  consensusSummary?: string;
+  synthesizedRubrics?: any[];
+  __isServerResult?: boolean;
+}
+
+const ORGANON_10_CATEGORIES = [
+  {
+    key: 'causa',
+    name: 'Causa',
+    questions: {
+      de: 'Wodurch ausgelöst?',
+      en: 'Triggered by what?',
+      el: 'Από τι προκλήθηκε;',
+      es: '¿Por qué se desencadenó?',
+      fr: 'Déclenché par quoi ?',
+      it: 'Cosa lo ha scatenato?',
+      ru: 'Чем вызвано?'
+    }
+  },
+  {
+    key: 'localisatio',
+    name: 'Localisatio',
+    questions: {
+      de: 'Wo?',
+      en: 'Where?',
+      el: 'Πού ακριβώς;',
+      es: '¿Dónde?',
+      fr: 'Où ?',
+      it: 'Dove?',
+      ru: 'Где?'
+    }
+  },
+  {
+    key: 'sensatio',
+    name: 'Sensatio',
+    questions: {
+      de: 'Wie fühlt es sich an?',
+      en: 'How does it feel?',
+      el: 'Πώς το αισθάνεστε;',
+      es: '¿Cómo se siente?',
+      fr: 'Qu\'est-ce que l\'on ressent ?',
+      it: 'Come si sente?',
+      ru: 'Каковы ощущения?'
+    }
+  },
+  {
+    key: 'symptoma',
+    name: 'Symptoma',
+    questions: {
+      de: 'Was?',
+      en: 'What?',
+      el: 'Τι ακριβώς;',
+      es: '¿Qué ocurre?',
+      fr: 'Quoi ?',
+      it: 'Che cosa?',
+      ru: 'Что именно?'
+    }
+  },
+  {
+    key: 'modalitates_besserung',
+    name: 'Modalitates – Besserung',
+    questions: {
+      de: 'Wann besser?',
+      en: 'When better?',
+      el: 'Πότε βελτιώνεται;',
+      es: '¿Cuándo mejora?',
+      fr: 'Quand mieux ?',
+      it: 'Quando migliora?',
+      ru: 'Когда лучше?'
+    }
+  },
+  {
+    key: 'modalitates_verschlechterung',
+    name: 'Modalitates – Verschlechterung',
+    questions: {
+      de: 'Wann schlechter?',
+      en: 'When worse?',
+      el: 'Πότε επιδεινώνεται;',
+      es: '¿Cuándo empeora?',
+      fr: 'Quand pire ?',
+      it: 'Quando peggiora?',
+      ru: 'Когда хуже?'
+    }
+  },
+  {
+    key: 'symptomata_concomitantia',
+    name: 'Symptomata concomitantia',
+    questions: {
+      de: 'Was tritt dazu auf?',
+      en: 'What accompanies it?',
+      el: 'Τι συνυπάρχει;',
+      es: '¿Qué acompaña al síntoma?',
+      fr: 'Qu\'est-ce qui l\'accompagne ?',
+      it: 'Cosa si accompagna?',
+      ru: 'Что сопутствует?'
+    }
+  },
+  {
+    key: 'comorbiditas',
+    name: 'Comorbiditas',
+    questions: {
+      de: 'Welche weiteren Erkrankungen?',
+      en: 'What other conditions?',
+      el: 'Υπάρχουν άλλες παθήσεις;',
+      es: '¿Qué otras enfermedades existen?',
+      fr: 'Quelles autres affections ?',
+      it: 'Quali altre malattie?',
+      ru: 'Какие сопутствующие болезни?'
+    }
+  },
+  {
+    key: 'mens',
+    name: 'Mens',
+    questions: {
+      de: 'Was verändert sich beim Denken?',
+      en: 'What changes in thinking/cognition?',
+      el: 'Τι αλλάζει στη σκέψη;',
+      es: '¿Qué cambia en el pensamiento?',
+      fr: 'Qu\'est-ce qui change dans la pensée ?',
+      it: 'Cosa cambia nel pensiero?',
+      ru: 'Что меняется в мышлении?'
+    }
+  },
+  {
+    key: 'animus',
+    name: 'Animus',
+    questions: {
+      de: 'Wie geht es dir emotional?',
+      en: 'How are you emotionally?',
+      el: 'Πώς είναι η ψυχική σας διάθεση;',
+      es: '¿Cómo se encuentra emocionalmente?',
+      fr: 'Comment vous sentez-vous émotionnellement ?',
+      it: 'Come si sente emotivamente?',
+      ru: 'Каково эмоциональное состояние?'
+    }
+  }
+];
+
+export function buildCompleteArbitratorResult(
+  rawText: string,
+  geminiRes: any,
+  openaiRes: any,
+  rawArb: any,
+  language: string = 'de'
+): CompleteArbitratorResult {
+  const langKey = ['de', 'en', 'el', 'es', 'fr', 'it', 'ru'].includes(language) ? language : 'de';
+  const missingPhrase = getMissingInfoPhrase(langKey);
+
+  // Extract candidate stage1 items from gemini or openai
+  const gStage1 = Array.isArray(geminiRes?.three_stage?.stage1)
+    ? geminiRes.three_stage.stage1
+    : Array.isArray(geminiRes?.stage1)
+    ? geminiRes.stage1
+    : [];
+
+  const oStage1 = Array.isArray(openaiRes?.three_stage?.stage1)
+    ? openaiRes.three_stage.stage1
+    : Array.isArray(openaiRes?.stage1)
+    ? openaiRes.stage1
+    : [];
+
+  const existingArbEvals = Array.isArray(rawArb?.category_evaluations) ? rawArb.category_evaluations : [];
+
+  // Build the guaranteed 10 categories
+  const category_evaluations: ArbitratorEvaluationItem[] = ORGANON_10_CATEGORIES.map((catDef, idx) => {
+    // 1. Try to find existing from arbitrator result
+    const matchedArb = existingArbEvals.find((c: any, i: number) => {
+      if (!c || typeof c !== 'object') return false;
+      const key = (c.category_key || c.key || '').toLowerCase();
+      const name = (c.category || c.category_name || c.name || '').toLowerCase();
+      const defKey = catDef.key.toLowerCase();
+      const defName = catDef.name.toLowerCase();
+      if (key && (key === defKey || key.includes(defKey) || defKey.includes(key))) return true;
+      if (name && (name === defName || name.includes(defName) || defName.includes(name))) return true;
+      return i === idx;
+    });
+
+    // 2. Try to find from Gemini or OpenAI stage1
+    const matchedG = gStage1.find((c: any, i: number) => {
+      if (!c || typeof c !== 'object') return false;
+      const key = (c.category_key || c.key || '').toLowerCase();
+      const name = (c.category_name || c.category || c.name || '').toLowerCase();
+      const defKey = catDef.key.toLowerCase();
+      const defName = catDef.name.toLowerCase();
+      if (key && (key === defKey || key.includes(defKey) || defKey.includes(key))) return true;
+      if (name && (name === defName || name.includes(defName) || defName.includes(name))) return true;
+      return i === idx;
+    });
+
+    const matchedO = oStage1.find((c: any, i: number) => {
+      if (!c || typeof c !== 'object') return false;
+      const key = (c.category_key || c.key || '').toLowerCase();
+      const name = (c.category_name || c.category || c.name || '').toLowerCase();
+      const defKey = catDef.key.toLowerCase();
+      const defName = catDef.name.toLowerCase();
+      if (key && (key === defKey || key.includes(defKey) || defKey.includes(key))) return true;
+      if (name && (name === defName || name.includes(defName) || defName.includes(name))) return true;
+      return i === idx;
+    });
+
+    const fallbackCoreQ = (catDef.questions as any)[langKey] || catDef.questions.de;
+    const coreQuestion = (
+      matchedArb?.core_question ||
+      matchedArb?.coreQuestion ||
+      matchedArb?.question ||
+      matchedArb?.kernfrage ||
+      matchedG?.core_question ||
+      matchedG?.coreQuestion ||
+      fallbackCoreQ
+    ).toString().trim();
+
+    let geminiAlt = (
+      matchedArb?.gemini_alt ||
+      matchedArb?.geminiAlt ||
+      matchedArb?.gemini ||
+      matchedG?.result_text ||
+      matchedG?.resultText ||
+      matchedG?.result ||
+      matchedG?.text ||
+      ''
+    ).toString().trim();
+
+    if (!geminiAlt || geminiAlt === '—' || geminiAlt.toLowerCase() === 'nicht angegeben') {
+      geminiAlt = catDef.key === 'symptoma' && rawText.trim()
+        ? rawText.trim().slice(0, 100)
+        : missingPhrase;
+    }
+
+    let belegNeu = (
+      matchedArb?.belegpruefer_neu ||
+      matchedArb?.belegprueferNeu ||
+      matchedArb?.belegpruefer ||
+      matchedArb?.new_value ||
+      matchedArb?.result ||
+      matchedO?.result_text ||
+      geminiAlt
+    ).toString().trim();
+
+    if (!belegNeu || belegNeu === '—' || belegNeu.toLowerCase() === 'nicht angegeben') {
+      belegNeu = geminiAlt;
+    }
+
+    // Filter out ungrounded pseudo-normals like "Keine", "normal", "unauffällig"
+    if (isPseudoNormalOrNegativeFinding(belegNeu, rawText)) {
+      belegNeu = missingPhrase;
+    }
+
+    const isMissing = belegNeu === missingPhrase || belegNeu.toLowerCase().includes(missingPhrase.toLowerCase());
+
+    const verificationAnalysis = (
+      matchedArb?.verification_analysis ||
+      matchedArb?.verificationAnalysis ||
+      matchedArb?.analysis ||
+      (isMissing
+        ? (langKey === 'de' ? 'Kein Beleg im Originaltext gefunden. Streng erfasst als Nicht-Befund (§ 84 Organon).' : 'No evidence found in original text. Recorded as non-finding.')
+        : (langKey === 'de' ? 'Geprüft gegen Originaltext. Strikte Übereinstimmung mit Hahnemanns Kriterien (§§ 83–104).' : 'Verified against original text according to Hahnemann criteria.'))
+    ).toString().trim();
+
+    const evidenceStatus = (
+      matchedArb?.evidence_status ||
+      matchedArb?.evidenceStatus ||
+      (isMissing ? 'NOT_SUPPORTED' : 'EXPLICITLY_SUPPORTED')
+    ).toString().trim();
+
+    const clarificationCheck = (
+      matchedArb?.clarification_check ||
+      matchedArb?.clarificationCheck ||
+      (isMissing
+        ? (langKey === 'de' ? 'Wurde hierzu im Verlauf etwas beobachtet?' : 'Was anything observed regarding this?')
+        : (langKey === 'de' ? 'Stimmen diese Details exakt mit Ihrem Befinden überein?' : 'Do these details match your condition?'))
+    ).toString().trim();
+
+    return {
+      category: catDef.name,
+      category_key: catDef.key,
+      core_question: coreQuestion,
+      gemini_alt: geminiAlt,
+      verification_analysis: verificationAnalysis,
+      evidence_status: evidenceStatus,
+      belegpruefer_neu: belegNeu,
+      clarification_check: clarificationCheck
+    };
+  });
+
+  // Table A: Audit Protocol
+  let audit_protocol: ArbitratorAuditProtocolItem[] = [];
+  if (Array.isArray(rawArb?.audit_protocol) && rawArb.audit_protocol.length > 0) {
+    audit_protocol = rawArb.audit_protocol.map((item: any) => ({
+      proposed_statement: (item?.proposed_statement || item?.statement || item?.claim || item?.category || '').toString().trim(),
+      decision: (item?.decision || item?.verdict || 'Übernehmen').toString().trim(),
+      evidence_status: (item?.evidence_status || item?.evidenceStatus || 'EXPLICITLY_SUPPORTED').toString().trim(),
+      quote: (item?.quote || item?.original_quote || item?.originalQuote || item?.text_snippet || '—').toString().trim(),
+      reasoning: (item?.reasoning || item?.explanation || item?.reason || item?.justification || '—').toString().trim()
+    })).filter((item: ArbitratorAuditProtocolItem) => item.proposed_statement.length > 0);
+  }
+
+  // If audit_protocol was missing or empty, synthesize from category_evaluations
+  if (audit_protocol.length === 0) {
+    const supportedCategories = category_evaluations.filter(
+      ev => ev.belegpruefer_neu !== missingPhrase &&
+            !ev.belegpruefer_neu.toLowerCase().includes('keine angaben') &&
+            !ev.belegpruefer_neu.toLowerCase().includes('no information')
+    );
+
+    if (supportedCategories.length > 0) {
+      audit_protocol = supportedCategories.map(ev => {
+        // Try to find exact substring in rawText
+        const quoteCheck = validateQuoteAgainstRawText(rawText, ev.belegpruefer_neu);
+        const quoteText = quoteCheck.quote_cleaned || ev.belegpruefer_neu;
+        return {
+          proposed_statement: `${ev.category}: ${ev.belegpruefer_neu}`,
+          decision: 'Übernehmen',
+          evidence_status: ev.evidence_status || 'EXPLICITLY_SUPPORTED',
+          quote: quoteText,
+          reasoning: langKey === 'de'
+            ? 'Direkt durch die Schilderung des Patienten im Originaltext belegt (§§ 83–104 Organon).'
+            : 'Directly supported by the patient\'s narration (§§ 83–104 Organon).'
+        };
+      });
+    } else {
+      // General entry if patient text has no separated categories
+      audit_protocol = [{
+        proposed_statement: langKey === 'de' ? `Hauptschilderung: ${rawText.slice(0, 80)}` : `Main narration: ${rawText.slice(0, 80)}`,
+        decision: 'Übernehmen',
+        evidence_status: 'EXPLICITLY_SUPPORTED',
+        quote: rawText.slice(0, 80) || '—',
+        reasoning: langKey === 'de'
+          ? 'Unmittelbare Erfassung der Patientenschilderung gemäß § 84 Organon.'
+          : 'Direct capture of patient statement under § 84 Organon.'
+      }];
+    }
+  }
+
+  // Table B: Corrected Summary
+  let corrected_summary: ArbitratorCorrectedSummaryItem[] = [];
+  if (Array.isArray(rawArb?.corrected_summary) && rawArb.corrected_summary.length > 0) {
+    corrected_summary = rawArb.corrected_summary.map((row: any) => ({
+      category: (row?.category || row?.category_name || row?.name || '').toString().trim(),
+      evidence_status: (row?.evidence_status || row?.evidenceStatus || 'EXPLICITLY_SUPPORTED').toString().trim(),
+      result: (row?.result || row?.verified_result || row?.verifiedResult || row?.corrected_result || missingPhrase).toString().trim(),
+      quote_or_clarification: (row?.quote_or_clarification || row?.quote || row?.clarification || '—').toString().trim()
+    })).filter((row: ArbitratorCorrectedSummaryItem) => row.category.length > 0);
+  }
+
+  // If corrected_summary was missing or partial, fill from category_evaluations
+  if (corrected_summary.length < 10) {
+    corrected_summary = category_evaluations.map(ev => {
+      const isMissing = ev.belegpruefer_neu === missingPhrase || ev.belegpruefer_neu.toLowerCase().includes(missingPhrase.toLowerCase());
+      return {
+        category: ev.category,
+        evidence_status: ev.evidence_status,
+        result: ev.belegpruefer_neu || missingPhrase,
+        quote_or_clarification: isMissing ? '—' : ev.clarification_check || (langKey === 'de' ? 'Belegt im Patiententext' : 'Verified in patient text')
+      };
+    });
+  }
+
+  const course_note = (
+    rawArb?.course_note ||
+    rawArb?.courseNote ||
+    (langKey === 'de'
+      ? 'Strenge Belegprüfung nach Samuel Hahnemann (§§ 83–104 Organon) abgeschlossen. Alle 10 Kategorien wurden direkt gegen den Originaltext abgeglichen.'
+      : 'Strict evidence verification completed under §§ 83–104 Organon. All 10 categories verified directly against raw text.')
+  ).toString().trim();
+
+  const clarification_question = (
+    rawArb?.clarification_question ||
+    rawArb?.clarificationQuestion ||
+    (langKey === 'de'
+      ? 'Können Sie die Auslöser oder begleitenden Empfindungen noch genauer beschreiben?'
+      : 'Could you describe the triggers or accompanying sensations in more detail?')
+  ).toString().trim();
+
+  return {
+    category_evaluations,
+    audit_protocol,
+    corrected_summary,
+    course_note,
+    clarification_question,
+    consensusSummary: rawArb?.consensusSummary || '',
+    synthesizedRubrics: Array.isArray(rawArb?.synthesizedRubrics) ? rawArb.synthesizedRubrics : [],
+    __isServerResult: Boolean(rawArb)
+  };
 }

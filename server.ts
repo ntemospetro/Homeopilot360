@@ -1607,11 +1607,18 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
           const apiKey = getGeminiApiKey();
           if (apiKey) {
             const ai = new GoogleGenAI({ apiKey });
-            const arbPrompt = `Du bist ein unabhängiger Schiedsrichter und Belegprüfer für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die beiden Analysen (Gemini und Zweitmeinung) und liefere ein JSON-Objekt mit "category_evaluations" für die 10 Kategorien.
+            const arbPrompt = `Du bist ein strenger und unbestechlicher BELEGPRÜFER für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die beiden Analysen (Gemini und Zweitmeinung).
+Liefere ein vollständiges JSON-Objekt mit:
+1. "category_evaluations": Array für alle 10 Kategorien (Causa, Localisatio, Sensatio, Symptoma, Modalitates – Besserung, Modalitates – Verschlechterung, Symptomata concomitantia, Comorbiditas, Mens, Animus) jeweils mit "category", "core_question", "gemini_alt", "verification_analysis", "belegpruefer_neu", "clarification_check".
+2. "audit_protocol": Array mit "proposed_statement", "decision" ("Übernehmen"|"Korrigieren"|"Verwerfen"|"Rückfrage erforderlich"), "quote", "reasoning".
+3. "corrected_summary": Array für alle 10 Kategorien mit "category", "result", "quote_or_clarification".
+4. "course_note": String
+5. "clarification_question": String
+
 Originaltext: "${rawText.replace(/"/g, '\\\\"')}"
 Gemini: ${JSON.stringify(parsedGemini || {})}
 Zweitmeinung: ${JSON.stringify(parsedOpenAI || {})}
-Antworte AUSSCHLIESSLICH als gültiges JSON.`;
+Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
             const arbRes = await ai.models.generateContent({
               model: "gemini-3.8-flash",
               contents: arbPrompt,
@@ -1936,10 +1943,17 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
         const apiKey = getGeminiApiKey();
         if (apiKey) {
           const ai = new GoogleGenAI({ apiKey });
-          const arbPrompt = `Du bist ein strenger BELEGPRÜFER für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die Analyse und liefere ein JSON-Objekt mit "category_evaluations" für die 10 Kategorien.
+          const arbPrompt = `Du bist ein strenger und unbestechlicher BELEGPRÜFER für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die Analyse.
+Liefere ein vollständiges JSON-Objekt mit:
+1. "category_evaluations": Array für alle 10 Kategorien (Causa, Localisatio, Sensatio, Symptoma, Modalitates – Besserung, Modalitates – Verschlechterung, Symptomata concomitantia, Comorbiditas, Mens, Animus) jeweils mit "category", "core_question", "gemini_alt", "verification_analysis", "belegpruefer_neu", "clarification_check".
+2. "audit_protocol": Array mit "proposed_statement", "decision" ("Übernehmen"|"Korrigieren"|"Verwerfen"|"Rückfrage erforderlich"), "quote", "reasoning".
+3. "corrected_summary": Array für alle 10 Kategorien mit "category", "result", "quote_or_clarification".
+4. "course_note": String
+5. "clarification_question": String
+
 Originaltext: "${rawText.replace(/"/g, '\\\\"')}"
 Analyse: ${JSON.stringify(parsed || {})}
-Antworte AUSSCHLIESSLICH als gültiges JSON.`;
+Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
           const arbRes = await ai.models.generateContent({
             model: "gemini-3.8-flash",
             contents: arbPrompt,

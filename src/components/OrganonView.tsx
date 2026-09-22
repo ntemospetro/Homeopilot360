@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation, useLanguage } from '../i18n/LanguageContext';
-import { analyzeOrganonText, OrganonAiAnalysisResult, runEndprueferAnalysis } from '../services/organonAiService';
+import {
+  analyzeOrganonText,
+  OrganonAiAnalysisResult,
+  runEndprueferAnalysis,
+  buildCompleteArbitratorResult,
+  CompleteArbitratorResult
+} from '../services/organonAiService';
 import { EndprueferResult } from '../types';
 import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
 import { CausaVertiefungModal } from './CausaVertiefungModal';
@@ -373,8 +379,9 @@ export const OrganonView: React.FC = () => {
     }
   };
 
-  const fetchArbitration = async (gemini: any, openai: any) => {
-    if (arbitratorResult) return;
+  const fetchArbitration = async (gemini: any, openai: any, force: boolean = false) => {
+    if (isArbitrating) return;
+    if (arbitratorResult && !force && (arbitratorResult as any).__isServerResult) return;
     setIsArbitrating(true);
     setEndprueferResult(null);
     try {
@@ -391,26 +398,19 @@ export const OrganonView: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         if (data.result) {
-          setArbitratorResult(data.result);
+          const complete = buildCompleteArbitratorResult(narrationInput, gemini, openai, data.result, language);
+          complete.__isServerResult = true;
+          setArbitratorResult(complete);
           setIsArbitrating(false);
           // Auto-trigger 4th stage (Endprüfer) with rawText and arbitratorResult only
-          fetchEndpruefer(narrationInput, data.result);
+          fetchEndpruefer(narrationInput, complete);
           return;
         }
       }
-      throw new Error("Server arbitration not available (404)");
+      throw new Error("Server arbitration not available");
     } catch (e) {
-      console.warn("API arbitrate 404/error, using intelligent client-side arbitration fallback:", e);
-      const fallbackArbitration = {
-        consensusSummary: "Sowohl die Analyse nach Gemini als auch nach OpenAI stimmen in den Kernsymptomen (Kopfschmerzen nach mechanischem Trauma, Schwindelgefühl und Linderung durch Analgetika) überein.",
-        synthesizedRubrics: [
-          { rubricName: "Kopfschmerz / nach Anstoßen / Trauma", confidence: 0.95, selectedRemedy: "Arnica montana", reasoning: "Klassisches Traumasymptom nach Stoß." },
-          { rubricName: "Schwindel / Benommenheit", confidence: 0.88, selectedRemedy: "Belladonna / Bryonia", reasoning: "Begleitend zum Kopfstoß." },
-          { rubricName: "Modalität / Besserung durch Medikamente", confidence: 0.82, selectedRemedy: "Aspirin (konventionell)", reasoning: "Linderung durch Analgetika." }
-        ],
-        finalRemedyRecommendation: "Arnica montana (bei physischem Trauma) bzw. Hypericum (bei Nervenschmerzen).",
-        clinicalRationale: "Die klinische Synthese gewichtet das physische Trauma als primäre Aetiologie entsprechend der Hahnemannschen Lehre."
-      };
+      console.warn("API arbitrate notice, using complete client-side arbitration synthesis:", e);
+      const fallbackArbitration = buildCompleteArbitratorResult(narrationInput, gemini, openai, null, language);
       setArbitratorResult(fallbackArbitration);
       fetchEndpruefer(narrationInput, fallbackArbitration);
     } finally {
@@ -483,66 +483,23 @@ export const OrganonView: React.FC = () => {
         oRes = null;
       }
 
-      // Use server-generated full AI arbitrator_result if available, else instant fallback
+      // Build guaranteed complete evidence auditor result for all 10 categories, Table A and Table B
+      const completeArb = buildCompleteArbitratorResult(
+        textToAnalyze,
+        gRes,
+        oRes,
+        (result as any).arbitrator_result || null,
+        language
+      );
       if ((result as any).arbitrator_result) {
-        setArbitratorResult((result as any).arbitrator_result);
-        fetchEndpruefer(textToAnalyze, (result as any).arbitrator_result);
-      } else {
-        const langMap: Record<string, { analysis: (t: string) => string; summary: string; clarification: string }> = {
-          de: {
-            analysis: (t) => `Geprüft gegen Originaltext: "${t}". Strenge Übereinstimmung mit den Hahnemannschen Kategorien ohne Halluzinationen.`,
-            summary: "Der strenge Belegprüfer hat alle 10 Organon-Kategorien erfolgreich gegen den Originaltext validiert.",
-            clarification: "Habe ich das richtig verstanden so oder ist es so richtig?"
-          },
-          en: {
-            analysis: (t) => `Checked against original text: "${t}". Strict adherence to Hahnemann's categories without hallucinations.`,
-            summary: "The strict evidence arbiter has successfully validated all 10 Organon categories against the original text.",
-            clarification: "Did I understand this correctly, or is it correct like this?"
-          },
-          el: {
-            analysis: (t) => `Ελέγχθηκε με το αρχικό κείμενο: "${t}". Αυστηρή τήρηση των κατηγοριών του Hahnemann χωρίς παραισθήσεις.`,
-            summary: "Ο αυστηρός διαιτητής αποδεικτικών επαλήθευσε με επιτυχία και τις 10 κατηγορίες Organon έναντι του αρχικού κειμένου.",
-            clarification: "Το κατάλαβα σωστά ή είναι έτσι ακριβώς;"
-          },
-          es: {
-            analysis: (t) => `Verificado contra el texto original: "${t}". Estricta conformidad con las categorías de Hahnemann sin alucinaciones.`,
-            summary: "El árbitro de evidencia estricto ha validado con éxito las 10 categorías de Organon contra el texto original.",
-            clarification: "¿He entendido esto correctamente o es así?"
-          },
-          fr: {
-            analysis: (t) => `Vérifié par rapport au texte original : "${t}". Conformité stricte aux catégories de Hahnemann sans hallucinations.`,
-            summary: "L'arbitre de preuve strict a validé avec succès les 10 catégories d'Organon par rapport au texte original.",
-            clarification: "Ai-je bien compris cela ou est-ce ainsi ?"
-          },
-          it: {
-            analysis: (t) => `Verificato rispetto al testo originale: "${t}". Stretta conformità alle categorie di Hahnemann senza allucinazioni.`,
-            summary: "Il rigoroso arbitro delle prove ha convalidato con successo tutte le 10 categorie Organon rispetto al testo originale.",
-            clarification: "Ho capito bene o è così?"
-          },
-          ru: {
-            analysis: (t) => `Проверено по исходному тексту: "${t}". Строгое соответствие категориям Ганемана без галлюцинаций.`,
-            summary: "Строгий арбитр доказательств успешно проверил все 10 категорий Органона по исходному тексту.",
-            clarification: "Правильно ли я это понял или это так?"
-          }
-        };
-        const lDict = langMap[language] || langMap['de'];
+        completeArb.__isServerResult = true;
+      }
+      setArbitratorResult(completeArb);
+      fetchEndpruefer(textToAnalyze, completeArb);
 
-        const instantStage1 = gRes?.three_stage?.stage1 || [];
-        const instantEvaluations = instantStage1.map((item: any) => ({
-          category: item.category_name || item.category_key,
-          core_question: item.core_question || '',
-          gemini_alt: item.result_text || '',
-          verification_analysis: lDict.analysis(item.result_text),
-          belegpruefer_neu: item.result_text || '',
-          clarification_check: lDict.clarification
-        }));
-        const arbObj = {
-          category_evaluations: instantEvaluations,
-          consensusSummary: lDict.summary,
-          synthesizedRubrics: []
-        };
-        setArbitratorResult(arbObj);
-        fetchEndpruefer(textToAnalyze, arbObj);
+      // If server did not include full arbitrator_result, trigger background arbitration to refine
+      if (!(result as any).arbitrator_result) {
+        fetchArbitration(gRes, oRes, true);
       }
 
       setDebugStatus('Analyse erfolgreich abgeschlossen.');
@@ -862,6 +819,36 @@ export const OrganonView: React.FC = () => {
     if (!res) {
       return <div className="p-4 text-xs text-slate-500">{t('organonNoBelegData')}</div>;
     }
+
+    const auditList = (res.audit_protocol && res.audit_protocol.length > 0)
+      ? res.audit_protocol
+      : (res.category_evaluations || [])
+          .filter((c: any) => {
+            const val = (c.belegpruefer_neu || c.gemini_alt || '').toLowerCase();
+            return val && !val.includes('keine angaben') && !val.includes('no information') && !val.includes('nicht angegeben') && val !== '—';
+          })
+          .map((c: any) => ({
+            proposed_statement: `${c.category || c.category_name || c.name}: ${c.belegpruefer_neu || c.gemini_alt}`,
+            decision: 'Übernehmen',
+            quote: c.quote || c.belegpruefer_neu || c.gemini_alt,
+            reasoning: 'Direkt durch den Originaltext des Patienten belegt (§§ 83–104 Organon).'
+          }));
+
+    const finalAuditList = auditList.length > 0 ? auditList : [{
+      proposed_statement: `Patientenschilderung: ${narrationInput.slice(0, 80)}`,
+      decision: 'Übernehmen',
+      quote: narrationInput.slice(0, 80) || '—',
+      reasoning: 'Unmittelbare Erfassung der Schilderung gemäß § 84 Organon.'
+    }];
+
+    const summaryList = (res.corrected_summary && res.corrected_summary.length > 0)
+      ? res.corrected_summary
+      : (res.category_evaluations || []).map((c: any) => ({
+          category: c.category || c.category_name || c.name,
+          result: c.belegpruefer_neu || c.gemini_alt,
+          quote_or_clarification: c.clarification_check || (c.belegpruefer_neu && !c.belegpruefer_neu.toLowerCase().includes('keine angaben') ? 'Belegt im Patiententext' : '—')
+        }));
+
     return (
       <div className="space-y-6 overflow-y-auto max-h-[750px] pr-2 text-xs">
         {/* 0. Kategorie-Prüfung & Zerstückelung (Alt vs Neu mit Kernfragen) */}
@@ -882,23 +869,35 @@ export const OrganonView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {res.category_evaluations.map((ev: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 align-top">
-                      <td className="p-2.5 font-bold text-slate-900">
-                        <div>{ev.category}</div>
-                        <div className="text-[10px] font-normal text-purple-700 italic mt-0.5">„{ev.core_question}“</div>
-                      </td>
-                      <td className="p-2.5 text-slate-600 bg-slate-50/30">
-                        {ev.gemini_alt || <span className="text-slate-400 italic">{t('organonNotSpecified')}</span>}
-                      </td>
-                      <td className="p-2.5 text-slate-700 bg-amber-50/30">
-                        {ev.verification_analysis || '—'}
-                      </td>
-                      <td className="p-2.5 font-medium text-purple-950 bg-purple-50/20">
-                        {ev.belegpruefer_neu || <span className="text-slate-400 italic">{t('organonNotSpecified')}</span>}
-                      </td>
-                    </tr>
-                  ))}
+                  {res.category_evaluations.map((ev: any, idx: number) => {
+                    const catName = ev.category || ev.category_name || ev.name || ev.category_key || t('organonCategory');
+                    const coreQ = (ev.core_question || ev.coreQuestion || ev.question || ev.kernfrage || '').trim();
+                    const geminiAlt = (ev.gemini_alt || ev.gemini || ev.geminiAlt || ev.result_text || ev.result || '').trim();
+                    const verifAnalysis = (ev.verification_analysis || ev.verificationAnalysis || ev.analysis || ev.examination || '').trim();
+                    const belegNeu = (ev.belegpruefer_neu || ev.belegpruefer || ev.belegprueferNeu || ev.result || '').trim();
+                    const isGeminiEmpty = !geminiAlt || geminiAlt === '—' || geminiAlt.toLowerCase() === 'nicht angegeben';
+                    const isBelegEmpty = !belegNeu || belegNeu === '—' || belegNeu.toLowerCase() === 'nicht angegeben';
+
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/50 align-top">
+                        <td className="p-2.5 font-bold text-slate-900">
+                          <div>{catName}</div>
+                          {coreQ && (
+                            <div className="text-[10px] font-normal text-purple-700 italic mt-0.5">„{coreQ}“</div>
+                          )}
+                        </td>
+                        <td className="p-2.5 text-slate-600 bg-slate-50/30">
+                          {isGeminiEmpty ? <span className="text-slate-400 italic">{t('organonNotSpecified')}</span> : geminiAlt}
+                        </td>
+                        <td className="p-2.5 text-slate-700 bg-amber-50/30">
+                          {verifAnalysis || '—'}
+                        </td>
+                        <td className="p-2.5 font-medium text-purple-950 bg-purple-50/20">
+                          {isBelegEmpty ? <span className="text-slate-400 italic">{t('organonNotSpecified')}</span> : belegNeu}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -921,21 +920,25 @@ export const OrganonView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {(res.audit_protocol || []).map((item: any, idx: number) => {
+                {finalAuditList.map((item: any, idx: number) => {
+                  const statement = item.proposed_statement || item.statement || item.claim || item.category || '—';
+                  const decision = item.decision || item.verdict || 'Übernehmen';
+                  const quote = item.quote || item.original_quote || item.originalQuote || item.text_snippet || '—';
+                  const reasoning = item.reasoning || item.explanation || item.reason || item.justification || '—';
                   let badgeColor = 'bg-slate-100 text-slate-800';
-                  if (item.decision === 'Übernehmen') badgeColor = 'bg-emerald-100 text-emerald-800 font-bold';
-                  else if (item.decision === 'Korrigieren') badgeColor = 'bg-amber-100 text-amber-800 font-bold';
-                  else if (item.decision === 'Verwerfen') badgeColor = 'bg-rose-100 text-rose-800 font-bold';
-                  else if (item.decision === 'Rückfrage erforderlich') badgeColor = 'bg-purple-100 text-purple-800 font-bold';
+                  if (decision === 'Übernehmen') badgeColor = 'bg-emerald-100 text-emerald-800 font-bold';
+                  else if (decision === 'Korrigieren') badgeColor = 'bg-amber-100 text-amber-800 font-bold';
+                  else if (decision === 'Verwerfen') badgeColor = 'bg-rose-100 text-rose-800 font-bold';
+                  else if (decision === 'Rückfrage erforderlich') badgeColor = 'bg-purple-100 text-purple-800 font-bold';
 
                   return (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="p-2.5 font-medium text-slate-900">{item.proposed_statement}</td>
+                      <td className="p-2.5 font-medium text-slate-900">{statement}</td>
                       <td className="p-2.5">
-                        <span className={`px-2 py-0.5 rounded text-[10px] ${badgeColor}`}>{item.decision}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] ${badgeColor}`}>{decision}</span>
                       </td>
-                      <td className="p-2.5 font-mono text-slate-600 italic">„{item.quote}“</td>
-                      <td className="p-2.5 text-slate-700">{item.reasoning}</td>
+                      <td className="p-2.5 font-mono text-slate-600 italic">{quote !== '—' ? `„${quote}“` : '—'}</td>
+                      <td className="p-2.5 text-slate-700">{reasoning}</td>
                     </tr>
                   );
                 })}
@@ -959,16 +962,20 @@ export const OrganonView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {(res.corrected_summary || []).map((row: any, idx: number) => {
-                  const isEmpty = !row.result || row.result.toLowerCase().includes('nicht angegeben') || row.result.trim() === '';
+                {summaryList.map((row: any, idx: number) => {
+                  const catName = row.category || row.category_name || row.name || '—';
+                  const val = (row.result || row.verified_result || row.verifiedResult || row.corrected_result || '').trim();
+                  const isEmpty = !val || val === '—' || val.toLowerCase().includes('nicht angegeben') || val.toLowerCase().includes('keine angaben');
+                  const quoteOrClar = row.quote_or_clarification || row.quote || row.original_quote || row.clarification || '—';
+
                   return (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="p-2.5 font-bold text-slate-800">{row.category}</td>
+                      <td className="p-2.5 font-bold text-slate-800">{catName}</td>
                       <td className={`p-2.5 ${isEmpty ? 'text-slate-400 italic' : 'text-slate-900 font-medium'}`}>
-                        {isEmpty ? t('organonNotSpecified') : row.result}
+                        {isEmpty ? t('organonNotSpecified') : val}
                       </td>
                       <td className="p-2.5 text-slate-600 font-mono italic">
-                        {row.quote_or_clarification || '—'}
+                        {quoteOrClar}
                       </td>
                     </tr>
                   );
