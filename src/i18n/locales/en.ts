@@ -3430,6 +3430,14 @@ export const en = {
   causaHahnemannInactiveBadge: "Inactive (Standard Gemini-only)",
   causa3TierBannerDesc: "Independent parallel examination (Gemini & GPT-4o) with arbitrator harmonization",
   causaGeminiOnlyBannerDesc: "Focused Causa exploration with exactly one Gemini instance per turn",
+  modeGeminiOnlyBtn: "Gemini-only",
+  modeHahnemannBtn: "Hahnemann check",
+  modeAbCompareBtn: "A/B",
+  causaLevelBResolved: "No unresolved or conflicting causa aspects remain.",
+  causaNoHistoryYet: "No deepening questions asked yet.",
+  causaOrientationTherapistLabel: "Guidance for the practitioner:",
+  localisatioLevelBResolved: "Conservative topographical assignment completed.",
+  localisatioNoHistoryYet: "No deepening questions asked yet.",
 
   // Localisatio-Vertiefungsanalyse (Stage 2)
   organonStartAnalysisWithLocalisatio: "Localisatio Deep Dive",
@@ -3554,5 +3562,24 @@ export const en = {
   stage2IssueAmbiguity: "Ambiguous statement",
   stage2IssueAssignmentUnclear: "Assignment unclear",
   stage2ClarificationProgress: "Open question {{current}} of {{total}}",
-  stage2ResolvedIssuesCount: "Successfully resolved points: {{count}}"
+  stage2ResolvedIssuesCount: "Successfully resolved points: {{count}}",
+  stage2AnamnesisIncompleteTitle: "Organon Anamnesis Incomplete",
+  stage2AnamnesisIncompleteDesc: "{completed} of {total} categories processed • {pending} still pending",
+  stage2AnamnesisIncompleteNotice: "The plausibility and contradiction check is complete, but not all 10 categories have been deepened in Stage 2 yet. You can navigate directly to pending categories below or conclude with the existing preliminary findings.",
+  stage2ActionDeepenNow: "Deepen now",
+  stage2AdoptAllPendingDrafts: "Adopt all pending with preliminary findings",
+  stage2CategoriesOverviewTitle: "Overview of all 10 Organon categories (§§ 83–104)",
+  stage2FinalizeWithIncompleteBtn: "Finalize with current state",
+
+  // Live Process Tracker (Organon Analysis)
+  organonLiveProcessTitle: "Structured Case Analysis according to Hahnemann",
+  organonLiveProcessSub: "Processing steps running in real time",
+  organonStepPatientText: "Patient narrative recorded",
+  organonStepTextDecomposition: "Text decomposed into relevant statements",
+  organonStepCategoryMapping: "Statements being mapped to Organon categories …",
+  organonStepCrossCheck: "Independent cross-check running …",
+  organonStepArbitration: "Results being reconciled …",
+  organonStepEvidenceCheck: "Evidence being verified",
+  organonStepConsolidation: "Results being consolidated",
+  organonStepFinalCheck: "Final verification"
 };

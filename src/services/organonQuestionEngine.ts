@@ -26,7 +26,8 @@ export interface OrganonQuestionEngineState {
 export async function initDynamicQuestions(
   rawText: string,
   initialMatrices: OrganonComplaintMatrix[],
-  initialRelations: OrganonComplaintRelation[]
+  initialRelations: OrganonComplaintRelation[],
+  endprueferResult?: any | null
 ): Promise<OrganonQuestionEngineState> {
   try {
     const res = await fetch('/api/organon/next-question', {
@@ -38,7 +39,8 @@ export async function initDynamicQuestions(
         currentRelations: initialRelations,
         questionHistory: [],
         latestAnswer: null,
-        currentQuestion: null
+        currentQuestion: null,
+        endprueferResult: endprueferResult || null
       })
     });
     if (res.ok) {
@@ -78,7 +80,8 @@ export async function submitAnswerAndGetNext(
   currentRelations: OrganonComplaintRelation[],
   questionHistory: QuestionHistoryItem[],
   latestAnswer: string,
-  currentQuestionText: string
+  currentQuestionText: string,
+  endprueferResult?: any | null
 ): Promise<OrganonQuestionEngineState> {
   try {
     const res = await fetch('/api/organon/next-question', {
@@ -90,7 +93,8 @@ export async function submitAnswerAndGetNext(
         currentRelations,
         questionHistory,
         latestAnswer,
-        currentQuestion: currentQuestionText
+        currentQuestion: currentQuestionText,
+        endprueferResult: endprueferResult || null
       })
     });
     if (res.ok) {

@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import { jsonrepair } from "jsonrepair";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import {
@@ -35,7 +36,9 @@ import {
   runGeminiCausaAnalysis,
   runGptCausaAnalysis,
   runCausaArbitration,
-  runGeminiOnlyCausaDeepen
+  runGeminiOnlyCausaDeepen,
+  markOpenAiKeyInvalid,
+  isOpenAiKeyMarkedInvalid
 } from "./src/services/causaMultiAgentEngine";
 import {
   seedCausaStateFromOrganonEndpruefer,
@@ -1303,6 +1306,32 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
         return res.status(400).json({ error: "rawText is required" });
       }
 
+      const isStream = req.body?.stream === true;
+      if (isStream) {
+        res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+        res.setHeader("Transfer-Encoding", "chunked");
+        res.setHeader("Cache-Control", "no-cache, no-transform");
+        res.setHeader("X-Accel-Buffering", "no");
+      }
+
+      const emitStep = (stepId: string, status: 'active' | 'done') => {
+        if (isStream) {
+          try {
+            res.write(JSON.stringify({ type: 'step', stepId, status }) + '\n');
+          } catch {
+            // ignore connection issues
+          }
+        }
+      };
+
+      // Real step 1 & 2: Patient text received and parsed
+      emitStep('patient_text', 'done');
+      emitStep('text_decomposition', 'done');
+      emitStep('category_mapping', 'active');
+      if (compare) {
+        emitStep('crosscheck', 'active');
+      }
+
       const langNames: Record<string, string> = {
         de: "German (Deutsch)",
         en: "English",
@@ -1406,8 +1435,8 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
       };
 
       const runOpenAI = async () => {
-        const openAiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET;
-        if (openAiKey && !isOpenAiKeyInvalid) {
+        const openAiKey = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET || "").trim();
+        if (openAiKey && openAiKey.length > 20 && !isOpenAiKeyInvalid && !isOpenAiKeyMarkedInvalid()) {
           try {
             // Dynamic import or require for openai package
             const OpenAI = (await import("openai")).default;
@@ -1427,6 +1456,7 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
             return { content, modelUsed };
           } catch (apiErr: any) {
             isOpenAiKeyInvalid = true;
+            markOpenAiKeyInvalid();
             console.log("[Organon] OpenAI credentials unavailable or inactive, using independent second-opinion profile.");
           }
         }
@@ -1492,7 +1522,7 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
           });
         } catch (e) {
           response = await ai.models.generateContent({
-            model: "gemini-3.6-flash",
+            model: "gemini-2.5-flash",
             contents: secondPrompt,
             config: { temperature: 0.6, responseMimeType: "application/json" },
           });
@@ -1568,15 +1598,56 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
         cleanStage1MissingInfo(parsedGemini, rawText, language);
         cleanStage1MissingInfo(parsedOpenAI, rawText, language);
 
-        return res.json({
+        emitStep('category_mapping', 'done');
+        emitStep('crosscheck', 'done');
+        emitStep('arbitration', 'active');
+
+        let arbitrator_result = null;
+        try {
+          const apiKey = getGeminiApiKey();
+          if (apiKey) {
+            const ai = new GoogleGenAI({ apiKey });
+            const arbPrompt = `Du bist ein unabhängiger Schiedsrichter und Belegprüfer für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die beiden Analysen (Gemini und Zweitmeinung) und liefere ein JSON-Objekt mit "category_evaluations" für die 10 Kategorien.
+Originaltext: "${rawText.replace(/"/g, '\\\\"')}"
+Gemini: ${JSON.stringify(parsedGemini || {})}
+Zweitmeinung: ${JSON.stringify(parsedOpenAI || {})}
+Antworte AUSSCHLIESSLICH als gültiges JSON.`;
+            const arbRes = await ai.models.generateContent({
+              model: "gemini-3.5-flash-lite",
+              contents: arbPrompt,
+              config: { temperature: 0.1, responseMimeType: "application/json" }
+            });
+            arbitrator_result = parseAiJson(arbRes.text || "{}", null);
+          }
+        } catch (e) {
+          console.warn("Background compare arbitration notice:", e);
+        }
+
+        emitStep('arbitration', 'done');
+        emitStep('evidence_check', 'active');
+        emitStep('evidence_check', 'done');
+        emitStep('consolidation', 'active');
+        emitStep('consolidation', 'done');
+        emitStep('final_check', 'active');
+        emitStep('final_check', 'done');
+
+        const compareResponse = {
           engine: "compare",
           gemini: parsedGemini,
           openai: parsedOpenAI,
           provider: "openai",
           model_requested: "gpt-4o",
           model_used: openaiRes.modelUsed || "gpt-4o",
+          arbitrator_result,
           errors: { gemini: geminiError, openai: openaiError }
-        });
+        };
+
+        if (isStream) {
+          res.write(JSON.stringify({ type: 'result', data: compareResponse }) + '\n');
+          return res.end();
+        }
+
+        return res.json(compareResponse);
       }
 
       let responseText = "{}";
@@ -1596,6 +1667,9 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
       } else {
         responseText = await runGemini();
       }
+
+      emitStep('category_mapping', 'done');
+      emitStep('evidence_check', 'active');
 
       const parsed = { ...defaultAnalysis, ...parseAiJson(responseText, defaultAnalysis) };
       cleanStage1MissingInfo(parsed, rawText, language);
@@ -1853,6 +1927,9 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
 
       parsed.scoring_adequacy = sa;
 
+      emitStep('evidence_check', 'done');
+      emitStep('consolidation', 'active');
+
       // Generate AI Belegprüfer verification in parallel for maximum quality and speed
       let arbitrator_result = null;
       try {
@@ -1874,7 +1951,17 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
         console.warn("Background server arbitration notice:", e);
       }
 
-      return res.json({ engine: usedEngine, result: parsed, arbitrator_result });
+      emitStep('consolidation', 'done');
+      emitStep('final_check', 'active');
+      emitStep('final_check', 'done');
+
+      const singleResponse = { engine: usedEngine, result: parsed, arbitrator_result };
+      if (isStream) {
+        res.write(JSON.stringify({ type: 'result', data: singleResponse }) + '\n');
+        return res.end();
+      }
+
+      return res.json(singleResponse);
     } catch (error: any) {
       console.error("Organon Analyze API Error Details:");
       console.error("Name:", error?.name);
@@ -1882,6 +1969,14 @@ Antworte AUSSCHLIESSLICH als gültiges JSON.`;
       console.error("Stack:", error?.stack);
       console.error("Status:", error?.status || error?.statusCode);
       console.error("Response:", error?.response || error?.body);
+
+      if (req.body?.stream === true && res.headersSent) {
+        try {
+          res.write(JSON.stringify({ type: 'error', error: error?.message || String(error) }) + '\n');
+          res.end();
+        } catch {}
+        return;
+      }
 
       res.status(500).json({
         error: "Failed to analyze organon text.",
@@ -2453,13 +2548,13 @@ Text:
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.8-flash",
           contents: prompt,
           config: { temperature: 0.1 },
         });
       } catch (e) {
         response = await ai.models.generateContent({
-          model: "gemini-flash-latest",
+          model: "gemini-2.5-flash",
           contents: prompt,
           config: { temperature: 0.1 },
         });
@@ -2475,14 +2570,31 @@ Text:
 
   app.post("/api/organon/next-question", async (req, res) => {
     try {
-      const { rawText, currentMatrices = [], currentRelations = [], questionHistory = [], latestAnswer = null, currentQuestion = null } = req.body;
+      const { rawText, currentMatrices = [], currentRelations = [], questionHistory = [], latestAnswer = null, currentQuestion = null, endprueferResult = null } = req.body;
       const apiKey = getGeminiApiKey();
       if (!apiKey) {
         return res.status(503).json({ error: "GEMINI_API_KEY is not configured" });
       }
       const ai = new GoogleGenAI({ apiKey });
 
+      let endprueferSummary = "Kein Endprüfer-Ergebnis vorhanden.";
+      if (endprueferResult && typeof endprueferResult === 'object') {
+        if (Array.isArray(endprueferResult.category_checks)) {
+          endprueferSummary = endprueferResult.category_checks.map((c: any) => 
+            `- Kategorie [${c.category}]: Entscheidung: ${c.decision} | Befund/Korrektur: "${c.schiedsrichter_result || c.minimal_correction || ''}"`
+          ).join('\n');
+        } else if (endprueferResult.final_corrected_output) {
+          endprueferSummary = `Endprüfer-Gesamtergebnis: ${endprueferResult.final_corrected_output}`;
+        }
+      }
+
       const prompt = `Du bist die homöopathische Fallaufnahme-Frageengine nach Hahnemann und Bönninghausen.
+
+=======================================================================
+AUTORITATIVE GRUNDLAGE (ENDPRÜFER-ERGEBNIS STAGE 1):
+=======================================================================
+${endprueferSummary}
+
 Originaler O-Ton des Patienten: "${rawText}"
 Bisherige Beschwerdematrizen: ${JSON.stringify(currentMatrices)}
 Bisherige zeitliche Relationen: ${JSON.stringify(currentRelations)}
@@ -2491,10 +2603,11 @@ Neueste gestellte Frage: "${currentQuestion || 'Initial'}"
 Neueste Patientenantwort: "${latestAnswer || 'Initialer Einstieg'}"
 
 AUFGABE:
-1. Verarbeite die neueste Patientenantwort semantisch (Multi-Information-Extraktion: Wenn der Patient z.B. auf eine Lokalisationsfrage freiwillig auch Sensation und Modalität nennt, aktualisiere alle diese Felder in der entsprechenden Beschwerdematrix).
-2. Aktualisiere und präzisiere die Beschwerdematrizen ("updatedMatrices") und zeitlichen Relationen ("updatedRelations"). Beachte streng: Keine unzulässigen Kausalitätsannahmen, chronische Beschwerden bleiben getrennt, Vermutungen bleiben "PATIENT_SUSPECTED", verneinte Dinge bleiben "DENIED", nicht getestete Dinge bleiben "NOT_PERFORMED" / "UNKNOWN".
-3. Bestimme, ob der Fall für diese strukturierte Aufnahmephase ausreichend geklärt ist ("isFinished": true oder false).
-4. Falls nicht fertig, bestimme **genau eine nächste einzelne Frage** ("nextQuestion") nach dem Ein-Frage-Prinzip, welche die wichtigste verbleibende Unklarheit, Lücke oder den wichtigsten offenen Punkt für die akute oder wichtigste Beschwerde klärt.
+1. Nutze AUSSCHLIESSLICH das obige Endprüfer-Ergebnis und die validierten Kategorie-Prüfungen als autoritative Grundlage, um offene Informationslücken, Unklarheiten oder Widersprüche für Causa und alle anderen Organon-Kategorien zu identifizieren.
+2. Verarbeite die neueste Patientenantwort semantisch (Multi-Information-Extraktion).
+3. Aktualisiere und präzisiere die Beschwerdematrizen ("updatedMatrices") und zeitlichen Relationen ("updatedRelations"). Beachte streng: Keine unzulässigen Kausalitätsannahmen, chronische Beschwerden bleiben getrennt, Vermutungen bleiben "PATIENT_SUSPECTED", verneinte Dinge bleiben "DENIED".
+4. Bestimme, ob der Fall für diese strukturierte Aufnahmephase ausreichend geklärt ist ("isFinished": true oder false).
+5. Falls nicht fertig, bestimme **genau eine nächste einzelne Frage** ("nextQuestion") nach dem Ein-Frage-Prinzip, welche basierend auf den Endprüfer-Befunden den wichtigsten offenen Punkt für Causa, Lokalisation, Modalitäten oder Begleitsymptome klärt.
 
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
 {
@@ -2505,7 +2618,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     "text": "Genau eine einzelne Frage an den Patienten",
     "target_complaint_id": "comp_1",
     "target_field": "causa",
-    "reason": "Begründung, warum diese Frage als nächstes wichtig ist"
+    "reason": "Begründung, warum diese Frage basierend auf den Endprüfer-Ergebnissen als nächstes wichtig ist"
   },
   "isFinished": false,
   "summary": "Kurze Zusammenfassung, was durch die Antwort aktualisiert wurde"
@@ -2515,21 +2628,23 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-3.5-flash-lite",
+          model: "gemini-3.8-flash",
           contents: prompt,
           config: {
             temperature: 0.2,
             responseMimeType: "application/json",
+            maxOutputTokens: 2048,
           },
         });
       } catch (primaryErr: any) {
         console.warn("Primary model failed, trying fallback model:", primaryErr);
         response = await ai.models.generateContent({
-          model: "gemini-flash-latest",
+          model: "gemini-2.5-flash",
           contents: prompt,
           config: {
             temperature: 0.2,
             responseMimeType: "application/json",
+            maxOutputTokens: 2048,
           },
         });
       }
@@ -2586,19 +2701,45 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     existingEvidence: any[],
     rawText: string
   ) {
-    const mergedFacts = [...existingFacts];
-    const mergedEvidence = [...existingEvidence];
+    // Sanitize and filter out bloated / concatenated entries from existingFacts
+    const cleanExisting = (existingFacts || []).filter(f => {
+      const t = (f.text || '').trim();
+      if (!t) return false;
+      if (t.length > 250 && (t.match(/;/g) || []).length > 2) return false; // drop bloated concatenated strings
+      return true;
+    });
+
+    const mergedFacts: any[] = [];
+    const seenTexts = new Set<string>();
+
+    for (const f of cleanExisting) {
+      const tNorm = (f.text || '').toLowerCase().trim();
+      if (!seenTexts.has(tNorm)) {
+        seenTexts.add(tNorm);
+        mergedFacts.push(f);
+      }
+    }
+
+    const mergedEvidence = [...(existingEvidence || [])];
     const contradictions: Array<{ text: string; reason: string; dimension?: string; priority?: string }> = [];
 
     for (const inc of incomingFacts) {
-      const incText = (inc.text || inc.factText || '').trim();
+      let incText = (inc.text || inc.factText || '').trim();
       if (!incText) continue;
+      // If incText is bloated with semicolons, take the first clean part or split
+      if (incText.length > 250 && incText.includes(';')) {
+        const parts = incText.split(';').map(p => p.trim()).filter(Boolean);
+        if (parts.length > 0) incText = parts[0];
+      }
       const incDim = inc.dimension || inc.dimensionId || 'C1';
       const incTarget = inc.semanticTarget || inc.targetDimension || incDim;
       const incSymptom = inc.symptomId || '';
       const incEpisode = inc.episodeId;
       const incQuote = inc.evidence || inc.originalQuote || rawText.slice(0, 100);
       const incStatus = inc.status || inc.factStatus || 'BELEGT_FAKTISCH';
+
+      const tNorm = incText.toLowerCase().trim();
+      if (seenTexts.has(tNorm)) continue;
 
       // 1. Widerspruchserkennung (z.B. Stress-Widerspruch gem. Punkt 7)
       const lowerInc = incText.toLowerCase();
@@ -2619,7 +2760,6 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       });
 
       if (stressConflictIdx !== -1) {
-        // Beide Einträge auf WIDERSPRÜCHLICH setzen
         mergedFacts[stressConflictIdx].status = 'WIDERSPRÜCHLICH';
         const existingEvIdx = mergedEvidence.findIndex(e => e.content === mergedFacts[stressConflictIdx].text);
         if (existingEvIdx !== -1) {
@@ -2631,6 +2771,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
           dimension: incDim,
           priority: 'MITTEL'
         });
+        seenTexts.add(tNorm);
         mergedFacts.push({
           text: incText,
           evidence: incQuote,
@@ -2643,73 +2784,28 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         continue;
       }
 
-      // 2. Atomare Identitäts-Deduplizierung (stabil anhand dimensionId + semanticTarget + symptomId + episodeId, KEINE rein textbasierte includes-Verschmelzung verschiedener Sachverhalte)
-      const existingFactIndex = mergedFacts.findIndex(f => {
-        const fDim = f.dimension || f.dimensionId || 'C1';
-        const fTarget = f.semanticTarget || f.targetDimension || fDim;
-        const fSymptom = f.symptomId || '';
-        const fEpisode = f.episodeId;
-
-        if (fDim !== incDim) return false;
-        if (fEpisode && incEpisode && fEpisode !== incEpisode) return false;
-
-        const fText = (f.text || '').toLowerCase().trim();
-        const iText = incText.toLowerCase().trim();
-
-        // Zeitbezug- oder Sachverhaltskonflikte verhindern
-        const timeWords = ['gestern', 'vorgestern', 'letzte woche', 'heute', 'morgen', 'vor jahren', 'seit monaten', 'vor tagen'];
-        for (const tw of timeWords) {
-          const fHasTime = fText.includes(tw);
-          const iHasTime = iText.includes(tw);
-          if (fHasTime && iHasTime && fText !== iText) {
-            return false;
-          }
-        }
-
-        if (fTarget && incTarget && fTarget === incTarget && fTarget !== fDim && incTarget !== incDim) {
-          return true;
-        }
-        if (fSymptom && incSymptom && fSymptom === incSymptom) {
-          return true;
-        }
-
-        if (fText === iText) {
-          return true;
-        }
-
-        return false;
+      seenTexts.add(tNorm);
+      mergedFacts.push({
+        text: incText,
+        evidence: incQuote,
+        dimension: incDim,
+        semanticTarget: incTarget,
+        symptomId: incSymptom,
+        episodeId: incEpisode,
+        status: incStatus
       });
-
-      if (existingFactIndex === -1) {
-        mergedFacts.push({
-          text: incText,
-          evidence: incQuote,
-          dimension: incDim,
-          semanticTarget: incTarget,
-          symptomId: incSymptom,
-          episodeId: incEpisode,
-          status: incStatus
-        });
-        mergedEvidence.push({
-          id: `ev_${mergedEvidence.length + 1}`,
-          content: incText,
-          status: incStatus,
-          originalQuote: incQuote,
-          source: 'Patientenaussage',
-          assignedSymptom: incDim,
-          dimension: incDim,
-          episodeId: incEpisode,
-          patientConfidence: inc.patientConfidence,
-          epistemicRelation: inc.epistemicRelation
-        });
-      } else {
-        if (incQuote && (!mergedFacts[existingFactIndex].evidence || mergedFacts[existingFactIndex].evidence === 'Ausgangsbefund' || mergedFacts[existingFactIndex].evidence === 'Befund')) {
-          mergedFacts[existingFactIndex].evidence = incQuote;
-        }
-        if (incStatus && incStatus !== 'UNERHOBEN') {
-          mergedFacts[existingFactIndex].status = incStatus;
-        }
-      }
+      mergedEvidence.push({
+        id: `ev_${mergedEvidence.length + 1}`,
+        content: incText,
+        status: incStatus,
+        originalQuote: incQuote,
+        source: 'Patientenaussage',
+        assignedSymptom: incDim,
+        dimension: incDim,
+        episodeId: incEpisode,
+        patientConfidence: inc.patientConfidence,
+        epistemicRelation: inc.epistemicRelation
+      });
     }
 
     return { mergedFacts, mergedEvidence, contradictions };
@@ -2732,8 +2828,35 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     history: any[];
     rawText: string;
   }) {
-    if (!candidateQuestion || openAspects.length === 0) {
-      return { question: null, isFinished: true, stoppingReason: "Causa-Klärung abgeschlossen: Keine weiteren offenen Aspekte oder Fragen vorhanden (§§ 83–104)." };
+    if (!candidateQuestion) {
+      // Wenn das Modell keine Frage geliefert hat, prüfen ob ungedeckte Aspekte vorliegen oder Erstbefragung (Turn 0) aktiv ist:
+      const fallbackAspect = openAspects.find(a => {
+        const dim = a.dimension || a.targetDimension;
+        return !dim || !terminalPaths.some(tp => tp.toLowerCase().includes(dim.toLowerCase()));
+      });
+
+      if (fallbackAspect) {
+        candidateQuestion = {
+          questionId: `q_${historyLength + 1}`,
+          questionText: fallbackAspect.text ? `Können Sie Näheres zu "${fallbackAspect.text}" erläutern?` : "Welche besonderen Umstände, Einwirkungen oder Vorkommnisse fielen Ihnen rund um den Beginn auf?",
+          orientationExample: fallbackAspect.reason || "Begleitumstände, Witterung oder zeitlicher Ablauf.",
+          targetDimension: fallbackAspect.dimension || fallbackAspect.targetDimension || 'C3',
+          reason: "Vertiefung des offenen Aspekts nach Hahnemann (Organon §§ 83–104).",
+          questionStage: 1
+        };
+      } else if (historyLength === 0) {
+        // Erstbefragung: Niemals im Turn 0 abbrechen ohne Frage, sondern Fragentrichter öffnen!
+        candidateQuestion = {
+          questionId: `q_1`,
+          questionText: "Können Sie die Begleitumstände, die Zeit unmittelbar davor oder den genauen Ablauf rund um das Auftreten der Beschwerden näher beschreiben?",
+          orientationExample: "Offene Fragentrichter-Eröffnung (§ 84) zu Vorfällen, Reaktionen oder zeitlichem Ablauf.",
+          targetDimension: "C3",
+          reason: "Initiale Fragentrichter-Eröffnung nach Organon §§ 83–104.",
+          questionStage: 1
+        };
+      } else {
+        return { question: null, isFinished: true, stoppingReason: "Causa-Klärung abgeschlossen: Keine weiteren Fragen vorhanden (§§ 83–104)." };
+      }
     }
 
     const qText = (candidateQuestion.questionText || '').toLowerCase();
@@ -3027,9 +3150,11 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       rawText
     });
 
-    const isFinished = action === "finalize" || plannerDecision.isFinished || Boolean(geminiOnlyRes.isFinished);
+    const isFinished = action === "finalize" || plannerDecision.isFinished || !plannerDecision.question;
     const effectiveQuestion = isFinished ? null : plannerDecision.question;
-    const effectiveStoppingReason = geminiOnlyRes.stoppingReason || plannerDecision.stoppingReason || (isFinished ? "Causa-Klärung abgeschlossen nach Organon §§ 83–104." : undefined);
+    const effectiveStoppingReason = isFinished
+      ? (plannerDecision.stoppingReason || geminiOnlyRes.stoppingReason || "Causa-Klärung abgeschlossen nach Organon §§ 83–104.")
+      : undefined;
 
     // Punkt 9: Bereinigung von Repertorisations-Fremdtexten
     const cleanedLevelC = Array.isArray(geminiOnlyRes.finalEvaluation?.levelC_homeopathicInterpretation)
@@ -3336,9 +3461,11 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       rawText
     });
 
-    const isFinished = action === "finalize" || plannerDecision.isFinished || Boolean(arbRes.isFinished);
+    const isFinished = action === "finalize" || plannerDecision.isFinished || !plannerDecision.question;
     const effectiveQuestion = isFinished ? null : plannerDecision.question;
-    const effectiveStoppingReason = arbRes.stoppingReason || plannerDecision.stoppingReason || (isFinished ? "Causa-Klärung durch Schiedsrichter abgeschlossen." : undefined);
+    const effectiveStoppingReason = isFinished
+      ? (plannerDecision.stoppingReason || arbRes.stoppingReason || "Causa-Klärung durch Schiedsrichter abgeschlossen.")
+      : undefined;
 
     // Punkt 9: Bereinigung von Repertorisations-Fremdtexten
     const cleanedLevelC = Array.isArray(arbRes.finalSummary?.levelC_homeopathicInterpretation)
@@ -3629,19 +3756,45 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       });
     }
 
-    const knownFacts = (geminiOnlyRes.atomicFacts || []).map(f => ({
-      text: f.factText,
-      evidence: f.originalQuote,
-      dimension: f.dimensionId,
-      symptomId: f.symptomId || activeSymptomId
-    }));
+    const cleanExisting = (state?.knownFacts || []).filter((f: any) => {
+      const t = (f.text || '').trim();
+      if (!t) return false;
+      if (t.length > 250 && (t.match(/;/g) || []).length > 2) return false;
+      return true;
+    });
 
-    const mergedKnownFacts = [...(state?.knownFacts || [])];
-    knownFacts.forEach(k => {
-      if (!mergedKnownFacts.some(m => m.text === k.text && m.symptomId === k.symptomId)) {
+    const knownFacts = (geminiOnlyRes.atomicFacts || []).map(f => {
+      let fText = (f.factText || '').trim();
+      if (fText.length > 250 && fText.includes(';')) {
+        const parts = fText.split(';').map(p => p.trim()).filter(Boolean);
+        if (parts.length > 0) fText = parts[0];
+      }
+      return {
+        text: fText,
+        evidence: f.originalQuote,
+        dimension: f.dimensionId,
+        symptomId: f.symptomId || activeSymptomId
+      };
+    }).filter(f => Boolean(f.text));
+
+    const mergedKnownFacts: any[] = [];
+    const seenLocFacts = new Set<string>();
+
+    for (const f of cleanExisting) {
+      const key = `${(f.text || '').toLowerCase().trim()}__${f.symptomId || activeSymptomId}`;
+      if (!seenLocFacts.has(key)) {
+        seenLocFacts.add(key);
+        mergedKnownFacts.push(f);
+      }
+    }
+
+    for (const k of knownFacts) {
+      const key = `${(k.text || '').toLowerCase().trim()}__${k.symptomId || activeSymptomId}`;
+      if (!seenLocFacts.has(key)) {
+        seenLocFacts.add(key);
         mergedKnownFacts.push(k);
       }
-    });
+    }
 
     return {
       activeSymptomId: newActiveSymptomId,
@@ -3866,10 +4019,38 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
           dimension: f.dimensionId || "L1"
         })) : []);
 
-    const mergedKnownFacts = [...existingKnownFacts];
+    const clean3TierExisting = existingKnownFacts.filter((f: any) => {
+      const t = (f.text || '').trim();
+      if (!t) return false;
+      if (t.length > 250 && (t.match(/;/g) || []).length > 2) return false;
+      return true;
+    });
+
+    const mergedKnownFacts: any[] = [];
+    const seen3TierLocFacts = new Set<string>();
+
+    for (const f of clean3TierExisting) {
+      const key = `${(f.text || '').toLowerCase().trim()}__${f.symptomId || activeSymptomId}`;
+      if (!seen3TierLocFacts.has(key)) {
+        seen3TierLocFacts.add(key);
+        mergedKnownFacts.push(f);
+      }
+    }
+
     for (const nf of newFacts) {
-      if (!mergedKnownFacts.some(k => k.text === nf.text && k.symptomId === nf.symptomId)) {
-        mergedKnownFacts.push(nf);
+      let tNorm = (nf.text || '').trim();
+      if (tNorm.length > 250 && tNorm.includes(';')) {
+        const parts = tNorm.split(';').map((p: string) => p.trim()).filter(Boolean);
+        if (parts.length > 0) tNorm = parts[0];
+      }
+      if (!tNorm) continue;
+      const key = `${tNorm.toLowerCase()}__${nf.symptomId || activeSymptomId}`;
+      if (!seen3TierLocFacts.has(key)) {
+        seen3TierLocFacts.add(key);
+        mergedKnownFacts.push({
+          ...nf,
+          text: tNorm
+        });
       }
     }
 
@@ -4448,34 +4629,43 @@ oder
       return JSON.parse(clean);
     } catch (e1) {
       try {
-        // Fix trailing commas and unescaped newlines/control chars inside strings
-        const fixed = clean
-          .replace(/,\s*([}\]])/g, '$1')
-          .replace(/[\u0000-\u001F]+/g, (match) => {
-            if (match === '\n') return '\\n';
-            if (match === '\r') return '\\r';
-            if (match === '\t') return '\\t';
-            return '';
-          });
-        return JSON.parse(fixed);
-      } catch (e2) {
+        const repaired = jsonrepair(clean);
+        return JSON.parse(repaired);
+      } catch {
         try {
-          // Fallback evaluation if safe or attempting to auto-close truncated JSON
-          let trial = clean;
-          // Count open braces vs close braces
-          const opens = (trial.match(/{/g) || []).length;
-          const closes = (trial.match(/}/g) || []).length;
-          if (opens > closes) {
-            trial += '}'.repeat(opens - closes);
+          // Fix trailing commas and unescaped newlines/control chars inside strings
+          const fixed = clean
+            .replace(/,\s*([}\]])/g, '$1')
+            .replace(/[\u0000-\u001F]+/g, (match) => {
+              if (match === '\n') return '\\n';
+              if (match === '\r') return '\\r';
+              if (match === '\t') return '\\t';
+              return '';
+            });
+          try {
+            return JSON.parse(fixed);
+          } catch {
+            return JSON.parse(jsonrepair(fixed));
           }
-          // eslint-disable-next-line no-new-func
-          const evaluated = new Function(`return ${trial}`)();
-          if (evaluated && typeof evaluated === 'object') {
-            return evaluated;
-          }
-        } catch {}
+        } catch (e2) {
+          try {
+            // Fallback evaluation if safe or attempting to auto-close truncated JSON
+            let trial = clean;
+            // Count open braces vs close braces
+            const opens = (trial.match(/{/g) || []).length;
+            const closes = (trial.match(/}/g) || []).length;
+            if (opens > closes) {
+              trial += '}'.repeat(opens - closes);
+            }
+            // eslint-disable-next-line no-new-func
+            const evaluated = new Function(`return ${trial}`)();
+            if (evaluated && typeof evaluated === 'object') {
+              return evaluated;
+            }
+          } catch {}
 
-        return fallbackObj;
+          return fallbackObj;
+        }
       }
     }
   }
@@ -4971,7 +5161,7 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
 `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt,
       });
 
@@ -5011,7 +5201,7 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
       recordTokenUsage({
         endpoint: '/api/medications/clinical-comparison',
         actionName: `AMTS Clinical Analysis Engine v5.0 (${targetLang.toUpperCase()})`,
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         promptTokens: response.usageMetadata?.promptTokenCount || 750,
         candidatesTokens: response.usageMetadata?.candidatesTokenCount || 1200
       });

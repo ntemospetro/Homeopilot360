@@ -3424,6 +3424,14 @@ export const fr = {
   causaHahnemannInactiveBadge: "Inactive (standard Gemini uniquement)",
   causa3TierBannerDesc: "Examen parallèle indépendant (Gemini & GPT-4o) avec harmonisation par arbitre",
   causaGeminiOnlyBannerDesc: "Exploration Causa ciblée avec exactement une instance Gemini par tour",
+  modeGeminiOnlyBtn: "Gemini-only",
+  modeHahnemannBtn: "Vérification Hahnemann",
+  modeAbCompareBtn: "A/B",
+  causaLevelBResolved: "Aucun aspect de cause non résolu ou conflictuel ne subsiste.",
+  causaNoHistoryYet: "Aucune question d'approfondissement posée pour l'instant.",
+  causaOrientationTherapistLabel: "Guide d'orientation pour le thérapeute :",
+  localisatioLevelBResolved: "Attribution topographique conservatrice terminée.",
+  localisatioNoHistoryYet: "Aucune question d'approfondissement posée pour l'instant.",
 
   // Localisatio-Vertiefungsanalyse (Stage 2)
   organonStartAnalysisWithLocalisatio: "Approfondissement Localisatio",
@@ -3548,5 +3556,24 @@ export const fr = {
   stage2IssueAmbiguity: "Déclaration ambiguë",
   stage2IssueAssignmentUnclear: "Attribution imprécise",
   stage2ClarificationProgress: "Question ouverte {{current}} sur {{total}}",
-  stage2ResolvedIssuesCount: "Points clarifiés avec succès : {{count}}"
+  stage2ResolvedIssuesCount: "Points clarifiés avec succès : {{count}}",
+  stage2AnamnesisIncompleteTitle: "Anamnèse Organon incomplète",
+  stage2AnamnesisIncompleteDesc: "{completed} sur {total} catégories traitées • {pending} encore en attente",
+  stage2AnamnesisIncompleteNotice: "La vérification de plausibilité et de contradiction est terminée, mais les 10 catégories n'ont pas encore été approfondies dans l'étape 2. Vous pouvez accéder directement aux catégories en attente ci-dessous ou conclure avec les constatations préliminaires existantes.",
+  stage2ActionDeepenNow: "Approfondir maintenant",
+  stage2AdoptAllPendingDrafts: "Adopter tous les éléments en attente avec les constatations préliminaires",
+  stage2CategoriesOverviewTitle: "Aperçu des 10 catégories d'Organon (§§ 83–104)",
+  stage2FinalizeWithIncompleteBtn: "Finaliser avec l'état actuel",
+
+  // Live Process Tracker (Organon Analysis)
+  organonLiveProcessTitle: "Analyse de cas structurée selon Hahnemann",
+  organonLiveProcessSub: "Les étapes de traitement s'exécutent en temps réel",
+  organonStepPatientText: "Récit du patient enregistré",
+  organonStepTextDecomposition: "Texte décomposé en déclarations pertinentes",
+  organonStepCategoryMapping: "Attribution des déclarations aux catégories de l'Organon …",
+  organonStepCrossCheck: "Contre-expertise indépendante en cours …",
+  organonStepArbitration: "Harmonisation des résultats en cours …",
+  organonStepEvidenceCheck: "Preuves en cours de vérification",
+  organonStepConsolidation: "Consolidation des résultats",
+  organonStepFinalCheck: "Contrôle final"
 };

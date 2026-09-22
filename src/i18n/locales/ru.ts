@@ -3424,6 +3424,14 @@ export const ru = {
   causaHahnemannInactiveBadge: "Неактивно (только Gemini по умолчанию)",
   causa3TierBannerDesc: "Независимая параллельная проверка (Gemini и GPT-4o) с гармонизацией арбитром",
   causaGeminiOnlyBannerDesc: "Фокусированное исследование Causa с ровно одним вызовом Gemini за ход",
+  modeGeminiOnlyBtn: "Gemini-only",
+  modeHahnemannBtn: "Проверка Ганемана",
+  modeAbCompareBtn: "A/B",
+  causaLevelBResolved: "Нерешенных или противоречивых аспектов причины не осталось.",
+  causaNoHistoryYet: "Углубляющие вопросы еще не задавались.",
+  causaOrientationTherapistLabel: "Ориентировочная подсказка для терапевта:",
+  localisatioLevelBResolved: "Консервативное топографическое соотнесение завершено.",
+  localisatioNoHistoryYet: "Углубляющие вопросы еще не задавались.",
 
   // Localisatio-Vertiefungsanalyse (Stage 2)
   organonStartAnalysisWithLocalisatio: "Углубление Localisatio",
@@ -3548,5 +3556,24 @@ export const ru = {
   stage2IssueAmbiguity: "Неоднозначное высказывание",
   stage2IssueAssignmentUnclear: "Неясное отнесение",
   stage2ClarificationProgress: "Открытый вопрос {{current}} из {{total}}",
-  stage2ResolvedIssuesCount: "Успешно уточненных пунктов: {{count}}"
+  stage2ResolvedIssuesCount: "Успешно уточненных пунктов: {{count}}",
+  stage2AnamnesisIncompleteTitle: "Анамнез Organon еще не завершен",
+  stage2AnamnesisIncompleteDesc: "{completed} из {total} категорий обработано • {pending} еще не завершено",
+  stage2AnamnesisIncompleteNotice: "Проверка на достоверность и противоречия завершена, однако не все 10 категорий были углублены на 2-м этапе. Вы можете перейти к открытым категориям ниже или завершить работу с имеющимися предварительными данными.",
+  stage2ActionDeepenNow: "Углубить сейчас",
+  stage2AdoptAllPendingDrafts: "Принять все открытые с предварительными данными",
+  stage2CategoriesOverviewTitle: "Обзор всех 10 категорий Organon (§§ 83–104)",
+  stage2FinalizeWithIncompleteBtn: "Завершить в текущем состоянии",
+
+  // Live Process Tracker (Organon Analysis)
+  organonLiveProcessTitle: "Структурированный анализ случая по Ганеману",
+  organonLiveProcessSub: "Шаги обработки выполняются в реальном времени",
+  organonStepPatientText: "Текст пациента зафиксирован",
+  organonStepTextDecomposition: "Текст разбит на значимые высказывания",
+  organonStepCategoryMapping: "Высказывания соотносятся с категориями Органона …",
+  organonStepCrossCheck: "Выполняется независимая перекрёстная проверка …",
+  organonStepArbitration: "Сопоставление и согласование результатов …",
+  organonStepEvidenceCheck: "Проверка доказательств и точности",
+  organonStepConsolidation: "Консолидация результатов",
+  organonStepFinalCheck: "Финальная проверка"
 };

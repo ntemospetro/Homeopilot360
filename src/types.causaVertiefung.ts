@@ -69,6 +69,7 @@ export interface CausaHistoryEntry {
   orientationExample?: string;
   answer: string;
   extractedNotes?: string;
+  dimension?: string;
 }
 
 export interface CausaSummaryThreeLevels {

@@ -14,6 +14,7 @@ interface OrganonDynamicQuestionModalProps {
   rawText: string;
   initialMatrices: OrganonComplaintMatrix[];
   initialRelations: OrganonComplaintRelation[];
+  endprueferResult?: any | null;
 }
 
 export const OrganonDynamicQuestionModal: React.FC<OrganonDynamicQuestionModalProps> = ({
@@ -21,7 +22,8 @@ export const OrganonDynamicQuestionModal: React.FC<OrganonDynamicQuestionModalPr
   onClose,
   rawText,
   initialMatrices,
-  initialRelations
+  initialRelations,
+  endprueferResult = null
 }) => {
   const [engineState, setEngineState] = useState<OrganonQuestionEngineState | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -49,7 +51,7 @@ export const OrganonDynamicQuestionModal: React.FC<OrganonDynamicQuestionModalPr
     setLoading(true);
     setError(null);
     try {
-      const state = await initDynamicQuestions(textToUse, matrices, relations);
+      const state = await initDynamicQuestions(textToUse, matrices, relations, endprueferResult);
       setEngineState(state);
     } catch (err: any) {
       setError(err.message || 'Fehler beim Starten der Frageengine');
@@ -75,7 +77,8 @@ export const OrganonDynamicQuestionModal: React.FC<OrganonDynamicQuestionModalPr
         engineState.complaint_relations,
         engineState.question_history,
         ans,
-        currentQText
+        currentQText,
+        endprueferResult
       );
       setEngineState(updatedState);
     } catch (err: any) {

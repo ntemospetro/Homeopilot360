@@ -11,7 +11,7 @@
  * - Exakte Erhaltung des Evidence Ceilings
  */
 
-import { Stage2Category, STAGE2_CATEGORY_META } from '../types/organonStage2Workflow';
+import { Stage2Category, STAGE2_CATEGORY_META, STAGE2_CATEGORY_SEQUENCE } from '../types/organonStage2Workflow';
 import {
   OrganonOpenIssue,
   OrganonOpenIssueType,
@@ -382,6 +382,25 @@ export function executeOrganonGlobalReview(input: OrganonGlobalReviewInput): Org
   // 6. ENTSCHEIDUNG ÜBER NÄCHSTE AKTION & SCHLUSSZUSTAND
   // =========================================================================
 
+  // Vollständigkeitsanalyse der 10 Organon-Kategorien
+  const pendingCategories: Stage2Category[] = [];
+  let completedCount = 0;
+  let skippedCount = 0;
+
+  STAGE2_CATEGORY_SEQUENCE.forEach(cat => {
+    const rec = (stage2Records as any)?.[cat];
+    const status = rec?.status;
+    if (status === 'COMPLETED') {
+      completedCount++;
+    } else if (status === 'SKIPPED_SUFFICIENT') {
+      skippedCount++;
+    } else {
+      pendingCategories.push(cat);
+    }
+  });
+
+  const isFullySettled = pendingCategories.length === 0;
+
   let nextAction: 'ASK_CLARIFICATION' | 'COMPLETE' = 'COMPLETE';
   let currentIssue: OrganonOpenIssue | null = null;
   let proposedQuestion: string | undefined = undefined;
@@ -413,6 +432,10 @@ export function executeOrganonGlobalReview(input: OrganonGlobalReviewInput): Org
     summaryNotes.push(`Priorität 1: ${currentIssue?.description || 'Klärung erforderlich'}`);
   }
 
+  if (!isFullySettled) {
+    summaryNotes.push(`Vollständigkeitsstatus: ${completedCount + skippedCount} von 10 Kategorien vertieft (${pendingCategories.length} noch offen).`);
+  }
+
   return {
     reviewStatus,
     openIssues: activeOpenIssues,
@@ -423,6 +446,14 @@ export function executeOrganonGlobalReview(input: OrganonGlobalReviewInput): Org
     proposedQuestion,
     summaryNotes,
     timestamp: new Date().toISOString(),
+    completeness: {
+      totalCategories: STAGE2_CATEGORY_SEQUENCE.length,
+      completedCount,
+      skippedCount,
+      pendingCount: pendingCategories.length,
+      isFullySettled,
+      pendingCategories
+    },
     meta: {
       totalCheckedCategories: 10,
       evidenceCeilingVerified: true,

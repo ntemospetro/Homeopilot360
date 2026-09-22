@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { jsonrepair } from "jsonrepair";
 import { 
   CAUSA_DIMENSION_NAMES, 
   CausaDimensionId,
@@ -53,6 +54,122 @@ export interface CausaArbitratorDecision {
   };
 }
 
+function safeParseJson<T = any>(rawText: string, fallback: T): T {
+  if (!rawText || typeof rawText !== "string") return fallback;
+  let cleaned = rawText.trim();
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
+  }
+
+  // Find boundaries of outer JSON object
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+
+  // 1. Direct parse first
+  try {
+    return JSON.parse(cleaned);
+  } catch (initialErr) {
+    // 2. High-precision jsonrepair library
+    try {
+      const repaired = jsonrepair(cleaned);
+      return JSON.parse(repaired);
+    } catch {
+      // 3. Trailing commas & unescaped control chars repair
+      try {
+        const sanitized = cleaned
+          .replace(/,\s*([}\]])/g, '$1')
+          .replace(/[\u0000-\u001F]+/g, (match) => {
+            if (match === '\n') return '\\n';
+            if (match === '\r') return '\\r';
+            if (match === '\t') return '\\t';
+            return '';
+          });
+        try {
+          return JSON.parse(sanitized);
+        } catch {
+          const repairedSanitized = jsonrepair(sanitized);
+          return JSON.parse(repairedSanitized);
+        }
+      } catch {
+        // 4. Truncated or malformed JSON heuristic repair
+        try {
+          let repaired = cleaned
+            .replace(/,\s*"[^"]*"?\s*:\s*"?$/, "")
+            .replace(/,\s*"[^"]*"?\s*$/, "")
+            .replace(/,\s*$/, "");
+
+          const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
+          if (quoteCount % 2 !== 0) {
+            repaired += '"';
+          }
+          let openBrackets = 0;
+          let openBraces = 0;
+          let inString = false;
+          let escapeNext = false;
+          for (let i = 0; i < repaired.length; i++) {
+            const c = repaired[i];
+            if (escapeNext) {
+              escapeNext = false;
+              continue;
+            }
+            if (c === "\\") {
+              escapeNext = true;
+              continue;
+            }
+            if (c === '"') {
+              inString = !inString;
+              continue;
+            }
+            if (!inString) {
+              if (c === "{") openBraces++;
+              else if (c === "}") openBraces = Math.max(0, openBraces - 1);
+              else if (c === "[") openBrackets++;
+              else if (c === "]") openBrackets = Math.max(0, openBrackets - 1);
+            }
+          }
+          repaired = repaired.replace(/,\s*$/, "");
+          while (openBrackets > 0) {
+            repaired += "]";
+            openBrackets--;
+          }
+          while (openBraces > 0) {
+            repaired += "}";
+            openBraces--;
+          }
+          try {
+            return JSON.parse(repaired);
+          } catch {
+            const libRepaired = jsonrepair(repaired);
+            return JSON.parse(libRepaired);
+          }
+        } catch (err2) {
+          // 5. Fallback evaluation
+          try {
+            let trial = cleaned.replace(/,\s*([}\]])/g, '$1');
+            const opens = (trial.match(/{/g) || []).length;
+            const closes = (trial.match(/}/g) || []).length;
+            if (opens > closes) {
+              trial += '}'.repeat(opens - closes);
+            }
+            // eslint-disable-next-line no-new-func
+            const evaluated = new Function(`return ${trial}`)();
+            if (evaluated && typeof evaluated === 'object') {
+              return evaluated;
+            }
+          } catch {}
+
+          return fallback;
+        }
+      }
+    }
+  }
+}
+
 const CAUSA_SYSTEM_SPEC = `Du bist Teil des 3-Instanzen-Prüfsystems für die Causa-Vertiefung nach Samuel Hahnemann (Organon §§ 83–104).
 Das Ziel ist die präzise, evidenzgetreue und unvoreingenommene Klärung möglicher Krankheitsauslöser.
 
@@ -87,6 +204,39 @@ WICHTIGSTE METHODISCHE REGELN:
      a) "Causa ausreichend gestützt" (Patient berichtet nachvollziehbaren Zusammenhang)
      b) "Causa unsicher" (Patient vermutet Zusammenhang, Gegenbeispiele/Lücken bestehen)
      c) "Keine ausreichend belegte Causa ermittelbar" (völlig gleichwertiges, valides Ergebnis!)`;
+
+const CAUSA_PRIMARY_MODEL = "gemini-3.8-flash";
+const CAUSA_FALLBACK_MODEL = "gemini-2.5-flash";
+
+async function executeCausaAiGeneration(
+  ai: GoogleGenAI,
+  prompt: string,
+  temperature: number = 0.2,
+  maxOutputTokens: number = 8192
+) {
+  try {
+    return await ai.models.generateContent({
+      model: CAUSA_PRIMARY_MODEL,
+      contents: prompt,
+      config: { 
+        temperature, 
+        responseMimeType: "application/json",
+        maxOutputTokens
+      }
+    });
+  } catch (err) {
+    console.warn(`[CausaEngine] Primary model ${CAUSA_PRIMARY_MODEL} failed, falling back to ${CAUSA_FALLBACK_MODEL}:`, err);
+    return await ai.models.generateContent({
+      model: CAUSA_FALLBACK_MODEL,
+      contents: prompt,
+      config: { 
+        temperature, 
+        responseMimeType: "application/json",
+        maxOutputTokens
+      }
+    });
+  }
+}
 
 export async function runGeminiCausaAnalysis(
   ai: GoogleGenAI,
@@ -135,38 +285,33 @@ Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown-Ummantelung:
   }
 }`;
 
-  let response;
-  try {
-    response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: prompt,
-      config: { temperature: 0.2, responseMimeType: "application/json" }
-    });
-  } catch (err) {
-    response = await ai.models.generateContent({
-      model: "gemini-3.5-flash-lite",
-      contents: prompt,
-      config: { temperature: 0.2, responseMimeType: "application/json" }
-    });
-  }
+  const response = await executeCausaAiGeneration(ai, prompt, 0.2, 2048);
 
-  try {
-    return JSON.parse(response.text || "{}");
-  } catch (e) {
-    return {
-      knownFacts: existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C8" }] : [],
-      openAspects: [{ text: "Erstbeginn & Chronologie", reason: "Bisher ungeklärt", dimension: "C1" }],
-      suggestedQuestion: {
-        questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum allerersten Mal auftraten?",
-        orientationExample: "Besondere Ereignisse, Umstände, körperliche Verfassung oder zeitliche Auffälligkeiten.",
-        targetDimension: "C1",
-        reason: "Offene Ersterfassung des Zeitpunkts und der Umstände des Erstbeginns.",
-        questionStage: 1
-      },
-      dimensionStatus: { C1: "UNERHOBEN" },
-      isFinished: false
-    };
-  }
+  const fallbackResult: CausaAgentAnalysis = {
+    knownFacts: existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C8" }] : [],
+    openAspects: [{ text: "Erstbeginn & Chronologie", reason: "Bisher ungeklärt", dimension: "C1" }],
+    suggestedQuestion: {
+      questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum allerersten Mal auftraten?",
+      orientationExample: "Besondere Ereignisse, Umstände, körperliche Verfassung oder zeitliche Auffälligkeiten.",
+      targetDimension: "C1",
+      reason: "Offene Ersterfassung des Zeitpunkts und der Umstände des Erstbeginns.",
+      questionStage: 1
+    },
+    dimensionStatus: { C1: "UNERHOBEN" },
+    isFinished: false
+  };
+
+  return safeParseJson<CausaAgentAnalysis>(response.text || "{}", fallbackResult);
+}
+
+let isOpenAiCausaKeyInvalid = false;
+
+export function markOpenAiKeyInvalid(): void {
+  isOpenAiCausaKeyInvalid = true;
+}
+
+export function isOpenAiKeyMarkedInvalid(): boolean {
+  return isOpenAiCausaKeyInvalid;
 }
 
 export async function runGptCausaAnalysis(
@@ -176,7 +321,15 @@ export async function runGptCausaAnalysis(
   history: Array<{ question: string; answer: string }>,
   language: string = "de"
 ): Promise<CausaAgentAnalysis> {
-  const openAiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET;
+  const rawOpenAiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET;
+  const openAiKey = typeof rawOpenAiKey === "string" ? rawOpenAiKey.trim() : "";
+  const isLikelyValidKey =
+    Boolean(openAiKey) &&
+    openAiKey.length > 20 &&
+    !isOpenAiCausaKeyInvalid &&
+    !openAiKey.includes("YOUR_") &&
+    !openAiKey.startsWith("sk-proj-YOUR") &&
+    !openAiKey.includes("MY_KEY");
 
   const prompt = `${CAUSA_SYSTEM_SPEC}
 
@@ -218,7 +371,7 @@ Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown:
   }
 }`;
 
-  if (openAiKey) {
+  if (isLikelyValidKey) {
     try {
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: openAiKey, timeout: 6000, maxRetries: 0 });
@@ -235,35 +388,35 @@ Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown:
       if (content) {
         return JSON.parse(content);
       }
-    } catch (e) {
-      console.warn("[CausaMultiAgent] OpenAI direct call failed or unavailable, fallback to independent engine:", e);
+    } catch (e: any) {
+      isOpenAiCausaKeyInvalid = true;
+      console.log("[CausaMultiAgent] OpenAI direct credentials unavailable or inactive, smoothly utilizing independent second-opinion engine.");
     }
   }
 
   // Fallback zu separatem, unabhängigem Prompt-Aufruf (Second-Opinion Profile)
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
-    contents: `[SYSTEM: DU ARBEITEST ALS VOLLKOMMEN UNABHÄNGIGE INSTANZ 2 (GPT-4o PRO EMULATION)]\n\n${prompt}`,
-    config: { temperature: 0.3, responseMimeType: "application/json" }
-  });
+  const response = await executeCausaAiGeneration(
+    ai,
+    `[SYSTEM: DU ARBEITEST ALS VOLLKOMMEN UNABHÄNGIGE INSTANZ 2 (GPT-4o PRO EMULATION)]\n\n${prompt}`,
+    0.3,
+    2048
+  );
 
-  try {
-    return JSON.parse(response.text || "{}");
-  } catch (e) {
-    return {
-      knownFacts: existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C8" }] : [],
-      openAspects: [{ text: "Erstbeginn & Chronologie", reason: "Bisher ungeklärt", dimension: "C1" }],
-      suggestedQuestion: {
-        questionText: "Wie genau haben die Beschwerden damals angefangen und was war in der Zeit davor los?",
-        orientationExample: "Ereignisse, Stress, Witterung oder sonstige Umstände.",
-        targetDimension: "C1",
-        reason: "Offene Erfassung des Beginns ohne Vorab-Hypothese.",
-        questionStage: 1
-      },
-      dimensionStatus: { C1: "UNERHOBEN" },
-      isFinished: false
-    };
-  }
+  const fallbackGpt: CausaAgentAnalysis = {
+    knownFacts: existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C8" }] : [],
+    openAspects: [{ text: "Erstbeginn & Chronologie", reason: "Bisher ungeklärt", dimension: "C1" }],
+    suggestedQuestion: {
+      questionText: "Wie genau haben die Beschwerden damals angefangen und was war in der Zeit davor los?",
+      orientationExample: "Ereignisse, Stress, Witterung oder sonstige Umstände.",
+      targetDimension: "C1",
+      reason: "Offene Erfassung des Beginns ohne Vorab-Hypothese.",
+      questionStage: 1
+    },
+    dimensionStatus: { C1: "UNERHOBEN" },
+    isFinished: false
+  };
+
+  return safeParseJson<CausaAgentAnalysis>(response.text || "{}", fallbackGpt);
 }
 
 export async function runCausaArbitration(
@@ -339,43 +492,32 @@ Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown:
   "finalSummary": null
 }`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
-    contents: prompt,
-    config: { temperature: 0.1, responseMimeType: "application/json" }
-  });
+  const response = await executeCausaAiGeneration(ai, prompt, 0.1, 2048);
 
-  try {
-    const parsed = JSON.parse(response.text || "{}");
-    return {
-      ...parsed,
-      agentOpinions: {
-        geminiQuestion: geminiAnalysis.suggestedQuestion?.questionText || "",
-        gptQuestion: gptAnalysis.suggestedQuestion?.questionText || ""
-      }
-    };
-  } catch (e) {
-    // Robuster Fallback, falls der Schiedsrichter-Parse fehlschlägt
-    const selectedQ = gptAnalysis.suggestedQuestion?.questionText || geminiAnalysis.suggestedQuestion?.questionText || "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum ersten Mal auftraten?";
-    return {
-      chosenQuestion: {
-        questionId: "q_arb_fallback",
-        questionText: selectedQ,
-        orientationExample: "Ereignisse, Verfassung, Witterung oder zeitliche Umstände.",
-        targetDimension: "C1",
-        reason: "Offene Ersterfassung des zeitlichen und situationalen Kontexts.",
-        arbitrationNote: "Konsolidierung nach Schiedsrichter-Prüfung beider Modellvorschläge."
-      },
-      factsDelta: [],
-      dimensionCompletion: {},
-      isFinished: false,
-      finalSummary: null,
-      agentOpinions: {
-        geminiQuestion: geminiAnalysis.suggestedQuestion?.questionText || "",
-        gptQuestion: gptAnalysis.suggestedQuestion?.questionText || ""
-      }
-    };
-  }
+  const selectedQ = gptAnalysis.suggestedQuestion?.questionText || geminiAnalysis.suggestedQuestion?.questionText || "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum ersten Mal auftraten?";
+  const defaultArbitrationFallback = {
+    chosenQuestion: {
+      questionId: "q_arb_fallback",
+      questionText: selectedQ,
+      orientationExample: "Ereignisse, Verfassung, Witterung oder zeitliche Umstände.",
+      targetDimension: "C1",
+      reason: "Offene Ersterfassung des zeitlichen und situationalen Kontexts.",
+      arbitrationNote: "Konsolidierung nach Schiedsrichter-Prüfung beider Modellvorschläge."
+    },
+    factsDelta: [],
+    dimensionCompletion: {},
+    isFinished: false,
+    finalSummary: null
+  };
+
+  const parsed = safeParseJson(response.text || "{}", defaultArbitrationFallback);
+  return {
+    ...parsed,
+    agentOpinions: {
+      geminiQuestion: geminiAnalysis.suggestedQuestion?.questionText || "",
+      gptQuestion: gptAnalysis.suggestedQuestion?.questionText || ""
+    }
+  };
 }
 
 // ============================================================
@@ -514,9 +656,14 @@ VERBINDLICHE METHODISCHE GESETZE (UNVERÄNDERT DURCHZUSETZEN):
 7. EPISODEN-TRENNUNG:
    - Trenne Tatsachen strikt nach Episoden (EP_INITIAL, EP_RECURRENT, EP_SINGLE_EXERTION, EP_CHRONIC_EXPOSURE, EP_HISTORICAL).
 
-8. STOPP-REGEL & DETERMINISTISCHE KONVERGENZ:
-   - Es gibt KEINE Pflicht, alle 13 Dimensionen abzufragen! UNERHOBEN allein ist KEIN Fragegrund!
-   - Stoppe (isFinished = true, nextQuestion = null), sobald die im konkreten Fall relevanten, sinnvoll erhebbaren Causa-Aspekte erhoben sind ODER keine weiteren sachdienlichen Fragen offen sind ODER keine Causa ermittelbar ist (§ 104).
+8. STOPP-REGEL & VERTIEFUNGS-PFLICHT NACH HAHNEMANN (§§ 83–104):
+   - Wenn der Patient ein Ereignis, einen Sturz, eine Kälteeinwirkung oder eine seelische Erschütterung nennt (z. B. "Sturz vom Fahrrad"), ist die Causa dadurch NICHT abgeschlossen, sondern MUSS offen vertieft werden!
+   - Kläre in diesem Fall die Phänomenologie der Einwirkung (C4: Wie lief es genau ab? Krafteinwirkung?), die Wahrnehmung/Sofortreaktion (C6) oder die Latenzzeit (C7: Wann nach dem Ereignis traten die Symptome auf?).
+   - Breche NIEMALS im ersten Turn (history leer) ab, wenn ein potenzieller Auslöser oder Beginn vorliegt, sondern formuliere stets eine offene Vertiefungsfrage (Fragentrichter Stufe 1).
+   - Stoppe (isFinished = true, nextQuestion = null) erst, wenn:
+     a) die relevanten Begleitumstände und der Verlauf der Einwirkung geklärt sind, ODER
+     b) der Patient angibt, sich an keine weiteren Einzelheiten erinnern zu können (NICHT_ERINNERLICH), ODER
+     c) nach sorgfältiger Befragung keine hinreichend belegte Causa ermittelbar ist (§ 104).
    - GÜLTIGES, VOLLWERTIGES ENDERGEBNIS: "Keine ausreichend belegte Causa ermittelbar." Wenn kein Auslöser belegt ist, erzwinge keinen!
 
 DIE 13 CAUSA-DIMENSIONEN (C1–C13):
@@ -558,18 +705,12 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt dieser Struktur:
   "finalEvaluation": null
 }`;
 
-  // Genau EIN einziger Gemini-Aufruf pro Turn. Kein GPT, kein Schiedsrichter, kein Fallback-Modell.
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
-    contents: prompt,
-    config: { 
-      temperature: 0.1, 
-      responseMimeType: "application/json" 
-    }
-  });
+  // Genau EIN einziger schneller Gemini-Aufruf pro Turn.
+  const response = await executeCausaAiGeneration(ai, prompt, 0.1, 2048);
 
-  try {
-    const parsed = JSON.parse(response.text || "{}");
+  const rawJsonText = response.text || "{}";
+  const parsed = safeParseJson(rawJsonText, null);
+  if (parsed && typeof parsed === "object") {
     return {
       atomicFacts: Array.isArray(parsed.atomicFacts) ? parsed.atomicFacts : [],
       dimensionStates: parsed.dimensionStates || {},
@@ -579,37 +720,37 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt dieser Struktur:
       stoppingReason: parsed.stoppingReason || (parsed.isFinished ? "Causa-Klärung abgeschlossen." : undefined),
       finalEvaluation: parsed.finalEvaluation || null
     };
-  } catch (parseErr) {
-    console.error("[runGeminiOnlyCausaDeepen] JSON Parse Error:", parseErr, response.text);
-    const hasC1Evidence = (Array.isArray(canonicalState?.facts) && canonicalState.facts.some((f: any) => f.dimensionId === 'C1')) ||
-      (Array.isArray(canonicalState?.knownFacts) && canonicalState.knownFacts.some((k: any) => k.dimension === 'C1'));
-
-    return {
-      atomicFacts: existingCausaText ? [
-        {
-          factId: "f_fallback",
-          factText: existingCausaText,
-          originalQuote: rawText.slice(0, 100),
-          episodeId: "EP_INITIAL",
-          dimensionId: hasC1Evidence ? "C3" : "C1",
-          factStatus: "BELEGT_FAKTISCH",
-          patientConfidence: "SICHERE_BEOBACHTUNG",
-          epistemicRelation: "ZEITLICHE_KOINZIDENZ"
-        }
-      ] : [],
-      dimensionStates: {},
-      openAspects: hasC1Evidence 
-        ? [{ text: "Mögliche Auslöser & Umstände", reason: "Klärung eventueller Einwirkungen", dimension: "C3" }]
-        : [{ text: "Erstbeginn & Chronologie", reason: "Ersterfassung des Beginns", dimension: "C1" }],
-      nextQuestion: hasC1Evidence ? null : {
-        questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum allerersten Mal auftraten?",
-        orientationExample: "Besondere Ereignisse, Umstände oder körperliche Verfassung.",
-        targetDimension: "C1",
-        reason: "Offene Erfassung des Beginns nach Fragentrichter Stufe 1.",
-        questionStage: 1
-      },
-      isFinished: Boolean(hasC1Evidence)
-    };
   }
+
+  console.warn("[runGeminiOnlyCausaDeepen] Fallback triggered. Raw model response was:", rawJsonText);
+  const hasC1Evidence = (Array.isArray(canonicalState?.facts) && canonicalState.facts.some((f: any) => f.dimensionId === 'C1')) ||
+    (Array.isArray(canonicalState?.knownFacts) && canonicalState.knownFacts.some((k: any) => k.dimension === 'C1'));
+
+  return {
+    atomicFacts: existingCausaText ? [
+      {
+        factId: "f_fallback",
+        factText: existingCausaText,
+        originalQuote: rawText.slice(0, 100),
+        episodeId: "EP_INITIAL",
+        dimensionId: hasC1Evidence ? "C3" : "C1",
+        factStatus: "BELEGT_FAKTISCH",
+        patientConfidence: "SICHERE_BEOBACHTUNG",
+        epistemicRelation: "ZEITLICHE_KOINZIDENZ"
+      }
+    ] : [],
+    dimensionStates: {},
+    openAspects: hasC1Evidence 
+      ? [{ text: "Mögliche Auslöser & Umstände", reason: "Klärung eventueller Einwirkungen", dimension: "C3" }]
+      : [{ text: "Erstbeginn & Chronologie", reason: "Ersterfassung des Beginns", dimension: "C1" }],
+    nextQuestion: hasC1Evidence ? null : {
+      questionText: "Was erinnern Sie noch von der Zeit, als diese Beschwerden zum allerersten Mal auftraten?",
+      orientationExample: "Besondere Ereignisse, Umstände oder körperliche Verfassung.",
+      targetDimension: "C1",
+      reason: "Offene Erfassung des Beginns nach Fragentrichter Stufe 1.",
+      questionStage: 1
+    },
+    isFinished: Boolean(hasC1Evidence)
+  };
 }
 

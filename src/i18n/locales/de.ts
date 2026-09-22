@@ -3431,6 +3431,14 @@ export const de = {
   causaHahnemannInactiveBadge: "Inaktiv (Gemini-only Standard)",
   causa3TierBannerDesc: "Unabhängige Parallelprüfung (Gemini & GPT-4o) mit Schiedsrichter-Harmonisierung",
   causaGeminiOnlyBannerDesc: "Fokussierte Causa-Exploration mit genau einer Gemini-Instanz pro Turn",
+  modeGeminiOnlyBtn: "Gemini-only",
+  modeHahnemannBtn: "Hahnemann-Prüfung",
+  modeAbCompareBtn: "A/B",
+  causaLevelBResolved: "Keine ungelösten oder widersprüchlichen Causa-Aspekte verblieben.",
+  causaNoHistoryYet: "Noch keine Vertiefungsfragen gestellt.",
+  causaOrientationTherapistLabel: "Orientierungshilfe für den Therapeuten:",
+  localisatioLevelBResolved: "Konservative topographische Zuordnung abgeschlossen.",
+  localisatioNoHistoryYet: "Noch keine Vertiefungsfragen gestellt.",
 
   // Localisatio-Vertiefungsanalyse (Stage 2)
   organonStartAnalysisWithLocalisatio: "Localisatio-Vertiefung",
@@ -3555,5 +3563,24 @@ export const de = {
   stage2IssueAmbiguity: "Mehrdeutige Aussage",
   stage2IssueAssignmentUnclear: "Zuordnung unklar",
   stage2ClarificationProgress: "Offene Frage {{current}} von {{total}}",
-  stage2ResolvedIssuesCount: "Erfolgreich geklärte Punkte: {{count}}"
+  stage2ResolvedIssuesCount: "Erfolgreich geklärte Punkte: {{count}}",
+  stage2AnamnesisIncompleteTitle: "Organon-Anamnese noch unvollständig",
+  stage2AnamnesisIncompleteDesc: "{completed} von {total} Kategorien bearbeitet • {pending} noch offen",
+  stage2AnamnesisIncompleteNotice: "Die Plausibilitäts- und Widerspruchsprüfung ist abgeschlossen, jedoch wurden noch nicht alle 10 Kategorien in Stufe 2 vertieft. Sie können offene Kategorien unten direkt ansteuern oder mit den bestehenden Vorbefunden abschließen.",
+  stage2ActionDeepenNow: "Jetzt vertiefen",
+  stage2AdoptAllPendingDrafts: "Alle offenen mit Vorbefunden übernehmen",
+  stage2CategoriesOverviewTitle: "Übersicht aller 10 Organon-Kategorien (§§ 83–104)",
+  stage2FinalizeWithIncompleteBtn: "Mit aktuellem Stand abschließen",
+
+  // Live Process Tracker (Organon Analysis)
+  organonLiveProcessTitle: "Strukturierte Fallanalyse nach Hahnemann",
+  organonLiveProcessSub: "Verarbeitungsschritte laufen in Echtzeit ab",
+  organonStepPatientText: "Patiententext erfasst",
+  organonStepTextDecomposition: "Text in relevante Aussagen zerlegt",
+  organonStepCategoryMapping: "Aussagen werden Organon-Kategorien zugeordnet …",
+  organonStepCrossCheck: "Unabhängige Gegenprüfung läuft …",
+  organonStepArbitration: "Ergebnisse werden abgeglichen …",
+  organonStepEvidenceCheck: "Evidenz wird geprüft",
+  organonStepConsolidation: "Ergebnisse werden konsolidiert",
+  organonStepFinalCheck: "Abschlussprüfung"
 };

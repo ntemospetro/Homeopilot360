@@ -7,6 +7,7 @@ import { CausaVertiefungModal } from './CausaVertiefungModal';
 import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
 import { OrganonStage2WorkflowModal } from './OrganonStage2WorkflowModal';
 import { Stage2Category } from '../types/organonStage2Workflow';
+import { OrganonLiveProgress, LiveProcessStep } from './OrganonLiveProgress';
 import { motion } from 'motion/react';
 import { 
   isSpeechRecognitionSupported, 
@@ -107,7 +108,7 @@ export const OrganonView: React.FC = () => {
     } catch {
       // ignore
     }
-    return true;
+    return false;
   });
 
   useEffect(() => {
@@ -140,6 +141,7 @@ export const OrganonView: React.FC = () => {
   const [viewLayout, setViewLayout] = useState<'tabs' | 'sideBySide'>('tabs');
   const [activeTab, setActiveTab] = useState<'gemini' | 'openai' | 'arbitrator' | 'endpruefer'>('gemini');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [liveSteps, setLiveSteps] = useState<LiveProcessStep[]>([]);
   const [debugStatus, setDebugStatus] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState<boolean>(false);
@@ -434,11 +436,41 @@ export const OrganonView: React.FC = () => {
     setIsStage2WorkflowTriggered(openStage2Workflow || openCausaPopup || openLocalisatioPopup);
     setErrorMessage('');
     setDebugStatus('Analysiere Text...');
+
+    const shouldCrossCheck = enableGptCompare || enableHahnemannCrossCheck;
+    const initialSteps: LiveProcessStep[] = shouldCrossCheck
+      ? [
+          { id: 'patient_text', labelKey: 'organonStepPatientText', status: 'done' },
+          { id: 'text_decomposition', labelKey: 'organonStepTextDecomposition', status: 'done' },
+          { id: 'category_mapping', labelKey: 'organonStepCategoryMapping', status: 'active' },
+          { id: 'crosscheck', labelKey: 'organonStepCrossCheck', status: 'active' },
+          { id: 'arbitration', labelKey: 'organonStepArbitration', status: 'pending' },
+          { id: 'evidence_check', labelKey: 'organonStepEvidenceCheck', status: 'pending' },
+          { id: 'consolidation', labelKey: 'organonStepConsolidation', status: 'pending' },
+          { id: 'final_check', labelKey: 'organonStepFinalCheck', status: 'pending' },
+        ]
+      : [
+          { id: 'patient_text', labelKey: 'organonStepPatientText', status: 'done' },
+          { id: 'text_decomposition', labelKey: 'organonStepTextDecomposition', status: 'done' },
+          { id: 'category_mapping', labelKey: 'organonStepCategoryMapping', status: 'active' },
+          { id: 'evidence_check', labelKey: 'organonStepEvidenceCheck', status: 'pending' },
+          { id: 'consolidation', labelKey: 'organonStepConsolidation', status: 'pending' },
+          { id: 'final_check', labelKey: 'organonStepFinalCheck', status: 'pending' },
+        ];
+    setLiveSteps(initialSteps);
+
+    const onStepUpdate = (stepId: string, status: 'active' | 'done') => {
+      setLiveSteps(prev =>
+        prev.map(step => (step.id === stepId ? { ...step, status } : step))
+      );
+    };
+
     try {
-      const result = await analyzeOrganonText(textToAnalyze, language, 'gemini', enableGptCompare);
+      const result = await analyzeOrganonText(textToAnalyze, language, 'gemini', shouldCrossCheck, onStepUpdate);
+      setLiveSteps(prev => prev.map(s => ({ ...s, status: 'done' })));
       let gRes: any = null;
       let oRes: any = null;
-      if (enableGptCompare && result && typeof result === 'object' && 'gemini' in result && 'openai' in result) {
+      if (shouldCrossCheck && result && typeof result === 'object' && 'gemini' in result && 'openai' in result) {
         setCompareResult(result);
         setAnalysisResult((result as any).gemini);
         gRes = (result as any).gemini;
@@ -1605,6 +1637,13 @@ export const OrganonView: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Dynamische Prozessliste während der Analyse */}
+            {isProcessing && liveSteps.length > 0 && (
+              <div className="w-full pt-2">
+                <OrganonLiveProgress steps={liveSteps} />
+              </div>
+            )}
           </div>
         </div>
 
@@ -1978,6 +2017,7 @@ export const OrganonView: React.FC = () => {
         rawText={analysisResult?.raw_text || narrationInput}
         initialMatrices={analysisResult?.complaint_matrices || []}
         initialRelations={analysisResult?.complaint_relations || []}
+        endprueferResult={endprueferResult}
       />
 
       <CausaVertiefungModal
@@ -2007,6 +2047,7 @@ export const OrganonView: React.FC = () => {
         stage1Values={getStage1ValuesMap()}
         endprueferResult={endprueferResult}
         hahnemannCrossCheck={enableHahnemannCrossCheck}
+        onHahnemannCrossCheckChange={(enabled) => setEnableHahnemannCrossCheck(enabled)}
         onAdoptCategoryResult={handleAdoptStage2Result}
         onWorkflowCompleted={handleStage2WorkflowCompleted}
       />

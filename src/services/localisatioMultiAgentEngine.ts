@@ -9,6 +9,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
+import { jsonrepair } from "jsonrepair";
 import {
   LocalisatioDimensionId,
   LOCALISATIO_DIMENSION_NAMES,
@@ -86,22 +87,102 @@ export interface GeminiOnlyLocalisatioResult {
 
 function parseAiJson(rawText: string, fallback: any = {}): any {
   if (!rawText || typeof rawText !== "string") return fallback;
+  let cleaned = rawText.trim();
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
+  }
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+
+  // 1. Direct JSON parse
   try {
-    let cleaned = rawText.trim();
-    if (cleaned.startsWith("```json")) {
-      cleaned = cleaned.replace(/^```json\s*/, "").replace(/\s*```$/, "");
-    } else if (cleaned.startsWith("```")) {
-      cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
-    }
-    const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-    }
     return JSON.parse(cleaned);
-  } catch (err) {
-    console.warn("[LocalisatioEngine] JSON-Parse-Fehler:", err);
-    return fallback;
+  } catch (initialErr) {
+    // 2. High-precision jsonrepair library (handles unescaped internal quotes, missing commas, trailing commas)
+    try {
+      const repaired = jsonrepair(cleaned);
+      return JSON.parse(repaired);
+    } catch {
+      // 3. Trailing commas & unescaped control chars repair
+      try {
+        const sanitized = cleaned
+          .replace(/,\s*([}\]])/g, '$1')
+          .replace(/[\u0000-\u001F]+/g, (match) => {
+            if (match === '\n') return '\\n';
+            if (match === '\r') return '\\r';
+            if (match === '\t') return '\\t';
+            return '';
+          });
+        try {
+          return JSON.parse(sanitized);
+        } catch {
+          const repairedSanitized = jsonrepair(sanitized);
+          return JSON.parse(repairedSanitized);
+        }
+      } catch {
+        // 4. Truncated or malformed JSON heuristic repair
+        try {
+          let repaired = cleaned
+            .replace(/,\s*"[^"]*"?\s*:\s*"?$/, "")
+            .replace(/,\s*"[^"]*"?\s*$/, "")
+            .replace(/,\s*$/, "");
+
+          // Balance quotes
+          const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
+          if (quoteCount % 2 !== 0) repaired += '"';
+
+          let openBrackets = 0;
+          let openBraces = 0;
+          let inString = false;
+          let escapeNext = false;
+          for (let i = 0; i < repaired.length; i++) {
+            const c = repaired[i];
+            if (escapeNext) { escapeNext = false; continue; }
+            if (c === "\\") { escapeNext = true; continue; }
+            if (c === '"') { inString = !inString; continue; }
+            if (!inString) {
+              if (c === "{") openBraces++;
+              else if (c === "}") openBraces = Math.max(0, openBraces - 1);
+              else if (c === "[") openBrackets++;
+              else if (c === "]") openBrackets = Math.max(0, openBrackets - 1);
+            }
+          }
+          repaired = repaired.replace(/,\s*$/, "");
+          while (openBrackets > 0) { repaired += "]"; openBrackets--; }
+          while (openBraces > 0) { repaired += "}"; openBraces--; }
+
+          try {
+            return JSON.parse(repaired);
+          } catch {
+            const libRepaired = jsonrepair(repaired);
+            return JSON.parse(libRepaired);
+          }
+        } catch (err2) {
+          // 5. Function constructor fallback for JS object literal flexibility
+          try {
+            let trial = cleaned.replace(/,\s*([}\]])/g, '$1');
+            const opens = (trial.match(/{/g) || []).length;
+            const closes = (trial.match(/}/g) || []).length;
+            if (opens > closes) {
+              trial += '}'.repeat(opens - closes);
+            }
+            // eslint-disable-next-line no-new-func
+            const evaluated = new Function(`return ${trial}`)();
+            if (evaluated && typeof evaluated === 'object') {
+              return evaluated;
+            }
+          } catch {}
+
+          console.warn("[LocalisatioEngine] JSON-Parse-Fehler:", initialErr);
+          return fallback;
+        }
+      }
+    }
   }
 }
 
@@ -206,21 +287,23 @@ Antworte AUSSCHLIESSLICH als valides JSON:
   let response;
   try {
     response = await ai.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+      model: "gemini-3.8-flash",
       contents: prompt,
       config: {
         temperature: 0.15,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        maxOutputTokens: 8192
       }
     });
   } catch (primaryErr) {
-    console.warn("[LocalisatioEngine] Primary model failed, falling back to gemini-flash-latest:", primaryErr);
+    console.warn("[LocalisatioEngine] Primary model failed, falling back to gemini-2.5-flash-lite:", primaryErr);
     response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
+      model: "gemini-2.5-flash-lite",
       contents: prompt,
       config: {
         temperature: 0.15,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        maxOutputTokens: 8192
       }
     });
   }
@@ -321,11 +404,12 @@ Antworte als valides JSON:
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+      model: "gemini-3.8-flash",
       contents: prompt,
       config: {
         temperature: 0.25,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        maxOutputTokens: 8192
       }
     });
     return parseAiJson(response.text || "{}", {});
@@ -383,11 +467,12 @@ Antworte als valides JSON:
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+      model: "gemini-3.8-flash",
       contents: prompt,
       config: {
         temperature: 0.1,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        maxOutputTokens: 8192
       }
     });
     return parseAiJson(response.text || "{}", {

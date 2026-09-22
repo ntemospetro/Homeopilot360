@@ -3424,6 +3424,14 @@ export const it = {
   causaHahnemannInactiveBadge: "Inattiva (standard solo Gemini)",
   causa3TierBannerDesc: "Esame parallelo indipendente (Gemini & GPT-4o) con armonizzazione dell'arbitro",
   causaGeminiOnlyBannerDesc: "Esplorazione mirata della Causa con esattamente un'istanza Gemini per turno",
+  modeGeminiOnlyBtn: "Gemini-only",
+  modeHahnemannBtn: "Verifica Hahnemann",
+  modeAbCompareBtn: "A/B",
+  causaLevelBResolved: "Nessun aspetto causale irrisolto o contrastante rimasto.",
+  causaNoHistoryYet: "Nessuna domanda di approfondimento ancora posta.",
+  causaOrientationTherapistLabel: "Guida di orientamento per il terapeuta:",
+  localisatioLevelBResolved: "Assegnazione topografica conservativa completata.",
+  localisatioNoHistoryYet: "Nessuna domanda di approfondimento ancora posta.",
 
   // Localisatio-Vertiefungsanalyse (Stage 2)
   organonStartAnalysisWithLocalisatio: "Approfondimento Localisatio",
@@ -3548,5 +3556,24 @@ export const it = {
   stage2IssueAmbiguity: "Dichiarazione ambigua",
   stage2IssueAssignmentUnclear: "Attribuzione non chiara",
   stage2ClarificationProgress: "Domanda aperta {{current}} di {{total}}",
-  stage2ResolvedIssuesCount: "Punti chiariti con successo: {{count}}"
+  stage2ResolvedIssuesCount: "Punti chiariti con successo: {{count}}",
+  stage2AnamnesisIncompleteTitle: "Anamnesi Organon incompleta",
+  stage2AnamnesisIncompleteDesc: "{completed} su {total} categorie elaborate • {pending} ancora in sospeso",
+  stage2AnamnesisIncompleteNotice: "Il controllo di plausibilità e contraddizione è completato, ma non tutte le 10 categorie sono state ancora approfondite nella Fase 2. È possibile accedere direttamente alle categorie in sospeso di seguito o concludere con i risultati preliminari esistenti.",
+  stage2ActionDeepenNow: "Approfondisci ora",
+  stage2AdoptAllPendingDrafts: "Adotta tutti i sospesi con i risultati preliminari",
+  stage2CategoriesOverviewTitle: "Panoramica di tutte le 10 categorie di Organon (§§ 83–104)",
+  stage2FinalizeWithIncompleteBtn: "Finalizza con lo stato corrente",
+
+  // Live Process Tracker (Organon Analysis)
+  organonLiveProcessTitle: "Analisi strutturata del caso secondo Hahnemann",
+  organonLiveProcessSub: "Le fasi di elaborazione avvengono in tempo reale",
+  organonStepPatientText: "Testo del paziente registrato",
+  organonStepTextDecomposition: "Testo suddiviso in affermazioni rilevanti",
+  organonStepCategoryMapping: "Assegnazione affermazioni alle categorie dell'Organon …",
+  organonStepCrossCheck: "Verifica incrociata indipendente in corso …",
+  organonStepArbitration: "Confronto e armonizzazione dei risultati …",
+  organonStepEvidenceCheck: "Verifica dell'evidenza clinica",
+  organonStepConsolidation: "Consolidamento dei risultati",
+  organonStepFinalCheck: "Controllo finale"
 };

@@ -1,36 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   X, 
-  HelpCircle, 
   CheckCircle2, 
-  AlertCircle, 
   Sparkles, 
   Send, 
   RefreshCw, 
   History, 
   ShieldCheck, 
   Layers, 
-  Info,
-  Clock,
-  Check,
-  AlertTriangle,
-  Mic,
-  MicOff,
-  Brain,
-  GitCompare,
-  ChevronDown,
-  ChevronUp
+  Clock, 
+  Check, 
+  Mic, 
+  MicOff, 
+  Brain, 
+  GitCompare, 
+  ChevronDown, 
+  ChevronUp 
 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext';
 import { 
   CausaVertiefungState, 
-  CausaEvidenceStatus,
-  CausaAbCompareState
+  CausaEvidenceStatus 
 } from '../types.causaVertiefung';
-import {
-  CAUSA_DIMENSION_NAMES,
-  CausaDimensionId
+import { 
+  CAUSA_DIMENSION_NAMES, 
+  CausaDimensionId 
 } from '../types/causaDeepDive';
 import { 
   initCausaVertiefung, 
@@ -85,7 +80,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const [showAgentProposals, setShowAgentProposals] = useState<boolean>(true);
   const [show13Dimensions, setShow13Dimensions] = useState<boolean>(false);
 
-  // Speech recording state & refs (Organon Layout)
+  // Speech recording state & refs
   const [isRecording, setIsRecording] = useState(false);
   const [recordSecondsLeft, setRecordSecondsLeft] = useState(60);
   const isSpeechSupported = isSpeechRecognitionSupported();
@@ -94,48 +89,65 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const recordingBaseTextRef = useRef<string>('');
   const lastSpokenTranscriptRef = useRef<string>('');
   const isFinalizingRef = useRef<boolean>(false);
+  const initRequestIdRef = useRef<number>(0);
+  const prevInitKeyRef = useRef<string>('');
 
   useEffect(() => {
     if (isOpen) {
       const mode = hahnemannCrossCheck ? '3-tier' : 'gemini-only';
+      const initKey = `${mode}|${rawText}|${existingCausaText}|${Boolean(endprueferResult)}|${isOpen}`;
+      if (prevInitKeyRef.current === initKey) {
+        return;
+      }
+      prevInitKeyRef.current = initKey;
       setActiveMode(mode);
       setAnswerInput('');
       setShowHistory(false);
       setShowEvidence(false);
       setShowAgentProposals(true);
+      setShow13Dimensions(false);
       loadInitialState(mode);
+    } else {
+      prevInitKeyRef.current = '';
     }
-  }, [isOpen, rawText, existingCausaText, endprueferResult, hahnemannCrossCheck]);
+  }, [isOpen, rawText, existingCausaText, Boolean(endprueferResult), hahnemannCrossCheck]);
 
   const loadInitialState = async (modeToUse: 'gemini-only' | '3-tier' | 'ab-compare' = activeMode) => {
+    const thisRequestId = ++initRequestIdRef.current;
     setLoading(true);
     try {
       if (modeToUse === 'ab-compare') {
         const abRes = await initCausaAbCompare(rawText, existingCausaText, language, endprueferResult);
+        if (thisRequestId !== initRequestIdRef.current) return;
         setStateA(abRes.branchA);
         setStateB(abRes.branchB);
       } else {
         const res = await initCausaVertiefung(rawText, existingCausaText, language, endprueferResult, modeToUse);
+        if (thisRequestId !== initRequestIdRef.current) return;
         setState(res);
         if (res.pipelineMode) {
           setActiveMode(res.pipelineMode);
         }
       }
     } catch (err) {
+      if (thisRequestId !== initRequestIdRef.current) return;
       console.error('[CausaVertiefungModal] Error loading initial state:', err);
     } finally {
-      setLoading(false);
+      if (thisRequestId === initRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   const handleSwitchMode = async (newMode: 'gemini-only' | '3-tier' | 'ab-compare') => {
     if (newMode === activeMode || loading) return;
     setActiveMode(newMode);
+    prevInitKeyRef.current = `${newMode}|${rawText}|${existingCausaText}|${Boolean(endprueferResult)}|${isOpen}`;
     loadInitialState(newMode);
   };
 
   const startVoiceRecording = () => {
-    if (!isSpeechSupported) return;
+    if (!isSpeechSupported || isRecording) return;
 
     recordingBaseTextRef.current = answerInput;
     lastSpokenTranscriptRef.current = '';
@@ -162,6 +174,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
       },
       onError: (err) => {
         console.warn('[CausaVertiefungModal] Speech recognition notice:', err);
+        stopVoiceRecording();
       },
       onEnd: () => {
         if (!isFinalizingRef.current && isRecording) {
@@ -249,6 +262,9 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
 
   const handleFinalize = async () => {
     if (loading) return;
+    if (isRecording) {
+      stopVoiceRecording();
+    }
     setLoading(true);
     try {
       if (activeMode === 'ab-compare') {
@@ -311,47 +327,47 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
       case 'EXPLICIT':
       case 'BELEGT_FAKTISCH':
         return (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
             {t('causaStatusExplicit')}
           </span>
         );
       case 'DENIED':
       case 'AUSDRÜCKLICH_VERNEINT':
         return (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">
             {t('causaStatusDenied')}
           </span>
         );
       case 'UNCERTAIN':
       case 'UNSICHER':
         return (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
             {t('causaStatusUncertain')}
           </span>
         );
       case 'NICHT_ERINNERLICH':
         return (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-800 border border-slate-300">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
             {t('stage2NotRememberedBtn')}
           </span>
         );
       case 'AMBIGUOUS':
       case 'MEHRDEUTIG':
         return (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
             {t('causaStatusAmbiguous')}
           </span>
         );
       case 'CONFLICT':
       case 'WIDERSPRÜCHLICH':
         return (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40">
             {t('causaStatusConflict')}
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
             {t('causaStatusUnknown')}
           </span>
         );
@@ -364,8 +380,8 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
     knownFacts: any[] = []
   ) => {
     return (
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
           <span>{t('causaDimensionsOverviewLabel')}</span>
         </div>
         <div className="grid grid-cols-4 sm:grid-cols-7 gap-1">
@@ -378,10 +394,10 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
                 title={`${dimId}: ${CAUSA_DIMENSION_NAMES[dimId]}`}
                 className={`px-1.5 py-1 rounded text-[10px] font-mono flex items-center justify-between border transition-all ${
                   isCurrent
-                    ? 'bg-teal-600 text-white border-teal-700 font-bold shadow-2xs'
+                    ? 'bg-teal-500/30 text-teal-200 border-teal-400 font-bold shadow-xs'
                     : isExplored
-                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300 font-semibold'
-                    : 'bg-slate-50 text-slate-400 border-slate-200'
+                    ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30 font-semibold'
+                    : 'bg-slate-900/60 text-slate-500 border-slate-800'
                 }`}
               >
                 <span>{dimId}</span>
@@ -403,8 +419,8 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   ) => {
     if (!branchState) {
       return (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center min-h-[320px] text-slate-400 space-y-2">
-          <RefreshCw className="w-5 h-5 animate-spin text-teal-600" />
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center min-h-[320px] text-slate-400 space-y-2">
+          <RefreshCw className="w-5 h-5 animate-spin text-teal-400" />
           <span className="text-xs">{t('causaLoadingNext')}</span>
         </div>
       );
@@ -414,35 +430,33 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
     const curQ = branchState.currentQuestion;
 
     return (
-      <div className={`bg-white border rounded-xl p-4 sm:p-5 shadow-xs flex flex-col space-y-4 transition-all ${
-        branchKey === 'A' ? 'border-slate-300 ring-1 ring-slate-200' : 'border-teal-300 ring-1 ring-teal-200'
+      <div className={`bg-gradient-to-br from-slate-800/90 to-slate-900 border rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col space-y-4 transition-all ${
+        branchKey === 'A' ? 'border-slate-700/80' : 'border-teal-500/30'
       }`}>
         {/* Branch Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
             {branchKey === 'A' ? (
-              <Layers className="w-4 h-4 text-slate-700 shrink-0" />
+              <Layers className="w-4 h-4 text-slate-400 shrink-0" />
             ) : (
-              <Sparkles className="w-4 h-4 text-teal-600 shrink-0" />
+              <Sparkles className="w-4 h-4 text-teal-400 shrink-0" />
             )}
-            <h4 className="font-bold text-xs sm:text-sm text-slate-900">
+            <h4 className="font-bold text-xs sm:text-sm text-slate-100">
               {title}
             </h4>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            {/* Status Badge */}
             <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
               isFin 
-                ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
-                : 'bg-teal-50 text-teal-900 border-teal-200'
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                : 'bg-teal-500/20 text-teal-300 border-teal-500/40'
             }`}>
               {isFin ? t('causaStatusStopped') : t('causaStatusContinue')}
             </span>
 
-            {/* Laufzeit */}
             {branchState.turnDurations?.totalMs != null && (
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-950/60 text-slate-300 border border-slate-800 flex items-center gap-1">
                 <Clock className="w-3 h-3 text-slate-500" />
                 <span>{t('causaTurnRuntimeSeconds', { seconds: (branchState.turnDurations.totalMs / 1000).toFixed(2) })}</span>
               </span>
@@ -450,9 +464,8 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
           </div>
         </div>
 
-        {/* Detaillierte Laufzeitaufschlüsselung bei Branch A */}
         {branchKey === 'A' && branchState.turnDurations?.geminiMs != null && (
-          <div className="text-[10px] text-slate-500 font-mono bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between flex-wrap gap-1">
+          <div className="text-[10px] text-slate-400 font-mono bg-slate-950/60 p-2 rounded-lg border border-slate-800 flex items-center justify-between flex-wrap gap-1">
             <span>Gemini: {((branchState.turnDurations.geminiMs || 0) / 1000).toFixed(1)}s</span>
             <span>•</span>
             <span>GPT: {((branchState.turnDurations.gptMs || 0) / 1000).toFixed(1)}s</span>
@@ -461,73 +474,71 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
           </div>
         )}
 
-        {/* Frage oder Abschluss-Zusammenfassung */}
         {!isFin && curQ ? (
-          <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+          <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 {t('causaQuestionLabel')}
               </span>
               {curQ.targetDimension && (
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-teal-100 text-teal-900 rounded border border-teal-200">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-teal-500/20 text-teal-300 rounded border border-teal-500/40">
                   {t('causaTargetDimensionLabel')} {curQ.targetDimension}
                 </span>
               )}
             </div>
-            <p className="text-sm font-bold text-slate-900 leading-snug">
+            <p className="text-sm font-bold text-slate-100 leading-snug">
               „{curQ.questionText}“
             </p>
 
             {curQ.orientationExample && (
-              <div className="bg-amber-50/80 border border-amber-200/80 rounded-lg p-2 text-xs text-amber-950">
-                <span className="text-[10px] font-bold text-amber-800 uppercase block mb-0.5">
+              <div className="bg-amber-950/20 border border-amber-500/30 rounded-lg p-2.5 text-xs text-amber-200">
+                <span className="text-[10px] font-bold text-amber-400 uppercase block mb-0.5">
                   {t('causaOrientationExampleLabel')}
                 </span>
-                <p className="italic leading-relaxed text-[11px]">„{curQ.orientationExample}“</p>
+                <p className="italic leading-relaxed text-[11px] text-amber-300">„{curQ.orientationExample}“</p>
               </div>
             )}
 
-            {/* Begründung / Note */}
-            <div className="text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200 space-y-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase block">
+            <div className="text-xs text-slate-300 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">
                 {t('causaReasonDimensionLabel')}
               </span>
-              <p className="text-[11px] leading-relaxed">
+              <p className="text-[11px] leading-relaxed text-slate-300">
                 {branchKey === 'A' ? (curQ.arbitrationNote || curQ.reason) : curQ.reason}
               </p>
             </div>
           </div>
         ) : isFin && branchState.finalSummary ? (
-          <div className="bg-emerald-50/60 border border-emerald-200 rounded-xl p-3.5 space-y-3">
+          <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-bold text-emerald-900 text-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-center gap-1.5 font-bold text-emerald-300 text-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>{t('causaFinishedTitle')}</span>
               </div>
               {branchState.stoppingReason && (
-                <span className="text-[10px] bg-white text-emerald-900 px-2 py-0.5 rounded border border-emerald-200 font-medium">
+                <span className="text-[10px] bg-slate-900 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40 font-medium">
                   {branchState.stoppingReason}
                 </span>
               )}
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="bg-white p-2.5 rounded-lg border border-emerald-200">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase block mb-1">
+              <div className="bg-slate-900/80 p-2.5 rounded-lg border border-emerald-500/30">
+                <span className="text-[10px] font-bold text-emerald-400 uppercase block mb-1">
                   {t('causaLevelATitle')}
                 </span>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-800">
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-200">
                   {(branchState.finalSummary.levelA_patientReported || []).map((it, i) => (
                     <li key={i}>{it}</li>
                   ))}
                 </ul>
               </div>
 
-              <div className="bg-white p-2.5 rounded-lg border border-emerald-200">
-                <span className="text-[10px] font-bold text-amber-800 uppercase block mb-1">
+              <div className="bg-slate-900/80 p-2.5 rounded-lg border border-amber-500/30">
+                <span className="text-[10px] font-bold text-amber-400 uppercase block mb-1">
                   {t('causaLevelBTitle')}
                 </span>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-800">
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-200">
                   {(branchState.finalSummary.levelB_unresolvedOrConflicting || []).map((it, i) => (
                     <li key={i}>{it}</li>
                   ))}
@@ -538,7 +549,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
             <button
               type="button"
               onClick={() => handleAdoptBranch(branchState)}
-              className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+              className="w-full py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Check className="w-3.5 h-3.5" />
               <span>{onWorkflowComplete ? t('stage2AdoptAndContinueBtn') : t('causaAdoptToAnalysisBtn')} ({branchKey === 'A' ? t('causaBranchATitle') : t('causaBranchBTitle')})</span>
@@ -546,50 +557,46 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
           </div>
         ) : null}
 
-        {/* C1–C13 Status */}
         {renderCompactDimensions(curQ?.targetDimension, branchState.evidenceList, branchState.knownFacts)}
 
-        {/* Bekannte Fakten & Offene Aspekte */}
         <div className="grid grid-cols-1 gap-2 pt-1">
-          {/* Bekannte Fakten */}
-          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5">
-            <span className="text-[10px] font-bold text-emerald-800 uppercase block">
+          <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-1.5">
+            <span className="text-[10px] font-bold text-emerald-400 uppercase block">
               {t('causaKnownTitle')} ({(branchState.knownFacts || []).length})
             </span>
             {(branchState.knownFacts || []).length > 0 ? (
               <div className="space-y-1 max-h-36 overflow-y-auto">
                 {(branchState.knownFacts || []).map((kf, i) => (
-                  <div key={i} className="text-[11px] bg-white p-1.5 rounded border border-emerald-100 text-slate-800">
-                    <p className="font-medium">{kf.text}</p>
+                  <div key={i} className="text-[11px] bg-slate-900/80 p-2 rounded-lg border border-emerald-500/20 text-slate-200">
+                    <p className="font-medium text-slate-100">{kf.text}</p>
                     {kf.evidence && (
-                      <p className="text-[9px] text-emerald-700 italic">„{kf.evidence}“</p>
+                      <p className="text-[9px] text-emerald-300 italic mt-0.5">„{kf.evidence}“</p>
                     )}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-[10px] text-slate-400 italic">{t('causaNoKnownFacts')}</p>
+              <p className="text-[10px] text-slate-500 italic">{t('causaNoKnownFacts')}</p>
             )}
           </div>
 
-          {/* Offene Aspekte */}
-          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5">
-            <span className="text-[10px] font-bold text-amber-800 uppercase block">
+          <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-1.5">
+            <span className="text-[10px] font-bold text-amber-400 uppercase block">
               {t('causaOpenTitle')} ({(branchState.openAspects || []).length})
             </span>
             {(branchState.openAspects || []).length > 0 ? (
               <div className="space-y-1 max-h-36 overflow-y-auto">
                 {(branchState.openAspects || []).map((oa, i) => (
-                  <div key={i} className="text-[11px] bg-white p-1.5 rounded border border-amber-100 text-slate-800">
-                    <p className="font-medium">{oa.text}</p>
+                  <div key={i} className="text-[11px] bg-slate-900/80 p-2 rounded-lg border border-amber-500/20 text-slate-200">
+                    <p className="font-medium text-slate-100">{oa.text}</p>
                     {oa.reason && (
-                      <p className="text-[9px] text-amber-800 italic">{oa.reason}</p>
+                      <p className="text-[9px] text-amber-300 italic mt-0.5">{oa.reason}</p>
                     )}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
+              <p className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
                 <Check className="w-3 h-3" />
                 <span>{t('causaNoOpenAspects')}</span>
               </p>
@@ -605,15 +612,15 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
     if (isBothFinished) return null;
 
     return (
-      <div className="bg-white border border-teal-200 rounded-xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2 text-teal-800 font-bold text-xs uppercase tracking-wide">
-            <Send className="w-4 h-4 text-teal-600" />
+      <div className="bg-gradient-to-br from-slate-800/90 to-slate-900 border border-teal-500/30 rounded-2xl p-5 shadow-lg space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex items-center gap-2 text-teal-300 font-bold text-xs uppercase tracking-wide">
+            <Send className="w-4 h-4 text-teal-400" />
             <span>{t('causaPatientAnswerLabel')} ({t('causaSharedInputForBoth')})</span>
           </div>
           {isRecording && (
-            <span className="text-[11px] font-mono text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+            <span className="text-[11px] font-mono text-rose-300 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-500/40 flex items-center gap-1 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
               {recordSecondsLeft}s
             </span>
           )}
@@ -630,7 +637,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
               }
             }}
             placeholder={t('causaSharedAnswerPlaceholder')}
-            className="w-full text-xs p-3 rounded-lg border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-teal-500 focus:border-transparent min-h-[90px] resize-y"
+            className="w-full text-xs p-3.5 rounded-xl border border-slate-700/80 bg-slate-950 text-slate-100 placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 min-h-[90px] resize-y"
             disabled={loading}
           />
 
@@ -641,13 +648,13 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
                   type="button"
                   onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
                   disabled={loading}
-                  className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border ${
                     isRecording 
-                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs' 
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse' 
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
                   }`}
                 >
-                  {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-teal-600" />}
+                  {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-teal-400" />}
                   <span>{isRecording ? t('causaStopDictationBtn') : t('causaDictateAnswerBtn')}</span>
                 </button>
               )}
@@ -658,7 +665,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
                 type="button"
                 onClick={handleFinalize}
                 disabled={loading}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>{t('causaFinalizeBtn')}</span>
@@ -668,7 +675,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
                 type="button"
                 onClick={handleSubmitAnswer}
                 disabled={!answerInput.trim() || loading}
-                className="px-5 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+                className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-2 shadow-md cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -696,69 +703,67 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
     if (maxSteps === 0) return null;
 
     return (
-      <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-2xs">
+      <div className="border border-slate-800 rounded-2xl bg-slate-950/40 overflow-hidden shadow-md">
         <button
           type="button"
           onClick={() => setShowHistory(!showHistory)}
-          className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+          className="w-full px-4 py-3 bg-slate-900/80 hover:bg-slate-850 flex items-center justify-between text-xs font-bold text-slate-300 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <History className="w-4 h-4 text-slate-600" />
-            <span>{t('causaHistoryTitle')} ({maxSteps} {t('causaTurnsUnitLabel')})</span>
+            <History className="w-4 h-4 text-teal-400" />
+            <span>{t('causaHistoryTitle')} ({maxSteps})</span>
           </div>
-          <span className="text-[11px] text-slate-500 font-normal">
+          <span className="text-[11px] text-slate-400 font-normal">
             {showHistory ? '▲ Verbergen' : '▼ Anzeigen'}
           </span>
         </button>
 
         {showHistory && (
-          <div className="p-4 space-y-4">
+          <div className="p-3 space-y-3">
             {Array.from({ length: maxSteps }).map((_, idx) => {
               const hA = historyA[idx];
               const hB = historyB[idx];
-              const sharedAnswer = (hA as any)?.answer || (hB as any)?.answer || (hA as any)?.patientAnswer || (hB as any)?.patientAnswer || '';
+              const sharedAnswer = (hA as any)?.answer || (hB as any)?.answer || '';
               const qA = (hA as any)?.question || (hA as any)?.questionText || '';
               const qB = (hB as any)?.question || (hB as any)?.questionText || '';
 
               return (
-                <div key={idx} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2.5">
-                  <div className="flex items-center justify-between text-slate-500 font-semibold text-[11px]">
-                    <span>{t('causaQuestionCount', { current: idx + 1 })}</span>
+                <div key={idx} className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 text-xs space-y-2.5">
+                  <div className="flex items-center justify-between text-slate-400 font-mono text-[11px]">
+                    <span className="font-bold text-slate-300">{t('causaQuestionCount', { current: idx + 1 })}</span>
                   </div>
 
-                  {/* Fragen Gegenüberstellung */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1">
-                      <span className="text-[10px] font-bold text-slate-600 block uppercase">
+                    <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800 space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">
                         {t('causaBranchATitle')}
                       </span>
                       {qA ? (
-                        <p className="font-medium text-slate-900 leading-relaxed">„{qA}“</p>
+                        <p className="font-medium text-slate-100 leading-relaxed">„{qA}“</p>
                       ) : (
-                        <p className="text-slate-400 italic">{t('causaNoQuestionRecorded')}</p>
+                        <p className="text-slate-500 italic">{t('causaNoQuestionRecorded')}</p>
                       )}
                     </div>
-                    <div className="bg-white p-2.5 rounded-lg border border-teal-200 space-y-1">
-                      <span className="text-[10px] font-bold text-teal-700 block uppercase">
+                    <div className="bg-slate-950/60 p-2.5 rounded-lg border border-teal-500/20 space-y-1">
+                      <span className="text-[10px] font-bold text-teal-400 block uppercase">
                         {t('causaBranchBTitle')}
                       </span>
                       {qB ? (
-                        <p className="font-medium text-slate-900 leading-relaxed">„{qB}“</p>
+                        <p className="font-medium text-slate-100 leading-relaxed">„{qB}“</p>
                       ) : (
-                        <p className="text-slate-400 italic">{t('causaNoQuestionRecorded')}</p>
+                        <p className="text-slate-500 italic">{t('causaNoQuestionRecorded')}</p>
                       )}
                     </div>
                   </div>
 
-                  {/* Geteilte Patientenantwort */}
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">
+                  <div className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">
                       {t('causaPatientAnswerLabel')}:
                     </span>
                     {sharedAnswer ? (
-                      <span className="text-slate-800 leading-relaxed whitespace-pre-wrap">{sharedAnswer}</span>
+                      <span className="text-slate-200 leading-relaxed whitespace-pre-wrap">{sharedAnswer}</span>
                     ) : (
-                      <span className="text-slate-400 italic">{t('causaNoAnswerRecorded')}</span>
+                      <span className="text-slate-500 italic">{t('causaNoAnswerRecorded')}</span>
                     )}
                   </div>
                 </div>
@@ -772,651 +777,583 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
 
   if (!isOpen) return null;
 
-  const modalBody = (
-    <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/50">
-      {/* Causa-Prüfmodus Toggle & Status Banner */}
-          <div className="bg-gradient-to-r from-teal-50 via-slate-50 to-emerald-50 border border-teal-200/90 rounded-xl p-3.5 shadow-2xs space-y-2.5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              {/* Modus-Umschalter (Pill-Buttons für Hahnemann-Gegenprüfung) */}
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">
-                  {t('causaModeToggleLabel')}
-                </span>
-                <div className="inline-flex p-1 bg-white/90 rounded-lg border border-teal-200 shadow-2xs gap-1 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => handleSwitchMode('gemini-only')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
-                      activeMode === 'gemini-only'
-                        ? 'bg-teal-600 text-white shadow-2xs font-bold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-teal-50/60'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{t('organonHahnemannCrossCheckLabel')}: {t('causaHahnemannInactiveBadge')}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSwitchMode('3-tier')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
-                      activeMode === '3-tier'
-                        ? 'bg-teal-600 text-white shadow-2xs font-bold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-teal-50/60'
-                    }`}
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>{t('organonHahnemannCrossCheckLabel')}: {t('causaHahnemannActiveBadge')}</span>
-                  </button>
-                </div>
-              </div>
+  // -------------------------------------------------------------
+  // Main Content Assembly
+  // -------------------------------------------------------------
+  let mainContent: React.ReactNode = null;
 
-              {/* Action Buttons: 13-Dimensionen-Toggle */}
-              <button
-                type="button"
-                onClick={() => setShow13Dimensions(!show13Dimensions)}
-                className="self-start md:self-auto px-3 py-1.5 bg-white hover:bg-teal-100/60 border border-teal-300 text-teal-900 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-              >
-                <Brain className="w-3.5 h-3.5 text-teal-700" />
-                <span>{t('causa13DimensionsTitle')}</span>
-                {show13Dimensions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-            </div>
+  if (loading && !state && activeMode !== 'ab-compare') {
+    mainContent = (
+      <div id="causa-loading-state" className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
+        <RefreshCw className="w-8 h-8 animate-spin text-teal-400" />
+        <p className="text-sm font-medium">{t('causaLoadingNext')}</p>
+      </div>
+    );
+  } else if (loading && activeMode === 'ab-compare' && (!stateA || !stateB)) {
+    mainContent = (
+      <div id="causa-loading-state-ab" className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
+        <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
+        <p className="text-sm font-medium">{t('causaLoadingNext')}</p>
+      </div>
+    );
+  } else if (state?.isFinished) {
+    mainContent = (
+      <div id="causa-finished-container" className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-900 text-slate-100">
+        <div className="p-5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-emerald-300">
+              {t('causaFinishedTitle')}
+            </h3>
+            <p className="text-xs text-slate-300">
+              {state.stoppingReason || t('causaNoOpenAspects')}
+            </p>
+          </div>
+        </div>
 
-            {/* Modus-Details & Laufzeitanzeige */}
-            <div className="pt-2 border-t border-teal-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-2 flex-wrap">
-                {activeMode === 'gemini-only' ? (
-                  <>
-                    <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-800 border border-slate-300 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-slate-600" />
-                      {t('organonHahnemannCrossCheckLabel')}: {t('causaHahnemannInactiveBadge')}
-                    </span>
-                    <span className="text-[11px] text-slate-600 font-medium">
-                      {t('causaGeminiOnlyBannerDesc')}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-teal-100 text-teal-900 border border-teal-300 flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3 text-teal-700" />
-                      {t('organonHahnemannCrossCheckLabel')}: {t('causaHahnemannActiveBadge')}
-                    </span>
-                    <span className="text-[11px] text-teal-900/90 font-medium">
-                      {t('causa3TierBannerDesc')}
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {/* Laufzeit-Anzeige pro Turn (Single Mode) */}
-              {activeMode !== 'ab-compare' && state?.turnDurations?.totalMs != null && (
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-700 font-mono bg-white/80 px-2.5 py-1 rounded-md border border-teal-200/80 shrink-0">
-                  <Clock className="w-3.5 h-3.5 text-teal-700" />
-                  <span className="font-semibold text-slate-900">{t('causaTurnRuntimeLabel')}</span>
-                  <span className="font-bold text-teal-800">
-                    {t('causaTurnRuntimeSeconds', { seconds: (state.turnDurations.totalMs / 1000).toFixed(2) })}
-                  </span>
-                  {activeMode === '3-tier' && state.turnDurations.geminiMs != null && (
-                    <span className="text-[10px] text-slate-500 font-normal ml-1">
-                      (Gemini: {((state.turnDurations.geminiMs || 0) / 1000).toFixed(1)}s | GPT: {((state.turnDurations.gptMs || 0) / 1000).toFixed(1)}s | Arb: {((state.turnDurations.arbitratorMs || 0) / 1000).toFixed(1)}s)
-                    </span>
-                  )}
-                </div>
+        {/* 3-Level Evaluation */}
+        <div className="space-y-3">
+          <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-2">
+            <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4" />
+              {t('causaLevelATitle')}
+            </h4>
+            <ul className="space-y-1 pl-4 list-disc text-xs text-slate-200">
+              {state.finalSummary?.levelA_patientReported && state.finalSummary.levelA_patientReported.length > 0 ? (
+                state.finalSummary.levelA_patientReported.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))
+              ) : (
+                <li>{t('causaNoKnownFacts')}</li>
               )}
-            </div>
-
-            {/* Ausklappbares Denkgerüst der 13 Causa-Dimensionen */}
-            {show13Dimensions && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="pt-2 border-t border-teal-100 text-xs text-slate-700 space-y-2"
-              >
-                <p className="text-[11px] text-teal-900/90 italic">
-                  {t('causa13DimensionsDesc')}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
-                  {(Object.keys(CAUSA_DIMENSION_NAMES) as CausaDimensionId[]).map((dimId) => {
-                    const isCurrent = state?.currentQuestion?.targetDimension === dimId;
-                    const isExplored = state?.evidenceList?.some(e => e.dimension === dimId);
-                    return (
-                      <div
-                        key={dimId}
-                        className={`p-2 rounded-lg border text-xs flex items-start gap-2 transition-all ${
-                          isCurrent
-                            ? 'bg-teal-100 border-teal-400 font-bold text-teal-950 shadow-2xs ring-1 ring-teal-400/50'
-                            : isExplored
-                            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                            : 'bg-white border-slate-200 text-slate-700 opacity-80'
-                        }`}
-                      >
-                        <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                          isCurrent ? 'bg-teal-600 text-white' : isExplored ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'
-                        }`}>
-                          {dimId}
-                        </span>
-                        <div className="flex-1 leading-tight">
-                          <span className="block">{CAUSA_DIMENSION_NAMES[dimId]}</span>
-                          <span className="text-[9px] font-normal opacity-75">
-                            {isCurrent ? t('causaDimInFocus') : isExplored ? t('causaDimExplored') : t('causaDimPending')}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
+            </ul>
           </div>
 
-          {/* Content Area: A/B Comparison vs Single Mode */}
-          {activeMode === 'ab-compare' ? (
-            <div className="space-y-6">
-              {/* Dual-Column Parallel Branch Results */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-                {renderBranchColumn(stateA, 'A', t('causaBranchATitle'))}
-                {renderBranchColumn(stateB, 'B', t('causaBranchBTitle'))}
-              </div>
+          <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-2">
+            <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              {t('causaLevelBTitle')}
+            </h4>
+            <ul className="space-y-1 pl-4 list-disc text-xs text-slate-200">
+              {state.finalSummary?.levelB_unresolvedOrConflicting && state.finalSummary.levelB_unresolvedOrConflicting.length > 0 ? (
+                state.finalSummary.levelB_unresolvedOrConflicting.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))
+              ) : (
+                <li>{t('causaLevelBResolved')}</li>
+              )}
+            </ul>
+          </div>
 
-              {/* Geteilte Patientenantwort-Eingabe */}
-              {renderSharedAnswerInput()}
-
-              {/* Parallele Gesprächshistorie */}
-              {renderAbHistory()}
+          {state.finalSummary?.levelC_homeopathicInterpretation && state.finalSummary.levelC_homeopathicInterpretation.length > 0 && (
+            <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-2">
+              <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                {t('causaLevelCTitle')}
+              </h4>
+              <ul className="space-y-1 pl-4 list-disc text-xs text-slate-300">
+                {state.finalSummary.levelC_homeopathicInterpretation.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
             </div>
-          ) : (
-            <>
-              {/* Top Section: Rule 5 - Known vs Open */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Bereits bekannt */}
-                <div className="bg-white border border-emerald-200/80 rounded-xl p-4 shadow-2xs flex flex-col">
-                  <div className="flex items-center gap-2 pb-2 mb-2 border-b border-emerald-100 text-emerald-800 font-bold text-xs">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>{t('causaKnownTitle')}</span>
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    {state && (state.knownFacts || []).length > 0 ? (
-                      (state.knownFacts || []).map((fact, idx) => (
-                        <div key={idx} className="text-xs text-slate-700 bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-100">
-                          <p className="font-medium text-slate-900 leading-relaxed">{fact.text}</p>
-                          {fact.evidence && (
-                            <p className="text-[10px] text-emerald-700 italic mt-1 flex items-center gap-1">
-                              <span className="font-semibold">{t('causaOriginalQuoteLabel')}</span> „{fact.evidence}“
-                            </p>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-slate-400 italic py-2">
-                        {t('causaNoKnownFacts')}
-                      </p>
-                    )}
-                  </div>
-                </div>
+          )}
+        </div>
 
-                {/* Noch offen */}
-                <div className="bg-white border border-amber-200/80 rounded-xl p-4 shadow-2xs flex flex-col">
-                  <div className="flex items-center gap-2 pb-2 mb-2 border-b border-amber-100 text-amber-800 font-bold text-xs">
-                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>{t('causaOpenTitle')}</span>
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    {state && (state.openAspects || []).length > 0 ? (
-                      (state.openAspects || []).map((aspect, idx) => (
-                        <div key={idx} className="text-xs text-slate-700 bg-amber-50/60 p-2.5 rounded-lg border border-amber-100">
-                          <p className="font-medium text-slate-900 leading-relaxed">{aspect.text}</p>
-                          {aspect.reason && (
-                            <p className="text-[10px] text-amber-800 italic mt-1">
-                              {aspect.reason}
-                            </p>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-emerald-700 font-medium py-2 flex items-center gap-1.5">
-                        <Check className="w-4 h-4" />
-                        {t('causaNoOpenAspects')}
-                      </p>
-                    )}
-                  </div>
-                </div>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <button
+            id="causa-close-finish-btn"
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 transition-colors cursor-pointer"
+          >
+            {t('causaCloseBtn')}
+          </button>
+          <button
+            id="causa-adopt-finish-btn"
+            type="button"
+            onClick={handleAdopt}
+            className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-md transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <Check className="w-4 h-4" />
+            {onWorkflowComplete ? t('stage2AdoptAndContinueBtn') : t('causaAdoptToAnalysisBtn')}
+          </button>
+        </div>
+      </div>
+    );
+  } else if (activeMode === 'ab-compare') {
+    mainContent = (
+      <div id="causa-ab-container" className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-900 text-slate-100">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+          {renderBranchColumn(stateA, 'A', t('causaBranchATitle'))}
+          {renderBranchColumn(stateB, 'B', t('causaBranchBTitle'))}
+        </div>
+        {renderSharedAnswerInput()}
+        {renderAbHistory()}
+      </div>
+    );
+  } else {
+    // Active Question Workflow (Single Mode)
+    mainContent = (
+      <div id="causa-active-container" className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-900 text-slate-100">
+        {/* Question Card */}
+        {state?.currentQuestion && (
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-800/80 to-slate-900 border border-teal-500/30 shadow-lg space-y-3 relative overflow-hidden">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                  {state.currentQuestion.targetDimension ? `${state.currentQuestion.targetDimension}: ${CAUSA_DIMENSION_NAMES[state.currentQuestion.targetDimension as CausaDimensionId] || ''}` : t('stage2StepCausa')}
+                </span>
+                <span className="text-slate-400 text-xs">
+                  {t('causaQuestionCount', { current: (state.history?.length || 0) + 1 })}
+                </span>
               </div>
 
-          {/* Active Question or Final Summary */}
-          {state && !state.isFinished && state.currentQuestion && (
-            <div className="bg-white border border-teal-200 rounded-xl p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2 text-teal-800 font-bold text-xs uppercase tracking-wide">
-                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
-                  <span>{t('causaQuestionCount', { current: state.history.length + 1 })}</span>
-                </div>
-                {state.currentQuestion.targetDimension && (
-                  <span className="text-[11px] font-mono px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md border border-slate-200">
-                    {state.currentQuestion.targetDimension}
+              <div className="flex items-center gap-2">
+                {state.turnDurations?.totalMs != null && (
+                  <span className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
+                    <Clock className="w-3.5 h-3.5" />
+                    {((state.turnDurations.totalMs || 0) / 1000).toFixed(1)}s
                   </span>
                 )}
+                {activeMode === '3-tier' && state.currentQuestion.agentOpinions && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAgentProposals(!showAgentProposals)}
+                    className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 underline cursor-pointer ml-1"
+                  >
+                    {showAgentProposals ? t('causaAgentOpinionsHide') : t('causaAgentOpinionsBtn')}
+                  </button>
+                )}
               </div>
+            </div>
 
-              {/* The Single Question */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">
-                  {t('causaQuestionLabel')}
-                </label>
-                <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                  „{state.currentQuestion.questionText}“
-                </h4>
+            <p className="text-base font-medium text-slate-100 leading-relaxed">
+              „{state.currentQuestion.questionText}“
+            </p>
+
+            {state.currentQuestion.orientationExample && (
+              <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 text-xs text-slate-400 space-y-1">
+                <span className="font-semibold text-slate-300 block">
+                  {t('causaOrientationTherapistLabel')}
+                </span>
+                <p className="italic text-slate-300">
+                  {state.currentQuestion.orientationExample}
+                </p>
               </div>
+            )}
 
-              {/* Begründung / Schiedsrichter-Vermerk je nach Prüfmodus */}
-              {activeMode === 'gemini-only' ? (
-                <div className="bg-teal-50/70 border border-teal-200/80 rounded-xl p-3 text-xs text-teal-950 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-bold text-[11px] text-teal-900 uppercase tracking-wider">
-                      <Sparkles className="w-3.5 h-3.5 text-teal-700" />
-                      <span>{t('causaModeGeminiOnly')}</span>
-                    </div>
-                    {state.turnDurations?.totalMs != null && (
-                      <span className="text-[11px] font-mono font-semibold text-teal-800 bg-white/90 px-2 py-0.5 rounded border border-teal-200">
-                        {t('causaTurnRuntimeLabel')} {t('causaTurnRuntimeSeconds', { seconds: (state.turnDurations.totalMs / 1000).toFixed(2) })}
+            {state.currentQuestion.arbitrationNote && (
+              <div className="text-xs text-indigo-300/80 flex items-center gap-1.5 pt-1">
+                <Brain className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <span>{state.currentQuestion.arbitrationNote}</span>
+              </div>
+            )}
+
+            {showAgentProposals && state.currentQuestion.agentOpinions && activeMode === '3-tier' && (
+              <div className="mt-2.5 pt-2.5 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 shadow-md">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-teal-300 flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                      {t('causaGeminiProposal')}
+                    </span>
+                    {state.turnDurations?.geminiMs != null && (
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {((state.turnDurations.geminiMs || 0) / 1000).toFixed(1)}s
                       </span>
                     )}
                   </div>
-                  {state.currentQuestion.reason && (
-                    <p className="text-teal-900 leading-relaxed pl-5">
-                      {state.currentQuestion.reason}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-gradient-to-r from-teal-50/90 via-slate-50 to-indigo-50/60 border border-teal-200/90 rounded-xl p-3.5 text-xs text-teal-950 space-y-2.5">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-1.5 font-bold text-[11px] text-teal-900 uppercase tracking-wider">
-                      <ShieldCheck className="w-4 h-4 text-teal-700" />
-                      <span>{t('causaArbitrationNote')}</span>
-                    </div>
-                    {state.currentQuestion.agentOpinions && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAgentProposals(!showAgentProposals)}
-                        className="text-[11px] font-semibold text-teal-700 hover:text-teal-900 underline flex items-center gap-1 cursor-pointer ml-auto"
-                      >
-                        <span>{showAgentProposals ? t('causaAgentOpinionsHide') : t('causaAgentOpinionsBtn')}</span>
-                      </button>
-                    )}
-                  </div>
-                  {(state.currentQuestion.arbitrationNote || state.currentQuestion.reason) && (
-                    <p className="text-teal-950 font-medium leading-relaxed pl-5">
-                      {state.currentQuestion.arbitrationNote || state.currentQuestion.reason}
-                    </p>
-                  )}
-
-                  {/* Transparente Anzeige der unabhängigen Vorschläge (Gemini & GPT) */}
-                  {showAgentProposals && state.currentQuestion.agentOpinions && (
-                    <div className="mt-2.5 pt-2.5 border-t border-teal-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
-                      <div className="bg-white/90 p-3 rounded-lg border border-teal-200 shadow-2xs">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-teal-900 flex items-center gap-1">
-                            <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-                            {t('causaGeminiProposal')}
-                          </span>
-                          {state.turnDurations?.geminiMs != null && (
-                            <span className="text-[10px] font-mono text-slate-500">
-                              {((state.turnDurations.geminiMs || 0) / 1000).toFixed(1)}s
-                            </span>
-                          )}
-                        </div>
-                        <p className="italic text-slate-900 font-medium leading-relaxed">
-                          „{state.currentQuestion.agentOpinions.geminiQuestion}“
-                        </p>
-                      </div>
-                      <div className="bg-white/90 p-3 rounded-lg border border-indigo-200 shadow-2xs">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-indigo-900 flex items-center gap-1">
-                            <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                            {t('causaGptProposal')}
-                          </span>
-                          {state.turnDurations?.gptMs != null && (
-                            <span className="text-[10px] font-mono text-slate-500">
-                              {((state.turnDurations.gptMs || 0) / 1000).toFixed(1)}s
-                            </span>
-                          )}
-                        </div>
-                        <p className="italic text-slate-900 font-medium leading-relaxed">
-                          „{state.currentQuestion.agentOpinions.gptQuestion}“
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Rule 6: Orientation example for therapist */}
-              {state.currentQuestion.orientationExample && (
-                <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3 text-xs text-amber-950 space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-[11px] text-amber-900 uppercase tracking-wider">
-                    <Info className="w-3.5 h-3.5 text-amber-700" />
-                    <span>{t('causaOrientationExampleLabel')}</span>
-                  </div>
-                  <p className="text-amber-900/90 italic pl-5 leading-relaxed">
-                    „{state.currentQuestion.orientationExample}“
+                  <p className="italic text-slate-200 font-medium leading-relaxed">
+                    „{state.currentQuestion.agentOpinions.geminiQuestion}“
                   </p>
                 </div>
+                <div className="bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 shadow-md">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-indigo-300 flex items-center gap-1">
+                      <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                      {t('causaGptProposal')}
+                    </span>
+                    {state.turnDurations?.gptMs != null && (
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {((state.turnDurations.gptMs || 0) / 1000).toFixed(1)}s
+                      </span>
+                    )}
+                  </div>
+                  <p className="italic text-slate-200 font-medium leading-relaxed">
+                    „{state.currentQuestion.agentOpinions.gptQuestion}“
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Patient Answer Box */}
+        <div className="space-y-3">
+          <div className="relative">
+            <textarea
+              id="causa-patient-answer-input"
+              rows={3}
+              value={answerInput}
+              onChange={(e) => setAnswerInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleSubmitAnswer();
+                }
+              }}
+              placeholder={t('causaAnswerPlaceholder')}
+              disabled={loading}
+              className="w-full p-4 rounded-xl bg-slate-800/80 border border-slate-700/80 focus:border-teal-500/60 focus:ring-1 focus:ring-teal-500/60 text-slate-100 text-xs resize-none placeholder:text-slate-500 transition-colors"
+            />
+            {isRecording && (
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <span>{recordSecondsLeft}s</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {isSpeechSupported && (
+                <button
+                  id="causa-voice-record-btn"
+                  type="button"
+                  onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                  disabled={loading}
+                  className={`px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2 border transition-all cursor-pointer ${
+                    isRecording
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-xs'
+                      : 'bg-slate-800/80 text-slate-300 hover:text-white border-slate-700 hover:bg-slate-750'
+                  }`}
+                >
+                  {isRecording ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-teal-400" />}
+                  <span>{isRecording ? t('causaStopDictationBtn') : t('causaDictateAnswerBtn')}</span>
+                </button>
               )}
 
-              {/* Answer Input Field & Voice Recording (Organon Layout) */}
-              <div className="space-y-2 pt-1">
-                <div className="flex flex-col sm:flex-row gap-3 items-stretch">
-                  <div className="relative flex-1">
-                    <textarea
-                      id="causa-patient-answer-input"
-                      rows={5}
-                      value={answerInput}
-                      onChange={(e) => setAnswerInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                          e.preventDefault();
-                          handleSubmitAnswer();
-                        }
-                      }}
-                      placeholder={t('causaAnswerPlaceholder')}
-                      disabled={loading}
-                      className="w-full h-full min-h-[130px] p-4 bg-slate-50/50 focus:bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all resize-y shadow-2xs"
-                    />
-                  </div>
-
-                  {/* Vertical Aufnahme Button like in Organon */}
-                  <button
-                    type="button"
-                    onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-                    disabled={!isSpeechSupported || loading}
-                    className={`w-full sm:w-32 md:w-36 shrink-0 rounded-xl text-white flex flex-col items-center justify-center gap-2 p-3 transition-all shadow-xs cursor-pointer min-h-[130px] border ${
-                      isRecording
-                        ? 'bg-rose-600 hover:bg-rose-700 animate-pulse border-rose-700'
-                        : 'bg-[#00897b] hover:bg-[#00796b] border-teal-800/20'
-                    } ${!isSpeechSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white shadow-inner">
-                      {isRecording ? (
-                        <MicOff className="w-6 h-6 text-white" />
-                      ) : (
-                        <Mic className="w-6 h-6 text-white" />
-                      )}
-                    </div>
-                    <span className="text-xs font-semibold text-white tracking-wide text-center">
-                      {isRecording ? `${t('organonStopBtn')} (${recordSecondsLeft}s)` : t('organonRecordBtn')}
-                    </span>
-                  </button>
-                </div>
-
-                {isRecording && (
-                  <div className="space-y-1">
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-rose-500 h-full transition-all duration-1000 ease-linear rounded-full"
-                        style={{ width: `${((60 - recordSecondsLeft) / 60) * 100}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
-                      <span>{t('causaMicActive')}</span>
-                      <span>{recordSecondsLeft}s</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={handleFinalize}
-                    disabled={loading}
-                    className="text-xs text-slate-500 hover:text-slate-800 font-medium px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                  >
-                    {t('causaFinishVertiefungBtn')}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSubmitAnswer}
-                    disabled={!answerInput.trim() || loading}
-                    className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer ml-auto"
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>{t('causaLoadingNext')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        <span>{t('causaSubmitAnswerBtn')}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Rule 11: Final Summary on 3 Levels */}
-          {state && state.isFinished && state.finalSummary && (
-            <div className="bg-white border border-teal-300 rounded-xl p-6 shadow-md space-y-5">
-              <div className="flex items-center justify-between border-b border-teal-100 pb-3">
-                <div className="flex items-center gap-2 text-teal-800 font-bold text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-teal-600" />
-                  <span>{t('causaFinishedTitle')}</span>
-                </div>
-                {state.stoppingReason && (
-                  <span className="text-[11px] font-medium bg-teal-100/70 text-teal-900 px-2.5 py-1 rounded-lg border border-teal-200">
-                    <strong className="font-semibold">{t('causaStoppingReasonLabel')}</strong> {state.stoppingReason}
-                  </span>
-                )}
-              </div>
-
-              {/* Ebene A */}
-              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 space-y-2">
-                <h5 className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                  <span>{t('causaLevelATitle')}</span>
-                </h5>
-                <ul className="list-disc list-inside text-xs text-emerald-950 space-y-1 pl-1">
-                  {(state.finalSummary.levelA_patientReported || []).map((item, idx) => (
-                    <li key={idx} className="leading-relaxed font-medium">{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Ebene B */}
-              <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-4 space-y-2">
-                <h5 className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-700" />
-                  <span>{t('causaLevelBTitle')}</span>
-                </h5>
-                <ul className="list-disc list-inside text-xs text-amber-950 space-y-1 pl-1">
-                  {(state.finalSummary.levelB_unresolvedOrConflicting || []).map((item, idx) => (
-                    <li key={idx} className="leading-relaxed">{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Ebene C */}
-              <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-4 space-y-2">
-                <h5 className="text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-purple-700" />
-                  <span>{t('causaLevelCTitle')}</span>
-                </h5>
-                <ul className="list-disc list-inside text-xs text-purple-950 space-y-1 pl-1">
-                  {(state.finalSummary.levelC_homeopathicInterpretation || []).map((item, idx) => (
-                    <li key={idx} className="leading-relaxed italic">{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={handleAdopt}
-                  className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{onWorkflowComplete ? t('stage2AdoptAndContinueBtn') : t('causaAdoptToAnalysisBtn')}</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Collapsible: Evidence List (Rule 9) */}
-          {state && (state.evidenceList || []).length > 0 && (
-            <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-2xs">
               <button
+                id="causa-finish-early-btn"
                 type="button"
-                onClick={() => setShowEvidence(!showEvidence)}
-                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                onClick={handleFinalize}
+                disabled={loading}
+                className="px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 transition-colors cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-teal-600" />
-                  <span>{t('causaEvidenceTitle')} ({(state.evidenceList || []).length})</span>
-                </div>
-                <span className="text-[11px] text-slate-500 font-normal">
-                  {showEvidence ? '▲ Verbergen' : '▼ Anzeigen'}
-                </span>
+                {t('causaFinishVertiefungBtn')}
               </button>
+            </div>
 
-              {showEvidence && (
-                <div className="p-3 space-y-2 divide-y divide-slate-100">
-                  {(state.evidenceList || []).map((ev, idx) => (
-                    <div key={idx} className="pt-2 first:pt-0 text-xs flex items-start justify-between gap-3">
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          {renderStatusBadge(ev.status)}
-                          <span className="font-semibold text-slate-900">{ev.content}</span>
-                        </div>
-                        {ev.originalQuote && (
-                          <p className="text-[11px] text-slate-600 italic">
-                            <span className="text-slate-400 not-italic">{t('causaOriginalQuoteLabel')}</span> „{ev.originalQuote}“
+            <button
+              id="causa-submit-answer-btn"
+              type="button"
+              onClick={handleSubmitAnswer}
+              disabled={loading || !answerInput.trim()}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>{t('causaLoadingNext')}</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  <span>{t('causaSubmitAnswerBtn')}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Accordion 1: 13 Causa-Dimensionen (C1–C13) */}
+        <div id="causa-dimensions-accordion" className="border border-slate-800 rounded-xl bg-slate-950/40 overflow-hidden">
+          <button
+            id="causa-toggle-dimensions-btn"
+            type="button"
+            onClick={() => setShow13Dimensions(!show13Dimensions)}
+            className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-300 hover:bg-slate-800/40 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Brain className="w-4 h-4 text-teal-400" />
+              <span>{t('causa13DimensionsTitle')}</span>
+              <span className="text-slate-500 font-normal">({t('causaDimensionsOverviewLabel')})</span>
+            </div>
+            {show13Dimensions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+
+          {show13Dimensions && (
+            <div className="p-4 border-t border-slate-800 space-y-2">
+              <p className="text-[11px] text-slate-400 pb-2">
+                {t('causa13DimensionsDesc')}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {(Object.keys(CAUSA_DIMENSION_NAMES) as CausaDimensionId[]).map((dimId) => {
+                  const isCurrent = state?.currentQuestion?.targetDimension === dimId;
+                  const isExplored = (state?.evidenceList || []).some(e => e.dimension === dimId) || (state?.knownFacts || []).some((k: any) => k.dimension === dimId);
+                  return (
+                    <div
+                      key={dimId}
+                      id={`causa-dim-card-${dimId}`}
+                      className={`p-2.5 rounded-lg border text-xs flex items-start justify-between gap-2 transition-all ${
+                        isCurrent
+                          ? 'bg-teal-500/10 border-teal-500/40'
+                          : isExplored
+                          ? 'bg-emerald-950/20 border-emerald-500/30'
+                          : 'bg-slate-900/60 border-slate-800/80'
+                      }`}
+                    >
+                      <div>
+                        <span className="font-semibold text-slate-200 block">
+                          {dimId}: {CAUSA_DIMENSION_NAMES[dimId]}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          {isCurrent ? t('causaDimInFocus') : isExplored ? t('causaDimExplored') : t('causaDimPending')}
+                        </span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium shrink-0 ${
+                        isCurrent
+                          ? 'bg-teal-500/20 text-teal-300 font-bold'
+                          : isExplored
+                          ? 'bg-emerald-500/20 text-emerald-300'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {isCurrent ? '● Im Fokus' : isExplored ? '✓ Erkundet' : 'Offen'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Accordion 2: Belegte Evidenzen & Fakten */}
+        <div id="causa-evidence-accordion" className="border border-slate-800 rounded-xl bg-slate-950/40 overflow-hidden">
+          <button
+            id="causa-toggle-evidence-btn"
+            type="button"
+            onClick={() => setShowEvidence(!showEvidence)}
+            className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-300 hover:bg-slate-800/40 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>{t('causaEvidenceTitle')} ({(state?.evidenceList?.length || 0) + (state?.knownFacts?.length || 0)})</span>
+            </div>
+            {showEvidence ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+
+          {showEvidence && (
+            <div className="p-4 border-t border-slate-800 space-y-3">
+              {/* Bekannte Fakten */}
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">
+                  {t('causaKnownTitle')}
+                </span>
+                {state?.knownFacts && state.knownFacts.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {state.knownFacts.map((kf, i) => (
+                      <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs space-y-1">
+                        <span className="font-medium text-slate-200 block">{kf.text}</span>
+                        {kf.evidence && (
+                          <p className="text-[11px] text-slate-400 italic">
+                            „{kf.evidence}“
                           </p>
                         )}
-                        <p className="text-[10px] text-slate-400">
-                          {ev.source} • {t('causaAssignedSymptomLabel')} {ev.assignedSymptom}
-                        </p>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">{t('causaNoKnownFacts')}</p>
+                )}
+              </div>
+
+              {/* Offene Aspekte */}
+              {state?.openAspects && state.openAspects.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                  <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
+                    {t('causaOpenTitle')}
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {state.openAspects.map((oa, i) => (
+                      <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs space-y-1">
+                        <span className="font-medium text-slate-200 block">{oa.text}</span>
+                        {oa.reason && (
+                          <p className="text-[11px] text-slate-400 italic">
+                            {oa.reason}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Collapsible: History */}
-          {state && (state.history || []).length > 0 && (
-            <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setShowHistory(!showHistory)}
-                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <History className="w-4 h-4 text-slate-600" />
-                  <span>{t('causaHistoryTitle')} ({(state.history || []).length})</span>
-                </div>
-                <span className="text-[11px] text-slate-500 font-normal">
-                  {showHistory ? '▲ Verbergen' : '▼ Anzeigen'}
-                </span>
-              </button>
-
-              {showHistory && (
-                <div className="p-3 space-y-3">
-                  {(state.history || []).map((h, idx) => {
-                    const qText = (h as any).question || (h as any).questionText || (h as any).text || '';
-                    const aText = (h as any).answer || (h as any).patientAnswer || (h as any).extractedNotes || '';
-                    const stepNum = h.step || idx + 1;
-                    return (
-                      <div key={idx} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1.5">
-                        <div className="flex items-center justify-between text-slate-500 font-semibold text-[11px]">
-                          <span>{t('causaQuestionCount', { current: stepNum })}</span>
-                        </div>
-                        {qText ? (
-                          <p className="font-medium text-slate-800">„{qText}“</p>
-                        ) : (
-                          <p className="font-medium text-slate-500 italic">„{t('causaQuestionCount', { current: stepNum })}“</p>
-                        )}
-                        <div className="bg-white p-2.5 rounded-md border border-slate-200 text-slate-900 text-xs mt-1">
-                          <span className="text-[10px] font-bold text-teal-700 block uppercase mb-0.5">Antwort:</span>
-                          {aText ? (
-                            <span className="text-slate-800 leading-relaxed whitespace-pre-wrap">{aText}</span>
-                          ) : (
-                            <span className="text-slate-400 italic">{t('causaNoAnswerRecorded')}</span>
+              {/* Evidenzliste mit Status */}
+              {state?.evidenceList && state.evidenceList.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                  <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider block">
+                    {t('causaEvidenceTitle')}
+                  </span>
+                  <div className="space-y-1.5">
+                    {state.evidenceList.map((ev, i) => (
+                      <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs flex items-start justify-between gap-2">
+                        <div className="space-y-0.5 flex-1">
+                          <div className="flex items-center gap-2">
+                            {renderStatusBadge(ev.status)}
+                            <span className="font-medium text-slate-200">{ev.content}</span>
+                          </div>
+                          {ev.originalQuote && (
+                            <p className="text-[11px] text-slate-400 italic">
+                              <span className="text-slate-500 not-italic">{t('causaOriginalQuoteLabel')}</span> „{ev.originalQuote}“
+                            </p>
                           )}
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           )}
-            </>
+        </div>
+
+        {/* Accordion 3: Frageverlauf (Historie) */}
+        <div id="causa-history-accordion" className="border border-slate-800 rounded-xl bg-slate-950/40 overflow-hidden">
+          <button
+            id="causa-toggle-history-btn"
+            type="button"
+            onClick={() => setShowHistory(!showHistory)}
+            className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-300 hover:bg-slate-800/40 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-amber-400" />
+              <span>{t('causaHistoryTitle')} ({state?.history?.length || 0})</span>
+            </div>
+            {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+
+          {showHistory && (
+            <div className="p-4 border-t border-slate-800 space-y-3">
+              {state?.history && state.history.length > 0 ? (
+                state.history.map((h, i) => {
+                  const qText = (h as any).question || (h as any).questionText || (h as any).text || '';
+                  const aText = (h as any).answer || (h as any).patientAnswer || (h as any).extractedNotes || '';
+                  const stepNum = h.step || i + 1;
+                  return (
+                    <div key={i} className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-xs">
+                      <div className="flex items-center justify-between text-slate-400 font-semibold text-[11px]">
+                        <span>Turn {stepNum}</span>
+                        {h.dimension && <span>{h.dimension}</span>}
+                      </div>
+                      <p className="text-teal-300/90 font-medium">F: {qText}</p>
+                      <p className="text-slate-300 pl-3 border-l-2 border-slate-700">A: {aText}</p>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-slate-500 italic">
+                  {t('causaNoHistoryYet')}
+                </p>
+              )}
+            </div>
           )}
         </div>
-  );
+      </div>
+    );
+  }
 
+  // -------------------------------------------------------------
+  // Render: Embedded View vs Full Modal
+  // -------------------------------------------------------------
   if (isEmbedded) {
     return (
-      <div id="causa-embedded-view" className="w-full flex flex-col flex-1 bg-slate-50/50 overflow-y-auto">
-        {modalBody}
+      <div id="causa-embedded-view" className="w-full flex flex-col flex-1 bg-slate-900 text-slate-100 overflow-y-auto">
+        <div className="px-6 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 text-xs shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-300 font-bold">{t('causaModalTitle')} (C1–C13)</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs">
+            {activeMode === '3-tier' ? (
+              <span className="flex items-center gap-1.5 text-indigo-300 font-semibold">
+                <Brain className="w-3.5 h-3.5" />
+                {t('modeHahnemannBtn')}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-teal-300 font-semibold">
+                <Sparkles className="w-3.5 h-3.5" />
+                {t('modeGeminiOnlyBtn')}
+              </span>
+            )}
+          </div>
+        </div>
+        {mainContent}
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+    <div id="causa-vertiefung-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md overflow-y-auto">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        id="causa-vertiefung-modal-container"
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
         transition={{ duration: 0.2 }}
-        className={`bg-white w-full ${activeMode === 'ab-compare' ? 'max-w-6xl' : 'max-w-4xl'} rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-hidden transition-all`}
+        className={`relative w-full ${activeMode === 'ab-compare' ? 'max-w-6xl' : 'max-w-4xl'} max-h-[92vh] flex flex-col bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden text-slate-100`}
       >
-        {/* Modal Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-teal-900 via-slate-900 to-teal-950 text-white flex items-center justify-between shrink-0 shadow-xs">
+        {/* Header */}
+        <div id="causa-modal-header" className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-teal-500/20 text-teal-300 rounded-xl border border-teal-500/30">
+            <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <span>{t('causaModalTitle')}</span>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-teal-400/20 text-teal-300 border border-teal-400/30 rounded-full">
-                  §§ 83–104
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-100 tracking-tight">
+                  {t('causaModalTitle')}
+                </h2>
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                  Stage 2
                 </span>
-              </h3>
-              <p className="text-xs text-teal-200/80 mt-0.5">
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
                 {t('causaModalSubtitle')}
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-            aria-label={t('causaCloseBtn')}
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-3">
+            {/* Active Mode Badge (Zentral gesteuert vor Analyse-Start) */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs font-medium">
+              {activeMode === '3-tier' ? (
+                <span className="flex items-center gap-1.5 text-indigo-300 font-semibold">
+                  <Brain className="w-3.5 h-3.5" />
+                  {t('organonHahnemannCrossCheckLabel')}: {t('causaHahnemannActiveBadge')}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-teal-300 font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {t('modeGeminiOnlyBtn')} ({t('causaHahnemannInactiveBadge')})
+                </span>
+              )}
+            </div>
+
+            <button
+              id="causa-modal-close-btn"
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {modalBody}
-
-        {/* Modal Footer */}
-        <div className="px-6 py-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 shrink-0">
-          <span>Organon §§ 83–104 • Hahnemann & Bönninghausen</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition-colors cursor-pointer"
-          >
-            {t('causaCloseBtn')}
-          </button>
-        </div>
+        {mainContent}
       </motion.div>
     </div>
   );

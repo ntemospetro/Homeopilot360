@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   HelpCircle,
   ArrowRight,
+  ArrowUpRight,
   Send,
   RotateCcw,
   Check,
+  CheckCheck,
   Sparkles,
   Info,
   Clock,
@@ -34,6 +37,7 @@ export interface OrganonGlobalReviewViewProps {
   hahnemannCrossCheck: boolean;
   onUpdateRecords: (records: Record<Stage2Category, any>) => void;
   onFinalizeWorkflow: () => void;
+  onNavigateToCategory?: (category: Stage2Category) => void;
 }
 
 export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = ({
@@ -43,7 +47,8 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
   records,
   hahnemannCrossCheck,
   onUpdateRecords,
-  onFinalizeWorkflow
+  onFinalizeWorkflow,
+  onNavigateToCategory
 }) => {
   const { t } = useTranslation();
 
@@ -53,6 +58,37 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
   const [clarificationInput, setClarificationInput] = useState<string>('');
   const [activeIssue, setActiveIssue] = useState<OrganonOpenIssue | null>(null);
   const [isReviewLoading, setIsReviewLoading] = useState<boolean>(false);
+
+  // Category completeness calculations
+  const completedCategoriesCount = useMemo(() => {
+    return STAGE2_CATEGORY_SEQUENCE.filter(cat => records[cat]?.status === 'COMPLETED').length;
+  }, [records]);
+
+  const skippedCategoriesCount = useMemo(() => {
+    return STAGE2_CATEGORY_SEQUENCE.filter(cat => records[cat]?.status === 'SKIPPED_SUFFICIENT').length;
+  }, [records]);
+
+  const pendingCategories = useMemo(() => {
+    return STAGE2_CATEGORY_SEQUENCE.filter(cat => {
+      const s = records[cat]?.status;
+      return s !== 'COMPLETED' && s !== 'SKIPPED_SUFFICIENT';
+    });
+  }, [records]);
+
+  const isAllCategoriesSettled = pendingCategories.length === 0;
+
+  const handleAdoptAllPendingDrafts = () => {
+    const updated = { ...records };
+    pendingCategories.forEach((cat) => {
+      const currentText = updated[cat]?.text || stage1Values[cat] || '';
+      updated[cat] = {
+        category: cat,
+        status: 'SKIPPED_SUFFICIENT',
+        text: currentText
+      };
+    });
+    onUpdateRecords(updated);
+  };
 
   // Trigger review execution
   const executeReview = async (
@@ -390,34 +426,72 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
       {/* ================= STATE 4: COMPLETED ================= */}
       {reviewStepState === 'COMPLETED' && (
         <div id="organon-stage2-completed-view" className="space-y-6">
-          {/* Completion Banner */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-850 to-emerald-950/40 border border-emerald-500/30 shadow-lg space-y-2">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-6 h-6" />
+          {/* Banner: Check if all categories are settled or if incomplete */}
+          {isAllCategoriesSettled ? (
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-850 to-emerald-950/40 border border-emerald-500/30 shadow-lg space-y-2">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-tight">
+                    {t('stage2AnamnesisCompletedTitle')}
+                  </h3>
+                  <p className="text-xs text-emerald-200/90 mt-0.5">
+                    {t('stage2AnamnesisCompletedDesc')}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white tracking-tight">
-                  {t('stage2AnamnesisCompletedTitle')}
-                </h3>
-                <p className="text-xs text-emerald-200/90 mt-0.5">
-                  {t('stage2AnamnesisCompletedDesc')}
-                </p>
-              </div>
-            </div>
 
-            <div className="pt-2 text-xs text-slate-300 leading-relaxed pl-14">
-              {reviewResult?.unresolvedIssues && reviewResult.unresolvedIssues.length > 0 ? (
-                <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/30 text-amber-200/90 text-xs">
-                  {t('stage2ReviewUnresolvedDoc')}
-                </div>
-              ) : (
-                <div className="text-emerald-200/90">
-                  {t('stage2ReviewNoIssues')}
-                </div>
-              )}
+              <div className="pt-2 text-xs text-slate-300 leading-relaxed pl-14">
+                {reviewResult?.unresolvedIssues && reviewResult.unresolvedIssues.length > 0 ? (
+                  <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/30 text-amber-200/90 text-xs">
+                    {t('stage2ReviewUnresolvedDoc')}
+                  </div>
+                ) : (
+                  <div className="text-emerald-200/90">
+                    {t('stage2ReviewNoIssues')}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-850 to-amber-950/30 border border-amber-500/30 shadow-lg space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white tracking-tight">
+                      {t('stage2AnamnesisIncompleteTitle')}
+                    </h3>
+                    <p className="text-xs text-amber-200/90 mt-0.5">
+                      {t('stage2AnamnesisIncompleteDesc', {
+                        completed: completedCategoriesCount + skippedCategoriesCount,
+                        total: STAGE2_CATEGORY_SEQUENCE.length,
+                        pending: pendingCategories.length
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  id="organon-stage2-adopt-all-pending-btn"
+                  type="button"
+                  onClick={handleAdoptAllPendingDrafts}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-amber-200 bg-amber-900/40 hover:bg-amber-800/60 border border-amber-500/40 transition-colors self-start sm:self-center shrink-0 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  <span>{t('stage2AdoptAllPendingDrafts')}</span>
+                </button>
+              </div>
+
+              <div className="pt-1 text-xs text-amber-200/80 leading-relaxed pl-14">
+                {t('stage2AnamnesisIncompleteNotice')}
+              </div>
+            </div>
+          )}
 
           {/* Clarification turns log (if any points were clarified) */}
           {clarificationHistory.length > 0 && (
@@ -442,7 +516,7 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
           {/* Overview Table of All 10 Categories */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Übersicht aller 10 Organon-Kategorien (§§ 83–104)
+              {t('stage2CategoriesOverviewTitle')}
             </h4>
             <div className="space-y-2">
               {STAGE2_CATEGORY_SEQUENCE.map((cat, idx) => {
@@ -450,14 +524,25 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
                 const rec = records[cat];
                 const isDone = rec?.status === 'COMPLETED';
                 const isSkipped = rec?.status === 'SKIPPED_SUFFICIENT';
+                const isPending = !isDone && !isSkipped;
 
                 return (
                   <div
                     key={cat}
-                    className="p-3.5 rounded-xl bg-slate-850 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                      isPending
+                        ? 'bg-slate-850/90 border-amber-500/20'
+                        : 'bg-slate-850 border-slate-800'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-xs font-mono font-bold shrink-0">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-bold shrink-0 ${
+                        isDone
+                          ? 'bg-emerald-500/20 text-emerald-300'
+                          : isSkipped
+                          ? 'bg-amber-500/20 text-amber-300'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}>
                         {idx + 1}
                       </span>
                       <div>
@@ -478,7 +563,7 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             : isSkipped
                             ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-slate-800 text-slate-400'
+                            : 'bg-slate-800 text-slate-400 border border-slate-700'
                         }`}
                       >
                         {isDone
@@ -487,6 +572,17 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
                           ? t('stage2StatusSkipped')
                           : t('stage2StatusPending')}
                       </span>
+
+                      {isPending && onNavigateToCategory && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToCategory(cat)}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-teal-300 bg-teal-950/60 hover:bg-teal-900/80 border border-teal-500/40 flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <ArrowUpRight className="w-3 h-3" />
+                          <span>{t('stage2ActionDeepenNow')}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -500,10 +596,18 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
               id="organon-stage2-finalize-btn"
               type="button"
               onClick={onFinalizeWorkflow}
-              className="px-6 py-3 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              className={`px-6 py-3 rounded-xl text-xs font-bold text-white shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
+                isAllCategoriesSettled
+                  ? 'bg-teal-600 hover:bg-teal-500'
+                  : 'bg-amber-700/80 hover:bg-amber-600 text-amber-100 border border-amber-500/30'
+              }`}
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{t('stage2FinalizeAndSaveBtn')}</span>
+              <span>
+                {isAllCategoriesSettled
+                  ? t('stage2FinalizeAndSaveBtn')
+                  : t('stage2FinalizeWithIncompleteBtn')}
+              </span>
             </button>
           </div>
         </div>

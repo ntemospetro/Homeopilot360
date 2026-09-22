@@ -3424,6 +3424,14 @@ export const el = {
   causaHahnemannInactiveBadge: "Ανενεργή (μόνο Gemini προεπιλογή)",
   causa3TierBannerDesc: "Ανεξάρτητη παράλληλη εξέταση (Gemini & GPT-4o) με εναρμόνιση διαιτητή",
   causaGeminiOnlyBannerDesc: "Εστιασμένη διερεύνηση Causa με ακριβώς μία κλήση Gemini ανά γύρο",
+  modeGeminiOnlyBtn: "Gemini-only",
+  modeHahnemannBtn: "Έλεγχος Hahnemann",
+  modeAbCompareBtn: "A/B",
+  causaLevelBResolved: "Δεν απομένουν άλυτες ή αντικρουόμενες πτυχές αιτίου.",
+  causaNoHistoryYet: "Δεν έχουν τεθεί ακόμη ερωτήσεις εμβάθυνσης.",
+  causaOrientationTherapistLabel: "Οδηγός προσανατολισμού για τον θεραπευτή:",
+  localisatioLevelBResolved: "Η συντηρητική τοπογραφική αντιστοίχιση ολοκληρώθηκε.",
+  localisatioNoHistoryYet: "Δεν έχουν τεθεί ακόμη ερωτήσεις εμβάθυνσης.",
 
   // Localisatio-Vertiefungsanalyse (Stage 2)
   organonStartAnalysisWithLocalisatio: "Εμβάθυνση Localisatio",
@@ -3548,5 +3556,24 @@ export const el = {
   stage2IssueAmbiguity: "Διφορούμενη δήλωση",
   stage2IssueAssignmentUnclear: "Ασαφής αντιστοίχιση",
   stage2ClarificationProgress: "Ανοιχτό ερώτημα {{current}} από {{total}}",
-  stage2ResolvedIssuesCount: "Επιτυχώς διευκρινισμένα σημεία: {{count}}"
+  stage2ResolvedIssuesCount: "Επιτυχώς διευκρινισμένα σημεία: {{count}}",
+  stage2AnamnesisIncompleteTitle: "Η λήψη ιστορικού Organon είναι ελλιπής",
+  stage2AnamnesisIncompleteDesc: "{completed} από {total} κατηγορίες επεξεργάστηκαν • {pending} εκκρεμούν ακόμα",
+  stage2AnamnesisIncompleteNotice: "Ο έλεγχος ευλογοφάνειας και αντιφάσεων ολοκληρώθηκε, αλλά δεν έχουν εμβαθυνθεί ακόμα και οι 10 κατηγορίες στο Στάδιο 2. Μπορείτε να μεταβείτε απευθείας στις εκκρεμείς κατηγορίες παρακάτω ή να ολοκληρώσετε με τα υπάρχοντα προκαταρκτικά ευρήματα.",
+  stage2ActionDeepenNow: "Εμβάθυνση τώρα",
+  stage2AdoptAllPendingDrafts: "Υιοθέτηση όλων των εκκρεμών με προκαταρκτικά ευρήματα",
+  stage2CategoriesOverviewTitle: "Επισκόπηση και των 10 κατηγοριών Organon (§§ 83–104)",
+  stage2FinalizeWithIncompleteBtn: "Οριστικοποίηση με την τρέχουσα κατάσταση",
+
+  // Live Process Tracker (Organon Analysis)
+  organonLiveProcessTitle: "Δομημένη ανάλυση περιστατικού κατά Hahnemann",
+  organonLiveProcessSub: "Τα στάδια επεξεργασίας εκτελούνται σε πραγματικό χρόνο",
+  organonStepPatientText: "Καταγραφή κειμένου ασθενούς",
+  organonStepTextDecomposition: "Διάσπαση κειμένου σε σχετικές δηλώσεις",
+  organonStepCategoryMapping: "Αντιστοίχιση δηλώσεων στις κατηγορίες Organon …",
+  organonStepCrossCheck: "Ανεξάρτητος διασταυρούμενος έλεγχος σε εξέλιξη …",
+  organonStepArbitration: "Σύγκριση και εναρμόνιση αποτελεσμάτων …",
+  organonStepEvidenceCheck: "Έλεγχος κλινικών αποδείξεων",
+  organonStepConsolidation: "Ενοποίηση αποτελεσμάτων",
+  organonStepFinalCheck: "Τελικός έλεγχος"
 };

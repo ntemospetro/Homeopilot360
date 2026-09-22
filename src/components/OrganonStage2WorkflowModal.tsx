@@ -153,39 +153,26 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   const [slotNoteInput, setSlotNoteInput] = useState<string>('');
   const [confirmExitOpen, setConfirmExitOpen] = useState<boolean>(false);
 
-  // Synchronize initial hahnemann check
-  useEffect(() => {
-    setGlobalHahnemannCrossCheck(initialHahnemannCrossCheck);
-  }, [initialHahnemannCrossCheck]);
-
   // When workflow opens or resets
   useEffect(() => {
     if (isOpen) {
       setCurrentStepIndex(0);
       setConfirmExitOpen(false);
-      // Initialize seed values
-      setRecords((prev) => {
-        const updated = { ...prev };
+      // Initialize seed values only on initial modal open - status is PENDING until deepened or confirmed
+      setRecords(() => {
+        const initial: Record<Stage2Category, CategoryResultRecord> = {} as any;
         STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
           const s1Text = stage1Values[cat] || '';
-          if (!updated[cat] || updated[cat].status === 'PENDING') {
-            updated[cat] = {
-              category: cat,
-              status: s1Text ? 'COMPLETED' : 'PENDING',
-              text: s1Text || updated[cat]?.text || ''
-            };
-          } else if (s1Text && s1Text !== updated[cat].text) {
-            // Keep synchronized with updated stage1Values from previous workflow/review
-            updated[cat] = {
-              ...updated[cat],
-              text: s1Text
-            };
-          }
+          initial[cat] = {
+            category: cat,
+            status: 'PENDING',
+            text: s1Text
+          };
         });
-        return updated;
+        return initial;
       });
     }
-  }, [isOpen, stage1Values]);
+  }, [isOpen]); // Only react to isOpen changes, NOT stage1Values updates!
 
   // Current active category
   const activeCategory: Stage2Category | null = useMemo(() => {
@@ -203,15 +190,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
       const existingText = records[activeCategory]?.text || stage1Values[activeCategory] || '';
       setSlotNoteInput(existingText);
     }
-  }, [activeCategory, records, stage1Values]);
-
-  const handleToggleHahnemann = () => {
-    const nextVal = !globalHahnemannCrossCheck;
-    setGlobalHahnemannCrossCheck(nextVal);
-    if (onHahnemannCrossCheckChange) {
-      onHahnemannCrossCheckChange(nextVal);
-    }
-  };
+  }, [activeCategory]);
 
   // Handler when a category finishes and adopts findings
   const handleCompleteCategory = (cat: Stage2Category, summaryText: string, skipped = false) => {
@@ -299,32 +278,17 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
 
           {/* Right: Persistent Hahnemann Cross-Check Switch & Close Button */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Global Hahnemann-Gegenprüfung persistent toggle */}
+            {/* Global Hahnemann-Gegenprüfung persistent status (Zentral gesteuert) */}
             <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs">
               <div className="flex items-center gap-1.5 text-slate-300">
                 <Brain className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="hidden md:inline font-medium">{t('organonHahnemannCrossCheckLabel')}</span>
+                <span className="hidden md:inline font-medium">{t('organonHahnemannCrossCheckLabel')}:</span>
               </div>
-              <button
-                id="organon-stage2-global-hahnemann-toggle"
-                type="button"
-                onClick={handleToggleHahnemann}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  globalHahnemannCrossCheck ? 'bg-indigo-600' : 'bg-slate-700'
-                }`}
-                title={t('organonHahnemannCrossCheckLabel')}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                    globalHahnemannCrossCheck ? 'translate-x-4' : 'translate-x-0'
-                  }`}
-                />
-              </button>
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                   globalHahnemannCrossCheck
                     ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                    : 'bg-slate-700/60 text-slate-400'
+                    : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
                 }`}
               >
                 {globalHahnemannCrossCheck ? t('causaHahnemannActiveBadge') : t('causaHahnemannInactiveBadge')}
@@ -354,17 +318,19 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
             const isSkipped = rec?.status === 'SKIPPED_SUFFICIENT';
 
             return (
-              <div
+              <button
+                type="button"
                 key={cat}
                 id={`organon-step-indicator-${cat}`}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+                onClick={() => setCurrentStepIndex(idx)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer ${
                   isCurrent
-                    ? 'bg-teal-600 text-white font-bold shadow-xs border border-teal-400/40'
+                    ? 'bg-teal-600 text-white font-bold shadow-xs border border-teal-400/40 ring-1 ring-teal-400/40'
                     : isDone
-                    ? 'bg-emerald-950/50 text-emerald-300 border border-emerald-500/30 font-medium'
+                    ? 'bg-emerald-950/50 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900/40 font-medium'
                     : isSkipped
-                    ? 'bg-amber-950/40 text-amber-300 border border-amber-500/30 font-medium'
-                    : 'bg-slate-900 text-slate-400 border border-slate-800'
+                    ? 'bg-amber-950/40 text-amber-300 border border-amber-500/30 hover:bg-amber-900/40 font-medium'
+                    : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-850 hover:text-slate-200'
                 }`}
               >
                 <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-mono shrink-0">
@@ -378,22 +344,24 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
                 </span>
                 <span className="text-[11px]">{t(meta.labelKey)}</span>
                 <span className="text-[9px] opacity-70 font-mono">({meta.dimensionsCode})</span>
-              </div>
+              </button>
             );
           })}
 
           {/* Abschlussprüfungs-Instanz (Keine 11. Kategorie) */}
-          <div
+          <button
+            type="button"
             id="organon-step-indicator-review"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
+            onClick={() => setCurrentStepIndex(STAGE2_CATEGORY_SEQUENCE.length)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer ${
               isGlobalReview
-                ? 'bg-indigo-600 text-white font-bold shadow-xs border border-indigo-400/40'
-                : 'bg-slate-900 text-slate-400 border border-slate-800'
+                ? 'bg-indigo-600 text-white font-bold shadow-xs border border-indigo-400/40 ring-1 ring-indigo-400/40'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-850 hover:text-slate-200'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
             <span className="text-[11px] font-semibold">{t('stage2StepGlobalReview')}</span>
-          </div>
+          </button>
         </div>
 
         {/* ================= WORKFLOW BODY ================= */}
@@ -411,9 +379,6 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
               onAdoptCausa={(causaSummary) => {
                 handleCompleteCategory('CAUSA', causaSummary);
               }}
-              onWorkflowComplete={(causaSummary) => {
-                handleCompleteCategory('CAUSA', causaSummary);
-              }}
             />
           )}
 
@@ -428,9 +393,6 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
               hahnemannCrossCheck={globalHahnemannCrossCheck}
               isEmbedded={true}
               onAdoptLocalisatio={(locSummary) => {
-                handleCompleteCategory('LOCALISATIO', locSummary);
-              }}
-              onWorkflowComplete={(locSummary) => {
                 handleCompleteCategory('LOCALISATIO', locSummary);
               }}
             />
@@ -584,6 +546,12 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
                 }
               }}
               onFinalizeWorkflow={handleFinalizeWorkflow}
+              onNavigateToCategory={(cat) => {
+                const targetIdx = STAGE2_CATEGORY_SEQUENCE.indexOf(cat);
+                if (targetIdx >= 0) {
+                  setCurrentStepIndex(targetIdx);
+                }
+              }}
             />
           )}
         </div>

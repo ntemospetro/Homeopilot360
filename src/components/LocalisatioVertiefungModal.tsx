@@ -360,7 +360,7 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
                   <ul className="space-y-1 pl-4 list-disc text-xs text-slate-200">
                     {state.finalSummary?.levelB_conservativeNormalizations?.map((item, i) => (
                       <li key={i}>{item}</li>
-                    )) || <li>Konservative topographische Zuordnung abgeschlossen.</li>}
+                    )) || <li>{t('localisatioLevelBResolved')}</li>}
                   </ul>
                 </div>
 
@@ -699,7 +699,7 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
                   ))
                 ) : (
                   <p className="text-xs text-slate-500 italic">
-                    Noch keine Vertiefungsfragen gestellt.
+                    {t('localisatioNoHistoryYet')}
                   </p>
                 )}
               </div>
@@ -716,44 +716,18 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
           <div className="flex items-center gap-2">
             <span className="text-slate-300 font-bold">{t('localisatioModalTitle')} (L1–L7)</span>
           </div>
-          <div className="flex items-center bg-slate-800/80 border border-slate-700/60 rounded-xl p-0.5 text-xs">
-            <button
-              id="localisatio-mode-gemini-btn-emb"
-              type="button"
-              onClick={() => handleModeChange('gemini-only')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-                activeMode === 'gemini-only'
-                  ? 'bg-teal-600 text-white shadow-xs font-bold'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Gemini-only
-            </button>
-            <button
-              id="localisatio-mode-3tier-btn-emb"
-              type="button"
-              onClick={() => handleModeChange('3-tier')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-                activeMode === '3-tier'
-                  ? 'bg-indigo-600 text-white shadow-xs font-bold'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Hahnemann-Prüfung
-            </button>
-            <button
-              id="localisatio-mode-ab-btn-emb"
-              type="button"
-              onClick={() => handleModeChange('ab-compare')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
-                activeMode === 'ab-compare'
-                  ? 'bg-amber-600 text-white shadow-xs font-bold'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <GitCompare className="w-3 h-3" />
-              A/B
-            </button>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs">
+            {activeMode === '3-tier' ? (
+              <span className="flex items-center gap-1.5 text-indigo-300 font-semibold">
+                <Brain className="w-3.5 h-3.5" />
+                {t('modeHahnemannBtn')}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-teal-300 font-semibold">
+                <Sparkles className="w-3.5 h-3.5" />
+                {t('modeGeminiOnlyBtn')}
+              </span>
+            )}
           </div>
         </div>
         {mainContent}
@@ -793,45 +767,19 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Mode Switcher */}
-            <div className="flex items-center bg-slate-800/80 border border-slate-700/60 rounded-xl p-0.5 text-xs">
-              <button
-                id="localisatio-mode-gemini-btn"
-                type="button"
-                onClick={() => handleModeChange('gemini-only')}
-                className={`px-2.5 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                  activeMode === 'gemini-only'
-                    ? 'bg-teal-600 text-white shadow-sm font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Gemini-only
-              </button>
-              <button
-                id="localisatio-mode-3tier-btn"
-                type="button"
-                onClick={() => handleModeChange('3-tier')}
-                className={`px-2.5 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                  activeMode === '3-tier'
-                    ? 'bg-indigo-600 text-white shadow-sm font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Hahnemann-Prüfung
-              </button>
-              <button
-                id="localisatio-mode-ab-btn"
-                type="button"
-                onClick={() => handleModeChange('ab-compare')}
-                className={`px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
-                  activeMode === 'ab-compare'
-                    ? 'bg-amber-600 text-white shadow-sm font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <GitCompare className="w-3.5 h-3.5" />
-                A/B
-              </button>
+            {/* Active Mode Badge (Zentral gesteuert vor Analyse-Start) */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs font-medium">
+              {activeMode === '3-tier' ? (
+                <span className="flex items-center gap-1.5 text-indigo-300 font-semibold">
+                  <Brain className="w-3.5 h-3.5" />
+                  {t('organonHahnemannCrossCheckLabel')}: {t('causaHahnemannActiveBadge')}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-teal-300 font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {t('modeGeminiOnlyBtn')} ({t('causaHahnemannInactiveBadge')})
+                </span>
+              )}
             </div>
 
             <button

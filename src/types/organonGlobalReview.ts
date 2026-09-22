@@ -80,6 +80,15 @@ export interface OrganonGlobalReviewInput {
   language?: string;
 }
 
+export interface OrganonCategoryCompleteness {
+  totalCategories: number;
+  completedCount: number;
+  skippedCount: number;
+  pendingCount: number;
+  isFullySettled: boolean;
+  pendingCategories: Stage2Category[];
+}
+
 export interface OrganonGlobalReviewResult {
   reviewStatus: OrganonReviewStatus;
   openIssues: OrganonOpenIssue[];
@@ -90,6 +99,7 @@ export interface OrganonGlobalReviewResult {
   proposedQuestion?: string;
   summaryNotes: string[];
   timestamp: string;
+  completeness?: OrganonCategoryCompleteness;
   meta: {
     totalCheckedCategories: number;
     evidenceCeilingVerified: boolean;

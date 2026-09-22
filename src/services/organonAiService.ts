@@ -676,28 +676,104 @@ export interface OrganonCompareResult {
   errors?: { gemini?: string; openai?: string };
 }
 
-export async function analyzeOrganonText(rawText: string, language: string = 'de', engine: string = 'gemini', compare: boolean = false): Promise<OrganonAiAnalysisResult | OrganonCompareResult> {
+export async function analyzeOrganonText(
+  rawText: string,
+  language: string = 'de',
+  engine: string = 'gemini',
+  compare: boolean = false,
+  onStepUpdate?: (stepId: string, status: 'active' | 'done') => void
+): Promise<OrganonAiAnalysisResult | OrganonCompareResult> {
   try {
     const res = await fetch('/api/organon/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ rawText, language, engine, compare }),
+      body: JSON.stringify({ rawText, language, engine, compare, stream: !!onStepUpdate }),
     });
 
     if (res.ok) {
+      if (onStepUpdate && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let resultData: any = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const msg = JSON.parse(trimmed);
+              if (msg.type === 'step' && msg.stepId && msg.status) {
+                onStepUpdate(msg.stepId, msg.status);
+              } else if (msg.type === 'result' && msg.data) {
+                resultData = msg.data;
+              }
+            } catch {
+              // ignore partial line JSON parse errors
+            }
+          }
+        }
+
+        if (buffer.trim()) {
+          try {
+            const msg = JSON.parse(buffer.trim());
+            if (msg.type === 'step' && msg.stepId && msg.status) {
+              onStepUpdate(msg.stepId, msg.status);
+            } else if (msg.type === 'result' && msg.data) {
+              resultData = msg.data;
+            }
+          } catch {}
+        }
+
+        if (resultData) {
+          if (compare && resultData.gemini && resultData.openai) {
+            const cmpRes: any = {
+              engine: 'compare',
+              gemini: normalizeOrganonAnalysisResult(resultData.gemini, rawText),
+              openai: normalizeOrganonAnalysisResult(resultData.openai, rawText),
+              errors: resultData.errors
+            };
+            if (resultData.arbitrator_result) {
+              cmpRes.arbitrator_result = resultData.arbitrator_result;
+            }
+            return cmpRes;
+          }
+          const resultObj = resultData.result || resultData;
+          const normalized = normalizeOrganonAnalysisResult(resultObj, rawText);
+          if (resultData.arbitrator_result) {
+            (normalized as any).arbitrator_result = resultData.arbitrator_result;
+          }
+          return normalized;
+        }
+      }
+
       const data = await res.json();
       if (compare && data.gemini && data.openai) {
-        return {
+        const cmpRes: any = {
           engine: 'compare',
           gemini: normalizeOrganonAnalysisResult(data.gemini, rawText),
           openai: normalizeOrganonAnalysisResult(data.openai, rawText),
           errors: data.errors
         };
+        if (data.arbitrator_result) {
+          cmpRes.arbitrator_result = data.arbitrator_result;
+        }
+        return cmpRes;
       }
       const resultObj = data.result || data;
-      return normalizeOrganonAnalysisResult(resultObj, rawText);
+      const normalized = normalizeOrganonAnalysisResult(resultObj, rawText);
+      if (data.arbitrator_result) {
+        (normalized as any).arbitrator_result = data.arbitrator_result;
+      }
+      return normalized;
     }
 
     console.warn(`[analyzeOrganonText] Server returned ${res.status}, activating local semantic fallback.`);
