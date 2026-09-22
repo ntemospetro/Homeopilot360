@@ -918,15 +918,6 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   } else if (activeMode === 'ab-compare') {
     mainContent = (
       <div id="causa-ab-container" className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-900 text-slate-100">
-        {loading && (
-          <OrganonLiveProgress
-            steps={causaLiveSteps.length > 0 ? causaLiveSteps : getInitialCausaSteps(activeMode)}
-            orientation="horizontal"
-            titleKey="causaLiveProcessTitle"
-            subTitleKey="causaLiveProcessSub"
-            className="shadow-md border-teal-500/40"
-          />
-        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
           {renderBranchColumn(stateA, 'A', t('causaBranchATitle'))}
           {renderBranchColumn(stateB, 'B', t('causaBranchBTitle'))}
@@ -939,17 +930,6 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
     // Active Question Workflow (Single Mode)
     mainContent = (
       <div id="causa-active-container" className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-900 text-slate-100">
-        {/* Horizontal Process Bar during analysis */}
-        {loading && (
-          <OrganonLiveProgress
-            steps={causaLiveSteps.length > 0 ? causaLiveSteps : getInitialCausaSteps(activeMode)}
-            orientation="horizontal"
-            titleKey="causaLiveProcessTitle"
-            subTitleKey="causaLiveProcessSub"
-            className="shadow-md border-teal-500/40"
-          />
-        )}
-
         {/* Question Card */}
         {state?.currentQuestion && (
           <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-800/80 to-slate-900 border border-teal-500/30 shadow-lg space-y-3 relative overflow-hidden">

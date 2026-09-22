@@ -30,7 +30,14 @@ export async function runOrganonGlobalReview(
     if (res.ok) {
       const data = await res.json();
       if (data && data.result) {
-        return data.result as OrganonGlobalReviewResult;
+        const r = data.result;
+        return {
+          ...r,
+          openIssues: Array.isArray(r.openIssues) ? r.openIssues : [],
+          unresolvedIssues: Array.isArray(r.unresolvedIssues) ? r.unresolvedIssues : [],
+          resolvedIssues: Array.isArray(r.resolvedIssues) ? r.resolvedIssues : [],
+          summaryNotes: Array.isArray(r.summaryNotes) ? r.summaryNotes : []
+        } as OrganonGlobalReviewResult;
       }
     }
   } catch (err) {

@@ -36,7 +36,7 @@ export interface OrganonGlobalReviewViewProps {
   records: Record<Stage2Category, { category: Stage2Category; status: string; text: string; details?: any }>;
   hahnemannCrossCheck: boolean;
   onUpdateRecords: (records: Record<Stage2Category, any>) => void;
-  onFinalizeWorkflow: (currentRecords?: Record<Stage2Category, any>) => void;
+  onFinalizeWorkflow: () => void;
   onNavigateToCategory?: (category: Stage2Category) => void;
 }
 
@@ -109,8 +109,9 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
 
       setReviewResult(result);
 
-      if (result.openIssues.length > 0 && result.nextAction === 'ASK_CLARIFICATION') {
-        setActiveIssue(result.currentIssue || result.openIssues[0]);
+      const issues = result?.openIssues || [];
+      if (issues.length > 0 && result?.nextAction === 'ASK_CLARIFICATION') {
+        setActiveIssue(result.currentIssue || issues[0]);
         setReviewStepState('GLOBAL_REVIEW_COMPLETE');
       } else {
         setActiveIssue(null);
@@ -595,7 +596,7 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
             <button
               id="organon-stage2-finalize-btn"
               type="button"
-              onClick={() => onFinalizeWorkflow(records)}
+              onClick={onFinalizeWorkflow}
               className={`px-6 py-3 rounded-xl text-xs font-bold text-white shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
                 isAllCategoriesSettled
                   ? 'bg-teal-600 hover:bg-teal-500'
