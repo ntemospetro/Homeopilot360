@@ -462,7 +462,34 @@ export function createLocalFallbackAnalysis(rawText: string): OrganonAiAnalysisR
       warnings: []
     },
     complaint_matrices: complaintMatrices,
-    complaint_relations: []
+    complaint_relations: [],
+    three_stage: {
+      stage1: [
+        { category_key: 'causa', category_name: 'Causa', core_question: 'Wodurch ausgelöst?', result_text: 'Keine Angaben im Text.' },
+        { category_key: 'localisatio', category_name: 'Localisatio', core_question: 'Wo?', result_text: loc || 'Keine Angaben im Text.' },
+        { category_key: 'sensatio', category_name: 'Sensatio', core_question: 'Wie fühlt es sich an?', result_text: sens || 'Keine Angaben im Text.' },
+        { category_key: 'symptoma', category_name: 'Symptoma', core_question: 'Was?', result_text: clean.slice(0, 120) || 'Keine Angaben im Text.' },
+        { category_key: 'modalitates_besserung', category_name: 'Modalitates – Besserung', core_question: 'Wann besser?', result_text: /besser|ruhe|wärme/i.test(clean) ? 'Besserung im Text erwähnt' : 'Keine Angaben im Text.' },
+        { category_key: 'modalitates_verschlechterung', category_name: 'Modalitates – Verschlechterung', core_question: 'Wann schlechter?', result_text: /schlimmer|kälte|bewegung|nacht/i.test(clean) ? 'Verschlechterung im Text erwähnt' : 'Keine Angaben im Text.' },
+        { category_key: 'symptomata_concomitantia', category_name: 'Symptomata concomitantia', core_question: 'Was tritt dazu auf?', result_text: 'Keine Angaben im Text.' },
+        { category_key: 'comorbiditas', category_name: 'Comorbiditas', core_question: 'Welche weiteren Erkrankungen?', result_text: 'Keine Angaben im Text.' },
+        { category_key: 'mens', category_name: 'Mens', core_question: 'Was verändert sich beim Denken?', result_text: 'Keine Angaben im Text.' },
+        { category_key: 'animus', category_name: 'Animus', core_question: 'Wie geht es dir emotional?', result_text: /angst|unruhe|traurig|wut/i.test(clean) ? 'Emotionale Beteiligung im Text geschildert' : 'Keine Angaben im Text.' }
+      ],
+      stage2: sentences.length > 0 ? sentences.slice(0, 5).map(s => ({
+        text_snippet: s,
+        examination: 'Prüfung der Patientenschilderung nach Hahnemann (§§ 83–104).',
+        adopted_complaint: s
+      })) : [{
+        text_snippet: clean,
+        examination: 'Prüfung der Patientenschilderung.',
+        adopted_complaint: clean
+      }],
+      stage3: {
+        control_notes: 'Objektive Erfassung der Patientenschilderung durchgeführt. Zur vollständigen Fallanalyse fehlen noch Angaben zu genauen Modalitäten.',
+        clarification_question: 'Gibt es bestimmte Einflüsse (z. B. Wärme, Kälte, Ruhe, Bewegung), die die Beschwerden spürbar verändern?'
+      }
+    }
   };
 }
 
@@ -838,14 +865,14 @@ export async function analyzeOrganonText(
     }
 
     console.warn(`[analyzeOrganonText] Server returned ${res.status}, activating local semantic fallback.`);
-    const fallback = createLocalFallbackAnalysis(rawText);
+    const fallback = normalizeOrganonAnalysisResult(createLocalFallbackAnalysis(rawText), rawText);
     if (compare) {
       return { engine: 'compare', gemini: fallback, openai: fallback };
     }
     return fallback;
   } catch (fetchErr) {
     console.warn('[analyzeOrganonText] Network or API unavailable, activating local semantic fallback:', fetchErr);
-    const fallback = createLocalFallbackAnalysis(rawText);
+    const fallback = normalizeOrganonAnalysisResult(createLocalFallbackAnalysis(rawText), rawText);
     if (compare) {
       return { engine: 'compare', gemini: fallback, openai: fallback };
     }

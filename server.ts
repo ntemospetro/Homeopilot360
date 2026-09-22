@@ -1312,12 +1312,18 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
         res.setHeader("Transfer-Encoding", "chunked");
         res.setHeader("Cache-Control", "no-cache, no-transform");
         res.setHeader("X-Accel-Buffering", "no");
+        if (typeof (res as any).flushHeaders === 'function') {
+          (res as any).flushHeaders();
+        }
       }
 
       const emitStep = (stepId: string, status: 'active' | 'done') => {
         if (isStream) {
           try {
             res.write(JSON.stringify({ type: 'step', stepId, status }) + '\n');
+            if (typeof (res as any).flush === 'function') {
+              (res as any).flush();
+            }
           } catch {
             // ignore connection issues
           }
@@ -1436,11 +1442,12 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
 
       const runOpenAI = async () => {
         const openAiKey = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET || "").trim();
+        let openAiDirectError: string | null = null;
         if (openAiKey && openAiKey.length > 20 && !isOpenAiKeyInvalid && !isOpenAiKeyMarkedInvalid()) {
           try {
             // Dynamic import or require for openai package
             const OpenAI = (await import("openai")).default;
-            const openai = new OpenAI({ apiKey: openAiKey, timeout: 4000, maxRetries: 0 });
+            const openai = new OpenAI({ apiKey: openAiKey, timeout: 35000, maxRetries: 1 });
 
             const completion = await openai.chat.completions.create({
               model: "gpt-4o",
@@ -1453,12 +1460,17 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
             });
             const content = completion.choices[0]?.message?.content || "{}";
             const modelUsed = completion.model || "gpt-4o";
-            return { content, modelUsed };
+            return { content, modelUsed, error: null, isRealOpenAi: true };
           } catch (apiErr: any) {
-            isOpenAiKeyInvalid = true;
-            markOpenAiKeyInvalid();
-            console.log("[Organon] OpenAI credentials unavailable or inactive, using independent second-opinion profile.");
+            openAiDirectError = apiErr?.message || "OpenAI API unavailable";
+            if (apiErr?.status === 401 || String(apiErr?.message || "").includes("401") || String(apiErr?.message || "").includes("invalid_api_key")) {
+              isOpenAiKeyInvalid = true;
+              markOpenAiKeyInvalid();
+            }
+            console.log("[Organon] OpenAI credentials unavailable or inactive:", openAiDirectError, "- using independent second-opinion profile.");
           }
+        } else {
+          openAiDirectError = "Kein gültiger OpenAI API-Schlüssel hinterlegt (Klinisches Zweitmeinungs-Profil aktiv)";
         }
 
         console.info("Running independent second-opinion analysis via GPT-4o Pro Expert Clinical Engine.");
@@ -1522,12 +1534,17 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
           });
         } catch (e) {
           response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.1-flash-lite",
             contents: secondPrompt,
             config: { temperature: 0.6, responseMimeType: "application/json" },
           });
         }
-        return { content: response.text || "{}", modelUsed: "GPT-4o Pro (Expert Clinical Engine)" };
+        return {
+          content: response.text || "{}",
+          modelUsed: "GPT-4o Pro (Expert Clinical Engine)",
+          error: openAiDirectError,
+          isRealOpenAi: false
+        };
       };
 
       const defaultAnalysis = {
@@ -1645,8 +1662,12 @@ Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
           provider: "openai",
           model_requested: "gpt-4o",
           model_used: openaiRes.modelUsed || "gpt-4o",
+          is_real_openai: openaiRes.isRealOpenAi ?? false,
           arbitrator_result,
-          errors: { gemini: geminiError, openai: openaiError }
+          errors: {
+            gemini: geminiError,
+            openai: openaiError || openaiRes.error || null
+          }
         };
 
         if (isStream) {

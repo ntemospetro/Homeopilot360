@@ -504,9 +504,11 @@ export const OrganonView: React.FC = () => {
 
       setDebugStatus('Analyse erfolgreich abgeschlossen.');
       setActiveTab('gemini');
-      setIsResultsModalOpen(true);
       if (openStage2Workflow || openCausaPopup || openLocalisatioPopup) {
         setIsStage2WorkflowModalOpen(true);
+        setIsResultsModalOpen(false);
+      } else {
+        setIsResultsModalOpen(true);
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Fehler bei der KI-Analyse');
@@ -738,6 +740,10 @@ export const OrganonView: React.FC = () => {
       ANIMUS: ['animus', 'gemüt', 'gemuet']
     };
 
+    let updatedAnalysis: OrganonAiAnalysisResult | null = null;
+    let updatedGemini: OrganonAiAnalysisResult | null = null;
+    let updatedOpenai: OrganonAiAnalysisResult | null = null;
+
     if (analysisResult?.three_stage?.stage1) {
       const updatedStage1 = analysisResult.three_stage.stage1.map((item: any) => {
         const itemKey = (item.category_key || item.category_name || '').toLowerCase();
@@ -745,19 +751,20 @@ export const OrganonView: React.FC = () => {
           if (keys.some(k => itemKey.includes(k))) {
             const newText = allResults[cat as Stage2Category];
             if (newText && newText.trim()) {
-              return { ...item, result_text: newText };
+              return { ...item, result_text: newText.trim() };
             }
           }
         }
         return item;
       });
-      setAnalysisResult({
+      updatedAnalysis = {
         ...analysisResult,
         three_stage: {
           ...analysisResult.three_stage,
           stage1: updatedStage1
         }
-      });
+      };
+      setAnalysisResult(updatedAnalysis);
     }
 
     if (compareResult?.gemini?.three_stage?.stage1) {
@@ -767,23 +774,66 @@ export const OrganonView: React.FC = () => {
           if (keys.some(k => itemKey.includes(k))) {
             const newText = allResults[cat as Stage2Category];
             if (newText && newText.trim()) {
-              return { ...item, result_text: newText };
+              return { ...item, result_text: newText.trim() };
             }
           }
         }
         return item;
       });
+      updatedGemini = {
+        ...compareResult.gemini,
+        three_stage: {
+          ...compareResult.gemini.three_stage,
+          stage1: updatedGStage1
+        }
+      };
+
+      if (compareResult.openai?.three_stage?.stage1) {
+        const updatedOStage1 = compareResult.openai.three_stage.stage1.map((item: any) => {
+          const itemKey = (item.category_key || item.category_name || '').toLowerCase();
+          for (const [cat, keys] of Object.entries(catKeyMap)) {
+            if (keys.some(k => itemKey.includes(k))) {
+              const newText = allResults[cat as Stage2Category];
+              if (newText && newText.trim()) {
+                return { ...item, result_text: newText.trim() };
+              }
+            }
+          }
+          return item;
+        });
+        updatedOpenai = {
+          ...compareResult.openai,
+          three_stage: {
+            ...compareResult.openai.three_stage,
+            stage1: updatedOStage1
+          }
+        };
+      }
+
       setCompareResult({
         ...compareResult,
-        gemini: {
-          ...compareResult.gemini,
-          three_stage: {
-            ...compareResult.gemini.three_stage,
-            stage1: updatedGStage1
-          }
-        }
+        gemini: updatedGemini,
+        openai: updatedOpenai || compareResult.openai
       });
     }
+
+    // Automatically recalculate Belegprüfer and Endprüfer with the deepened Stage 2 data!
+    const effectiveG = updatedGemini || updatedAnalysis;
+    if (effectiveG) {
+      const effectiveO = updatedOpenai || compareResult?.openai || null;
+      const updatedArb = buildCompleteArbitratorResult(
+        narrationInput,
+        effectiveG,
+        effectiveO,
+        null,
+        language
+      );
+      setArbitratorResult(updatedArb);
+      fetchEndpruefer(narrationInput, updatedArb);
+    }
+
+    setIsStage2WorkflowModalOpen(false);
+    setIsResultsModalOpen(true);
   };
 
   const getArbitratorResult = (gemini: OrganonAiAnalysisResult, openai: OrganonAiAnalysisResult) => {
@@ -1401,26 +1451,66 @@ export const OrganonView: React.FC = () => {
       <div className="flex-1 w-full flex flex-col gap-6">
         
         {/* Results Available Banner / Launcher */}
-        {compareResult && (
-          <div className="bg-gradient-to-r from-teal-900 to-slate-900 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 border border-teal-700/50">
-            <div className="flex items-center gap-4">
+        {(compareResult || analysisResult) && (
+          <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-indigo-950 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 border border-teal-700/50">
+            <div className="flex items-center gap-4 w-full md:w-auto">
               <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-inner">
-                <Sparkles className="w-6 h-6" />
+                <Sparkles className="w-6 h-6 text-teal-200" />
               </div>
               <div>
-                <span className="text-xs uppercase font-bold tracking-wider text-teal-400">{t('organonAnalysisSuccess')}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs uppercase font-bold tracking-wider text-teal-400">{t('organonAnalysisSuccess')}</span>
+                  {endprueferResult && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                      endprueferResult.overall_status === 'PASS' ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/30 text-amber-300 border border-amber-500/40'
+                    }`}>
+                      {endprueferResult.overall_status === 'PASS' ? 'Endprüfer: PASS' : 'Endprüfer: Geprüft'}
+                    </span>
+                  )}
+                </div>
                 <h3 className="text-base font-bold text-white">{t('organonDualAiReadyTitle')}</h3>
                 <p className="text-xs text-slate-300">{t('organonDualAiReadyDesc')}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => { setActiveTab('gemini'); setIsResultsModalOpen(true); }}
-              className="px-5 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer shrink-0"
-            >
-              <Maximize2 className="w-4 h-4" />
-              <span>{t('organonOpenPopupBtn')}</span>
-            </button>
+
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => { setActiveTab('gemini'); setIsResultsModalOpen(true); }}
+                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-teal-300 rounded-xl text-xs font-semibold border border-teal-500/30 transition-all cursor-pointer"
+              >
+                Gemini 3.8
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveTab('openai'); setIsResultsModalOpen(true); }}
+                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-indigo-300 rounded-xl text-xs font-semibold border border-indigo-500/30 transition-all cursor-pointer"
+              >
+                GPT-4o Pro
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveTab('arbitrator'); setIsResultsModalOpen(true); }}
+                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-purple-300 rounded-xl text-xs font-semibold border border-purple-500/30 transition-all cursor-pointer"
+              >
+                {t('organonStrictArbiterLabel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveTab('endpruefer'); setIsResultsModalOpen(true); }}
+                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-emerald-300 rounded-xl text-xs font-semibold border border-emerald-500/30 transition-all cursor-pointer"
+              >
+                {t('organonEndprueferTabLabel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveTab('gemini'); setIsResultsModalOpen(true); }}
+                className="px-5 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer shrink-0 ml-1"
+              >
+                <Maximize2 className="w-4 h-4" />
+                <span>{t('organonOpenPopupBtn')}</span>
+              </button>
+            </div>
           </div>
         )}
 

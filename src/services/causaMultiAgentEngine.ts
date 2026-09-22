@@ -374,7 +374,7 @@ Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown:
   if (isLikelyValidKey) {
     try {
       const OpenAI = (await import("openai")).default;
-      const openai = new OpenAI({ apiKey: openAiKey, timeout: 6000, maxRetries: 0 });
+      const openai = new OpenAI({ apiKey: openAiKey, timeout: 30000, maxRetries: 1 });
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
