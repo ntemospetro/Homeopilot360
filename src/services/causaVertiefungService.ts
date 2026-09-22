@@ -100,7 +100,8 @@ export async function submitCausaAnswer(
   currentState: CausaVertiefungState,
   latestAnswer: string,
   language: string = 'de',
-  mode?: 'gemini-only' | '3-tier' | 'ab-compare'
+  mode?: 'gemini-only' | '3-tier' | 'ab-compare',
+  onStepUpdate?: (stepId: string, status: 'active' | 'done') => void
 ): Promise<CausaVertiefungState> {
   const activeMode = mode || currentState.pipelineMode || 'gemini-only';
   try {
@@ -114,12 +115,44 @@ export async function submitCausaAnswer(
         latestAnswer,
         language,
         mode: activeMode,
-        endprueferResult: currentState.endprueferResult || null
+        endprueferResult: currentState.endprueferResult || null,
+        stream: Boolean(onStepUpdate)
       })
     });
 
     if (res.ok) {
-      const data = await res.json();
+      let data: any = null;
+      if (onStepUpdate && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const msg = JSON.parse(trimmed);
+              if (msg.type === 'step' && msg.stepId && msg.status) {
+                onStepUpdate(msg.stepId, msg.status);
+              } else if (msg.type === 'result' && msg.data) {
+                data = msg.data;
+              }
+            } catch (e) {
+              // ignore parse errors on intermediate chunks
+            }
+          }
+        }
+      } else {
+        data = await res.json();
+      }
+
       if (data && data.state) {
         if (Array.isArray(data.state.history)) {
           data.state.history = data.state.history.map((h: any, idx: number) => ({
@@ -339,7 +372,8 @@ export async function submitCausaAbCompareAnswer(
   stateA: CausaVertiefungState,
   stateB: CausaVertiefungState,
   latestAnswer: string,
-  language: string = 'de'
+  language: string = 'de',
+  onStepUpdate?: (stepId: string, status: 'active' | 'done') => void
 ): Promise<CausaAbCompareState> {
   try {
     const res = await fetch('/api/organon/causa-deepen', {
@@ -353,12 +387,44 @@ export async function submitCausaAbCompareAnswer(
         latestAnswer,
         language,
         mode: 'ab-compare',
-        endprueferResult: stateA.endprueferResult || stateB.endprueferResult || null
+        endprueferResult: stateA.endprueferResult || stateB.endprueferResult || null,
+        stream: Boolean(onStepUpdate)
       })
     });
 
     if (res.ok) {
-      const data = await res.json();
+      let data: any = null;
+      if (onStepUpdate && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const msg = JSON.parse(trimmed);
+              if (msg.type === 'step' && msg.stepId && msg.status) {
+                onStepUpdate(msg.stepId, msg.status);
+              } else if (msg.type === 'result' && msg.data) {
+                data = msg.data;
+              }
+            } catch (e) {
+              // ignore parse errors
+            }
+          }
+        }
+      } else {
+        data = await res.json();
+      }
+
       if (data && data.stateA && data.stateB) {
         return {
           branchA: {
@@ -380,7 +446,7 @@ export async function submitCausaAbCompareAnswer(
   }
 
   const [nextA, nextB] = await Promise.all([
-    submitCausaAnswer(rawText, stateA, latestAnswer, language, '3-tier'),
+    submitCausaAnswer(rawText, stateA, latestAnswer, language, '3-tier', onStepUpdate),
     submitCausaAnswer(rawText, stateB, latestAnswer, language, 'gemini-only')
   ]);
   return { branchA: nextA, branchB: nextB };

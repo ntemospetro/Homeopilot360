@@ -3581,5 +3581,13 @@ export const en = {
   organonStepArbitration: "Results being reconciled …",
   organonStepEvidenceCheck: "Evidence being verified",
   organonStepConsolidation: "Results being consolidated",
-  organonStepFinalCheck: "Final verification"
+  organonStepFinalCheck: "Final verification",
+
+  // Live Process Tracker (Causa Deep Dive)
+  causaLiveProcessTitle: "Causa Deep-Dive Analysis",
+  causaLiveProcessSub: "Organon §§ 83–104 (C1–C13)",
+  causaStepAnswerCaptured: "Patient response recorded",
+  causaStepAnalysisDimensions: "Causa deep-dive analysis (Organon §§ 83–104) (C1–C13)",
+  causaStepHahnemannCheck: "Hahnemann cross-check",
+  causaStepProcessAndNext: "Processing answer and determining next single question..."
 };

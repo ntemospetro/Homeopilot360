@@ -3575,5 +3575,13 @@ export const ru = {
   organonStepArbitration: "Сопоставление и согласование результатов …",
   organonStepEvidenceCheck: "Проверка доказательств и точности",
   organonStepConsolidation: "Консолидация результатов",
-  organonStepFinalCheck: "Финальная проверка"
+  organonStepFinalCheck: "Финальная проверка",
+
+  // Live Process Tracker (Causa Deep Dive)
+  causaLiveProcessTitle: "Углубленный анализ причины (Causa)",
+  causaLiveProcessSub: "Органон §§ 83–104 (C1–C13)",
+  causaStepAnswerCaptured: "Ответ пациента зафиксирован",
+  causaStepAnalysisDimensions: "Углубленный анализ причины (Органон §§ 83–104) (C1–C13)",
+  causaStepHahnemannCheck: "Проверка по Ганеману",
+  causaStepProcessAndNext: "Обработка ответа и определение следующего вопроса..."
 };

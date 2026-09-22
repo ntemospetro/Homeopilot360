@@ -3575,5 +3575,13 @@ export const fr = {
   organonStepArbitration: "Harmonisation des résultats en cours …",
   organonStepEvidenceCheck: "Preuves en cours de vérification",
   organonStepConsolidation: "Consolidation des résultats",
-  organonStepFinalCheck: "Contrôle final"
+  organonStepFinalCheck: "Contrôle final",
+
+  // Live Process Tracker (Causa Deep Dive)
+  causaLiveProcessTitle: "Analyse approfondie de la cause",
+  causaLiveProcessSub: "Organon §§ 83–104 (C1–C13)",
+  causaStepAnswerCaptured: "Réponse du patient enregistrée",
+  causaStepAnalysisDimensions: "Analyse approfondie de la cause (Organon §§ 83–104) (C1–C13)",
+  causaStepHahnemannCheck: "Contre-vérification hahnemannienne",
+  causaStepProcessAndNext: "Traitement de la réponse et détermination de la question suivante..."
 };

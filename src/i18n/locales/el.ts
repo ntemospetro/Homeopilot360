@@ -3575,5 +3575,13 @@ export const el = {
   organonStepArbitration: "Σύγκριση και εναρμόνιση αποτελεσμάτων …",
   organonStepEvidenceCheck: "Έλεγχος κλινικών αποδείξεων",
   organonStepConsolidation: "Ενοποίηση αποτελεσμάτων",
-  organonStepFinalCheck: "Τελικός έλεγχος"
+  organonStepFinalCheck: "Τελικός έλεγχος",
+
+  // Live Process Tracker (Causa Deep Dive)
+  causaLiveProcessTitle: "Εις βάθος ανάλυση Αιτίας (Causa)",
+  causaLiveProcessSub: "Όργανον §§ 83–104 (C1–C13)",
+  causaStepAnswerCaptured: "Η απάντηση του ασθενούς καταγράφηκε",
+  causaStepAnalysisDimensions: "Εις βάθος ανάλυση Αιτίας (Όργανον §§ 83–104) (C1–C13)",
+  causaStepHahnemannCheck: "Έλεγχος Χάνεμαν",
+  causaStepProcessAndNext: "Επεξεργασία απάντησης & προσδιορισμός επόμενης ερώτησης..."
 };

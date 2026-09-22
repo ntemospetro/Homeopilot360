@@ -35,6 +35,7 @@ import {
   submitCausaAbCompareAnswer,
   finalizeCausaAbCompare
 } from '../services/causaVertiefungService';
+import { OrganonLiveProgress, LiveProcessStep, LiveProcessStepStatus } from './OrganonLiveProgress';
 import { 
   isSpeechRecognitionSupported, 
   startSpeechRecognition, 
@@ -79,6 +80,21 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const [showEvidence, setShowEvidence] = useState<boolean>(false);
   const [showAgentProposals, setShowAgentProposals] = useState<boolean>(true);
   const [show13Dimensions, setShow13Dimensions] = useState<boolean>(false);
+  const [causaLiveSteps, setCausaLiveSteps] = useState<LiveProcessStep[]>([]);
+
+  const getInitialCausaSteps = (mode: 'gemini-only' | '3-tier' | 'ab-compare'): LiveProcessStep[] => {
+    if (mode === 'gemini-only') {
+      return [
+        { id: 'causa_analysis_dimensions', labelKey: 'causaStepAnalysisDimensions', status: 'active' },
+        { id: 'causa_next_question', labelKey: 'causaStepProcessAndNext', status: 'pending' }
+      ];
+    }
+    return [
+      { id: 'causa_analysis_dimensions', labelKey: 'causaStepAnalysisDimensions', status: 'active' },
+      { id: 'causa_hahnemann_check', labelKey: 'causaStepHahnemannCheck', status: 'pending' },
+      { id: 'causa_next_question', labelKey: 'causaStepProcessAndNext', status: 'pending' }
+    ];
+  };
 
   // Speech recording state & refs
   const [isRecording, setIsRecording] = useState(false);
@@ -115,6 +131,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const loadInitialState = async (modeToUse: 'gemini-only' | '3-tier' | 'ab-compare' = activeMode) => {
     const thisRequestId = ++initRequestIdRef.current;
     setLoading(true);
+    setCausaLiveSteps(getInitialCausaSteps(modeToUse));
     try {
       if (modeToUse === 'ab-compare') {
         const abRes = await initCausaAbCompare(rawText, existingCausaText, language, endprueferResult);
@@ -239,15 +256,26 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
     const answer = answerInput.trim();
     setAnswerInput('');
     setLoading(true);
+
+    const initialSteps = getInitialCausaSteps(activeMode);
+    setCausaLiveSteps(initialSteps);
+
+    const onStepUpdate = (stepId: string, status: LiveProcessStepStatus) => {
+      setCausaLiveSteps((prev) => {
+        const steps = prev.length > 0 ? prev : initialSteps;
+        return steps.map((s) => (s.id === stepId ? { ...s, status } : s));
+      });
+    };
+
     try {
       if (activeMode === 'ab-compare') {
         if (!stateA || !stateB) return;
-        const nextAb = await submitCausaAbCompareAnswer(rawText, stateA, stateB, answer, language);
+        const nextAb = await submitCausaAbCompareAnswer(rawText, stateA, stateB, answer, language, onStepUpdate);
         setStateA(nextAb.branchA);
         setStateB(nextAb.branchB);
       } else {
         if (!state) return;
-        const nextState = await submitCausaAnswer(rawText, state, answer, language, activeMode);
+        const nextState = await submitCausaAnswer(rawText, state, answer, language, activeMode, onStepUpdate);
         setState(nextState);
         if (nextState.pipelineMode) {
           setActiveMode(nextState.pipelineMode);
@@ -784,16 +812,34 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
 
   if (loading && !state && activeMode !== 'ab-compare') {
     mainContent = (
-      <div id="causa-loading-state" className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-        <RefreshCw className="w-8 h-8 animate-spin text-teal-400" />
-        <p className="text-sm font-medium">{t('causaLoadingNext')}</p>
+      <div id="causa-loading-state" className="p-6 flex flex-col items-center justify-center gap-4 text-slate-400">
+        <OrganonLiveProgress
+          steps={causaLiveSteps.length > 0 ? causaLiveSteps : getInitialCausaSteps(activeMode)}
+          orientation="horizontal"
+          titleKey="causaLiveProcessTitle"
+          subTitleKey="causaLiveProcessSub"
+          className="shadow-md border-teal-500/40 w-full max-w-2xl"
+        />
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <RefreshCw className="w-4 h-4 animate-spin text-teal-400" />
+          <span>{t('causaLoadingNext')}</span>
+        </div>
       </div>
     );
   } else if (loading && activeMode === 'ab-compare' && (!stateA || !stateB)) {
     mainContent = (
-      <div id="causa-loading-state-ab" className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-        <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
-        <p className="text-sm font-medium">{t('causaLoadingNext')}</p>
+      <div id="causa-loading-state-ab" className="p-6 flex flex-col items-center justify-center gap-4 text-slate-400">
+        <OrganonLiveProgress
+          steps={causaLiveSteps.length > 0 ? causaLiveSteps : getInitialCausaSteps(activeMode)}
+          orientation="horizontal"
+          titleKey="causaLiveProcessTitle"
+          subTitleKey="causaLiveProcessSub"
+          className="shadow-md border-teal-500/40 w-full max-w-2xl"
+        />
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
+          <span>{t('causaLoadingNext')}</span>
+        </div>
       </div>
     );
   } else if (state?.isFinished) {
@@ -886,6 +932,15 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   } else if (activeMode === 'ab-compare') {
     mainContent = (
       <div id="causa-ab-container" className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-900 text-slate-100">
+        {loading && (
+          <OrganonLiveProgress
+            steps={causaLiveSteps.length > 0 ? causaLiveSteps : getInitialCausaSteps(activeMode)}
+            orientation="horizontal"
+            titleKey="causaLiveProcessTitle"
+            subTitleKey="causaLiveProcessSub"
+            className="shadow-md border-teal-500/40"
+          />
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
           {renderBranchColumn(stateA, 'A', t('causaBranchATitle'))}
           {renderBranchColumn(stateB, 'B', t('causaBranchBTitle'))}
@@ -898,6 +953,17 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
     // Active Question Workflow (Single Mode)
     mainContent = (
       <div id="causa-active-container" className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-900 text-slate-100">
+        {/* Horizontal Process Bar during analysis */}
+        {loading && (
+          <OrganonLiveProgress
+            steps={causaLiveSteps.length > 0 ? causaLiveSteps : getInitialCausaSteps(activeMode)}
+            orientation="horizontal"
+            titleKey="causaLiveProcessTitle"
+            subTitleKey="causaLiveProcessSub"
+            className="shadow-md border-teal-500/40"
+          />
+        )}
+
         {/* Question Card */}
         {state?.currentQuestion && (
           <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-800/80 to-slate-900 border border-teal-500/30 shadow-lg space-y-3 relative overflow-hidden">

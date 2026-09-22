@@ -2987,7 +2987,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     latestAnswer,
     language,
     action,
-    canonicalSeed
+    canonicalSeed,
+    onStep
   }: {
     ai: any;
     rawText: string;
@@ -2998,6 +2999,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     language: string;
     action: string;
     canonicalSeed?: any;
+    onStep?: (stepId: string, status: 'active' | 'done') => void;
   }) {
     let currentHistory: Array<{ question: string; answer: string; orientationExample?: string }> = [];
     if (Array.isArray(state?.history)) {
@@ -3092,6 +3094,9 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     }
 
     const turnStartTime = Date.now();
+    onStep?.('causa_answer_captured', 'done');
+    onStep?.('causa_analysis_dimensions', 'active');
+
     const geminiOnlyRes = await runGeminiOnlyCausaDeepen(
       ai,
       rawText,
@@ -3103,6 +3108,9 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     );
     const durationMs = Date.now() - turnStartTime;
     console.log(`[CausaDeepen] Gemini-only Turn abgeschlossen in ${durationMs}ms`);
+
+    onStep?.('causa_analysis_dimensions', 'done');
+    onStep?.('causa_next_question', 'active');
 
     // Punkt 3 & 7: Semantische Deduplizierung und Widerspruchsbehandlung
     const incomingFacts = Array.isArray(geminiOnlyRes.atomicFacts) ? geminiOnlyRes.atomicFacts.map(f => ({
@@ -3169,6 +3177,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       normalizedValue: { text: f.text }
     }));
 
+    onStep?.('causa_next_question', 'done');
+
     return {
       knownFacts: mergedFacts.length > 0 ? mergedFacts : (existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C1", status: "BELEGT_FAKTISCH" }] : []),
       openAspects: isFinished ? [] : baseOpenAspects,
@@ -3213,7 +3223,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     language,
     action,
     activeEndprueferResult,
-    canonicalSeed
+    canonicalSeed,
+    onStep
   }: {
     ai: any;
     rawText: string;
@@ -3224,6 +3235,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     action: string;
     activeEndprueferResult: any;
     canonicalSeed?: any;
+    onStep?: (stepId: string, status: 'active' | 'done') => void;
   }) {
     let currentHistory: Array<{ question: string; answer: string; orientationExample?: string }> = [];
     if (Array.isArray(state?.history)) {
@@ -3327,6 +3339,9 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     let arbRes: any = null;
 
     const prepStart = Date.now();
+    onStep?.('causa_answer_captured', 'done');
+    onStep?.('causa_analysis_dimensions', 'active');
+
     const geminiPromise = (async () => {
       const t0 = Date.now();
       const res = await runGeminiCausaAnalysis(ai, rawText, existingCausaText, currentHistory, language);
@@ -3343,6 +3358,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
 
     const [geminiSettled, gptSettled] = await Promise.allSettled([geminiPromise, gptPromise]);
     waitBothDurationMs = Date.now() - prepStart;
+    onStep?.('causa_analysis_dimensions', 'done');
+    onStep?.('causa_hahnemann_check', 'active');
 
     if (geminiSettled.status === "fulfilled") {
       geminiRes = geminiSettled.value;
@@ -3415,6 +3432,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     const arbT0 = Date.now();
     arbRes = await runCausaArbitration(ai, rawText, existingCausaText, currentHistory, geminiRes, gptRes, language);
     arbDurationMs = Date.now() - arbT0;
+    onStep?.('causa_hahnemann_check', 'done');
+    onStep?.('causa_next_question', 'active');
 
     const totalTurnDurationMs = Date.now() - turnStartTime;
 
@@ -3480,6 +3499,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       normalizedValue: { text: f.text }
     }));
 
+    onStep?.('causa_next_question', 'done');
+
     return {
       knownFacts: mergedFacts.length > 0 ? mergedFacts : (existingCausaText ? [{ text: existingCausaText, evidence: "Ausgangsbefund", dimension: "C1", status: "BELEGT_FAKTISCH" }] : []),
       openAspects: isFinished ? [] : baseOpenAspects,
@@ -3530,7 +3551,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         language = "de",
         mode = "gemini-only",
         endprueferResult = null,
-        canonicalSeed = null
+        canonicalSeed = null,
+        stream = false
       } = req.body;
 
       const activeMode = mode || state?.pipelineMode || "gemini-only";
@@ -3541,6 +3563,20 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         return res.status(503).json({ error: "GEMINI_API_KEY is not configured" });
       }
       const ai = new GoogleGenAI({ apiKey });
+
+      let emitStep: ((stepId: string, status: 'active' | 'done') => void) | undefined = undefined;
+      if (stream) {
+        res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        emitStep = (stepId: string, status: 'active' | 'done') => {
+          try {
+            res.write(JSON.stringify({ type: 'step', stepId, status }) + '\n');
+          } catch (e) {
+            // ignore stream write errors
+          }
+        };
+      }
 
       // -------------------------------------------------------------
       // MODUS A/B-VERGLEICH (PARALLELE UNABHÄNGIGE BERECHNUNG)
@@ -3562,7 +3598,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
             language,
             action,
             activeEndprueferResult,
-            canonicalSeed
+            canonicalSeed,
+            onStep: emitStep
           }),
           executeGeminiOnlyTurn({
             ai,
@@ -3576,6 +3613,18 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
             canonicalSeed
           })
         ]);
+
+        if (stream) {
+          res.write(JSON.stringify({
+            type: 'result',
+            data: {
+              stateA: finalBranchA,
+              stateB: finalBranchB,
+              pipelineMode: "ab-compare"
+            }
+          }) + '\n');
+          return res.end();
+        }
 
         return res.json({
           stateA: finalBranchA,
@@ -3597,8 +3646,14 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
           latestAnswer,
           language,
           action,
-          canonicalSeed
+          canonicalSeed,
+          onStep: emitStep
         });
+
+        if (stream) {
+          res.write(JSON.stringify({ type: 'result', data: { state: finalState } }) + '\n');
+          return res.end();
+        }
 
         return res.json({ state: finalState });
       }
@@ -3615,12 +3670,22 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
         language,
         action,
         activeEndprueferResult,
-        canonicalSeed
+        canonicalSeed,
+        onStep: emitStep
       });
+
+      if (stream) {
+        res.write(JSON.stringify({ type: 'result', data: { state: finalState } }) + '\n');
+        return res.end();
+      }
 
       return res.json({ state: finalState });
     } catch (error: any) {
       console.error("Causa Vertiefung Engine Error:", error);
+      if (req.body?.stream === true && res.headersSent) {
+        res.write(JSON.stringify({ type: 'error', error: error?.message }) + '\n');
+        return res.end();
+      }
       res.status(500).json({ error: "Failed to process causa vertiefung.", details: error?.message });
     }
   });
