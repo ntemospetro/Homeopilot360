@@ -693,16 +693,23 @@ export async function analyzeOrganonText(
     });
 
     if (res.ok) {
-      if (onStepUpdate && res.body) {
-        const reader = res.body.getReader();
+      const contentType = res.headers.get('content-type') || '';
+      const isStreamingResponse = onStepUpdate && res.body && (contentType.includes('application/x-ndjson') || contentType.includes('chunked') || contentType.includes('text/'));
+
+      if (isStreamingResponse) {
+        const reader = res.body!.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let fullStreamText = '';
         let resultData: any = null;
+        let streamError: string | null = null;
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          buffer += decoder.decode(value, { stream: true });
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          fullStreamText += chunk;
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
 
@@ -712,9 +719,13 @@ export async function analyzeOrganonText(
             try {
               const msg = JSON.parse(trimmed);
               if (msg.type === 'step' && msg.stepId && msg.status) {
-                onStepUpdate(msg.stepId, msg.status);
+                onStepUpdate!(msg.stepId, msg.status);
               } else if (msg.type === 'result' && msg.data) {
                 resultData = msg.data;
+              } else if (msg.type === 'error') {
+                streamError = msg.error || 'Server error during stream';
+              } else if (msg.result || msg.three_stage || msg.gemini) {
+                resultData = msg;
               }
             } catch {
               // ignore partial line JSON parse errors
@@ -726,11 +737,30 @@ export async function analyzeOrganonText(
           try {
             const msg = JSON.parse(buffer.trim());
             if (msg.type === 'step' && msg.stepId && msg.status) {
-              onStepUpdate(msg.stepId, msg.status);
+              onStepUpdate!(msg.stepId, msg.status);
             } else if (msg.type === 'result' && msg.data) {
               resultData = msg.data;
+            } else if (msg.type === 'error') {
+              streamError = msg.error || 'Server error during stream';
+            } else if (msg.result || msg.three_stage || msg.gemini) {
+              resultData = msg;
             }
           } catch {}
+        }
+
+        if (!resultData && fullStreamText.trim()) {
+          try {
+            const parsedWhole = JSON.parse(fullStreamText.trim());
+            if (parsedWhole.type === 'result' && parsedWhole.data) {
+              resultData = parsedWhole.data;
+            } else if (parsedWhole.result || parsedWhole.three_stage || parsedWhole.gemini) {
+              resultData = parsedWhole;
+            }
+          } catch {}
+        }
+
+        if (streamError) {
+          throw new Error(`Server stream reported error: ${streamError}`);
         }
 
         if (resultData) {
@@ -753,8 +783,11 @@ export async function analyzeOrganonText(
           }
           return normalized;
         }
+
+        throw new Error('Stream finished without returning a valid result payload.');
       }
 
+      // Non-streaming response branch (res.body has not been read by getReader)
       const data = await res.json();
       if (compare && data.gemini && data.openai) {
         const cmpRes: any = {
