@@ -934,7 +934,7 @@ export const AdaptiveAnamnesisWizardModal: React.FC<AdaptiveAnamnesisWizardModal
         {/* WIZARD STEPPER NAVIGATION BAR */}
         <div 
           ref={stepperContainerRef}
-          className="bg-slate-100 border-b border-slate-200 px-3 sm:px-6 py-2 shrink-0 overflow-x-auto scroll-smooth"
+          className="bg-slate-100 border-b border-slate-200 px-3 sm:px-6 py-2 shrink-0 overflow-x-auto scroll-smooth no-scrollbar"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-max">
             {steps.map((step) => {

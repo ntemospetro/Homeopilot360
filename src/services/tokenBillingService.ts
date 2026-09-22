@@ -16,8 +16,8 @@ export const DEFAULT_MODEL_TIERS: ModelPricingTier[] = [
     customerCachedPerMillionEur: 0.20,
   },
   {
-    modelId: 'gemini-2.5-flash',
-    modelName: 'Gemini 2.5 Flash (Mehrsprachige Lokalisierung & Recherche)',
+    modelId: 'gemini-3.6-flash',
+    modelName: 'Gemini 3.6 Flash (Mehrsprachige Lokalisierung & Recherche)',
     purpose: 'Standard-Recherche, Monographien & Übersetzungen in 7 Sprachen',
     costInputPerMillionEur: 0.14,       // 0.15 $
     costOutputPerMillionEur: 0.55,      // 0.60 $
@@ -30,8 +30,8 @@ export const DEFAULT_MODEL_TIERS: ModelPricingTier[] = [
     customerCachedPerMillionEur: 0.10,
   },
   {
-    modelId: 'gemini-2.5-flash-lite',
-    modelName: 'Gemini 2.5 Flash-Lite (Sofort-Klassifizierung)',
+    modelId: 'gemini-3.1-flash-lite',
+    modelName: 'Gemini 3.1 Flash-Lite (Sofort-Klassifizierung)',
     purpose: 'Relevanz-Vorprüfung, Symptom-Extraktion & Schnell-Validierung',
     costInputPerMillionEur: 0.09,       // 0.10 $
     costOutputPerMillionEur: 0.37,      // 0.40 $

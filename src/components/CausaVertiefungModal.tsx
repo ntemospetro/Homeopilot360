@@ -813,13 +813,6 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   if (loading && !state && activeMode !== 'ab-compare') {
     mainContent = (
       <div id="causa-loading-state" className="p-6 flex flex-col items-center justify-center gap-4 text-slate-400">
-        <OrganonLiveProgress
-          steps={causaLiveSteps.length > 0 ? causaLiveSteps : getInitialCausaSteps(activeMode)}
-          orientation="horizontal"
-          titleKey="causaLiveProcessTitle"
-          subTitleKey="causaLiveProcessSub"
-          className="shadow-md border-teal-500/40 w-full max-w-2xl"
-        />
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <RefreshCw className="w-4 h-4 animate-spin text-teal-400" />
           <span>{t('causaLoadingNext')}</span>
@@ -829,13 +822,6 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   } else if (loading && activeMode === 'ab-compare' && (!stateA || !stateB)) {
     mainContent = (
       <div id="causa-loading-state-ab" className="p-6 flex flex-col items-center justify-center gap-4 text-slate-400">
-        <OrganonLiveProgress
-          steps={causaLiveSteps.length > 0 ? causaLiveSteps : getInitialCausaSteps(activeMode)}
-          orientation="horizontal"
-          titleKey="causaLiveProcessTitle"
-          subTitleKey="causaLiveProcessSub"
-          className="shadow-md border-teal-500/40 w-full max-w-2xl"
-        />
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
           <span>{t('causaLoadingNext')}</span>

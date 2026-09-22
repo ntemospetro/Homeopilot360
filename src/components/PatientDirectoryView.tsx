@@ -37,6 +37,7 @@ import {
 interface PatientDirectoryViewProps {
   therapist: Therapist;
   onOpenCaseInWorkspace: (patientCase: PatientCase) => void;
+  onOpenOrganonForCase?: (patientCase: PatientCase) => void;
   onNewCaseForPatient?: (patientName: string, stammdatenDefaults?: Partial<PatientCase>) => void;
   initialOpenAction?: 'new_patient' | 'select_patient' | null;
   onActionHandled?: () => void;
@@ -94,6 +95,7 @@ function formatLastActivity(timestamp: number, language: string, t: (key: any) =
 export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
   therapist,
   onOpenCaseInWorkspace,
+  onOpenOrganonForCase,
   onNewCaseForPatient,
   initialOpenAction,
   onActionHandled,
@@ -713,6 +715,18 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                   <span>{t('editMasterData')}</span>
                 </button>
 
+                {onOpenOrganonForCase && activePatient.primaryCase && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenOrganonForCase(activePatient.primaryCase)}
+                    className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                    title={t('btnOrganonAnalysis') || 'Organon'}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                    <span>{t('btnOrganonAnalysis') || 'Organon'}</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => handleRequestDeleteCustomer(activePatient)}
@@ -862,7 +876,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                 </button>
               </div>
             ) : (
-              <div className={filteredCases.length > 5 ? "max-h-[580px] overflow-y-auto pr-1.5 space-y-3 scrollbar-thin" : "space-y-3"}>
+              <div className={filteredCases.length > 5 ? "max-h-[580px] overflow-y-auto pr-1.5 space-y-3 custom-scrollbar" : "space-y-3"}>
                 {filteredCases.map((c, idx) => {
                   const originalIndex = activePatient.cases.findIndex(item => item.id === c.id);
                   const caseNum = originalIndex !== -1 ? activePatient.cases.length - originalIndex : activePatient.cases.length - idx;
@@ -946,6 +960,18 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                             <ArrowRight className="w-3.5 h-3.5 text-white" />
                             <span>{t('repertorisationBtn')}</span>
                           </button>
+
+                          {onOpenOrganonForCase && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenOrganonForCase(c)}
+                              className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                              title={t('btnOrganonAnalysis') || 'Organon'}
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-white" />
+                              <span>{t('btnOrganonAnalysis') || 'Organon'}</span>
+                            </button>
+                          )}
                         </div>
                       </div>
 

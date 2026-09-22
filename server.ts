@@ -171,8 +171,8 @@ async function startServer() {
         customerCachedPerMillionEur: 0.20,
       },
       {
-        modelId: 'gemini-2.5-flash',
-        modelName: 'Gemini 2.5 Flash (Mehrsprachige Lokalisierung & Recherche)',
+        modelId: 'gemini-3.6-flash',
+        modelName: 'Gemini 3.6 Flash (Mehrsprachige Lokalisierung & Recherche)',
         purpose: 'Standard-Recherche, Monographien & Übersetzungen in 7 Sprachen',
         costInputPerMillionEur: 0.14,
         costOutputPerMillionEur: 0.55,
@@ -185,8 +185,8 @@ async function startServer() {
         customerCachedPerMillionEur: 0.10,
       },
       {
-        modelId: 'gemini-2.5-flash-lite',
-        modelName: 'Gemini 2.5 Flash-Lite (Sofort-Klassifizierung)',
+        modelId: 'gemini-3.1-flash-lite',
+        modelName: 'Gemini 3.1 Flash-Lite (Sofort-Klassifizierung)',
         purpose: 'Relevanz-Vorprüfung, Symptom-Extraktion & Schnell-Validierung',
         costInputPerMillionEur: 0.09,
         costOutputPerMillionEur: 0.37,
@@ -281,7 +281,7 @@ async function startServer() {
         therapistEmail: 'sophie.brunner@homoeopathie-zuerich.ch',
         endpoint: '/api/check-medical-relevance',
         actionName: 'Medizinischer Relevanz-Check',
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-3.1-flash-lite',
         promptTokens: 215,
         candidatesTokens: 32,
         cachedTokens: 0,
@@ -341,7 +341,7 @@ async function startServer() {
         therapistEmail: 'k.lindemann@naturheilpraxis-berlin.de',
         endpoint: '/api/check-medical-relevance',
         actionName: 'Medizinischer Relevanz-Check',
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-3.1-flash-lite',
         promptTokens: 195,
         candidatesTokens: 28,
         cachedTokens: 0,
@@ -1624,17 +1624,17 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
           const apiKey = getGeminiApiKey();
           if (apiKey) {
             const ai = new GoogleGenAI({ apiKey });
-            const arbPrompt = `Du bist ein strenger und unbestechlicher BELEGPRÜFER für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die beiden Analysen (Gemini und Zweitmeinung).
+            const arbPrompt = `Du bist ein strenger und unbestechlicher BELEGPRÜFER (Ratio) für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die beiden Analysen (Genius und Optimus).
 Liefere ein vollständiges JSON-Objekt mit:
-1. "category_evaluations": Array für alle 10 Kategorien (Causa, Localisatio, Sensatio, Symptoma, Modalitates – Besserung, Modalitates – Verschlechterung, Symptomata concomitantia, Comorbiditas, Mens, Animus) jeweils mit "category", "core_question", "gemini_alt", "verification_analysis", "belegpruefer_neu", "clarification_check".
-2. "audit_protocol": Array mit "proposed_statement", "decision" ("Übernehmen"|"Korrigieren"|"Verwerfen"|"Rückfrage erforderlich"), "quote", "reasoning".
+1. "category_evaluations": Array für alle 10 Kategorien (Causa, Localisatio, Sensatio, Symptoma, Modalitates – Besserung, Modalitates – Verschlechterung, Symptomata concomitantia, Comorbiditas, Mens, Animus) jeweils mit "category", "core_question", "gemini_alt" (Vorschlag von Genius), "optimus_alt" (Vorschlag von Optimus), "verification_analysis", "belegpruefer_neu" (geprüfte Synthese / Ratio), "clarification_check".
+2. "audit_protocol": Array mit "proposed_statement", "source" ("Genius"|"Optimus"|"Beide"), "decision" ("Übernehmen"|"Korrigieren"|"Verwerfen"|"Rückfrage erforderlich"), "quote", "reasoning".
 3. "corrected_summary": Array für alle 10 Kategorien mit "category", "result", "quote_or_clarification".
 4. "course_note": String
 5. "clarification_question": String
 
 Originaltext: "${rawText.replace(/"/g, '\\\\"')}"
-Gemini: ${JSON.stringify(parsedGemini || {})}
-Zweitmeinung: ${JSON.stringify(parsedOpenAI || {})}
+Genius: ${JSON.stringify(parsedGemini || {})}
+Optimus: ${JSON.stringify(parsedOpenAI || {})}
 Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
             const arbRes = await ai.models.generateContent({
               model: "gemini-3.8-flash",
@@ -2148,7 +2148,7 @@ Perform a detailed evaluation for each of the 10 categories with its exact core 
 10. Animus | How do you feel emotionally?
 
 EVALUATION PROCESS PER CATEGORY:
-- Independently evaluate what Gemini and GPT proposed against rawText. If both share an unsupported conclusion, correct both.
+- Independently evaluate what Genius and Optimus proposed against rawText. If both share an unsupported conclusion, correct both.
 - Create the corrected result ("belegpruefer_neu") strictly according to rawText without hallucinations or semantic amplification. If no info, output "${missingInfoDefault}".
 - Ensure the 'quote' field contains ONLY an exact verbatim substring from rawText. If no exact quote exists, output "${missingInfoDefault}".
 - Ensure clarification questions are neutral and open (not suggestive).
@@ -2156,10 +2156,10 @@ EVALUATION PROCESS PER CATEGORY:
 Originaltext:
 "${rawText.replace(/"/g, '\\\\"')}"
 
-Gemini Analyse:
+Genius Analyse:
 ${JSON.stringify(geminiResult || {})}
 
-GPT / Zweit-Analyse:
+Optimus Analyse:
 ${JSON.stringify(openaiResult || {})}
 
 Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Blöcke) mit folgender Struktur zurück (wobei alle Kategorienamen, Kernfragen, Prüfungen und Begründungen in ${targetLanguageName} verfasst sein müssen):
@@ -2168,10 +2168,11 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
     {
       "category": "Category name in ${targetLanguageName}",
       "core_question": "Core question in ${targetLanguageName}",
-      "gemini_alt": "string",
+      "gemini_alt": "Genius proposal string",
+      "optimus_alt": "Optimus proposal string",
       "verification_analysis": "string in ${targetLanguageName}",
       "evidence_status": "EXPLICITLY_SUPPORTED | TEMPORAL_ASSOCIATION | INTERPRETATION | NOT_SUPPORTED | etc.",
-      "belegpruefer_neu": "string",
+      "belegpruefer_neu": "string (Ratio verified result)",
       "clarification_check": "string in ${targetLanguageName}"
     },
     ... (all 10 categories)
@@ -2179,6 +2180,7 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
   "audit_protocol": [
     {
       "proposed_statement": "string",
+      "source": "Genius | Optimus | Both",
       "decision": "string in ${targetLanguageName} (e.g. Accept, Correct, Reject)",
       "evidence_status": "EXPLICITLY_SUPPORTED | TEMPORAL_ASSOCIATION | INTERPRETATION | NOT_SUPPORTED | etc.",
       "quote": "string (exact verbatim substring from rawText)",
@@ -2589,7 +2591,7 @@ Text:
         });
       } catch (e) {
         response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.6-flash",
           contents: prompt,
           config: { temperature: 0.1 },
         });
@@ -2674,7 +2676,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       } catch (primaryErr: any) {
         console.warn("Primary model failed, trying fallback model:", primaryErr);
         response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.6-flash",
           contents: prompt,
           config: {
             temperature: 0.2,
@@ -4265,6 +4267,157 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
     } catch (error: any) {
       console.error("Localisatio Vertiefung Engine Error:", error);
       res.status(500).json({ error: "Failed to process localisatio vertiefung.", details: error?.message });
+    }
+  });
+
+  app.post("/api/organon/category-deepen", async (req, res) => {
+    try {
+      const {
+        action = "init",
+        category = "SENSATIO",
+        categoryTitle = "",
+        rawText = "",
+        stage1Text = "",
+        dimensions = [],
+        questionHistory = [],
+        knownFacts = [],
+        latestAnswer = "",
+        language = "de",
+        currentQuestion = null
+      } = req.body;
+
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        return res.status(503).json({ error: "GEMINI_API_KEY is not configured" });
+      }
+      const ai = new GoogleGenAI({ apiKey });
+
+      const updatedHistory = [...(questionHistory || [])];
+      if (action === "step" && latestAnswer && latestAnswer.trim()) {
+        const lastQ = updatedHistory.length > 0 ? updatedHistory[updatedHistory.length - 1] : null;
+        if (lastQ && !lastQ.answer) {
+          lastQ.answer = latestAnswer.trim();
+        } else if (currentQuestion) {
+          updatedHistory.push({
+            question: currentQuestion.text,
+            answer: latestAnswer.trim(),
+            targetDimension: currentQuestion.targetDimension
+          });
+        }
+      }
+
+      const dimListText = (dimensions || [])
+        .map((d: any) => `- [${d.code}] ${d.title}: ${d.desc}`)
+        .join("\n");
+      const dimCodes = (dimensions || []).map((d: any) => d.code);
+
+      const historyFormatted = updatedHistory
+        .map((h: any, i: number) => `Frage ${i + 1} (${h.targetDimension || 'Allgemein'}): "${h.question}"\nAntwort ${i + 1}: "${h.answer || 'Keine Angabe'}"`)
+        .join("\n\n");
+
+      const prompt = `Du bist ein hochpräziser homöopathischer Dialog- und Vertiefungs-Planer nach Samuel Hahnemanns Organon der Heilkunst (§§ 83–104).
+Deine Aufgabe ist die methodische klinische Vertiefung der Kategorie: "${categoryTitle || category}" (${category}) anhand dieser Fachdimensionen:
+${dimListText}
+
+KONTEXT:
+- Ursprünglicher Anamnesetext / Patientenschilderung:
+"""${rawText || "Kein Volltext"}"""
+
+- Vorbefund aus Stufe 1 für ${category}:
+"""${stage1Text || "Keine Vorbefunde"}"""
+
+- Bisheriger Frage-Antwort-Verlauf dieser Vertiefung:
+${historyFormatted || "Noch keine Fragen gestellt (Initialisierung)."}
+
+${action === 'step' && latestAnswer ? `- Neueste Antwort des Patienten / Therapeuten:\n"""${latestAnswer}"""` : ''}
+
+${action === 'finalize' ? `AUFGABE: Der Benutzer möchte diese Kategorie abschließen. Fasse alle erhobenen und bestätigten Phänomene kompakt, präzise und in treffender homöopathischer Nomenklatur zusammen. Setze isFinished auf true und nextQuestion auf null.` : `AUFGABE:
+1. Prüfe genau, welche der Dimensionen (${dimCodes.join(', ')}) im bisherigen Text und in den Antworten bereits konkret belegt sind ("BELEGT"), welche verneint oder als nicht zutreffend geklärt wurden ("VERNEINT" oder "NICHT_ERINNERLICH"), und welche noch offen sind ("OFFEN").
+2. Wenn alle wesentlichen Dimensionen geklärt sind ODER der Patient signalisiert, dass keine weiteren Symptome/Besonderheiten vorliegen ODER bereits 3–4 Fragen beantwortet wurden:
+   - Setze "isFinished": true
+   - Setze "nextQuestion": null
+3. Falls noch wesentliche Dimensionen offen sind:
+   - Wähle die klinisch bedeutsamste OFFENE Dimension als "targetDimension".
+   - Formuliere nach Organon §§ 84–90 eine offene, nicht-suggestive Vertiefungsfrage ("text").
+     Regeln nach Hahnemann:
+     - Keine Ja/Nein-Fragen!
+     - Keine Suggestivfragen (keine Mittel-spezifischen Leitsymptome vorgeben)!
+     - Den Patienten frei schildern lassen.
+   - Gib 2–3 typische Orientierungsbeispiele für den Therapeuten ("orientationExample").
+   - Begründe kurz die Notwendigkeit ("reason").
+   - Setze "isFinished": false.
+4. Generiere einen aktualisierten, klaren Befundtext ("summaryText") für diese Kategorie in Sprache "${language}", der alle bisherigen Fakten nachvollziehbar synthetisiert.`}
+
+ANTWORTE AUSSCHLIESSLICH IM FOLGENDEN JSON-FORMAT (ohne Markdown, nur valides JSON):
+{
+  "dimensionStatus": {
+    ${dimCodes.map((c: string) => `"${c}": "BELEGT" | "OFFEN" | "NICHT_ERINNERLICH" | "VERNEINT"`).join(',\n    ')}
+  },
+  "knownFacts": [
+    {
+      "text": "Prägnante Faktenaussage",
+      "dimension": "${dimCodes[0] || 'D1'}",
+      "status": "BELEGT" | "VERNEINT" | "NICHT_ERINNERLICH"
+    }
+  ],
+  "nextQuestion": {
+    "text": "Offene, nicht-suggestive Frage an den Patienten",
+    "targetDimension": "${dimCodes[0] || 'D1'}",
+    "orientationExample": "Orientierungsbeispiele zur Einordnung",
+    "reason": "Fachliche Begründung nach Organon"
+  },
+  "isFinished": false,
+  "summaryText": "Aktuelle Gesamtsynthese der Befunde dieser Kategorie"
+}`;
+
+      let responseText = "{}";
+      // Priority 1: Use gemini-3.1-flash-lite for ultra-fast, low-latency conversational questioning (<1s)
+      // Priority 2: Fallback to gemini-3.8-flash if needed
+      try {
+        const resp = await ai.models.generateContent({
+          model: "gemini-3.1-flash-lite",
+          contents: prompt,
+          config: {
+            temperature: 0.1,
+            maxOutputTokens: action === "step" ? 1024 : 2048,
+            responseMimeType: "application/json"
+          }
+        });
+        responseText = resp.text || "{}";
+      } catch (errFast) {
+        console.warn("[/api/organon/category-deepen] gemini-3.1-flash-lite failed, falling back to gemini-3.8-flash:", errFast);
+        const resp = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+          config: {
+            temperature: 0.1,
+            maxOutputTokens: 2048,
+            responseMimeType: "application/json"
+          }
+        });
+        responseText = resp.text || "{}";
+      }
+
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(responseText.replace(/```json\n?|\n?```/g, "").trim());
+      } catch (jsonErr) {
+        console.error("[/api/organon/category-deepen] JSON parse error:", jsonErr, responseText);
+        parsed = {};
+      }
+
+      return res.json({
+        category,
+        dimensionStatus: parsed.dimensionStatus || {},
+        knownFacts: parsed.knownFacts || [],
+        nextQuestion: parsed.isFinished ? null : (parsed.nextQuestion || null),
+        isFinished: Boolean(parsed.isFinished),
+        summaryText: parsed.summaryText || stage1Text || "",
+        questionHistory: updatedHistory
+      });
+    } catch (error: any) {
+      console.error("Category Deepen Engine Error:", error);
+      res.status(500).json({ error: "Failed to process category deepening.", details: error?.message });
     }
   });
 

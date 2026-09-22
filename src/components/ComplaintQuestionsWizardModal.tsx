@@ -602,7 +602,7 @@ export const ComplaintQuestionsWizardModal: React.FC<ComplaintQuestionsWizardMod
         </div>
 
         {/* 6-Pillar Stepper Progress Line */}
-        <div className="px-6 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-1 overflow-x-auto text-[11px]">
+        <div className="px-6 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-1 overflow-x-auto text-[11px] no-scrollbar">
           {[
             { key: 'causa', label: t('hahnemannPillarShortCausa'), isFilled: Boolean(matrix.causa && matrix.causa !== 'Noch nicht genannt'), icon: Activity },
             { key: 'lok', label: t('hahnemannPillarShortLokalisation'), isFilled: Boolean(matrix.lokalisierung && matrix.lokalisierung !== 'Noch nicht genannt'), icon: MapPin },

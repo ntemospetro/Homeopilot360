@@ -50,7 +50,7 @@ export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
         </div>
 
         {/* Horizontal Process Steps Flow from Left to Right */}
-        <div className="flex flex-row items-center gap-2 sm:gap-3 w-full overflow-x-auto pb-1 pt-0.5">
+        <div className="flex flex-row items-center gap-2 sm:gap-3 w-full overflow-x-auto no-scrollbar py-1">
           {steps.map((step, index) => {
             const isLast = index === steps.length - 1;
             const isActive = step.status === 'active';

@@ -35,6 +35,7 @@ import { AdminLogin } from './components/AdminLogin';
 import { AdminSecurityGate } from './components/AdminSecurityGate';
 import { LandingPage } from './components/LandingPage';
 import { MaintenancePage } from './components/MaintenancePage';
+import { OrganonView } from './components/OrganonView';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 
@@ -255,6 +256,11 @@ function AppContent() {
               />
             )}
           </>
+        )}
+
+        {/* VIEW 4: ORGANON ANALYSE */}
+        {currentView === 'organon' && (
+          <OrganonView />
         )}
       </main>
 

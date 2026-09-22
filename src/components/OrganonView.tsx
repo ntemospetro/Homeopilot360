@@ -7,7 +7,7 @@ import {
   buildCompleteArbitratorResult,
   CompleteArbitratorResult
 } from '../services/organonAiService';
-import { EndprueferResult } from '../types';
+import { EndprueferResult, PatientCase } from '../types';
 import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
 import { CausaVertiefungModal } from './CausaVertiefungModal';
 import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
@@ -99,12 +99,68 @@ const safeJoin = (arr: any, separator: string = ', '): string => {
   return String(arr);
 };
 
-export const OrganonView: React.FC = () => {
+export interface OrganonViewProps {
+  patientCase?: PatientCase;
+  onSavePatientCase?: (patientCase: PatientCase) => void;
+  onBack?: () => void;
+}
+
+export const OrganonView: React.FC<OrganonViewProps> = ({
+  patientCase,
+  onSavePatientCase,
+  onBack,
+}) => {
   const { t } = useTranslation();
   const { language } = useLanguage();
-  const [narrationInput, setNarrationInput] = useState<string>('');
-  const [analysisResult, setAnalysisResult] = useState<OrganonAiAnalysisResult | null>(null);
-  const [compareResult, setCompareResult] = useState<any | null>(null);
+  const [narrationInput, setNarrationInput] = useState<string>(() => {
+    if (patientCase) {
+      return patientCase.hauptbeschwerde || patientCase.spontanbericht || '';
+    }
+    return '';
+  });
+  const [analysisResult, setAnalysisResult] = useState<OrganonAiAnalysisResult | null>(() => {
+    if (patientCase?.organonAnalysis?.analysisResult) {
+      return patientCase.organonAnalysis.analysisResult;
+    }
+    return null;
+  });
+  const [compareResult, setCompareResult] = useState<any | null>(() => {
+    if (patientCase?.organonAnalysis?.compareResult) {
+      return patientCase.organonAnalysis.compareResult;
+    }
+    return null;
+  });
+  const [arbitratorResult, setArbitratorResult] = useState<any | null>(() => {
+    if (patientCase?.organonAnalysis?.arbitratorResult) {
+      return patientCase.organonAnalysis.arbitratorResult;
+    }
+    return null;
+  });
+  const [endprueferResult, setEndprueferResult] = useState<EndprueferResult | null>(() => {
+    if (patientCase?.organonAnalysis?.endprueferResult) {
+      return patientCase.organonAnalysis.endprueferResult;
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (patientCase && onSavePatientCase) {
+      const handler = setTimeout(() => {
+        onSavePatientCase({
+          ...patientCase,
+          hauptbeschwerde: narrationInput,
+          organonAnalysis: {
+            analysisResult,
+            compareResult,
+            arbitratorResult,
+            endprueferResult,
+            updatedAt: new Date().toISOString()
+          }
+        });
+      }, 600);
+      return () => clearTimeout(handler);
+    }
+  }, [narrationInput, analysisResult, compareResult, arbitratorResult, endprueferResult]);
   const [enableGptCompare, setEnableGptCompare] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('organon_enable_gpt_compare');
@@ -158,9 +214,7 @@ export const OrganonView: React.FC = () => {
   const [isLocalisatioTriggered, setIsLocalisatioTriggered] = useState<boolean>(false);
   const [isStage2WorkflowModalOpen, setIsStage2WorkflowModalOpen] = useState<boolean>(false);
   const [isStage2WorkflowTriggered, setIsStage2WorkflowTriggered] = useState<boolean>(false);
-  const [arbitratorResult, setArbitratorResult] = useState<any | null>(null);
   const [isArbitrating, setIsArbitrating] = useState<boolean>(false);
-  const [endprueferResult, setEndprueferResult] = useState<EndprueferResult | null>(null);
   const [isEndpruefend, setIsEndpruefend] = useState<boolean>(false);
   const [isCorrectingSpelling, setIsCorrectingSpelling] = useState<boolean>(false);
   const [originalNarrationInput, setOriginalNarrationInput] = useState<string>('');
@@ -858,7 +912,7 @@ export const OrganonView: React.FC = () => {
         stage1: consensusStage1,
         stage2: uniqueStage2,
         stage3: {
-          control_notes: "Der Schiedsrichter (Gemini 3.8 Flash Konsens-Prüfung) hat beide Analysen (Gemini & GPT) abgeglichen. Irrelevante Handlungen (wie Wege/Spaziergänge ohne Krankheitswert) wurden konsequent von echten Causa-Auslösern getrennt und nicht aufgeführt.",
+          control_notes: "Der Schiedsrichter (Ratio Konsens-Prüfung) hat beide Analysen (Genius & Optimus) abgeglichen. Irrelevante Handlungen (wie Wege/Spaziergänge ohne Krankheitswert) wurden konsequent von echten Causa-Auslösern getrennt und nicht aufgeführt.",
           clarification_question: gemini.three_stage?.stage3?.clarification_question || openai.three_stage?.stage3?.clarification_question || "Gibt es weitere Begleitsymptome?"
         }
       }
@@ -912,10 +966,11 @@ export const OrganonView: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-purple-200 text-slate-600 bg-purple-50/50">
-                    <th className="p-2.5 font-semibold w-1/4">{t('organonCategoryAndCoreQ')}</th>
-                    <th className="p-2.5 font-semibold w-1/4">{t('organonGeminiOld')}</th>
-                    <th className="p-2.5 font-semibold w-1/4">{t('organonVerificationSplit')}</th>
-                    <th className="p-2.5 font-semibold w-1/4">{t('organonBelegprueferNew')}</th>
+                    <th className="p-2.5 font-semibold w-[20%]">{t('organonCategoryAndCoreQ')}</th>
+                    <th className="p-2.5 font-semibold w-[20%] text-teal-900 bg-teal-50/40">{t('organonGeminiOld')}</th>
+                    <th className="p-2.5 font-semibold w-[20%] text-indigo-900 bg-indigo-50/40">{t('organonOptimusColumn')}</th>
+                    <th className="p-2.5 font-semibold w-[20%] text-amber-900 bg-amber-50/40">{t('organonVerificationSplit')}</th>
+                    <th className="p-2.5 font-semibold w-[20%] text-purple-900 bg-purple-50/40">{t('organonBelegprueferNew')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -923,9 +978,11 @@ export const OrganonView: React.FC = () => {
                     const catName = ev.category || ev.category_name || ev.name || ev.category_key || t('organonCategory');
                     const coreQ = (ev.core_question || ev.coreQuestion || ev.question || ev.kernfrage || '').trim();
                     const geminiAlt = (ev.gemini_alt || ev.gemini || ev.geminiAlt || ev.result_text || ev.result || '').trim();
+                    const optimusAlt = (ev.optimus_alt || ev.optimusAlt || ev.openai_alt || ev.openai || '').trim();
                     const verifAnalysis = (ev.verification_analysis || ev.verificationAnalysis || ev.analysis || ev.examination || '').trim();
                     const belegNeu = (ev.belegpruefer_neu || ev.belegpruefer || ev.belegprueferNeu || ev.result || '').trim();
                     const isGeminiEmpty = !geminiAlt || geminiAlt === '—' || geminiAlt.toLowerCase() === 'nicht angegeben';
+                    const isOptimusEmpty = !optimusAlt || optimusAlt === '—' || optimusAlt.toLowerCase() === 'nicht angegeben';
                     const isBelegEmpty = !belegNeu || belegNeu === '—' || belegNeu.toLowerCase() === 'nicht angegeben';
 
                     return (
@@ -936,10 +993,13 @@ export const OrganonView: React.FC = () => {
                             <div className="text-[10px] font-normal text-purple-700 italic mt-0.5">„{coreQ}“</div>
                           )}
                         </td>
-                        <td className="p-2.5 text-slate-600 bg-slate-50/30">
+                        <td className="p-2.5 text-slate-700 bg-teal-50/20">
                           {isGeminiEmpty ? <span className="text-slate-400 italic">{t('organonNotSpecified')}</span> : geminiAlt}
                         </td>
-                        <td className="p-2.5 text-slate-700 bg-amber-50/30">
+                        <td className="p-2.5 text-slate-700 bg-indigo-50/20">
+                          {isOptimusEmpty ? <span className="text-slate-400 italic">{t('organonNotSpecified')}</span> : optimusAlt}
+                        </td>
+                        <td className="p-2.5 text-slate-700 bg-amber-50/20">
                           {verifAnalysis || '—'}
                         </td>
                         <td className="p-2.5 font-medium text-purple-950 bg-purple-50/20">
@@ -964,6 +1024,7 @@ export const OrganonView: React.FC = () => {
               <thead>
                 <tr className="border-b border-purple-200 text-slate-600 bg-purple-50/50">
                   <th className="p-2.5 font-semibold">{t('organonProposedStatement')}</th>
+                  <th className="p-2.5 font-semibold">{t('organonSourceColumn')}</th>
                   <th className="p-2.5 font-semibold">{t('organonDecision')}</th>
                   <th className="p-2.5 font-semibold">{t('organonOriginalQuote')}</th>
                   <th className="p-2.5 font-semibold">{t('organonReasoningCorrection')}</th>
@@ -972,6 +1033,7 @@ export const OrganonView: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {finalAuditList.map((item: any, idx: number) => {
                   const statement = item.proposed_statement || item.statement || item.claim || item.category || '—';
+                  const rawSource = item.source || item.quelle || item.origin || '';
                   const decision = item.decision || item.verdict || 'Übernehmen';
                   const quote = item.quote || item.original_quote || item.originalQuote || item.text_snippet || '—';
                   const reasoning = item.reasoning || item.explanation || item.reason || item.justification || '—';
@@ -981,9 +1043,26 @@ export const OrganonView: React.FC = () => {
                   else if (decision === 'Verwerfen') badgeColor = 'bg-rose-100 text-rose-800 font-bold';
                   else if (decision === 'Rückfrage erforderlich') badgeColor = 'bg-purple-100 text-purple-800 font-bold';
 
+                  let sourceBadge = null;
+                  if (rawSource) {
+                    const isGen = rawSource.toLowerCase().includes('genius') || rawSource.toLowerCase().includes('gemini');
+                    const isOpt = rawSource.toLowerCase().includes('optimus') || rawSource.toLowerCase().includes('gpt') || rawSource.toLowerCase().includes('openai');
+                    const isBoth = rawSource.toLowerCase().includes('beide') || rawSource.toLowerCase().includes('both');
+                    if (isBoth) {
+                      sourceBadge = <span className="px-2 py-0.5 rounded text-[10px] bg-purple-100 text-purple-800 font-medium">Genius & Optimus</span>;
+                    } else if (isOpt) {
+                      sourceBadge = <span className="px-2 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-800 font-medium">Optimus</span>;
+                    } else if (isGen) {
+                      sourceBadge = <span className="px-2 py-0.5 rounded text-[10px] bg-teal-100 text-teal-800 font-medium">Genius</span>;
+                    } else {
+                      sourceBadge = <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700">{rawSource}</span>;
+                    }
+                  }
+
                   return (
                     <tr key={idx} className="hover:bg-slate-50/50">
                       <td className="p-2.5 font-medium text-slate-900">{statement}</td>
+                      <td className="p-2.5">{sourceBadge || <span className="text-slate-400 text-[10px]">—</span>}</td>
                       <td className="p-2.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] ${badgeColor}`}>{decision}</span>
                       </td>
@@ -1393,6 +1472,60 @@ export const OrganonView: React.FC = () => {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex flex-col font-sans antialiased p-4 sm:p-6 lg:p-8 max-w-[1800px] w-full mx-auto gap-6">
+      {/* Patient Connected Banner */}
+      {patientCase && (
+        <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-700 text-white font-bold flex items-center justify-center shrink-0">
+              {patientCase.patientName[0]}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-teal-950 text-sm">{patientCase.patientName}</span>
+                {patientCase.patientAge && <span className="text-xs text-teal-800">• {patientCase.patientAge} J.</span>}
+                {patientCase.patientGender && <span className="text-xs text-teal-800">• {patientCase.patientGender}</span>}
+              </div>
+              <p className="text-xs text-teal-800/80 mt-0.5">
+                {t('organonActivePatientNotice' as any) || 'Aktiver Patient in der Organon-Analyse (Änderungen werden automatisch gespeichert)'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-teal-800 border border-teal-200 text-xs font-semibold shadow-2xs cursor-pointer flex items-center gap-1.5"
+              >
+                <span>{t('backToPatientRecord' as any) || 'Zurück zur Akte'}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                if (onSavePatientCase) {
+                  onSavePatientCase({
+                    ...patientCase,
+                    hauptbeschwerde: narrationInput,
+                    organonAnalysis: {
+                      analysisResult,
+                      compareResult,
+                      arbitratorResult,
+                      endprueferResult,
+                      updatedAt: new Date().toISOString()
+                    }
+                  });
+                }
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-2xs cursor-pointer flex items-center gap-1.5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{t('saveChanges') || 'Speichern'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Header Card (Uniform Akutanalyse / Falldokumentation Design) */}
       <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -1479,14 +1612,14 @@ export const OrganonView: React.FC = () => {
                 onClick={() => { setActiveTab('gemini'); setIsResultsModalOpen(true); }}
                 className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-teal-300 rounded-xl text-xs font-semibold border border-teal-500/30 transition-all cursor-pointer"
               >
-                Gemini 3.8
+                {t('organonGeniusLabel')}
               </button>
               <button
                 type="button"
                 onClick={() => { setActiveTab('openai'); setIsResultsModalOpen(true); }}
                 className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-indigo-300 rounded-xl text-xs font-semibold border border-indigo-500/30 transition-all cursor-pointer"
               >
-                GPT-4o Pro
+                {t('organonOptimusLabel')}
               </button>
               <button
                 type="button"
@@ -1821,7 +1954,7 @@ export const OrganonView: React.FC = () => {
                           : 'border-transparent text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      Gemini 3.8 Flash
+                      {t('organonGeniusLabel')}
                     </button>
                     <button
                       type="button"
@@ -1849,7 +1982,7 @@ export const OrganonView: React.FC = () => {
                   </div>
 
                   <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-4 space-y-4">
-                    {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
+                    {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, t('organonGeniusLabel'))}
                     {activeTab === 'arbitrator' && (
                       isArbitrating ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
@@ -1902,25 +2035,25 @@ export const OrganonView: React.FC = () => {
                       <div className="flex items-center justify-between pb-2 border-b border-teal-100">
                         <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-teal-500" />
-                          Gemini 3.8 Flash
+                          {t('organonGeniusLabel')}
                         </span>
                         <span className="text-[10px] text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-full font-medium">{t('organonPrimarySynthesis')}</span>
                       </div>
-                      {renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
+                      {renderThreeStageView(compareResult.gemini, t('organonGeniusLabel'))}
                     </div>
 
                     <div className="bg-slate-50/70 rounded-xl border border-indigo-200/80 p-4 space-y-3">
                       <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
                         <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                          {compareResult.openai ? "GPT-4o Pro" : `${t('organonStrictArbiterLabel')} / ${t('organonConsensusMatchLabel')}`}
+                          {compareResult.openai ? t('organonOptimusLabel') : `${t('organonStrictArbiterLabel')} / ${t('organonConsensusMatchLabel')}`}
                         </span>
                         <span className="text-[10px] text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full font-medium">
                           {compareResult.openai ? t('organonParallelSynthesis') : t('organonVerifiedMatch')}
                         </span>
                       </div>
                       {compareResult.openai ? (
-                        renderThreeStageView(compareResult.openai, "GPT-4o Pro")
+                        renderThreeStageView(compareResult.openai, t('organonOptimusLabel'))
                       ) : arbitratorResult ? (
                         renderBelegprueferView(arbitratorResult)
                       ) : (
@@ -2003,7 +2136,7 @@ export const OrganonView: React.FC = () => {
                           : 'border-transparent text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      Gemini 3.8 Flash
+                      {t('organonGeniusLabel')}
                     </button>
                     <button
                       type="button"
@@ -2014,7 +2147,7 @@ export const OrganonView: React.FC = () => {
                           : 'border-transparent text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      GPT-4o Pro
+                      {t('organonOptimusLabel')}
                     </button>
                     <button
                       type="button"
@@ -2042,8 +2175,8 @@ export const OrganonView: React.FC = () => {
                   </div>
 
                   <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-4 space-y-4">
-                    {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, "Gemini 3.8 Flash")}
-                    {activeTab === 'openai' && renderThreeStageView(compareResult.openai, "GPT-4o Pro")}
+                    {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, t('organonGeniusLabel'))}
+                    {activeTab === 'openai' && renderThreeStageView(compareResult.openai, t('organonOptimusLabel'))}
                     {activeTab === 'arbitrator' && (
                       isArbitrating ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">

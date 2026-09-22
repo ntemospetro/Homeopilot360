@@ -1162,6 +1162,7 @@ export interface ArbitratorEvaluationItem {
   category_key?: string;
   core_question: string;
   gemini_alt: string;
+  optimus_alt?: string;
   verification_analysis: string;
   evidence_status: string;
   belegpruefer_neu: string;
@@ -1170,6 +1171,7 @@ export interface ArbitratorEvaluationItem {
 
 export interface ArbitratorAuditProtocolItem {
   proposed_statement: string;
+  source?: string;
   decision: string;
   evidence_status: string;
   quote: string;
@@ -1417,6 +1419,25 @@ export function buildCompleteArbitratorResult(
         : missingPhrase;
     }
 
+    let optimusAlt = (
+      matchedArb?.optimus_alt ||
+      matchedArb?.optimusAlt ||
+      matchedArb?.openai_alt ||
+      matchedArb?.openaiAlt ||
+      matchedArb?.openai ||
+      matchedO?.result_text ||
+      matchedO?.resultText ||
+      matchedO?.result ||
+      matchedO?.text ||
+      ''
+    ).toString().trim();
+
+    if (!optimusAlt || optimusAlt === '—' || optimusAlt.toLowerCase() === 'nicht angegeben') {
+      optimusAlt = catDef.key === 'symptoma' && rawText.trim()
+        ? rawText.trim().slice(0, 100)
+        : missingPhrase;
+    }
+
     let belegNeu = (
       matchedArb?.belegpruefer_neu ||
       matchedArb?.belegprueferNeu ||
@@ -1466,6 +1487,7 @@ export function buildCompleteArbitratorResult(
       category_key: catDef.key,
       core_question: coreQuestion,
       gemini_alt: geminiAlt,
+      optimus_alt: optimusAlt,
       verification_analysis: verificationAnalysis,
       evidence_status: evidenceStatus,
       belegpruefer_neu: belegNeu,
@@ -1478,6 +1500,7 @@ export function buildCompleteArbitratorResult(
   if (Array.isArray(rawArb?.audit_protocol) && rawArb.audit_protocol.length > 0) {
     audit_protocol = rawArb.audit_protocol.map((item: any) => ({
       proposed_statement: (item?.proposed_statement || item?.statement || item?.claim || item?.category || '').toString().trim(),
+      source: (item?.source || item?.quelle || item?.origin || '').toString().trim() || undefined,
       decision: (item?.decision || item?.verdict || 'Übernehmen').toString().trim(),
       evidence_status: (item?.evidence_status || item?.evidenceStatus || 'EXPLICITLY_SUPPORTED').toString().trim(),
       quote: (item?.quote || item?.original_quote || item?.originalQuote || item?.text_snippet || '—').toString().trim(),

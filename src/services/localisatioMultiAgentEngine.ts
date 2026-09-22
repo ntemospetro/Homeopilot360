@@ -296,9 +296,9 @@ Antworte AUSSCHLIESSLICH als valides JSON:
       }
     });
   } catch (primaryErr) {
-    console.warn("[LocalisatioEngine] Primary model failed, falling back to gemini-2.5-flash-lite:", primaryErr);
+    console.warn("[LocalisatioEngine] Primary model failed, falling back to gemini-3.1-flash-lite:", primaryErr);
     response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3.1-flash-lite",
       contents: prompt,
       config: {
         temperature: 0.15,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Check,
@@ -16,7 +16,10 @@ import {
   FileText,
   CheckCircle2,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Send,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext';
 import {
@@ -26,7 +29,19 @@ import {
 } from '../types/organonStage2Workflow';
 import { CausaVertiefungModal } from './CausaVertiefungModal';
 import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
+import { GenericCategoryDeepDiveModal } from './GenericCategoryDeepDiveModal';
 import { OrganonGlobalReviewView } from './OrganonGlobalReviewView';
+import {
+  requestCategoryDeepen,
+  CategoryDeepenState
+} from '../services/stage2CategoryDeepenService';
+import {
+  isSpeechRecognitionSupported,
+  startSpeechRecognition,
+  SpeechRecognitionSession,
+  mergeWithOverlap,
+  deduplicateRepeatedPhrases
+} from '../services/speechService';
 
 // Dimension lists for the 8 frozen Stage 2 categories
 const FROZEN_DIMENSIONS_MAP: Record<string, { code: string; title: string; desc: string }[]> = {
@@ -120,10 +135,21 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   onAdoptCategoryResult,
   onWorkflowCompleted
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Active step index: 0..9 (Stage 2 categories) or 10 (Global Review)
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const stepperRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll active stepper pill smoothly into view without native scrollbar
+  useEffect(() => {
+    if (stepperRef.current) {
+      const activeEl = stepperRef.current.querySelector<HTMLElement>('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  }, [currentStepIndex]);
 
   // Global Hahnemann Cross-Check switch (persists across all 10 modules!)
   const [globalHahnemannCrossCheck, setGlobalHahnemannCrossCheck] = useState<boolean>(
@@ -152,6 +178,87 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   // Local editing text for slot categories (S3..S10)
   const [slotNoteInput, setSlotNoteInput] = useState<string>('');
   const [confirmExitOpen, setConfirmExitOpen] = useState<boolean>(false);
+
+  // Interactive Question Engine states for S3..S10 (Sensatio, Symptoma, Modalitäten, Concomitantia, Comorbiditas, Mens, Animus)
+  const [catDeepenStates, setCatDeepenStates] = useState<Record<string, CategoryDeepenState>>({});
+  const [catLoading, setCatLoading] = useState<boolean>(false);
+  const [catAnswerInput, setCatAnswerInput] = useState<string>('');
+
+  // Speech recognition for category questioning
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordSecondsLeft, setRecordSecondsLeft] = useState(60);
+  const isSpeechSupported = isSpeechRecognitionSupported();
+  const recognitionRef = useRef<SpeechRecognitionSession | null>(null);
+  const timerIntervalRef = useRef<number | null>(null);
+  const recordingBaseTextRef = useRef<string>('');
+  const lastSpokenTranscriptRef = useRef<string>('');
+
+  const stopRecording = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (err) {
+        console.warn('Speech stop error:', err);
+      }
+      recognitionRef.current = null;
+    }
+    setIsRecording(false);
+  };
+
+  const startRecording = () => {
+    if (!isSpeechSupported) return;
+    if (isRecording) {
+      stopRecording();
+      return;
+    }
+
+    recordingBaseTextRef.current = catAnswerInput;
+    lastSpokenTranscriptRef.current = '';
+    setRecordSecondsLeft(60);
+    setIsRecording(true);
+
+    try {
+      const session = startSpeechRecognition({
+        language: ((language as string) || 'de') as any,
+        continuous: true,
+        interimResults: true,
+        onResult: (transcript: string, isFinal: boolean) => {
+          if (isFinal) {
+            lastSpokenTranscriptRef.current = transcript;
+            const merged = mergeWithOverlap(recordingBaseTextRef.current, transcript);
+            const cleanText = deduplicateRepeatedPhrases(merged);
+            setCatAnswerInput(cleanText);
+            recordingBaseTextRef.current = cleanText;
+          } else {
+            const combined = mergeWithOverlap(recordingBaseTextRef.current, transcript);
+            setCatAnswerInput(combined);
+          }
+        },
+        onError: (errorMsg: string) => {
+          console.warn('Speech recognition warning:', errorMsg);
+          stopRecording();
+        }
+      });
+      recognitionRef.current = session;
+
+      timerIntervalRef.current = window.setInterval(() => {
+        setRecordSecondsLeft((prev) => {
+          if (prev <= 1) {
+            stopRecording();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error('Speech start error:', err);
+      stopRecording();
+    }
+  };
 
   // When workflow opens or resets
   useEffect(() => {
@@ -189,8 +296,93 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
     if (activeCategory) {
       const existingText = records[activeCategory]?.text || stage1Values[activeCategory] || '';
       setSlotNoteInput(existingText);
+      setCatAnswerInput('');
     }
   }, [activeCategory]);
+
+  // Cleanup speech recording on unmount or category switch
+  useEffect(() => {
+    return () => {
+      stopRecording();
+    };
+  }, [activeCategory]);
+
+  // Initialize interactive question engine for S3..S10
+  const handleInitCategory = async (cat: Stage2Category, forceRefresh = false) => {
+    const dims = FROZEN_DIMENSIONS_MAP[cat];
+    if (!dims) return;
+    setCatLoading(true);
+    try {
+      const res = await requestCategoryDeepen({
+        action: 'init',
+        category: cat,
+        categoryTitle: t(STAGE2_CATEGORIES_METADATA[cat].labelKey),
+        rawText,
+        stage1Text: stage1Values[cat] || '',
+        dimensions: dims,
+        language: (language as string) || 'de'
+      });
+      setCatDeepenStates((prev) => ({ ...prev, [cat]: res }));
+      if (res.summaryText && (!slotNoteInput.trim() || forceRefresh)) {
+        setSlotNoteInput(res.summaryText);
+      }
+    } catch (err) {
+      console.warn('Failed to init category deepen:', err);
+    } finally {
+      setCatLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (
+      activeCategory &&
+      activeCategory !== 'CAUSA' &&
+      activeCategory !== 'LOCALISATIO' &&
+      !catDeepenStates[activeCategory]
+    ) {
+      handleInitCategory(activeCategory);
+    }
+  }, [activeCategory, catDeepenStates]);
+
+  // Submit answer to the active question
+  const handleAnswerCategory = async (overrideAnswer?: string) => {
+    if (!activeCategory) return;
+    const answer = (overrideAnswer !== undefined ? overrideAnswer : catAnswerInput).trim();
+    if (!answer) return;
+
+    if (isRecording) {
+      stopRecording();
+    }
+
+    const dims = FROZEN_DIMENSIONS_MAP[activeCategory];
+    if (!dims) return;
+
+    const currentState = catDeepenStates[activeCategory];
+    setCatLoading(true);
+    try {
+      const res = await requestCategoryDeepen({
+        action: 'step',
+        category: activeCategory,
+        categoryTitle: t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey),
+        rawText,
+        stage1Text: stage1Values[activeCategory] || '',
+        dimensions: dims,
+        questionHistory: currentState?.questionHistory || [],
+        knownFacts: currentState?.knownFacts || [],
+        latestAnswer: answer,
+        language: (language as string) || 'de'
+      });
+      setCatDeepenStates((prev) => ({ ...prev, [activeCategory]: res }));
+      setCatAnswerInput('');
+      if (res.summaryText) {
+        setSlotNoteInput(res.summaryText);
+      }
+    } catch (err) {
+      console.warn('Failed to submit category answer:', err);
+    } finally {
+      setCatLoading(false);
+    }
+  };
 
   // Handler when a category finishes and adopts findings
   const handleCompleteCategory = (cat: Stage2Category, summaryText: string, skipped = false) => {
@@ -309,7 +501,10 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
         </header>
 
         {/* ================= STEPPER PROGRESS BAR ================= */}
-        <div className="px-4 py-2 bg-slate-950/70 border-b border-slate-800/80 overflow-x-auto flex items-center gap-1.5 shrink-0 scrollbar-thin">
+        <div 
+          ref={stepperRef}
+          className="px-4 py-2 bg-slate-950/70 border-b border-slate-800/80 overflow-x-auto flex items-center gap-1.5 shrink-0 no-scrollbar scroll-smooth"
+        >
           {STAGE2_CATEGORY_SEQUENCE.map((cat, idx) => {
             const meta = STAGE2_CATEGORIES_METADATA[cat];
             const rec = records[cat];
@@ -322,6 +517,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
                 type="button"
                 key={cat}
                 id={`organon-step-indicator-${cat}`}
+                data-active={isCurrent ? "true" : "false"}
                 onClick={() => setCurrentStepIndex(idx)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer ${
                   isCurrent
@@ -352,6 +548,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
           <button
             type="button"
             id="organon-step-indicator-review"
+            data-active={isGlobalReview ? "true" : "false"}
             onClick={() => setCurrentStepIndex(STAGE2_CATEGORY_SEQUENCE.length)}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer ${
               isGlobalReview
@@ -398,132 +595,19 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
             />
           )}
 
-          {/* STEPS 3..10: FROZEN CATEGORIES (Sensatio ... Animus) */}
+          {/* STEPS 3..10: FROZEN CATEGORIES (Sensatio ... Animus) using GenericCategoryDeepDiveModal */}
           {activeCategory && activeCategory !== 'CAUSA' && activeCategory !== 'LOCALISATIO' && (
-            <div
-              id={`stage2-category-slot-${activeCategory}`}
-              className="w-full flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-slate-900"
-            >
-              {/* Category Header Card */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-850 border border-slate-700/80 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center shrink-0">
-                    <Layers className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-white tracking-tight">
-                        {t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)}
-                      </h3>
-                      <span className="px-2 py-0.5 text-[11px] font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full">
-                        {STAGE2_CATEGORIES_METADATA[activeCategory].dimensionsCode}
-                      </span>
-                    </div>
-                    <p className="text-xs text-teal-200/80 italic mt-0.5">
-                      {t(STAGE2_CATEGORIES_METADATA[activeCategory].questionKey)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-slate-400">
-                    Kategorie {currentStepIndex + 1} von 10 im geführten Gesamtprozess
-                  </span>
-                </div>
-              </div>
-
-              {/* Stage 1 Seed Data Card */}
-              <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  <span className="flex items-center gap-1.5 text-teal-400">
-                    <FileText className="w-3.5 h-3.5" />
-                    {t('stage2Stage1SeedData')}
-                  </span>
-                  {stage1Values[activeCategory] && (
-                    <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
-                      Erfasst in Stage 1
-                    </span>
-                  )}
-                </div>
-                {stage1Values[activeCategory] ? (
-                  <p className="text-xs text-slate-200 bg-slate-900/90 p-3 rounded-lg border border-slate-800 leading-relaxed font-sans">
-                    {stage1Values[activeCategory]}
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate-500 italic">
-                    {t('stage2NoStage1SeedData')}
-                  </p>
-                )}
-              </div>
-
-              {/* Frozen Specification Dimensions Grid */}
-              {FROZEN_DIMENSIONS_MAP[activeCategory] && (
-                <div className="space-y-2.5">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Compass className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Fachliche Dimensionen ({STAGE2_CATEGORIES_METADATA[activeCategory].dimensionsCode})</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                    {FROZEN_DIMENSIONS_MAP[activeCategory].map((dim) => (
-                      <div
-                        key={dim.code}
-                        className="p-3 rounded-xl bg-slate-850 border border-slate-800 space-y-1"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-mono font-bold">
-                            {dim.code}
-                          </span>
-                          <span className="text-xs font-bold text-slate-200">
-                            {dim.title}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 leading-relaxed">
-                          {dim.desc}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Patient Text & Findings Input */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                  Ergebnis / Vertiefungstext für {t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)}:
-                </label>
-                <textarea
-                  id={`stage2-input-${activeCategory}`}
-                  value={slotNoteInput}
-                  onChange={(e) => setSlotNoteInput(e.target.value)}
-                  placeholder={`Erfasste Phänomene, Nuancen und Patientenaussagen zu ${t(STAGE2_CATEGORIES_METADATA[activeCategory].labelKey)} hier eingeben...`}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 text-sm resize-none"
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800">
-                <button
-                  id={`stage2-skip-btn-${activeCategory}`}
-                  type="button"
-                  onClick={() => handleCompleteCategory(activeCategory, slotNoteInput.trim() || stage1Values[activeCategory] || '', true)}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition-colors cursor-pointer"
-                >
-                  {t('stage2SkipCategoryBtn')}
-                </button>
-
-                <button
-                  id={`stage2-adopt-btn-${activeCategory}`}
-                  type="button"
-                  onClick={() => handleCompleteCategory(activeCategory, slotNoteInput.trim() || stage1Values[activeCategory] || '')}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{t('stage2AdoptAndContinueBtn')}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            <GenericCategoryDeepDiveModal
+              category={activeCategory}
+              rawText={rawText}
+              stage1Text={stage1Values[activeCategory] || ''}
+              dimensions={FROZEN_DIMENSIONS_MAP[activeCategory] || []}
+              endprueferResult={endprueferResult}
+              hahnemannCrossCheck={globalHahnemannCrossCheck}
+              onAdopt={(summary) => {
+                handleCompleteCategory(activeCategory, summary);
+              }}
+            />
           )}
 
           {/* ORGANON-GESAMTPRÜFUNG & DYNAMISCHE RESTKLÄRUNG (Prüf- und Klärungsinstanz) */}

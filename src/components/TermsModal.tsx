@@ -160,7 +160,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({
         {/* Scrollable AGB Body */}
         <div 
           id="agb-modal-scroll-body"
-          className="p-5 sm:p-6 overflow-y-auto max-h-[60vh] space-y-1 bg-white select-text scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100"
+          className="p-5 sm:p-6 overflow-y-auto max-h-[60vh] space-y-1 bg-white select-text custom-scrollbar"
         >
           {renderFormattedContent(terms.content)}
         </div>

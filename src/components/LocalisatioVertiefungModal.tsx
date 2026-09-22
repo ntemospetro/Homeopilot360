@@ -273,7 +273,7 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
     <>
       {/* Multi-Symptom Stepper Ribbon */}
       {symptomOrder.length > 0 && (
-          <div id="localisatio-symptoms-ribbon" className="px-6 py-2.5 bg-slate-950/60 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto">
+          <div id="localisatio-symptoms-ribbon" className="px-6 py-2.5 bg-slate-950/60 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto no-scrollbar">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap flex items-center gap-1.5">
               <Compass className="w-3.5 h-3.5 text-teal-400" />
               {t('localisatioMultiSymptomWorkflow')}

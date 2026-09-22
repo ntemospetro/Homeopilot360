@@ -45,6 +45,7 @@ import { MedicationLiveInput } from './MedicationLiveInput';
 import { ComprehensiveAnalysisView } from './ComprehensiveAnalysisView';
 import { TherapyRecommendationsView } from './TherapyRecommendationsView';
 import { PatientDirectoryView } from './PatientDirectoryView';
+import { OrganonView } from './OrganonView';
 import { MateriaMedicaView } from './MateriaMedicaView';
 import { RepertoriumView } from './RepertoriumView';
 import { AcuteIntakeView } from './AcuteIntakeView';
@@ -178,7 +179,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { t, language } = useTranslation();
   const { termPatientenkartei, termPatient, termPatients } = useTerminology();
-  const [panelTab, setPanelTab] = useState<'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'quickintake' | 'medications' | 'documentation' | 'profile' | 'tariff'>(() => getStoredTherapistTab());
+  const [panelTab, setPanelTab] = useState<'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff'>(() => getStoredTherapistTab());
   const [patientDirectoryAction, setPatientDirectoryAction] = useState<'new_patient' | 'select_patient' | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [lockedPageAttempt, setLockedPageAttempt] = useState<{ key: string; name: string } | null>(null);
@@ -204,6 +205,8 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
         return 'medications';
       case 'documentation':
         return 'documentation';
+      case 'organon':
+        return 'cases';
       default:
         return null;
     }
@@ -225,6 +228,8 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
         return t('tabMedications');
       case 'documentation':
         return t('tabDocumentation');
+      case 'organon':
+        return t('tabOrganonAnalysis') || 'Organon-Analyse';
       default:
         return tab;
     }
@@ -242,13 +247,13 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
     return tariffAccess.isPageHidden(pageKey);
   };
 
-  const handleSelectTab = (tab: 'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'quickintake' | 'medications' | 'documentation' | 'profile' | 'tariff') => {
+  const handleSelectTab = (tab: 'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff') => {
     if (!isTabAllowed(tab)) {
       setLockedPageAttempt({ key: tab, name: getPageDisplayName(tab) });
       return;
     }
     setPanelTab(tab);
-    navigateTo('therapist', { therapistTab: tab });
+    navigateTo('therapist', { therapistTab: tab as any });
   };
 
   // Fallback if current active tab gets locked
@@ -2073,6 +2078,30 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
                 )}
               </button>
             )}
+
+            {/* Organon-Analyse */}
+            {!isTabHidden('organon') && (
+              <button
+                type="button"
+                id="sidebar-nav-tab-organon"
+                onClick={() => handleSelectTab('organon')}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors cursor-pointer ${
+                  panelTab === 'organon'
+                    ? 'bg-teal-50 text-teal-900 font-bold border border-teal-100/50'
+                    : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className={`w-4 h-4 ${isTabAllowed('organon') ? 'text-teal-600' : 'text-slate-400'}`} />
+                  <span className={!isTabAllowed('organon') ? 'text-slate-500' : ''}>{t('tabOrganonAnalysis')}</span>
+                </div>
+                {!isTabAllowed('organon') && (
+                  <span title={t('tariffPageLockedTooltip')}>
+                    <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
         
@@ -2219,15 +2248,33 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
             handleSelectCase(selectedCase);
             handleSelectTab('cases');
           }}
+          onOpenOrganonForCase={(selectedCase) => {
+            handleSelectCase(selectedCase);
+            handleSelectTab('organon');
+          }}
           onNewCaseForPatient={(patientName, defaults) => {
             handleNewCase();
             setCurrentCase(prev => ({
               ...prev,
               patientName,
               ...defaults,
+              id: prev.id || crypto.randomUUID(),
             }));
             handleSelectTab('cases');
           }}
+        />
+      )}
+
+      {/* TAB CONTENT: ORGANON ANALYSIS */}
+      {panelTab === 'organon' && (
+        <OrganonView
+          patientCase={currentCase as PatientCase}
+          onSavePatientCase={(updated) => {
+            setCurrentCase(updated);
+            savePatientCase(updated);
+            refreshCases();
+          }}
+          onBack={() => handleSelectTab('patients')}
         />
       )}
 

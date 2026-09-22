@@ -89,7 +89,7 @@
   height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -98,6 +98,24 @@
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Hide scrollbar completely across all browsers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+  overflow: -moz-scrollbars-none;
+}
+.no-scrollbar::-webkit-scrollbar-track {
+  display: none !important;
+}
+.no-scrollbar::-webkit-scrollbar-thumb {
+  display: none !important;
 }
 
 @keyframes progress-shimmer {

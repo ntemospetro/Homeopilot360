@@ -36,7 +36,7 @@ export interface OrganonGlobalReviewViewProps {
   records: Record<Stage2Category, { category: Stage2Category; status: string; text: string; details?: any }>;
   hahnemannCrossCheck: boolean;
   onUpdateRecords: (records: Record<Stage2Category, any>) => void;
-  onFinalizeWorkflow: () => void;
+  onFinalizeWorkflow: (currentRecords?: Record<Stage2Category, any>) => void;
   onNavigateToCategory?: (category: Stage2Category) => void;
 }
 
@@ -595,7 +595,7 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
             <button
               id="organon-stage2-finalize-btn"
               type="button"
-              onClick={onFinalizeWorkflow}
+              onClick={() => onFinalizeWorkflow(records)}
               className={`px-6 py-3 rounded-xl text-xs font-bold text-white shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
                 isAllCategoriesSettled
                   ? 'bg-teal-600 hover:bg-teal-500'

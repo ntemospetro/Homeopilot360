@@ -277,6 +277,7 @@ export interface PatientCase {
   repertorisationErgebnis?: string;
   verordnungPotenz?: string;
   anamneseSymptome?: string;
+  organonAnalysis?: any;
 
   // Lebensstil & Kumulative Medikations-Risikoanalyse
   lifestyleData?: PatientLifestyleData;
