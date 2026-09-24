@@ -500,9 +500,24 @@ ${JSON.stringify(chunk)}`;
   return trans[lang] || {};
 }
 
+interface LangTransData {
+  transMap: Record<string, string>;
+  lowerMap: Map<string, string>;
+  reverseMap: Map<string, string>;
+}
+
+const langTransCache: Record<string, LangTransData> = {};
+
 export function getKentTranslationsForLang(lang?: string): Record<string, string> {
   if (!lang || lang === "de") return {};
+
+  if (langTransCache[lang]) {
+    return langTransCache[lang].transMap;
+  }
+
   const transMap: Record<string, string> = {};
+  const lowerMap = new Map<string, string>();
+  const reverseMap = new Map<string, string>();
 
   // 1. Canonical Kent Chapters (Level 1)
   for (const [ch, trans] of Object.entries(CANONICAL_KENT_CHAPTERS)) {
@@ -524,45 +539,88 @@ export function getKentTranslationsForLang(lang?: string): Record<string, string
     Object.assign(transMap, allTrans[lang]);
   }
 
+  for (const [orig, tr] of Object.entries(transMap)) {
+    lowerMap.set(orig.toLowerCase(), tr);
+    reverseMap.set(tr.toLowerCase(), orig);
+  }
+
+  langTransCache[lang] = { transMap, lowerMap, reverseMap };
   return transMap;
 }
 
-function lookupTrans(term: string, transMap: Record<string, string>): string {
+function lookupTrans(term: string, transMap: Record<string, string>, lang?: string): string {
   if (!term) return "";
   if (transMap[term]) return transMap[term];
   const trimmed = term.trim();
   if (transMap[trimmed]) return transMap[trimmed];
+
+  const cache = lang ? langTransCache[lang] : undefined;
   const lower = trimmed.toLowerCase();
-  for (const [k, v] of Object.entries(transMap)) {
-    if (k.toLowerCase() === lower) {
-      return v;
+  if (cache) {
+    const directLower = cache.lowerMap.get(lower);
+    if (directLower) return directLower;
+  } else {
+    for (const [k, v] of Object.entries(transMap)) {
+      if (k.toLowerCase() === lower) {
+        return v;
+      }
     }
   }
+
+  // Word-by-word tokenized fallback for compound expressions
+  if (trimmed.includes(" ") || trimmed.includes("-") || trimmed.includes(",")) {
+    const tokens = trimmed.split(/(\b[A-Za-zÄÖÜäöüß0-9\-\'\.]+\b)/);
+    let changed = false;
+    const translatedTokens = tokens.map((part) => {
+      if (/^[A-Za-zÄÖÜäöüß0-9\-\'\.]+$/.test(part)) {
+        if (/^\d+[\-\d]*$/.test(part) || part === ".") return part;
+        const wordTr = transMap[part] || (cache ? cache.lowerMap.get(part.toLowerCase()) : undefined);
+        if (wordTr) {
+          changed = true;
+          return wordTr;
+        }
+      }
+      return part;
+    });
+    if (changed) {
+      return translatedTokens.join("");
+    }
+  }
+
   return term;
 }
 
-function toGermanTerm(term: string, transMap: Record<string, string>): string {
+function toGermanTerm(term: string, transMap: Record<string, string>, lang?: string): string {
   if (!term) return "";
+  const termLower = term.trim().toLowerCase();
+
   // Check canonical chapters
   for (const [deChapter, translations] of Object.entries(CANONICAL_KENT_CHAPTERS)) {
-    if (deChapter.toLowerCase() === term.toLowerCase()) return deChapter;
+    if (deChapter.toLowerCase() === termLower) return deChapter;
     for (const val of Object.values(translations)) {
-      if (val.toLowerCase() === term.toLowerCase()) return deChapter;
+      if (val.toLowerCase() === termLower) return deChapter;
     }
   }
-  // Check transMap
-  for (const [orig, trans] of Object.entries(transMap)) {
-    if (orig.toLowerCase() === term.toLowerCase()) return orig;
-    if (trans.toLowerCase() === term.toLowerCase()) return orig;
+
+  const cache = lang ? langTransCache[lang] : undefined;
+  if (cache) {
+    const fromRev = cache.reverseMap.get(termLower);
+    if (fromRev) return fromRev;
+  } else {
+    for (const [orig, trans] of Object.entries(transMap)) {
+      if (orig.toLowerCase() === termLower) return orig;
+      if (trans.toLowerCase() === termLower) return orig;
+    }
   }
+
   return term;
 }
 
-function translateRubric(r: KentRubric, transMap: Record<string, string>): any {
+function translateRubric(r: KentRubric, transMap: Record<string, string>, lang?: string): any {
   if (!transMap || Object.keys(transMap).length === 0) return r;
-  const chapterTranslated = lookupTrans(r.chapter, transMap);
-  const symptomTranslated = lookupTrans(r.symptom, transMap);
-  const zusatzTranslated = (r.zusatz || []).map((z) => lookupTrans(z, transMap));
+  const chapterTranslated = lookupTrans(r.chapter, transMap, lang);
+  const symptomTranslated = lookupTrans(r.symptom, transMap, lang);
+  const zusatzTranslated = (r.zusatz || []).map((z) => lookupTrans(z, transMap, lang));
   
   // Format translated path cleanly
   const pathParts = [chapterTranslated, symptomTranslated, ...zusatzTranslated].filter(Boolean);
@@ -595,19 +653,25 @@ export async function searchKentRubrics(
   const queryClean = query.toLowerCase().trim();
   const tokens = queryClean.split(/\s+/).filter(Boolean);
   let transMap = getKentTranslationsForLang(lang);
-  const chapterFilterNorm = chapterFilter ? toGermanTerm(chapterFilter.trim(), transMap).toLowerCase() : undefined;
+  const chapterFilterNorm = chapterFilter ? toGermanTerm(chapterFilter.trim(), transMap, lang).toLowerCase() : undefined;
 
   // Build list of equivalent search tokens (original token + any corresponding German words)
+  const cache = langTransCache[lang];
   const tokenEquivalents: string[][] = tokens.map((t) => {
     const list = [t];
-    if (lang !== "de" && Object.keys(transMap).length > 0) {
-      for (const [orig, trans] of Object.entries(transMap)) {
-        if (trans.toLowerCase().includes(t)) {
-          list.push(orig.toLowerCase());
+    if (lang !== "de") {
+      if (cache?.reverseMap.has(t)) {
+        list.push(cache.reverseMap.get(t)!.toLowerCase());
+      }
+      if (cache) {
+        for (const [trLower, orig] of cache.reverseMap.entries()) {
+          if (trLower === t || trLower.startsWith(t + " ") || trLower.endsWith(" " + t) || trLower.includes(" " + t + " ")) {
+            list.push(orig.toLowerCase());
+          }
         }
       }
     }
-    return list;
+    return Array.from(new Set(list));
   });
 
   // If query tokens don't match any German words in our dictionary, query Gemini for medical equivalents
@@ -694,7 +758,7 @@ export async function searchKentRubrics(
     }
   }
 
-  return rawMatches.map((rubric) => translateRubric(rubric, transMap));
+  return rawMatches.map((rubric) => translateRubric(rubric, transMap, lang));
 }
 
 /**
@@ -728,12 +792,15 @@ export function getKentChapters(): string[] {
 /**
  * Get a single rubric by ID
  */
-export function getKentRubricById(id: string): KentRubric | undefined {
+export function getKentRubricById(id: string, lang = "de"): any | undefined {
   if (!isLoaded) {
     ensureKentDatabaseLoaded();
     return undefined;
   }
-  return cachedRubrics.find((r) => r.id === id);
+  const found = cachedRubrics.find((r) => r.id === id);
+  if (!found) return undefined;
+  const transMap = getKentTranslationsForLang(lang);
+  return translateRubric(found, transMap, lang);
 }
 
 /**
@@ -759,16 +826,16 @@ export async function getKentDrilldown(
   }
 
   let transMap = getKentTranslationsForLang(lang);
-  const normalizedChapter = chapter ? toGermanTerm(chapter.trim(), transMap) : "";
-  const normalizedSymptom = symptom ? toGermanTerm(symptom.trim(), transMap) : "";
-  const normalizedZusatz = (zusatz || []).map((z) => toGermanTerm(z.trim(), transMap));
+  const normalizedChapter = chapter ? toGermanTerm(chapter.trim(), transMap, lang) : "";
+  const normalizedSymptom = symptom ? toGermanTerm(symptom.trim(), transMap, lang) : "";
+  const normalizedZusatz = (zusatz || []).map((z) => toGermanTerm(z.trim(), transMap, lang));
 
   // 1. No chapter selected: return all chapters
   if (!normalizedChapter) {
     const chapters = getKentChapters();
     const translatedOptions: Record<string, string> = {};
     for (const ch of chapters) {
-      translatedOptions[ch] = lookupTrans(ch, transMap) || ch;
+      translatedOptions[ch] = lookupTrans(ch, transMap, lang) || ch;
     }
     return {
       nextLevelType: "chapter",
@@ -818,7 +885,7 @@ export async function getKentDrilldown(
 
     const translatedOptions: Record<string, string> = {};
     for (const s of symptomsList) {
-      translatedOptions[s] = lookupTrans(s, transMap) || s;
+      translatedOptions[s] = lookupTrans(s, transMap, lang) || s;
     }
 
     return {
@@ -826,7 +893,7 @@ export async function getKentDrilldown(
       nextLevelIndex: 0,
       nextOptions: symptomsList,
       translatedOptions,
-      rubrics: matching.slice(0, 100).map((r) => translateRubric(r, transMap)),
+      rubrics: matching.slice(0, 100).map((r) => translateRubric(r, transMap, lang)),
     };
   }
 
@@ -888,7 +955,7 @@ export async function getKentDrilldown(
 
   const translatedOptions: Record<string, string> = {};
   for (const opt of nextOptions) {
-    translatedOptions[opt] = lookupTrans(opt, transMap) || opt;
+    translatedOptions[opt] = lookupTrans(opt, transMap, lang) || opt;
   }
 
   return {
@@ -896,7 +963,7 @@ export async function getKentDrilldown(
     nextLevelIndex: depth,
     nextOptions,
     translatedOptions,
-    rubrics: matching.slice(0, 150).map((r) => translateRubric(r, transMap)),
+    rubrics: matching.slice(0, 150).map((r) => translateRubric(r, transMap, lang)),
   };
 }
 

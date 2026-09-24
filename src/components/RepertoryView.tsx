@@ -34,9 +34,13 @@ interface RepertoryViewProps {
 interface KentRubric {
   id: string;
   chapter: string;
+  chapterTranslated?: string;
   symptom: string;
+  symptomTranslated?: string;
   zusatz: string[];
+  zusatzTranslated?: string[];
   path: string;
+  pathTranslated?: string;
   remedyCount: number;
 }
 
@@ -79,6 +83,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
   const [drillZusatz, setDrillZusatz] = useState<string[]>([]);
   
   const [drillOptions, setDrillOptions] = useState<string[]>([]);
+  const [drillTranslatedOptions, setDrillTranslatedOptions] = useState<Record<string, string>>({});
   const [drillLevelType, setDrillLevelType] = useState<string>('chapter');
   const [drillLevelIndex, setDrillLevelIndex] = useState<number>(-1);
   const [drillRubrics, setDrillRubrics] = useState<KentRubric[]>([]);
@@ -109,6 +114,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
 
   // Chapters list for filter dropdown
   const [chapters, setChapters] = useState<string[]>([]);
+  const [chapterTranslations, setChapterTranslations] = useState<Record<string, string>>({});
 
   // ==========================================================================
   // STATE 3: ARZNEIMITTEL / REMEDY POPUP MODAL (MATERIA MEDICA)
@@ -117,14 +123,17 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
   const [modalHistory, setModalHistory] = useState<LocalizedRemedy[]>([]);
   const [isLoadingRemedy, setIsLoadingRemedy] = useState(false);
 
-  // Load all Chapters on boot
+  // Load all Chapters on boot & whenever language changes
   useEffect(() => {
     const fetchChapters = async () => {
       try {
-        const res = await fetch('/api/kent/chapters');
+        const res = await fetch(`/api/kent/chapters?lang=${encodeURIComponent(language)}`);
         const data = await res.json();
         if (data.success && Array.isArray(data.chapters) && data.chapters.length > 0) {
           setChapters(data.chapters);
+          if (data.translatedChapters) {
+            setChapterTranslations(data.translatedChapters);
+          }
         } else {
           setChapters(FALLBACK_CHAPTERS);
         }
@@ -134,7 +143,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
       }
     };
     fetchChapters();
-  }, [FALLBACK_CHAPTERS]);
+  }, [FALLBACK_CHAPTERS, language]);
 
   // Debounce free keyword search input
   useEffect(() => {
@@ -162,6 +171,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
           url.searchParams.append('chapter', keywordChapterFilter);
         }
         url.searchParams.append('limit', '80');
+        url.searchParams.append('lang', language);
 
         const res = await fetch(url.toString());
         const data = await res.json();
@@ -182,7 +192,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
     if (searchMode === 'keyword') {
       executeKeywordSearch();
     }
-  }, [debouncedKeyword, keywordChapterFilter, searchMode]);
+  }, [debouncedKeyword, keywordChapterFilter, searchMode, language]);
 
   // ==========================================================================
   // DRILL-DOWN LOGIC: Fetch children level based on current path
@@ -211,7 +221,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
         const res = await fetch('/api/kent/drilldown', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chapter, symptom, zusatz }),
+          body: JSON.stringify({ chapter, symptom, zusatz, lang: language }),
           signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -225,6 +235,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
           setDrillLevelType(data.nextLevelType);
           setDrillLevelIndex(data.nextLevelIndex);
           setDrillOptions(data.nextOptions || []);
+          setDrillTranslatedOptions(data.translatedOptions || {});
           setDrillRubrics(data.rubrics || []);
           setDrillError(null);
           setIsDrillLoading(false);
@@ -254,12 +265,35 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
     setIsDrillLoading(false);
   };
 
-  // Run drill-down fetch whenever path state changes
+  // Run drill-down fetch whenever path state changes or language changes
   useEffect(() => {
     if (searchMode === 'drilldown') {
       loadDrilldownData(drillChapter, drillSymptom, drillZusatz);
     }
-  }, [drillChapter, drillSymptom, drillZusatz, searchMode]);
+  }, [drillChapter, drillSymptom, drillZusatz, searchMode, language]);
+
+  // When language changes, update any selected rubrics in the cart with the new language translations
+  useEffect(() => {
+    if (selectedRubrics.length === 0) return;
+    const refreshSelectedRubrics = async () => {
+      try {
+        const updated = await Promise.all(
+          selectedRubrics.map(async (r) => {
+            try {
+              const res = await fetch(`/api/kent/rubric/${encodeURIComponent(r.id)}?lang=${encodeURIComponent(language)}`);
+              if (res.ok) {
+                const data = await res.json();
+                if (data.rubric) return data.rubric;
+              }
+            } catch {}
+            return r;
+          })
+        );
+        setSelectedRubrics(updated);
+      } catch {}
+    };
+    refreshSelectedRubrics();
+  }, [language]);
 
   // Back navigation for Drill-down
   const handleDrillBack = () => {
@@ -306,8 +340,13 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
   const filteredDrillOptions = useMemo(() => {
     const query = drillFilterQuery.toLowerCase().trim();
     if (!query) return drillOptions;
-    return drillOptions.filter(opt => opt.toLowerCase().includes(query));
-  }, [drillOptions, drillFilterQuery]);
+    return drillOptions.filter(opt => {
+      const origMatch = opt.toLowerCase().includes(query);
+      const trans = drillTranslatedOptions[opt] || chapterTranslations[opt];
+      const transMatch = trans ? trans.toLowerCase().includes(query) : false;
+      return origMatch || transMatch;
+    });
+  }, [drillOptions, drillTranslatedOptions, chapterTranslations, drillFilterQuery]);
 
   // ==========================================================================
   // REPERTORISATION & CART LOGIC
@@ -703,7 +742,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         onClick={() => handleJumpToLevel('chapters')}
                         className="hover:text-teal-600 transition-all cursor-pointer text-slate-800 hover:underline bg-slate-200/60 px-2 py-0.5 rounded"
                       >
-                        {drillChapter}
+                        {chapterTranslations[drillChapter] || drillTranslatedOptions[drillChapter] || drillChapter}
                       </button>
                     </>
                   )}
@@ -715,7 +754,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         onClick={() => handleJumpToLevel('symptom')}
                         className="hover:text-teal-600 transition-all cursor-pointer text-slate-800 hover:underline bg-teal-50 px-2 py-0.5 rounded border border-teal-100"
                       >
-                        {drillSymptom}
+                        {drillTranslatedOptions[drillSymptom] || drillSymptom}
                       </button>
                     </>
                   )}
@@ -727,7 +766,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         onClick={() => handleJumpToLevel(idx)}
                         className="hover:text-teal-600 transition-all cursor-pointer text-slate-700 hover:underline bg-blue-50 px-2 py-0.5 rounded border border-blue-100 text-[11px]"
                       >
-                        {zus}
+                        {drillTranslatedOptions[zus] || zus}
                       </button>
                     </React.Fragment>
                   ))}
@@ -825,7 +864,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         onClick={() => handleSelectDrillOption(option)}
                         className="p-3 text-left bg-white border border-slate-200/60 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:border-teal-500 hover:bg-teal-50/30 hover:text-teal-950 transition-all flex items-center justify-between group cursor-pointer shadow-2xs"
                       >
-                        <span className="truncate pr-2">{option}</span>
+                        <span className="truncate pr-2">{drillTranslatedOptions[option] || chapterTranslations[option] || option}</span>
                         <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-teal-600 transition-all shrink-0" />
                       </button>
                     ))}
@@ -874,7 +913,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                   >
                     <option value="">{t('kentAllChapters')}</option>
                     {chapters.map((chap) => (
-                      <option key={chap} value={chap}>{chap}</option>
+                      <option key={chap} value={chap}>{chapterTranslations[chap] || chap}</option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -917,12 +956,12 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1.5">
                             <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-200 text-slate-700">
-                              {rubric.chapter}
+                              {rubric.chapterTranslated || chapterTranslations[rubric.chapter] || rubric.chapter}
                             </span>
                             <span className="text-[10px] text-slate-400">ID: {rubric.id}</span>
                           </div>
                           <p className="text-xs sm:text-sm text-slate-700 font-medium group-hover:text-teal-950 leading-relaxed">
-                            {rubric.path}
+                            {rubric.pathTranslated || rubric.path}
                           </p>
                         </div>
                         
@@ -972,11 +1011,11 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                           <div className="flex items-center gap-1.5">
                             <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-slate-200 text-slate-600">ID: {rubric.id}</span>
                             <span className="text-[10px] text-slate-400 font-semibold truncate max-w-[200px]">
-                              {rubric.chapter} ➔ {rubric.symptom}
+                              {rubric.chapterTranslated || chapterTranslations[rubric.chapter] || rubric.chapter} ➔ {rubric.symptomTranslated || rubric.symptom}
                             </span>
                           </div>
                           <p className="text-xs text-slate-700 font-semibold leading-relaxed group-hover:text-teal-950">
-                            {rubric.path}
+                            {rubric.pathTranslated || rubric.path}
                           </p>
                         </div>
 
@@ -1058,12 +1097,12 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                           Symptom {idx + 1}
                         </span>
                         <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold tracking-wider bg-slate-200 text-slate-600 uppercase">
-                          {rubric.chapter}
+                          {rubric.chapterTranslated || chapterTranslations[rubric.chapter] || rubric.chapter}
                         </span>
                         <span className="text-[10px] text-slate-400 font-semibold">ID: {rubric.id}</span>
                       </div>
                       <p className="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
-                        {rubric.path}
+                        {rubric.pathTranslated || rubric.path}
                       </p>
                     </div>
 
@@ -1194,7 +1233,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                                       ? 'bg-slate-200 text-slate-700' 
                                       : 'bg-slate-100 text-slate-300 border border-dashed border-slate-200'
                               }`}
-                              title={`${rubric.path}\nGrad: ${grade === 0 ? 'Nicht vorhanden' : grade}`}
+                              title={`${rubric.pathTranslated || rubric.path}\nGrad: ${grade === 0 ? 'Nicht vorhanden' : grade}`}
                             >
                               {grade > 0 ? grade : '•'}
                             </span>

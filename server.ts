@@ -6880,6 +6880,23 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
     }
   });
 
+  // 6. Get single rubric by ID with translations
+  app.get("/api/kent/rubric/:id", async (req, res) => {
+    try {
+      await ensureKentDatabaseLoaded();
+      const id = String(req.params.id);
+      const lang = String(req.query.lang || "de").toLowerCase();
+      const rubric = getKentRubricById(id, lang);
+      if (!rubric) {
+        return res.status(404).json({ success: false, error: "Rubric not found" });
+      }
+      res.json({ success: true, rubric });
+    } catch (err: any) {
+      console.error("[KENT_API] Error getting rubric by ID:", err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
