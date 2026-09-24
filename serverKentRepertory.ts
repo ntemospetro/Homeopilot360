@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import fs from "fs";
 import path from "path";
+import { GoogleGenAI } from "@google/genai";
 
 export interface KentRubric {
   id: string; // Spalte A: Rubrik-ID
@@ -189,14 +190,403 @@ export async function ensureKentDatabaseLoaded(): Promise<void> {
   }
 }
 
+export const CANONICAL_KENT_CHAPTERS: Record<string, Record<string, string>> = {
+  "Gemüt": { en: "Mind", es: "Mente", fr: "Mental", it: "Mente", el: "Νους", ru: "Психика" },
+  "Schwindel": { en: "Vertigo", es: "Vértigo", fr: "Vertige", it: "Vertigine", el: "Ίλιγγος", ru: "Головокружение" },
+  "Kopf": { en: "Head", es: "Cabeza", fr: "Tête", it: "Testa", el: "Κεφαλή", ru: "Голова" },
+  "Auge": { en: "Eye", es: "Ojos", fr: "Yeux", it: "Occhi", el: "Οφθαλμοί", ru: "Глаза" },
+  "Sehen": { en: "Vision", es: "Visión", fr: "Vision", it: "Vista", el: "Όραση", ru: "Зрение" },
+  "Ohr": { en: "Ear", es: "Oído", fr: "Oreille", it: "Orecchio", el: "Ώτα", ru: "Уши" },
+  "Gehör": { en: "Hearing", es: "Audición", fr: "Ouïe", it: "Udito", el: "Ακοή", ru: "Слух" },
+  "Nase": { en: "Nose", es: "Nariz", fr: "Nez", it: "Naso", el: "Ρίς", ru: "Нос" },
+  "Gesicht": { en: "Face", es: "Cara", fr: "Face", it: "Faccia", el: "Πρόσωπο", ru: "Лицо" },
+  "Mund": { en: "Mouth", es: "Boca", fr: "Bouche", it: "Bocca", el: "Στόμα", ru: "Рот" },
+  "Zähne": { en: "Teeth", es: "Dientes", fr: "Dents", it: "Denti", el: "Οδόντες", ru: "Зубы" },
+  "Hals": { en: "Throat", es: "Garganta", fr: "Gorge", it: "Gola", el: "Λαιμός", ru: "Горло" },
+  "Hals-Außenseite": { en: "External Throat & Neck", es: "Cuello externo", fr: "Gorge externe", it: "Collo esterno", el: "Εξωτερικός λαιμός", ru: "Шея снаружи" },
+  "Magen": { en: "Stomach", es: "Estómago", fr: "Estomac", it: "Stomaco", el: "Στόμαχος", ru: "Желудок" },
+  "Bauch": { en: "Abdomen", es: "Abdomen", fr: "Abdomen", it: "Addome", el: "Κοιλία", ru: "Живот" },
+  "Mastdarm": { en: "Rectum", es: "Recto", fr: "Rectum", it: "Retto", el: "Απευθυσμένο", ru: "Прямая кишка" },
+  "Stuhl": { en: "Stool", es: "Heces", fr: "Selles", it: "Feci", el: "Κόπρανα", ru: "Стул" },
+  "Blase": { en: "Bladder", es: "Vejiga", fr: "Vessie", it: "Vescica", el: "Ουροδόχος κύστη", ru: "Мочевой пузырь" },
+  "Nieren": { en: "Kidneys", es: "Riñones", fr: "Reins", it: "Reni", el: "Νεφροί", ru: "Почки" },
+  "Prostata": { en: "Prostate", es: "Próstata", fr: "Prostate", it: "Prostata", el: "Προστάτης", ru: "Простата" },
+  "Harnröhre": { en: "Urethra", es: "Uretra", fr: "Urètre", it: "Uretra", el: "Ουρήθρα", ru: "Уретра" },
+  "Urin": { en: "Urine", es: "Orina", fr: "Urine", it: "Urina", el: "Ούρα", ru: "Моча" },
+  "Geschlechtsorgane männlich": { en: "Male Genitalia", es: "Genitales masculinos", fr: "Organes génitaux masculins", it: "Genitali maschili", el: "Ανδρικά γεννητικά όργανα", ru: "Мужские половые органы" },
+  "Geschlechtsorgane weiblich": { en: "Female Genitalia", es: "Genitales femeninos", fr: "Organes génitaux féminins", it: "Genitali femminili", el: "Γυναικεία γεννητικά όργανα", ru: "Женские половые органы" },
+  "Kehlkopf und Luftröhre": { en: "Larynx & Trachea", es: "Laringe y tráquea", fr: "Larynx et trachée", it: "Laringe e trachea", el: "Λάρυγγας και τραχεία", ru: "Гортань и трахея" },
+  "Atmung": { en: "Respiration", es: "Respiración", fr: "Respiration", it: "Respirazione", el: "Αναπνοή", ru: "Дыхание" },
+  "Husten": { en: "Cough", es: "Tos", fr: "Toux", it: "Tosse", el: "Βήχας", ru: "Кашель" },
+  "Auswurf": { en: "Expectoration", es: "Expectoración", fr: "Expectoration", it: "Espettorato", el: "Απόχρεμψη", ru: "Мокрота" },
+  "Brust": { en: "Chest", es: "Pecho", fr: "Poitrine", it: "Torace", el: "Θώρακας", ru: "Грудная клетка" },
+  "Rücken": { en: "Back", es: "Espalda", fr: "Dos", it: "Dorso", el: "Ράχη", ru: "Спина" },
+  "Extremitäten": { en: "Extremities", es: "Extremidades", fr: "Membres", it: "Estremità", el: "Άκρα", ru: "Конечности" },
+  "Schlaf": { en: "Sleep", es: "Sueño", fr: "Sommeil", it: "Sonno", el: "Ύπνος", ru: "Сон" },
+  "Frost": { en: "Chill", es: "Escalofríos", fr: "Frissons", it: "Brividi", el: "Ρίγος", ru: "Озноб" },
+  "Fieber": { en: "Fever", es: "Fiebre", fr: "Fièvre", it: "Febbre", el: "Πυρετός", ru: "Лихорадка" },
+  "Schweiß": { en: "Perspiration", es: "Transpiración", fr: "Transpiration", it: "Sudorazione", el: "Ιδρώτας", ru: "Потливость" },
+  "Haut": { en: "Skin", es: "Piel", fr: "Peau", it: "Pelle", el: "Δέρμα", ru: "Кожа" },
+  "Allgemeines": { en: "Generals", es: "Generales", fr: "Généralités", it: "Generali", el: "Γενικά", ru: "Общие" }
+};
+
+export const CURATED_KENT_TERMS: Record<string, Record<string, string>> = {
+  "Schmerz": { en: "Pain", es: "Dolor", fr: "Douleur", it: "Dolore", el: "Πόνος", ru: "Боль" },
+  "Kopfschmerz": { en: "Headache", es: "Dolor de cabeza", fr: "Céphalée", it: "Mal di testa", el: "Κεφαλαλγία", ru: "Головная боль" },
+  "Hautausschläge": { en: "Eruptions", es: "Erupciones", fr: "Éruptions", it: "Eruzioni", el: "Εξανθήματα", ru: "Высыпания" },
+  "Schwäche": { en: "Weakness", es: "Debilidad", fr: "Faiblesse", it: "Debolezza", el: "Αδυναμία", ru: "Слабость" },
+  "Jucken": { en: "Itching", es: "Picazón", fr: "Démangeaisons", it: "Prurito", el: "Κνησμός", ru: "Зуд" },
+  "Verfärbung": { en: "Discoloration", es: "Decoloración", fr: "Décoloration", it: "Decolorazione", el: "Αποχρωματισμός", ru: "Изменение цвета" },
+  "Kälte": { en: "Coldness", es: "Frío", fr: "Froid", it: "Freddo", el: "Κρυάδα", ru: "Холод" },
+  "Wahnideen": { en: "Delusions", es: "Delirios", fr: "Délires", it: "Deliri", el: "Παραληρήματα", ru: "Бред" },
+  "Hitze": { en: "Heat", es: "Calor", fr: "Chaleur", it: "Calore", el: "Ζέστη", ru: "Жар" },
+  "Schwellung": { en: "Swelling", es: "Hinchazón", fr: "Gonflement", it: "Gonfiore", el: "Οίδημα", ru: "Отек" },
+  "Zucken": { en: "Twitching", es: "Espasmos", fr: "Secousses", it: "Spasmi", el: "Σπασμοί", ru: "Подергивания" },
+  "Krämpfe": { en: "Cramps", es: "Calambres", fr: "Crampes", it: "Crampi", el: "Κράμπες", ru: "Судороги" },
+  "Geräusche": { en: "Noises", es: "Ruidos", fr: "Bruits", it: "Rumori", el: "Θόρυβοι", ru: "Шумы" },
+  "Taubheitsgefühl": { en: "Numbness", es: "Entumecimiento", fr: "Engourdissement", it: "Intorpidimento", el: "Μούδιασμα", ru: "Онемение" },
+  "Spannung": { en: "Tension", es: "Tensión", fr: "Tension", it: "Tensione", el: "Τάση", ru: "Напряжение" },
+  "Schwere": { en: "Heaviness", es: "Pesadez", fr: "Lourdeur", it: "Pesantezza", el: "Βάρος", ru: "Тяжесть" },
+  "Geschwüre": { en: "Ulcers", es: "Úlceras", fr: "Ulcères", it: "Ulcere", el: "Έλκη", ru: "Язвы" },
+  "Erbrechen": { en: "Vomiting", es: "Vómitos", fr: "Vomissements", it: "Vomito", el: "Έμετος", ru: "Рвота" },
+  "Aufstoßen": { en: "Eructations", es: "Eructos", fr: "Éructations", it: "Eruttazioni", el: "Ερυγές", ru: "Отрыжка" },
+  "Zittern": { en: "Trembling", es: "Temblor", fr: "Tremblement", it: "Tremore", el: "Τρέμουλο", ru: "Дрожь" },
+  "Zusammenschnüren": { en: "Constriction", es: "Constricción", fr: "Constriction", it: "Costrizione", el: "Σύσφιξη", ru: "Сжатие" },
+  "Träume": { en: "Dreams", es: "Sueños", fr: "Rêves", it: "Sogni", el: "Όνειρα", ru: "Сны" },
+  "pulsierend": { en: "Pulsating", es: "Pulsátil", fr: "Pulsatile", it: "Pulsante", el: "Παλλόμενος", ru: "Пульсирующий" },
+  "Pulsieren": { en: "Pulsation", es: "Pulsación", fr: "Pulsation", it: "Pulsazione", el: "Σφυγμός", ru: "Пульсация" },
+  "Diarrhoe": { en: "Diarrhea", es: "Diarrea", fr: "Diarrhée", it: "Diarrea", el: "Διάρροια", ru: "Диарея" },
+  "Entzündung": { en: "Inflammation", es: "Inflamación", fr: "Inflammation", it: "Infiammazione", el: "Φλεγμονή", ru: "Воспаление" },
+  "Schwitzen": { en: "Sweating", es: "Sudoración", fr: "Transpiration", it: "Sudorazione", el: "Ιδρώτας", ru: "Потоотделение" },
+  "Steifheit": { en: "Stiffness", es: "Rigidez", fr: "Raideur", it: "Rigidità", el: "Δυσκαμψία", ru: "Скованность" },
+  "Geschmack": { en: "Taste", es: "Gusto", fr: "Goût", it: "Gusto", el: "Γεύση", ru: "Вкус" },
+  "Übelkeit": { en: "Nausea", es: "Náuseas", fr: "Nausée", it: "Nausea", el: "Ναυτία", ru: "Тошнота" },
+  "Furcht": { en: "Fear", es: "Miedo", fr: "Peur", it: "Paura", el: "Φόβος", ru: "Страх" },
+  "Angst": { en: "Anxiety", es: "Ansiedad", fr: "Anxiété", it: "Ansia", el: "Άγχος", ru: "Тревога" },
+  "Lähmung": { en: "Paralysis", es: "Parálisis", fr: "Paralysie", it: "Paralisi", el: "Παράλυση", ru: "Паралич" },
+  "schwierig": { en: "Difficult", es: "Difícil", fr: "Difficile", it: "Difficile", el: "Δύσκολος", ru: "Трудный" },
+  "Kribbeln": { en: "Tingling", es: "Hormigueo", fr: "Picotement", it: "Formicolio", el: "Μυρμήγκιασμα", ru: "Покалывание" },
+  "Absonderung": { en: "Discharge", es: "Secreción", fr: "Écoulement", it: "Secrezione", el: "Έκκριση", ru: "Выделения" },
+  "Urinieren": { en: "Urination", es: "Micción", fr: "Miction", it: "Minzione", el: "Ούρηση", ru: "Мочеиспускание" },
+  "Ruhelosigkeit": { en: "Restlessness", es: "Inquietud", fr: "Agitation", it: "Irrequietezza", el: "Ανησυχία", ru: "Беспокойство" },
+  "Herzklopfen": { en: "Palpitations", es: "Palpitaciones", fr: "Palpitations", it: "Palpitazioni", el: "Αίσθημα παλμών", ru: "Сердцебиение" },
+  "Menses": { en: "Menses", es: "Menstruación", fr: "Règles", it: "Mestruazioni", el: "Έμμηνα", ru: "Менструация" },
+  "Trockenheit": { en: "Dryness", es: "Sequedad", fr: "Sécheresse", it: "Secchezza", el: "Ξηρότητα", ru: "Сухость" },
+  "Stimme": { en: "Voice", es: "Voz", fr: "Voix", it: "Voce", el: "Φωνή", ru: "Голос" },
+  "Schnupfen": { en: "Coryza", es: "Coriza", fr: "Coryza", it: "Corizza", el: "Κόρυζα", ru: "Насморк" },
+  "Beklommenheit": { en: "Oppression", es: "Opresión", fr: "Oppression", it: "Oppressione", el: "Σφίξιμο", ru: "Стеснение" },
+  "Bewegung": { en: "Motion", es: "Movimiento", fr: "Mouvement", it: "Movimento", el: "Κίνηση", ru: "Движение" },
+  "Schläfrigkeit": { en: "Sleepiness", es: "Somnolencia", fr: "Somnolence", it: "Sonnolenza", el: "Υπνηλία", ru: "Сонливость" },
+  "besser": { en: "better", es: "mejor", fr: "meilleur", it: "migliore", el: "καλύτερα", ru: "лучше" },
+  "schlechter": { en: "worse", es: "peor", fr: "pire", it: "peggiore", el: "χειρότερα", ru: "хуже" },
+  "stechender": { en: "stitching", es: "punzante", fr: "piquant", it: "pungente", el: "διαπεραστικός", ru: "колющий" },
+  "morgens": { en: "in the morning", es: "por la mañana", fr: "le matin", it: "al mattino", el: "το πρωί", ru: "утром" },
+  "abends": { en: "in the evening", es: "por la tarde", fr: "le soir", it: "alla sera", el: "το βράδυ", ru: "вечером" },
+  "nachts": { en: "at night", es: "por la noche", fr: "la nuit", it: "di notte", el: "τη νύχτα", ru: "ночью" },
+  "nachmittags": { en: "in the afternoon", es: "por la tarde", fr: "l'après-midi", it: "nel pomeriggio", el: "το απόγευμα", ru: "днем" },
+  "vormittags": { en: "in the forenoon", es: "por la mañana", fr: "dans la matinée", it: "nella mattinata", el: "πριν το μεσημέρι", ru: "до полудня" },
+  "bei": { en: "during", es: "con / en", fr: "pendant", it: "durante", el: "κατά", ru: "при" },
+  "nach": { en: "after", es: "después de", fr: "après", it: "dopo", el: "μετά από", ru: "после" },
+  "ziehender": { en: "drawing", es: "tirante", fr: "tiraillement", it: "tirante", el: "ελκυστικός", ru: "тянущий" },
+  "reißender": { en: "tearing", es: "desgarrante", fr: "déchirant", it: "lacerante", el: "σχιστικός", ru: "рвущий" },
+  "drückender": { en: "pressing", es: "opresivo", fr: "pressant", it: "pressorio", el: "πιεστικός", ru: "давящий" },
+  "brennender": { en: "burning", es: "ardiente", fr: "brûlant", it: "bruciante", el: "καυστικός", ru: "жгучий" },
+  "wunder": { en: "sore", es: "endolorido", fr: "douloureux", it: "indolenzito", el: "πληγωμένος", ru: "болезненный" },
+  "schneidender": { en: "cutting", es: "cortante", fr: "coupant", it: "tagliente", el: "κοπτικός", ru: "режущий" },
+  "weher": { en: "aching", es: "dolorido", fr: "endolori", it: "dolente", el: "πονεμένος", ru: "ноющий" },
+  "wie zerschlagen": { en: "as if bruised", es: "como magullado", fr: "comme meurtri", it: "come contuso", el: "σαν χτυπημένος", ru: "как от ушиба" },
+  "erstreckt sich": { en: "extending to", es: "se extiende a", fr: "s'étendant à", it: "si estende a", el: "επεκτείνεται", ru: "распространяется" },
+  "während der": { en: "during", es: "durante la", fr: "pendant la", it: "durante la", el: "κατά τη διάρκεια", ru: "во время" },
+  "beim Gehen": { en: "while walking", es: "al caminar", fr: "en marchant", it: "camminando", el: "στο περπάτημα", ru: "при ходьбе" },
+  "Gehen": { en: "walking", es: "caminar", fr: "marcher", it: "camminare", el: "περπάτημα", ru: "ходьба" },
+  "beim Sitzen": { en: "while sitting", es: "al sentarse", fr: "en position assise", it: "da seduto", el: "στο κάθισμα", ru: "сидя" },
+  "beim Aufwachen": { en: "on waking", es: "al despertar", fr: "au réveil", it: "al risveglio", el: "στο ξύπνημα", ru: "при пробуждении" },
+  "im Bett": { en: "in bed", es: "en la cama", fr: "au lit", it: "a letto", el: "στο κρεβάτι", ru: "в постели" },
+  "Liegen": { en: "lying down", es: "acostado", fr: "en position couchée", it: "da sdraiato", el: "ξαπλωμένος", ru: "лежа" },
+  "rechts": { en: "right", es: "derecha", fr: "droit", it: "destra", el: "δεξιά", ru: "справа" },
+  "links": { en: "left", es: "izquierda", fr: "gauche", it: "sinistra", el: "αριστερά", ru: "слева" },
+  "Seiten": { en: "sides", es: "lados", fr: "côtés", it: "lati", el: "πλευρές", ru: "стороны" },
+  "Stirn": { en: "Forehead", es: "Frente", fr: "Front", it: "Fronte", el: "Μέτωπο", ru: "Лоб" },
+  "Hinterkopf": { en: "Occiput", es: "Occipucio", fr: "Occiput", it: "Occipite", el: "Ινίο", ru: "Затылок" },
+  "Schläfen": { en: "Temples", es: "Sienes", fr: "Tempes", it: "Tempie", el: "Κρόταφοι", ru: "Виски" },
+  "Arme": { en: "Arms", es: "Brazos", fr: "Bras", it: "Braccia", el: "Βραχίονες", ru: "Руки" },
+  "Hand": { en: "Hand", es: "Mano", fr: "Main", it: "Mano", el: "Χέρι", ru: "Кисть" },
+  "Finger": { en: "Fingers", es: "Dedos", fr: "Doigts", it: "Dita", el: "Δάκτυλα", ru: "Пальцы" },
+  "Beine": { en: "Legs", es: "Piernas", fr: "Jambes", it: "Gambe", el: "Κνήμες", ru: "Ноги" },
+  "Oberschenkel": { en: "Thighs", es: "Muslos", fr: "Cuisses", it: "Cosce", el: "Μηροί", ru: "Бедра" },
+  "Unterschenkel": { en: "Lower legs", es: "Piernas inferiores", fr: "Jambes inférieures", it: "Gambe inferiori", el: "Κάτω άκρα", ru: "Голени" },
+  "Knie": { en: "Knees", es: "Rodillas", fr: "Genoux", it: "Ginocchia", el: "Γόνατα", ru: "Колени" },
+  "Fuß": { en: "Foot", es: "Pie", fr: "Pied", it: "Piede", el: "Πόδι", ru: "Стопа" },
+  "Zehen": { en: "Toes", es: "Dedos del pie", fr: "Orteils", it: "Dita dei piedi", el: "Δάχτυλα ποδιών", ru: "Пальцы ног" },
+  "Schulter": { en: "Shoulder", es: "Hombro", fr: "Épaule", it: "Spalla", el: "Ώμος", ru: "Плечо" },
+  "Hüfte": { en: "Hip", es: "Cadera", fr: "Hanche", it: "Anca", el: "Ισχίο", ru: "Бедро" },
+  "Lendenregion": { en: "Lumbar region", es: "Región lumbar", fr: "Région lombaire", it: "Regione lombare", el: "Οσφυϊκή χώρα", ru: "Поясничная область" },
+  "Rückenregion": { en: "Back region", es: "Región de la espalda", fr: "Région du dos", it: "Regione dorsale", el: "Περιοχή ράχης", ru: "Область спины" }
+};
+
+let translationsCache: Record<string, Record<string, string>> | null = null;
+let saveDebounceTimer: NodeJS.Timeout | null = null;
+
+function getTranslations(): Record<string, Record<string, string>> {
+  if (translationsCache) return translationsCache;
+  const transPath = path.resolve("./data/kent_translations.json");
+  if (fs.existsSync(transPath)) {
+    try {
+      translationsCache = JSON.parse(fs.readFileSync(transPath, "utf-8"));
+      return translationsCache!;
+    } catch {
+      translationsCache = {};
+      return {};
+    }
+  }
+  translationsCache = {};
+  return {};
+}
+
+function persistTranslations(): void {
+  if (!translationsCache) return;
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(() => {
+    try {
+      const transPath = path.resolve("./data/kent_translations.json");
+      fs.writeFileSync(transPath, JSON.stringify(translationsCache, null, 2), "utf-8");
+    } catch (err) {
+      console.error("[KENT_TRANS] Failed to save translations:", err);
+    }
+  }, 1000);
+}
+
+// Set to track in-flight translation terms to avoid redundant Gemini calls
+const inFlightTerms = new Set<string>();
+
+export type KentTokenUsageCallback = (usage: {
+  promptTokens: number;
+  candidatesTokens: number;
+  cachedTokens?: number;
+  model: string;
+  actionName: string;
+}) => void;
+
 /**
- * Search Kent Rubrics in memory using token matching
+ * Resilient Gemini caller with automatic fallback across multiple models
+ * to handle temporary high demand spikes (503 / 429) seamlessly.
  */
-export function searchKentRubrics(
+async function generateWithMultiModelFallback(
+  ai: GoogleGenAI,
+  params: { contents: string; config?: any },
+  timeoutMs = 9000
+): Promise<{ text: string; usage: any; modelUsed: string } | null> {
+  const candidateModels = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
+
+  for (const model of candidateModels) {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      const timeoutPromise = new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), timeoutMs);
+      });
+      const genPromise = ai.models.generateContent({
+        ...params,
+        model,
+      });
+
+      const res: any = await Promise.race([genPromise, timeoutPromise]);
+      if (timer) clearTimeout(timer);
+
+      if (res && res.text) {
+        return {
+          text: res.text,
+          usage: res.usageMetadata || {},
+          modelUsed: model,
+        };
+      }
+    } catch (err: any) {
+      if (timer) clearTimeout(timer);
+      const errMsg = String(err?.message || "");
+      // If 503 high demand, 429 rate limit or unavailable, try next candidate
+      if (
+        errMsg.includes("503") ||
+        errMsg.includes("high demand") ||
+        errMsg.includes("429") ||
+        errMsg.includes("UNAVAILABLE") ||
+        errMsg.includes("resource has been exhausted")
+      ) {
+        continue;
+      }
+      continue;
+    }
+  }
+  return null;
+}
+
+export async function translateKentTerms(
+  terms: string[], 
+  lang: string, 
+  onTokenUsage?: KentTokenUsageCallback
+): Promise<Record<string, string>> {
+  if (!lang || lang === "de" || !terms || terms.length === 0) return {};
+  const trans = getTranslations();
+  if (!trans[lang]) trans[lang] = {};
+
+  const missing = Array.from(
+    new Set(terms.filter((t) => t && !trans[lang][t] && !inFlightTerms.has(t)))
+  );
+  if (missing.length === 0) return trans[lang];
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return trans[lang];
+
+  // Process all missing terms in chunks of 45 terms so none are skipped
+  const batchSize = 45;
+  for (let i = 0; i < missing.length; i += batchSize) {
+    const chunk = missing.slice(i, i + batchSize);
+    for (const t of chunk) {
+      inFlightTerms.add(t);
+    }
+
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `You are a licensed clinical and homeopathic repertory translator.
+Translate the following German homeopathic repertory terms (symptoms, modalities, anatomical locations) accurately into "${lang}", "en", "es", "fr", "it", "el", "ru".
+Return ONLY a valid JSON object where keys are the exact German terms and values are objects mapping each language code to its translation:
+{"Term1": {"en": "...", "es": "...", "fr": "...", "it": "...", "el": "...", "ru": "..."}, ...}
+
+German terms:
+${JSON.stringify(chunk)}`;
+
+      const result = await generateWithMultiModelFallback(
+        ai,
+        {
+          contents: prompt,
+          config: { responseMimeType: "application/json" }
+        },
+        9000
+      );
+
+      if (result && result.text) {
+        const parsed = JSON.parse(result.text || "{}");
+        for (const [orig, dict] of Object.entries(parsed)) {
+          if (typeof dict === "object" && dict !== null) {
+            for (const [l, val] of Object.entries(dict as any)) {
+              if (!trans[l]) trans[l] = {};
+              if (typeof val === "string" && val.trim()) {
+                trans[l][orig] = val.trim();
+              }
+            }
+          }
+        }
+        persistTranslations();
+
+        // Trigger token usage callback for therapist billing
+        if (onTokenUsage) {
+          const usage = result.usage || {};
+          onTokenUsage({
+            promptTokens: usage.promptTokenCount || Math.ceil(prompt.length / 4),
+            candidatesTokens: usage.candidatesTokenCount || Math.ceil(result.text.length / 4),
+            cachedTokens: usage.cachedContentTokenCount || 0,
+            model: result.modelUsed,
+            actionName: `Repertorium Live-Übersetzung (${lang.toUpperCase()}: ${Object.keys(parsed).length} Begriffe)`,
+          });
+        }
+      }
+    } catch {
+      // Non-blocking graceful fallback
+    } finally {
+      for (const t of chunk) {
+        inFlightTerms.delete(t);
+      }
+    }
+  }
+
+  return trans[lang] || {};
+}
+
+export function getKentTranslationsForLang(lang?: string): Record<string, string> {
+  if (!lang || lang === "de") return {};
+  const transMap: Record<string, string> = {};
+
+  // 1. Canonical Kent Chapters (Level 1)
+  for (const [ch, trans] of Object.entries(CANONICAL_KENT_CHAPTERS)) {
+    if (trans[lang]) {
+      transMap[ch] = trans[lang];
+    }
+  }
+
+  // 2. Curated core symptoms and modalities
+  for (const [term, trans] of Object.entries(CURATED_KENT_TERMS)) {
+    if (trans[lang]) {
+      transMap[term] = trans[lang];
+    }
+  }
+
+  // 3. Dynamic dictionary from JSON file if available
+  const allTrans = getTranslations();
+  if (allTrans && allTrans[lang]) {
+    Object.assign(transMap, allTrans[lang]);
+  }
+
+  return transMap;
+}
+
+function lookupTrans(term: string, transMap: Record<string, string>): string {
+  if (!term) return "";
+  if (transMap[term]) return transMap[term];
+  const trimmed = term.trim();
+  if (transMap[trimmed]) return transMap[trimmed];
+  const lower = trimmed.toLowerCase();
+  for (const [k, v] of Object.entries(transMap)) {
+    if (k.toLowerCase() === lower) {
+      return v;
+    }
+  }
+  return term;
+}
+
+function toGermanTerm(term: string, transMap: Record<string, string>): string {
+  if (!term) return "";
+  // Check canonical chapters
+  for (const [deChapter, translations] of Object.entries(CANONICAL_KENT_CHAPTERS)) {
+    if (deChapter.toLowerCase() === term.toLowerCase()) return deChapter;
+    for (const val of Object.values(translations)) {
+      if (val.toLowerCase() === term.toLowerCase()) return deChapter;
+    }
+  }
+  // Check transMap
+  for (const [orig, trans] of Object.entries(transMap)) {
+    if (orig.toLowerCase() === term.toLowerCase()) return orig;
+    if (trans.toLowerCase() === term.toLowerCase()) return orig;
+  }
+  return term;
+}
+
+function translateRubric(r: KentRubric, transMap: Record<string, string>): any {
+  if (!transMap || Object.keys(transMap).length === 0) return r;
+  const chapterTranslated = lookupTrans(r.chapter, transMap);
+  const symptomTranslated = lookupTrans(r.symptom, transMap);
+  const zusatzTranslated = (r.zusatz || []).map((z) => lookupTrans(z, transMap));
+  
+  // Format translated path cleanly
+  const pathParts = [chapterTranslated, symptomTranslated, ...zusatzTranslated].filter(Boolean);
+  const pathTranslated = pathParts.length > 0 ? pathParts.join(" ➔ ") : r.path;
+
+  return {
+    ...r,
+    chapterTranslated,
+    symptomTranslated,
+    zusatzTranslated,
+    pathTranslated
+  };
+}
+
+/**
+ * Search Kent Rubrics in memory using token matching with multi-lingual support
+ */
+export async function searchKentRubrics(
   query: string,
   chapterFilter?: string,
-  limit = 100
-): KentRubric[] {
+  limit = 100,
+  lang = "de",
+  onTokenUsage?: KentTokenUsageCallback
+): Promise<any[]> {
   if (!isLoaded) {
     ensureKentDatabaseLoaded();
     return [];
@@ -204,13 +594,63 @@ export function searchKentRubrics(
 
   const queryClean = query.toLowerCase().trim();
   const tokens = queryClean.split(/\s+/).filter(Boolean);
-  const chapterFilterClean = chapterFilter?.toLowerCase().trim();
+  let transMap = getKentTranslationsForLang(lang);
+  const chapterFilterNorm = chapterFilter ? toGermanTerm(chapterFilter.trim(), transMap).toLowerCase() : undefined;
 
-  const results: KentRubric[] = [];
+  // Build list of equivalent search tokens (original token + any corresponding German words)
+  const tokenEquivalents: string[][] = tokens.map((t) => {
+    const list = [t];
+    if (lang !== "de" && Object.keys(transMap).length > 0) {
+      for (const [orig, trans] of Object.entries(transMap)) {
+        if (trans.toLowerCase().includes(t)) {
+          list.push(orig.toLowerCase());
+        }
+      }
+    }
+    return list;
+  });
+
+  // If query tokens don't match any German words in our dictionary, query Gemini for medical equivalents
+  if (lang !== "de" && tokens.length > 0 && process.env.GEMINI_API_KEY) {
+    const hasAnyEquivalent = tokenEquivalents.some((eq) => eq.length > 1);
+    if (!hasAnyEquivalent) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const qRes = await generateWithMultiModelFallback(
+          ai,
+          {
+            contents: `Translate this homeopathic search query from "${lang}" into 1 to 4 German keywords for Kent Repertory matching: "${queryClean}". Return JSON array of lowercase German keywords, e.g. ["kopfschmerz", "stirn"].`,
+            config: { responseMimeType: "application/json" }
+          },
+          4000
+        );
+        if (qRes && qRes.text) {
+          const germanKeywords = JSON.parse(qRes.text || "[]");
+          if (Array.isArray(germanKeywords) && germanKeywords.length > 0) {
+            tokenEquivalents.push(germanKeywords.map((k) => String(k).toLowerCase().trim()));
+          }
+          if (onTokenUsage) {
+            const qUsage = qRes.usage || {};
+            onTokenUsage({
+              promptTokens: qUsage.promptTokenCount || Math.ceil(queryClean.length / 4),
+              candidatesTokens: qUsage.candidatesTokenCount || 20,
+              cachedTokens: qUsage.cachedContentTokenCount || 0,
+              model: qRes.modelUsed,
+              actionName: `Repertorium Suchbegriff-Übersetzung (${lang.toUpperCase()}: "${queryClean}")`,
+            });
+          }
+        }
+      } catch {
+        // Non-blocking fallback
+      }
+    }
+  }
+
+  const rawMatches: KentRubric[] = [];
 
   for (const rubric of cachedRubrics) {
     // 1. Chapter filter check
-    if (chapterFilterClean && rubric.chapter.toLowerCase() !== chapterFilterClean) {
+    if (chapterFilterNorm && rubric.chapter.toLowerCase() !== chapterFilterNorm) {
       continue;
     }
 
@@ -218,22 +658,43 @@ export function searchKentRubrics(
     const pathLower = rubric.path.toLowerCase();
     let isMatch = true;
 
-    for (const t of tokens) {
-      if (!pathLower.includes(t)) {
-        isMatch = false;
-        break;
+    if (tokens.length > 0) {
+      for (const equivs of tokenEquivalents) {
+        const matchesOne = equivs.some((eq) => pathLower.includes(eq));
+        if (!matchesOne) {
+          isMatch = false;
+          break;
+        }
       }
     }
 
     if (isMatch) {
-      results.push(rubric);
-      if (results.length >= limit) {
+      rawMatches.push(rubric);
+      if (rawMatches.length >= limit) {
         break;
       }
     }
   }
 
-  return results;
+  // Ensure all matching rubrics have their terms translated
+  if (lang !== "de" && rawMatches.length > 0) {
+    const missingTerms: string[] = [];
+    for (const r of rawMatches.slice(0, 50)) {
+      if (r.symptom && !transMap[r.symptom]) missingTerms.push(r.symptom);
+      if (Array.isArray(r.zusatz)) {
+        for (const z of r.zusatz) {
+          if (z && !transMap[z]) missingTerms.push(z);
+        }
+      }
+    }
+    const uniqueMissing = Array.from(new Set(missingTerms));
+    if (uniqueMissing.length > 0) {
+      await translateKentTerms(uniqueMissing, lang, onTokenUsage);
+      transMap = getKentTranslationsForLang(lang);
+    }
+  }
+
+  return rawMatches.map((rubric) => translateRubric(rubric, transMap));
 }
 
 /**
@@ -279,71 +740,111 @@ export function getKentRubricById(id: string): KentRubric | undefined {
  * Dynamic Drill-down helper for hierarchical symptom selection:
  * Chapter -> Symptom -> Zusatzangabe 1 -> Zusatzangabe 2 -> ... -> Zusatzangabe 9
  */
-export function getKentDrilldown(
+export async function getKentDrilldown(
   chapter?: string,
   symptom?: string,
-  zusatz: string[] = []
-): {
+  zusatz: string[] = [],
+  lang = "de",
+  onTokenUsage?: KentTokenUsageCallback
+): Promise<{
   nextLevelType: string;
   nextLevelIndex: number;
   nextOptions: string[];
-  rubrics: KentRubric[];
-} {
+  translatedOptions?: Record<string, string>;
+  rubrics: any[];
+}> {
   if (!isLoaded) {
     ensureKentDatabaseLoaded();
     return { nextLevelType: "chapter", nextLevelIndex: -1, nextOptions: [], rubrics: [] };
   }
 
+  let transMap = getKentTranslationsForLang(lang);
+  const normalizedChapter = chapter ? toGermanTerm(chapter.trim(), transMap) : "";
+  const normalizedSymptom = symptom ? toGermanTerm(symptom.trim(), transMap) : "";
+  const normalizedZusatz = (zusatz || []).map((z) => toGermanTerm(z.trim(), transMap));
+
   // 1. No chapter selected: return all chapters
-  if (!chapter) {
+  if (!normalizedChapter) {
     const chapters = getKentChapters();
+    const translatedOptions: Record<string, string> = {};
+    for (const ch of chapters) {
+      translatedOptions[ch] = lookupTrans(ch, transMap) || ch;
+    }
     return {
       nextLevelType: "chapter",
       nextLevelIndex: -1,
       nextOptions: chapters,
+      translatedOptions,
       rubrics: [],
     };
   }
 
   // Filter to matching chapter
   let matching = cachedRubrics.filter(
-    (r) => r.chapter.toLowerCase() === chapter.toLowerCase()
+    (r) => r.chapter.toLowerCase() === normalizedChapter.toLowerCase()
   );
 
   // 2. Chapter selected, but no symptom selected: return unique symptoms under this chapter
-  if (!symptom) {
+  if (!normalizedSymptom) {
     const symptoms = new Set<string>();
     for (const r of matching) {
       if (r.symptom) {
         symptoms.add(r.symptom);
       }
     }
+    const symptomsList = Array.from(symptoms).sort();
+
+    // Check for missing translations in symptoms
+    if (lang !== "de") {
+      const missingSymptoms = symptomsList.filter((s) => !transMap[s]);
+      if (missingSymptoms.length > 0) {
+        // Synchronously translate ALL missing symptoms of this chapter so user sees 100% translated options
+        await translateKentTerms(missingSymptoms, lang, onTokenUsage);
+        transMap = getKentTranslationsForLang(lang);
+      }
+
+      // PRE-TRANSLATE NEXT STEP: Asynchronously pre-translate Level 1 Zusatzangaben for this chapter
+      const nextLevelZusatz = new Set<string>();
+      for (const r of matching) {
+        if (r.zusatz && r.zusatz[0] && !transMap[r.zusatz[0]]) {
+          nextLevelZusatz.add(r.zusatz[0]);
+        }
+      }
+      const prefetchList = Array.from(nextLevelZusatz).slice(0, 90);
+      if (prefetchList.length > 0) {
+        translateKentTerms(prefetchList, lang, onTokenUsage).catch(() => {});
+      }
+    }
+
+    const translatedOptions: Record<string, string> = {};
+    for (const s of symptomsList) {
+      translatedOptions[s] = lookupTrans(s, transMap) || s;
+    }
+
     return {
       nextLevelType: "symptom",
       nextLevelIndex: 0,
-      nextOptions: Array.from(symptoms).sort(),
-      rubrics: matching.slice(0, 100), // Show first 100 matching rubrics under this chapter
+      nextOptions: symptomsList,
+      translatedOptions,
+      rubrics: matching.slice(0, 100).map((r) => translateRubric(r, transMap)),
     };
   }
 
   // Filter to matching symptom
   matching = matching.filter(
-    (r) => r.symptom.toLowerCase() === symptom.toLowerCase()
+    (r) => r.symptom.toLowerCase() === normalizedSymptom.toLowerCase()
   );
 
   // 3. Process zusatz layers
-  // zusatz is an array of selected sub-levels. e.g. ["abends", "im Bett"]
-  const depth = zusatz.length;
+  const depth = normalizedZusatz.length;
   
-  // Filter matching rubrics based on the zusatz selections so far
   for (let i = 0; i < depth; i++) {
-    const valSelected = zusatz[i].toLowerCase();
+    const valSelected = normalizedZusatz[i].toLowerCase();
     matching = matching.filter(
       (r) => r.zusatz[i] && r.zusatz[i].toLowerCase() === valSelected
     );
   }
 
-  // Next options will be unique values at r.zusatz[depth] among the current filtered rubrics
   const nextOptionsSet = new Set<string>();
   for (const r of matching) {
     if (r.zusatz[depth]) {
@@ -353,11 +854,49 @@ export function getKentDrilldown(
 
   const nextOptions = Array.from(nextOptionsSet).sort();
 
+  // If language is not German, ensure missing zusatz options and rubric items are translated
+  if (lang !== "de") {
+    const missingZusatz = nextOptions.filter((z) => !transMap[z]);
+    // Also check returned rubrics (symptom + zusatz) so all displayed rubrics are 100% translated
+    const missingInRubrics: string[] = [];
+    for (const r of matching.slice(0, 60)) {
+      if (r.symptom && !transMap[r.symptom]) missingInRubrics.push(r.symptom);
+      if (Array.isArray(r.zusatz)) {
+        for (const z of r.zusatz) {
+          if (z && !transMap[z]) missingInRubrics.push(z);
+        }
+      }
+    }
+    const immediateMissing = Array.from(new Set([...missingZusatz, ...missingInRubrics]));
+    if (immediateMissing.length > 0) {
+      await translateKentTerms(immediateMissing, lang, onTokenUsage);
+      transMap = getKentTranslationsForLang(lang);
+    }
+
+    // PRE-TRANSLATE NEXT STEP: Asynchronously pre-translate the deeper level (depth + 1) for matching rubrics
+    const deeperTerms = new Set<string>();
+    for (const r of matching) {
+      if (r.zusatz && r.zusatz[depth + 1] && !transMap[r.zusatz[depth + 1]]) {
+        deeperTerms.add(r.zusatz[depth + 1]);
+      }
+    }
+    const prefetchDeeper = Array.from(deeperTerms).slice(0, 90);
+    if (prefetchDeeper.length > 0) {
+      translateKentTerms(prefetchDeeper, lang, onTokenUsage).catch(() => {});
+    }
+  }
+
+  const translatedOptions: Record<string, string> = {};
+  for (const opt of nextOptions) {
+    translatedOptions[opt] = lookupTrans(opt, transMap) || opt;
+  }
+
   return {
     nextLevelType: nextOptions.length > 0 ? "zusatz" : "none",
     nextLevelIndex: depth,
     nextOptions,
-    rubrics: matching, // All rubrics matching the full selected path so far
+    translatedOptions,
+    rubrics: matching.slice(0, 150).map((r) => translateRubric(r, transMap)),
   };
 }
 

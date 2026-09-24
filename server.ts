@@ -64,7 +64,8 @@ import {
   getKentChapters,
   getKentRubricById,
   performKentRepertorisation,
-  getKentDrilldown
+  getKentDrilldown,
+  getKentTranslationsForLang
 } from "./serverKentRepertory";
 
 dotenv.config();
@@ -6763,8 +6764,10 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   app.get("/api/kent/chapters", async (req, res) => {
     try {
       await ensureKentDatabaseLoaded();
+      const lang = String(req.query.lang || "de").toLowerCase();
       const chapters = getKentChapters();
-      res.json({ success: true, chapters });
+      const transMap = getKentTranslationsForLang(lang);
+      res.json({ success: true, chapters, translatedChapters: transMap, lang });
     } catch (err: any) {
       console.error("[KENT_API] Error getting chapters:", err);
       res.status(500).json({ success: false, error: err.message });
@@ -6784,20 +6787,44 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   });
 
   // 3. Search rubrics by keyword
-  app.get("/api/kent/search", async (req, res) => {
+  // 3. Search rubrics by keyword
+  const handleKentSearch = async (req: any, res: any) => {
     try {
       await ensureKentDatabaseLoaded();
-      const q = String(req.query.q || "").trim();
-      const chapter = req.query.chapter ? String(req.query.chapter).trim() : undefined;
+      const q = String(req.query.q || req.body?.q || "").trim();
+      const chapter = (req.query.chapter || req.body?.chapter) ? String(req.query.chapter || req.body?.chapter).trim() : undefined;
       const limit = req.query.limit ? Number(req.query.limit) : 100;
+      const lang = String(req.query.lang || req.body?.lang || "de").toLowerCase();
+      const therapistId = req.query.therapistId || req.body?.therapistId || "th-101";
+      const therapistName = req.query.therapistName || req.body?.therapistName;
+      const therapistEmail = req.query.therapistEmail || req.body?.therapistEmail;
+
+      let tokensCharged = 0;
+      const onTokenUsage = (u: any) => {
+        tokensCharged += (u.promptTokens + u.candidatesTokens);
+        recordTokenUsage({
+          therapistId: String(therapistId || "th-101"),
+          therapistName: therapistName ? String(therapistName) : undefined,
+          therapistEmail: therapistEmail ? String(therapistEmail) : undefined,
+          endpoint: "/api/kent/search",
+          actionName: u.actionName,
+          model: u.model,
+          promptTokens: u.promptTokens,
+          candidatesTokens: u.candidatesTokens,
+          cachedTokens: u.cachedTokens,
+        });
+      };
       
-      const rubrics = searchKentRubrics(q, chapter, limit);
-      res.json({ success: true, rubrics });
+      const rubrics = await searchKentRubrics(q, chapter, limit, lang, onTokenUsage);
+      res.json({ success: true, rubrics, tokensCharged, lang });
     } catch (err: any) {
       console.error("[KENT_API] Error searching rubrics:", err);
       res.status(500).json({ success: false, error: err.message });
     }
-  });
+  };
+
+  app.get("/api/kent/search", handleKentSearch);
+  app.post("/api/kent/search", handleKentSearch);
 
   // 4. Perform Kent scoring (repertorisation)
   app.post("/api/kent/repertorize", async (req, res) => {
@@ -6820,13 +6847,33 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   app.post("/api/kent/drilldown", async (req, res) => {
     try {
       await ensureKentDatabaseLoaded();
-      const { chapter, symptom, zusatz } = req.body;
-      const result = getKentDrilldown(
+      const { chapter, symptom, zusatz, therapistId, therapistName, therapistEmail } = req.body || {};
+      const lang = String(req.body?.lang || req.query.lang || "de").toLowerCase();
+
+      let tokensCharged = 0;
+      const onTokenUsage = (u: any) => {
+        tokensCharged += (u.promptTokens + u.candidatesTokens);
+        recordTokenUsage({
+          therapistId: String(therapistId || "th-101"),
+          therapistName: therapistName ? String(therapistName) : undefined,
+          therapistEmail: therapistEmail ? String(therapistEmail) : undefined,
+          endpoint: "/api/kent/drilldown",
+          actionName: u.actionName,
+          model: u.model,
+          promptTokens: u.promptTokens,
+          candidatesTokens: u.candidatesTokens,
+          cachedTokens: u.cachedTokens,
+        });
+      };
+
+      const result = await getKentDrilldown(
         chapter ? String(chapter).trim() : undefined,
         symptom ? String(symptom).trim() : undefined,
-        Array.isArray(zusatz) ? zusatz.map(String) : []
+        Array.isArray(zusatz) ? zusatz.map(String) : [],
+        lang,
+        onTokenUsage
       );
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result, tokensCharged, lang });
     } catch (err: any) {
       console.error("[KENT_API] Error performing drilldown:", err);
       res.status(500).json({ success: false, error: err.message });

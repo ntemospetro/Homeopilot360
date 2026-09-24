@@ -18,7 +18,8 @@ import {
   ChevronRight,
   Filter,
   ArrowLeft,
-  BookOpen
+  BookOpen,
+  RefreshCw
 } from 'lucide-react';
 import { Therapist, PatientCase } from '../types';
 import { getLocalizedRemedies, LocalizedRemedy } from '../data/materiaMedicaData';
@@ -83,6 +84,18 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
   const [drillRubrics, setDrillRubrics] = useState<KentRubric[]>([]);
   const [isDrillLoading, setIsDrillLoading] = useState(false);
   const [drillFilterQuery, setDrillFilterQuery] = useState('');
+  const [drillError, setDrillError] = useState<string | null>(null);
+
+  // Fallback list of 37 Kent chapters in case backend is briefly initializing
+  const FALLBACK_CHAPTERS = useMemo(() => [
+    "Allgemeines", "Atmung", "Auge", "Auswurf", "Bauch", "Blase", "Brust",
+    "Extremitäten", "Fieber", "Frost", "Gehör", "Gemüt",
+    "Geschlechtsorgane männlich", "Geschlechtsorgane weiblich", "Gesicht",
+    "Hals", "Hals-Außenseite", "Harnröhre", "Haut", "Husten",
+    "Kehlkopf und Luftröhre", "Kopf", "Magen", "Mastdarm", "Mund",
+    "Nase", "Nieren", "Ohr", "Prostata", "Rücken", "Schlaf",
+    "Schweiß", "Schwindel", "Sehen", "Stuhl", "Urin", "Zähne"
+  ], []);
 
   // ==========================================================================
   // STATE 2: GLOBAL KEYWORD SEARCH MODE
@@ -110,15 +123,18 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
       try {
         const res = await fetch('/api/kent/chapters');
         const data = await res.json();
-        if (data.success && Array.isArray(data.chapters)) {
+        if (data.success && Array.isArray(data.chapters) && data.chapters.length > 0) {
           setChapters(data.chapters);
+        } else {
+          setChapters(FALLBACK_CHAPTERS);
         }
       } catch (err) {
-        console.error("Error fetching chapters:", err);
+        console.warn("Could not fetch chapters from API, using fallback list:", err);
+        setChapters(FALLBACK_CHAPTERS);
       }
     };
     fetchChapters();
-  }, []);
+  }, [FALLBACK_CHAPTERS]);
 
   // Debounce free keyword search input
   useEffect(() => {
@@ -173,27 +189,69 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
   // ==========================================================================
   const loadDrilldownData = async (chapter: string, symptom: string, zusatz: string[]) => {
     setIsDrillLoading(true);
+    setDrillError(null);
     setDrillFilterQuery(''); // reset local filter query on step change
-    try {
-      const res = await fetch('/api/kent/drilldown', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chapter, symptom, zusatz })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setDrillLevelType(data.nextLevelType);
-        setDrillLevelIndex(data.nextLevelIndex);
-        setDrillOptions(data.nextOptions || []);
-        setDrillRubrics(data.rubrics || []);
-      } else {
-        console.error("Drilldown API returned error:", data.error);
-      }
-    } catch (err) {
-      console.error("Error in drilldown fetch:", err);
-    } finally {
-      setIsDrillLoading(false);
+    
+    // Quick fallback check: If we are at root (no chapter selected) and options are empty, initialize fallback immediately
+    if (!chapter && drillOptions.length === 0) {
+      setDrillOptions(FALLBACK_CHAPTERS);
+      setDrillLevelType('chapter');
+      setDrillLevelIndex(-1);
     }
+
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+        const res = await fetch('/api/kent/drilldown', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chapter, symptom, zusatz }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          throw new Error(`Server returned HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (data.success) {
+          setDrillLevelType(data.nextLevelType);
+          setDrillLevelIndex(data.nextLevelIndex);
+          setDrillOptions(data.nextOptions || []);
+          setDrillRubrics(data.rubrics || []);
+          setDrillError(null);
+          setIsDrillLoading(false);
+          return;
+        } else {
+          throw new Error(data.error || "Drilldown failed");
+        }
+      } catch (err: any) {
+        console.warn(`[Kent Drilldown] Attempt ${attempts} failed:`, err.message || err);
+        if (attempts < maxAttempts) {
+          // brief pause before retry in case server/cache was warming up
+          await new Promise(r => setTimeout(r, 600));
+        } else {
+          // If all attempts failed
+          if (!chapter) {
+            // At root chapter level, seamlessly fallback to the standard 37 chapters
+            setDrillLevelType('chapter');
+            setDrillLevelIndex(-1);
+            setDrillOptions(FALLBACK_CHAPTERS);
+            setDrillError(null);
+          } else {
+            setDrillError("Die Rubriken konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
+          }
+        }
+      }
+    }
+    setIsDrillLoading(false);
   };
 
   // Run drill-down fetch whenever path state changes
@@ -569,51 +627,6 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-1">
-      {/* 1. HEADER BANNER */}
-      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700/60 p-6 sm:p-8 text-white relative overflow-hidden shadow-md">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/10 rounded-full -mr-20 -mt-20 opacity-60 blur-3xl pointer-events-none" />
-        
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-teal-500 text-slate-900">
-                Kent-Edition
-              </span>
-              <span className="text-slate-500 text-xs">•</span>
-              <span className="text-slate-300 text-xs font-semibold flex items-center gap-1">
-                <FileSpreadsheet className="w-3.5 h-3.5 text-teal-400" />
-                68.742 Rubriken
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight pt-1">
-              {t('repertoryTitle')}
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-              Hierarchisches Symptomverzeichnis nach James Tyler Kent. Navigieren Sie schrittweise oder nutzen Sie die freie Suche.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            {currentCase && currentCase.patientName && (
-              <div className="bg-slate-800/70 backdrop-blur-sm px-4 py-2 rounded-xl border border-slate-700 flex flex-col justify-center text-left">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Aktiver Patient</span>
-                <span className="text-sm font-semibold text-teal-300">{currentCase.patientName}</span>
-              </div>
-            )}
-            
-            {currentCase && selectedRubrics.length > 0 && (
-              <button
-                onClick={handleSaveToCase}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500 text-slate-950 font-bold text-sm shadow-md hover:bg-teal-400 transition-all cursor-pointer hover:scale-[1.02]"
-              >
-                <Save className="w-4 h-4" />
-                {t('kentSaveRepertorisation')}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* SUCCESS BANNER */}
       {showSaveSuccess && (
         <div className="bg-teal-50 border border-teal-200 text-slate-900 p-4 rounded-xl flex items-start gap-3 animate-fadeIn shadow-xs">
@@ -622,7 +635,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
         </div>
       )}
 
-      {/* 2. MODE SELECTOR TABS */}
+      {/* MODE SELECTOR TABS */}
       <div className="flex border-b border-slate-200/80 gap-1">
         <button
           onClick={() => setSearchMode('drilldown')}
@@ -772,6 +785,19 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                   <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500">
                     <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-3" />
                     <span className="text-xs font-semibold">{t('kentSearching')}</span>
+                  </div>
+                ) : drillError ? (
+                  /* Error state with retry */
+                  <div className="flex-1 flex flex-col items-center justify-center py-16 text-center text-slate-500">
+                    <AlertCircle className="w-10 h-10 text-rose-500 mb-2" />
+                    <p className="text-xs font-medium text-rose-700 mb-3">{drillError}</p>
+                    <button
+                      onClick={() => loadDrilldownData(drillChapter, drillSymptom, drillZusatz)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Erneut versuchen
+                    </button>
                   </div>
                 ) : drillLevelType === 'none' ? (
                   /* No more levels */
@@ -987,15 +1013,26 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                 </p>
               </div>
 
-              {selectedRubrics.length > 0 && (
-                <button
-                  onClick={handleClearAll}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 border border-rose-100 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition-all cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {t('kentClearAllBtn')}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {currentCase && selectedRubrics.length > 0 && (
+                  <button
+                    onClick={handleSaveToCase}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    {t('kentSaveRepertorisation')}
+                  </button>
+                )}
+                {selectedRubrics.length > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 border border-rose-100 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {t('kentClearAllBtn')}
+                  </button>
+                )}
+              </div>
             </div>
 
             {selectedRubrics.length === 0 ? (

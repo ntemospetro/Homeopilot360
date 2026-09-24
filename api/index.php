@@ -4458,13 +4458,55 @@ if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
         }
     };
 
+    // Helper: Bulk-Lookup von Übersetzungen aus der kent_translations-Tabelle
+    $getTranslationsMap = function($pdo, $lang, $terms) {
+        if (!$pdo || empty($lang) || $lang === 'de' || empty($terms)) return [];
+        $uniqueTerms = array_values(array_unique(array_filter(array_map('trim', $terms))));
+        if (empty($uniqueTerms)) return [];
+        $map = [];
+        $chunkSize = 100;
+        for ($i = 0; $i < count($uniqueTerms); $i += $chunkSize) {
+            $chunk = array_slice($uniqueTerms, $i, $chunkSize);
+            $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+            try {
+                $stmt = $pdo->prepare("SELECT original_term, translated_term FROM kent_translations WHERE lang = ? AND original_term IN ($placeholders)");
+                $stmt->execute(array_merge([$lang], $chunk));
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $map[$row['original_term']] = $row['translated_term'];
+                }
+            } catch (Exception $e) {
+                // Falls Tabelle noch nicht migriert oder Lock
+            }
+        }
+        return $map;
+    };
+
+    // Helper: Pfad-Übersetzung anhand der Term-Map
+    $translatePath = function($path, $transMap) {
+        if (empty($path)) return '';
+        $parts = explode(' - ', $path);
+        $translatedParts = [];
+        foreach ($parts as $p) {
+            $pTrim = trim($p);
+            $translatedParts[] = $transMap[$pTrim] ?? $pTrim;
+        }
+        return implode(' - ', $translatedParts);
+    };
+
     // 1. Kapitelverzeichnis
     if ($subRoute === 'chapters' || $subRoute === 'get-chapters') {
+        $lang = strtolower(trim($_GET['lang'] ?? 'de'));
         $pdo = $getKentPdo();
         if ($pdo) {
             $stmt = $pdo->query("SELECT DISTINCT chapter FROM rubrics WHERE chapter != '' ORDER BY chapter ASC");
             $chapters = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            sendJsonResponse(['success' => true, 'chapters' => $chapters]);
+            $transMap = ($lang !== 'de') ? $getTranslationsMap($pdo, $lang, $chapters) : [];
+            sendJsonResponse([
+                'success' => true,
+                'chapters' => $chapters,
+                'translatedChapters' => $transMap,
+                'lang' => $lang
+            ]);
         }
         $jsonPath = __DIR__ . '/../data/kent_chapters.json';
         if (file_exists($jsonPath)) {
@@ -4490,10 +4532,11 @@ if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
         sendJsonResponse(['success' => false, 'error' => 'Keine Arzneimittel gefunden'], 404);
     }
 
-    // 3. Volltextsuche
+    // 3. Volltextsuche (mit automatischer Mehrsprachigkeit)
     if ($subRoute === 'search') {
         $q = trim($_GET['q'] ?? '');
         $chapter = trim($_GET['chapter'] ?? '');
+        $lang = strtolower(trim($_GET['lang'] ?? 'de'));
         $limit = min(200, max(1, (int)($_GET['limit'] ?? 80)));
 
         $pdo = $getKentPdo();
@@ -4508,9 +4551,39 @@ if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
 
             if ($q !== '') {
                 $tokens = preg_split('/\s+/', strtolower($q), -1, PREG_SPLIT_NO_EMPTY);
-                foreach ($tokens as $token) {
-                    $sql .= " AND LOWER(path) LIKE ?";
-                    $params[] = '%' . $token . '%';
+                
+                // Falls Fremdsprache aktiv: Prüfe ob Suchbegriff in der Übersetzungstabelle existiert
+                $matchedGermanTerms = [];
+                if ($lang !== 'de') {
+                    foreach ($tokens as $token) {
+                        try {
+                            $tStmt = $pdo->prepare("SELECT original_term FROM kent_translations WHERE lang = ? AND LOWER(translated_term) LIKE ? LIMIT 5");
+                            $tStmt->execute([$lang, '%' . $token . '%']);
+                            $matches = $tStmt->fetchAll(PDO::FETCH_COLUMN);
+                            foreach ($matches as $m) {
+                                $matchedGermanTerms[] = strtolower($m);
+                            }
+                        } catch (Exception $e) {}
+                    }
+                }
+
+                if (!empty($matchedGermanTerms)) {
+                    // Suche nach dem deutschen Äquivalent ODER dem Original-Suchbegriff
+                    $orClauses = [];
+                    foreach ($matchedGermanTerms as $gt) {
+                        $orClauses[] = "LOWER(path) LIKE ?";
+                        $params[] = '%' . $gt . '%';
+                    }
+                    foreach ($tokens as $token) {
+                        $orClauses[] = "LOWER(path) LIKE ?";
+                        $params[] = '%' . $token . '%';
+                    }
+                    $sql .= " AND (" . implode(' OR ', $orClauses) . ")";
+                } else {
+                    foreach ($tokens as $token) {
+                        $sql .= " AND LOWER(path) LIKE ?";
+                        $params[] = '%' . $token . '%';
+                    }
                 }
             }
 
@@ -4519,19 +4592,53 @@ if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
             $stmt->execute($params);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $rubrics = [];
+            // Sammle alle Begriffe für Bulk-Übersetzung
+            $allTermsToTranslate = [];
+            $parsedRubrics = [];
             foreach ($rows as $row) {
-                $rubrics[] = [
+                $zusatzList = @json_decode($row['zusatz_json'], true) ?: [];
+                $allTermsToTranslate[] = $row['chapter'];
+                $allTermsToTranslate[] = $row['symptom'];
+                foreach ($zusatzList as $z) {
+                    $allTermsToTranslate[] = $z;
+                }
+                $parsedRubrics[] = [
                     'id' => (string)$row['id'],
                     'chapter' => $row['chapter'],
                     'symptom' => $row['symptom'],
-                    'zusatz' => @json_decode($row['zusatz_json'], true) ?: [],
+                    'zusatz' => $zusatzList,
                     'path' => $row['path'],
                     'remedies' => @json_decode($row['remedies_json'], true) ?: [],
                     'remedyCount' => (int)$row['remedy_count']
                 ];
             }
-            sendJsonResponse(['success' => true, 'rubrics' => $rubrics]);
+
+            $transMap = ($lang !== 'de') ? $getTranslationsMap($pdo, $lang, $allTermsToTranslate) : [];
+
+            $rubrics = [];
+            foreach ($parsedRubrics as $r) {
+                $rubrics[] = [
+                    'id' => $r['id'],
+                    'chapter' => $r['chapter'],
+                    'chapterTranslated' => $transMap[$r['chapter']] ?? $r['chapter'],
+                    'symptom' => $r['symptom'],
+                    'symptomTranslated' => $transMap[$r['symptom']] ?? $r['symptom'],
+                    'zusatz' => $r['zusatz'],
+                    'zusatzTranslated' => array_map(function($z) use ($transMap) {
+                        return $transMap[$z] ?? $z;
+                    }, $r['zusatz']),
+                    'path' => $r['path'],
+                    'pathTranslated' => $translatePath($r['path'], $transMap),
+                    'remedies' => $r['remedies'],
+                    'remedyCount' => $r['remedyCount']
+                ];
+            }
+
+            sendJsonResponse([
+                'success' => true,
+                'rubrics' => $rubrics,
+                'lang' => $lang
+            ]);
         }
 
         // Fallback: Kapitel-JSON
@@ -4632,23 +4739,27 @@ if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
         sendJsonResponse(['success' => false, 'error' => 'Datenbank nicht verfügbar'], 500);
     }
 
-    // 5. Drilldown
+    // 5. Drilldown (mit Sprachunterstützung)
     if ($subRoute === 'drilldown') {
         $chapter = trim($body['chapter'] ?? '');
         $symptom = trim($body['symptom'] ?? '');
         $zusatz = is_array($body['zusatz'] ?? null) ? $body['zusatz'] : [];
+        $lang = strtolower(trim($body['lang'] ?? $_GET['lang'] ?? 'de'));
 
         $pdo = $getKentPdo();
         if ($pdo) {
             if ($chapter === '') {
                 $stmt = $pdo->query("SELECT DISTINCT chapter FROM rubrics WHERE chapter != '' ORDER BY chapter ASC");
                 $chapters = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $transMap = ($lang !== 'de') ? $getTranslationsMap($pdo, $lang, $chapters) : [];
                 sendJsonResponse([
                     'success' => true,
                     'nextLevelType' => 'chapter',
                     'nextLevelIndex' => -1,
                     'nextOptions' => $chapters,
-                    'rubrics' => []
+                    'translatedOptions' => $transMap,
+                    'rubrics' => [],
+                    'lang' => $lang
                 ]);
             }
 
@@ -4661,14 +4772,27 @@ if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
                 $stmt2->execute([$chapter]);
                 $rows = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
+                $allTerms = array_merge($symptoms, [$chapter]);
+                foreach ($rows as $row) {
+                    $zList = @json_decode($row['zusatz_json'], true) ?: [];
+                    $allTerms[] = $row['symptom'];
+                    foreach ($zList as $z) $allTerms[] = $z;
+                }
+                $transMap = ($lang !== 'de') ? $getTranslationsMap($pdo, $lang, $allTerms) : [];
+
                 $rubrics = [];
                 foreach ($rows as $row) {
+                    $zList = @json_decode($row['zusatz_json'], true) ?: [];
                     $rubrics[] = [
                         'id' => (string)$row['id'],
                         'chapter' => $row['chapter'],
+                        'chapterTranslated' => $transMap[$row['chapter']] ?? $row['chapter'],
                         'symptom' => $row['symptom'],
-                        'zusatz' => @json_decode($row['zusatz_json'], true) ?: [],
+                        'symptomTranslated' => $transMap[$row['symptom']] ?? $row['symptom'],
+                        'zusatz' => $zList,
+                        'zusatzTranslated' => array_map(function($z) use ($transMap) { return $transMap[$z] ?? $z; }, $zList),
                         'path' => $row['path'],
+                        'pathTranslated' => $translatePath($row['path'], $transMap),
                         'remedies' => @json_decode($row['remedies_json'], true) ?: [],
                         'remedyCount' => (int)$row['remedy_count']
                     ];
@@ -4679,7 +4803,9 @@ if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
                     'nextLevelType' => 'symptom',
                     'nextLevelIndex' => 0,
                     'nextOptions' => $symptoms,
-                    'rubrics' => $rubrics
+                    'translatedOptions' => $transMap,
+                    'rubrics' => $rubrics,
+                    'lang' => $lang
                 ]);
             }
 
@@ -4722,16 +4848,95 @@ if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
             natcasesort($nextOptions);
             $nextOptions = array_values($nextOptions);
 
+            $allTerms = array_merge($nextOptions, [$chapter, $symptom]);
+            foreach (array_slice($filtered, 0, 150) as $f) {
+                foreach ($f['zusatz'] as $z) $allTerms[] = $z;
+            }
+            $transMap = ($lang !== 'de') ? $getTranslationsMap($pdo, $lang, $allTerms) : [];
+
+            $finalRubrics = [];
+            foreach (array_slice($filtered, 0, 150) as $f) {
+                $finalRubrics[] = [
+                    'id' => $f['id'],
+                    'chapter' => $f['chapter'],
+                    'chapterTranslated' => $transMap[$f['chapter']] ?? $f['chapter'],
+                    'symptom' => $f['symptom'],
+                    'symptomTranslated' => $transMap[$f['symptom']] ?? $f['symptom'],
+                    'zusatz' => $f['zusatz'],
+                    'zusatzTranslated' => array_map(function($z) use ($transMap) { return $transMap[$z] ?? $z; }, $f['zusatz']),
+                    'path' => $f['path'],
+                    'pathTranslated' => $translatePath($f['path'], $transMap),
+                    'remedies' => $f['remedies'],
+                    'remedyCount' => $f['remedyCount']
+                ];
+            }
+
             sendJsonResponse([
                 'success' => true,
                 'nextLevelType' => 'zusatz',
                 'nextLevelIndex' => $depth,
                 'nextOptions' => $nextOptions,
-                'rubrics' => array_slice($filtered, 0, 150)
+                'translatedOptions' => $transMap,
+                'rubrics' => $finalRubrics,
+                'lang' => $lang
             ]);
         }
 
         sendJsonResponse(['success' => false, 'error' => 'Datenbank nicht verfügbar'], 500);
+    }
+
+    // 6. On-Demand Übersetzungs-Cache & Lazy Translator
+    if ($subRoute === 'translate-on-demand') {
+        $targetLang = strtolower(trim($body['lang'] ?? 'en'));
+        $terms = is_array($body['terms'] ?? null) ? $body['terms'] : [];
+        if (empty($terms) || $targetLang === 'de') {
+            sendJsonResponse(['success' => true, 'translations' => []]);
+        }
+
+        $pdo = $getKentPdo();
+        $cached = $getTranslationsMap($pdo, $targetLang, $terms);
+        $missing = [];
+        foreach ($terms as $t) {
+            $tTrim = trim($t);
+            if ($tTrim !== '' && !isset($cached[$tTrim])) {
+                $missing[] = $tTrim;
+            }
+        }
+
+        if (!empty($missing) && $pdo) {
+            // Schnelle Echtzeit-Übersetzung für fehlende Terme via Google Translate API
+            $toInsert = [];
+            foreach ($missing as $term) {
+                try {
+                    $url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=" . urlencode($targetLang) . "&dt=t&q=" . urlencode($term);
+                    $ctx = stream_context_create(['http' => ['timeout' => 4]]);
+                    $resp = @file_get_contents($url, false, $ctx);
+                    if ($resp) {
+                        $arr = @json_decode($resp, true);
+                        if (isset($arr[0][0][0])) {
+                            $translated = $arr[0][0][0];
+                            $cached[$term] = $translated;
+                            $toInsert[] = [$targetLang, $term, $translated];
+                        }
+                    }
+                } catch (Exception $e) {}
+            }
+
+            if (!empty($toInsert)) {
+                try {
+                    $iStmt = $pdo->prepare("INSERT OR REPLACE INTO kent_translations (lang, original_term, translated_term) VALUES (?, ?, ?)");
+                    foreach ($toInsert as $ins) {
+                        $iStmt->execute($ins);
+                    }
+                } catch (Exception $e) {}
+            }
+        }
+
+        sendJsonResponse([
+            'success' => true,
+            'lang' => $targetLang,
+            'translations' => $cached
+        ]);
     }
 
     sendJsonResponse(['error' => 'Unbekannte Kent-Route: ' . $subRoute], 404);
