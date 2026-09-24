@@ -34,10 +34,12 @@ import {
   ClassicalAuthorFilterKey 
 } from '../data/classicalAuthorsMap';
 import { 
-  getBogerSynopticEntry 
+  getBogerSynopticEntry,
+  getUnifiedBogerSynopticEntry 
 } from '../data/bogerSynopticData';
 import { 
-  getAllenKeynoteEntry 
+  getAllenKeynoteEntry,
+  getUnifiedAllenKeynoteEntry 
 } from '../data/allenKeynotesData';
 import { 
   matchSymptomsToRemedies, 
@@ -1495,8 +1497,7 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
 
               {/* 9. C. M. Boger Synoptic Key & Charakteristika */}
               {(() => {
-                const bogerData = getBogerSynopticEntry(selectedRemedyForModal.id);
-                if (!bogerData) return null;
+                const bogerData = getUnifiedBogerSynopticEntry(selectedRemedyForModal.id, selectedRemedyForModal);
                 return (
                   <div className="space-y-3 bg-purple-50/50 p-4 rounded-xl border border-purple-200/70 mt-4">
                     <div className="flex items-center gap-2 text-purple-950 font-bold text-xs uppercase tracking-wider">
@@ -1560,8 +1561,7 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
 
               {/* 10. H. C. Allen Keynotes & Charakteristika */}
               {(() => {
-                const allenData = getAllenKeynoteEntry(selectedRemedyForModal.id);
-                if (!allenData) return null;
+                const allenData = getUnifiedAllenKeynoteEntry(selectedRemedyForModal.id, selectedRemedyForModal);
                 return (
                   <div className="space-y-3 bg-amber-50/50 p-4 rounded-xl border border-amber-200/70 mt-4">
                     <div className="flex items-center gap-2 text-amber-950 font-bold text-xs uppercase tracking-wider">

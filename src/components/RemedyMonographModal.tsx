@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { LocalizedRemedy, getLocalizedRemedies } from '../data/materiaMedicaData';
 import { getRemedyClassicalAuthors } from '../data/classicalAuthorsMap';
-import { getBogerSynopticEntry } from '../data/bogerSynopticData';
-import { getAllenKeynoteEntry } from '../data/allenKeynotesData';
+import { getBogerSynopticEntry, getUnifiedBogerSynopticEntry } from '../data/bogerSynopticData';
+import { getAllenKeynoteEntry, getUnifiedAllenKeynoteEntry } from '../data/allenKeynotesData';
 import { useTranslation } from '../i18n/LanguageContext';
 import { 
   X, 
@@ -399,8 +399,7 @@ export const RemedyMonographModal: React.FC<RemedyMonographModalProps> = ({
 
           {/* 9. C. M. Boger Synoptic Key & Charakteristika */}
           {(() => {
-            const bogerData = getBogerSynopticEntry(remedy.id);
-            if (!bogerData) return null;
+            const bogerData = getUnifiedBogerSynopticEntry(remedy.id, remedy);
             return (
               <div className="space-y-3 bg-purple-50/50 p-4 rounded-xl border border-purple-200/70 mt-4">
                 <div className="flex items-center gap-2 text-purple-950 font-bold text-xs uppercase tracking-wider">
@@ -464,8 +463,7 @@ export const RemedyMonographModal: React.FC<RemedyMonographModalProps> = ({
 
           {/* 10. H. C. Allen Keynotes & Charakteristika */}
           {(() => {
-            const allenData = getAllenKeynoteEntry(remedy.id);
-            if (!allenData) return null;
+            const allenData = getUnifiedAllenKeynoteEntry(remedy.id, remedy);
             return (
               <div className="space-y-3 bg-amber-50/50 p-4 rounded-xl border border-amber-200/70 mt-4">
                 <div className="flex items-center gap-2 text-amber-950 font-bold text-xs uppercase tracking-wider">

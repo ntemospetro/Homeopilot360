@@ -3086,3 +3086,78 @@ export function getAllenKeynoteEntry(remedyId: string): AllenKeynoteEntry | null
   }
   return null;
 }
+
+/**
+ * Breaks up giant Victorian run-on paragraphs into clean, distinct bullet items.
+ */
+export function formatAllenKeynotes(keynotes: string[]): string[] {
+  const result: string[] = [];
+  for (const item of keynotes) {
+    if (!item) continue;
+    if (item.length > 220) {
+      // Split on sentence boundaries (period followed by space and capital letter or quote)
+      const parts = item
+        .split(/(?<=[.!?])\s+(?=[A-Z"])/)
+        .map((p) => p.trim())
+        .filter((p) => p.length > 5);
+      if (parts.length > 1) {
+        result.push(...parts);
+        continue;
+      }
+    }
+    result.push(item);
+  }
+  return result;
+}
+
+/**
+ * Returns either the authentic H. C. Allen (1899) entry with cleanly broken-up bullet points,
+ * or a synthesized clinical keynote structure (Keynotes, Worse, Better, Relations).
+ * Guarantees that ALL 702 remedies render the unified Allen section consistently.
+ */
+export function getUnifiedAllenKeynoteEntry(
+  remedyId: string,
+  remedy?: {
+    latinName?: string;
+    category?: string;
+    origin?: string;
+    essence?: string;
+    mainIndications?: string[];
+    keynotes?: string[];
+    modalitiesBetter?: string[];
+    modalitiesWorse?: string[];
+    differentialRemedies?: string[];
+  }
+): AllenKeynoteEntry {
+  const existing = getAllenKeynoteEntry(remedyId);
+  if (existing) {
+    return {
+      ...existing,
+      keynotes: formatAllenKeynotes(existing.keynotes)
+    };
+  }
+
+  const latin = remedy?.latinName || remedyId;
+  const keynotes = remedy?.keynotes || [];
+  const worse = remedy?.modalitiesWorse || [];
+  const better = remedy?.modalitiesBetter || [];
+  const diffs = remedy?.differentialRemedies || [];
+
+  const formattedKeynotes = keynotes.length > 0
+    ? keynotes.slice(0, 5)
+    : (remedy?.essence ? [remedy.essence] : ['Charakteristisches Symptombild nach klassischer Arzneimittelprüfung.']);
+
+  const relations = diffs.length > 0
+    ? diffs.map((d) => `Vergleich (Comp.): ${d}`)
+    : [];
+
+  return {
+    remedyId,
+    title: latin,
+    keynotes: formattedKeynotes,
+    modalitiesWorse: worse,
+    modalitiesBetter: better,
+    relations
+  };
+}
+

@@ -1307,15 +1307,15 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
   app.post("/api/organon/analyze", async (req, res) => {
     try {
       if (req.body?.action === "endpruefer" || req.body?.endpruefer === true) {
-        const { rawText, arbitratorResult, language = "de", evaluationTarget = "ratio", geniusResult, optimusResult } = req.body;
-        if (!rawText || (evaluationTarget === "ratio" && !arbitratorResult)) {
+        const { rawText, arbitratorResult, language = "de" } = req.body;
+        if (!rawText || !arbitratorResult) {
           return res.status(400).json({ error: "rawText and arbitratorResult are required for endpruefer" });
         }
-        const parsed = await processEndprueferRequest(rawText, arbitratorResult, language, evaluationTarget, geniusResult, optimusResult);
+        const parsed = await processEndprueferRequest(rawText, arbitratorResult, language);
         return res.json({ engine: "endpruefer", result: parsed });
       }
 
-      const { rawText, language = "de", engine = "gemini", compare = false, enableRatio = true } = req.body;
+      const { rawText, language = "de", engine = "gemini", compare = false } = req.body;
       if (!rawText || typeof rawText !== "string") {
         return res.status(400).json({ error: "rawText is required" });
       }
@@ -1631,15 +1631,14 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
 
         emitStep('category_mapping', 'done');
         emitStep('crosscheck', 'done');
+        emitStep('arbitration', 'active');
 
         let arbitrator_result = null;
-        if (enableRatio !== false) {
-          emitStep('arbitration', 'active');
-          try {
-            const apiKey = getGeminiApiKey();
-            if (apiKey) {
-              const ai = new GoogleGenAI({ apiKey });
-              const arbPrompt = `Du bist ein strenger und unbestechlicher BELEGPRÜFER (Ratio) für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die beiden Analysen (Genius und Optimus).
+        try {
+          const apiKey = getGeminiApiKey();
+          if (apiKey) {
+            const ai = new GoogleGenAI({ apiKey });
+            const arbPrompt = `Du bist ein strenger und unbestechlicher BELEGPRÜFER (Ratio) für homöopathische Fallanalysen nach Samuel Hahnemann. Prüfe den Originaltext gegen die beiden Analysen (Genius und Optimus).
 Liefere ein vollständiges JSON-Objekt mit:
 1. "category_evaluations": Array für alle 10 Kategorien (Causa, Localisatio, Sensatio, Symptoma, Modalitates – Besserung, Modalitates – Verschlechterung, Symptomata concomitantia, Comorbiditas, Mens, Animus) jeweils mit "category", "core_question", "gemini_alt" (Vorschlag von Genius), "optimus_alt" (Vorschlag von Optimus), "verification_analysis", "belegpruefer_neu" (geprüfte Synthese / Ratio), "clarification_check".
 2. "audit_protocol": Array mit "proposed_statement", "source" ("Genius"|"Optimus"|"Beide"), "decision" ("Übernehmen"|"Korrigieren"|"Verwerfen"|"Rückfrage erforderlich"), "quote", "reasoning".
@@ -1651,19 +1650,18 @@ Originaltext: "${rawText.replace(/"/g, '\\\\"')}"
 Genius: ${JSON.stringify(parsedGemini || {})}
 Optimus: ${JSON.stringify(parsedOpenAI || {})}
 Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
-              const arbRes = await ai.models.generateContent({
-                model: "gemini-3.8-flash",
-                contents: arbPrompt,
-                config: { temperature: 0.1, responseMimeType: "application/json" }
-              });
-              arbitrator_result = parseAiJson(arbRes.text || "{}", null);
-            }
-          } catch (e) {
-            console.warn("Background compare arbitration notice:", e);
+            const arbRes = await ai.models.generateContent({
+              model: "gemini-3.8-flash",
+              contents: arbPrompt,
+              config: { temperature: 0.1, responseMimeType: "application/json" }
+            });
+            arbitrator_result = parseAiJson(arbRes.text || "{}", null);
           }
-          emitStep('arbitration', 'done');
+        } catch (e) {
+          console.warn("Background compare arbitration notice:", e);
         }
 
+        emitStep('arbitration', 'done');
         emitStep('evidence_check', 'active');
         emitStep('evidence_check', 'done');
         emitStep('consolidation', 'active');
@@ -2314,15 +2312,8 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
   });
 
   // Endprüfer / Texttreue- und Auffälligkeitsprüfung (4. und letzte Prüfinstanz)
-  // Bewertet je nach Konfiguration: Ratio (Belegprüfer), Genius direkt, oder Genius & Optimus direkt
-  async function processEndprueferRequest(
-    rawText: string,
-    arbitratorResult: any,
-    language: string = "de",
-    evaluationTarget: 'ratio' | 'genius' | 'genius_optimus' = "ratio",
-    geniusResult?: any,
-    optimusResult?: any
-  ): Promise<any> {
+  // Erhält AUSSCHLIESSLICH rawText und arbitratorResult (keine Gemini- oder GPT-Ergebnisse!)
+  async function processEndprueferRequest(rawText: string, arbitratorResult: any, language: string = "de"): Promise<any> {
     const langNames: Record<string, string> = {
       de: "German (Deutsch)",
       en: "English",
@@ -2340,30 +2331,9 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
 
     const missingInfoDefault = getMissingInfoPhrase(language);
 
-    let targetTitle = "SCHIEDSRICHTER- / RATIO-ERGEBNIS (BELEGPRÜFUNG)";
-    let targetDataString = "";
-    let targetInstruction = "";
-    if (evaluationTarget === "genius") {
-      targetTitle = "VORINSTANZ: GENIUS (GEMINI 3.8 FLASH)";
-      targetDataString = JSON.stringify(geniusResult || arbitratorResult || {});
-      targetInstruction = "HINWEIS: Ratio (Belegprüfer) ist deaktiviert. Du bewertest die Vorinstanz Genius (Gemini 3.8 Flash) direkt gegen den unveränderten Patienten-Originaltext.";
-    } else if (evaluationTarget === "genius_optimus") {
-      targetTitle = "VORINSTANZEN: GENIUS (GEMINI 3.8) & OPTIMUS (GPT-4O)";
-      targetDataString = `GENIUS:
-${JSON.stringify(geniusResult || {})}
-
-OPTIMUS:
-${JSON.stringify(optimusResult || {})}`;
-      targetInstruction = "HINWEIS: Ratio (Belegprüfer) ist deaktiviert. Du bewertest beide Vorinstanzen (Genius & Optimus) direkt gegen den unveränderten Patienten-Originaltext und konsolidierst die texttreue Endfassung.";
-    } else {
-      targetTitle = "SCHIEDSRICHTER- / RATIO-ERGEBNIS (BELEGPRÜFUNG)";
-      targetDataString = JSON.stringify(arbitratorResult || {});
-      targetInstruction = "Vergleiche den unveränderten Patienten-Originaltext mit dem vom Schiedsrichter (Ratio) erzeugten Belegprüfer-Ergebnis.";
-    }
-
     const prompt = `CRITICAL LANGUAGE REQUIREMENT: You MUST output all texts, issues, reasonings, and final output in ${targetLanguageName} (${language}).
 
-Du bist die vierte und LETZTE UNABHÄNGIGE PRÜFINSTANZ (Endprüfer / Texttreueprüfung / Decisor) einer homöopathischen Fallanalyse gemäß Organon (§§ 83–104).
+Du bist die vierte und LETZTE UNABHÄNGIGE PRÜFINSTANZ (Endprüfer / Texttreueprüfung) einer homöopathischen Fallanalyse gemäß Organon (§§ 83–104).
 
 WICHTIGE ANWEISUNGEN:
 - Du bist KEIN weiterer medizinischer oder homöopathischer Analysator und KEIN zweiter Schiedsrichter.
@@ -2375,8 +2345,7 @@ WICHTIGE ANWEISUNGEN:
   * NICHT repertorisieren und KEINE Arzneimittel vorschlagen
   * KEINE miasmatische Deutung
 - Deine EINZIGE Aufgabe:
-  Vergleiche den unveränderten Patienten-Originaltext mit dem zu prüfenden Vorinstanz-Ergebnis (${targetTitle}) und erkenne Stellen, an denen das Vorinstanz-Ergebnis mehr, weniger oder etwas anderes behauptet, als der Originaltext rechtfertigt.
-${targetInstruction}
+  Vergleiche den unveränderten Patienten-Originaltext mit dem vom Schiedsrichter erzeugten Ergebnis und erkenne Stellen, an denen das Schiedsrichter-Ergebnis mehr, weniger oder etwas anderes behauptet, als der Originaltext rechtfertigt.
 
 ATOMARE PRÜFUNG (STRENGSTE REGEL):
 Du darfst Kategorien oder Sätze NICHT pauschal als Einheit freigeben.
@@ -2427,8 +2396,8 @@ PRÜFE ALLE 10 KATEGORIEN EINZELN UND ATOMAR:
 PATIENTEN-ORIGINALTEXT:
 "${rawText.replace(/"/g, '\\"')}"
 
-${targetTitle}:
-${targetDataString}
+SCHIEDSRICHTER-ERGEBNIS:
+${JSON.stringify(arbitratorResult)}
 
 Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöcke) folgender Struktur:
 {
@@ -2440,13 +2409,13 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
   "category_checks": [
     {
       "category": "Causa | Localisatio | Sensatio | Symptoma | Modalitates – Besserung | Modalitates – Verschlechterung | Symptomata concomitantia | Comorbiditas | Mens | Animus",
-      "schiedsrichter_result": "Was die Vorinstanz zu dieser Kategorie formuliert hat",
+      "schiedsrichter_result": "Was der Schiedsrichter zu dieser Kategorie formuliert hat",
       "raw_text_snippet": "Relevante exakte Textstelle aus dem Originaltext oder null",
       "decision": "CORRECT | MEANING_STRENGTHENED | MEANING_WEAKENED | INFORMATION_ADDED | MEANING_CHANGED | UNSUPPORTED_STATEMENT | MISSING_INFORMATION_TREATED_AS_NORMAL | QUOTE_NOT_EXACT | CORRECTION_REQUIRED",
       "issue": "Gefundene Auffälligkeit oder null falls korrekt",
       "reasoning": "Begründung der Entscheidung",
       "severity": "GERING | MITTEL | HOCH | null",
-      "minimal_correction": "Minimal notwendige Korrektur zur Beseitigung der Abweichung (bzw. unverändertes Vorinstanz-Ergebnis falls korrekt; bei fehlenden Angaben: '${missingInfoDefault}')",
+      "minimal_correction": "Minimal notwendige Korrektur zur Beseitigung der Abweichung (bzw. unverändertes Schiedsrichter-Ergebnis falls korrekt; bei fehlenden Angaben: '${missingInfoDefault}')",
       "atomic_claims": [
         {
           "claim": "Konkrete atomare Teilaussage / Attribut",
@@ -2577,7 +2546,6 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
       if (!parsed.final_corrected_output || typeof parsed.final_corrected_output !== 'string') {
         parsed.final_corrected_output = arbitratorResult?.course_note || arbitratorResult?.consensusSummary || "Auswertung abgeschlossen.";
       }
-      parsed.evaluated_target = evaluationTarget;
     }
 
     return parsed;
@@ -2592,15 +2560,15 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
       return res.status(405).json({ error: "Method not allowed. Use POST." });
     }
     try {
-      const { rawText, arbitratorResult, language = "de", evaluationTarget = "ratio", geniusResult, optimusResult } = req.body;
+      const { rawText, arbitratorResult, language = "de" } = req.body;
       if (!rawText || typeof rawText !== "string") {
         return res.status(400).json({ error: "rawText is required" });
       }
-      if (evaluationTarget === "ratio" && (!arbitratorResult || typeof arbitratorResult !== "object")) {
+      if (!arbitratorResult || typeof arbitratorResult !== "object") {
         return res.status(400).json({ error: "arbitratorResult is required" });
       }
 
-      const parsed = await processEndprueferRequest(rawText, arbitratorResult, language, evaluationTarget, geniusResult, optimusResult);
+      const parsed = await processEndprueferRequest(rawText, arbitratorResult, language);
       return res.json({ engine: "endpruefer", result: parsed });
     } catch (error: any) {
       console.error("Organon Endprüfer API Error:", error);
@@ -6792,8 +6760,9 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   // ==========================================================================
   
   // 1. Get list of distinct chapters
-  app.get("/api/kent/chapters", (req, res) => {
+  app.get("/api/kent/chapters", async (req, res) => {
     try {
+      await ensureKentDatabaseLoaded();
       const chapters = getKentChapters();
       res.json({ success: true, chapters });
     } catch (err: any) {
@@ -6803,8 +6772,9 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   });
 
   // 2. Get list of all remedies in the Mittelverzeichnis
-  app.get("/api/kent/remedies", (req, res) => {
+  app.get("/api/kent/remedies", async (req, res) => {
     try {
+      await ensureKentDatabaseLoaded();
       const remedies = getKentRemedies();
       res.json({ success: true, remedies });
     } catch (err: any) {
@@ -6814,8 +6784,9 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   });
 
   // 3. Search rubrics by keyword
-  app.get("/api/kent/search", (req, res) => {
+  app.get("/api/kent/search", async (req, res) => {
     try {
+      await ensureKentDatabaseLoaded();
       const q = String(req.query.q || "").trim();
       const chapter = req.query.chapter ? String(req.query.chapter).trim() : undefined;
       const limit = req.query.limit ? Number(req.query.limit) : 100;
@@ -6829,8 +6800,9 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   });
 
   // 4. Perform Kent scoring (repertorisation)
-  app.post("/api/kent/repertorize", (req, res) => {
+  app.post("/api/kent/repertorize", async (req, res) => {
     try {
+      await ensureKentDatabaseLoaded();
       const { rubricIds } = req.body;
       if (!Array.isArray(rubricIds)) {
         return res.status(400).json({ success: false, error: "rubricIds must be an array of strings" });
@@ -6845,8 +6817,9 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   });
 
   // 5. Dynamic Drill-down for hierarchical navigation
-  app.post("/api/kent/drilldown", (req, res) => {
+  app.post("/api/kent/drilldown", async (req, res) => {
     try {
+      await ensureKentDatabaseLoaded();
       const { chapter, symptom, zusatz } = req.body;
       const result = getKentDrilldown(
         chapter ? String(chapter).trim() : undefined,

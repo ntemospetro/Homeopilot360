@@ -4421,6 +4421,323 @@ if (preg_match('#^therapist/billing/([^/]+)$#', $route, $matches)) {
 }
 
 // =========================================================================
+// ROUTE 25: KENT REPERTORY API (Optimized High-Performance SQLite & JSON)
+// =========================================================================
+if (strpos($route, 'kent') === 0 || strpos($route, 'api/kent') === 0) {
+    // Normalisiere Unter-Route
+    $subRoute = preg_replace('#^(api/)?kent/?#', '', $route);
+    $subRoute = trim($subRoute, '/');
+
+    // 1. Pfade zu SQLite Datenbank und JSON-Dateien
+    $dbPaths = [
+        __DIR__ . '/../data/kent_repertory.db',
+        __DIR__ . '/../../data/kent_repertory.db',
+        __DIR__ . '/../data/kent_repertory.sqlite',
+        __DIR__ . '/data/kent_repertory.db',
+    ];
+    $dbPath = null;
+    foreach ($dbPaths as $p) {
+        if (file_exists($p)) {
+            $dbPath = $p;
+            break;
+        }
+    }
+
+    $getKentPdo = function() use ($dbPath) {
+        static $pdo = null;
+        if ($pdo !== null) return $pdo;
+        if (!$dbPath) return null;
+        try {
+            $pdo = new PDO('sqlite:' . $dbPath);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->query('PRAGMA synchronous = OFF');
+            $pdo->query('PRAGMA journal_mode = MEMORY');
+            return $pdo;
+        } catch (Exception $e) {
+            return null;
+        }
+    };
+
+    // 1. Kapitelverzeichnis
+    if ($subRoute === 'chapters' || $subRoute === 'get-chapters') {
+        $pdo = $getKentPdo();
+        if ($pdo) {
+            $stmt = $pdo->query("SELECT DISTINCT chapter FROM rubrics WHERE chapter != '' ORDER BY chapter ASC");
+            $chapters = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            sendJsonResponse(['success' => true, 'chapters' => $chapters]);
+        }
+        $jsonPath = __DIR__ . '/../data/kent_chapters.json';
+        if (file_exists($jsonPath)) {
+            $chapters = @json_decode(file_get_contents($jsonPath), true);
+            sendJsonResponse(['success' => true, 'chapters' => $chapters ?: []]);
+        }
+        sendJsonResponse(['success' => false, 'error' => 'Keine Kapitel gefunden'], 404);
+    }
+
+    // 2. Mittelverzeichnis
+    if ($subRoute === 'remedies' || $subRoute === 'get-remedies') {
+        $pdo = $getKentPdo();
+        if ($pdo) {
+            $stmt = $pdo->query("SELECT abbreviation, full_name as fullName FROM remedies ORDER BY abbreviation ASC");
+            $remedies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            sendJsonResponse(['success' => true, 'remedies' => $remedies]);
+        }
+        $jsonPath = __DIR__ . '/../data/kent_remedies.json';
+        if (file_exists($jsonPath)) {
+            $remedies = @json_decode(file_get_contents($jsonPath), true);
+            sendJsonResponse(['success' => true, 'remedies' => $remedies ?: []]);
+        }
+        sendJsonResponse(['success' => false, 'error' => 'Keine Arzneimittel gefunden'], 404);
+    }
+
+    // 3. Volltextsuche
+    if ($subRoute === 'search') {
+        $q = trim($_GET['q'] ?? '');
+        $chapter = trim($_GET['chapter'] ?? '');
+        $limit = min(200, max(1, (int)($_GET['limit'] ?? 80)));
+
+        $pdo = $getKentPdo();
+        if ($pdo) {
+            $sql = "SELECT id, chapter, symptom, zusatz_json, path, remedies_json, remedy_count FROM rubrics WHERE 1=1";
+            $params = [];
+
+            if ($chapter !== '') {
+                $sql .= " AND LOWER(chapter) = LOWER(?)";
+                $params[] = $chapter;
+            }
+
+            if ($q !== '') {
+                $tokens = preg_split('/\s+/', strtolower($q), -1, PREG_SPLIT_NO_EMPTY);
+                foreach ($tokens as $token) {
+                    $sql .= " AND LOWER(path) LIKE ?";
+                    $params[] = '%' . $token . '%';
+                }
+            }
+
+            $sql .= " LIMIT " . $limit;
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $rubrics = [];
+            foreach ($rows as $row) {
+                $rubrics[] = [
+                    'id' => (string)$row['id'],
+                    'chapter' => $row['chapter'],
+                    'symptom' => $row['symptom'],
+                    'zusatz' => @json_decode($row['zusatz_json'], true) ?: [],
+                    'path' => $row['path'],
+                    'remedies' => @json_decode($row['remedies_json'], true) ?: [],
+                    'remedyCount' => (int)$row['remedy_count']
+                ];
+            }
+            sendJsonResponse(['success' => true, 'rubrics' => $rubrics]);
+        }
+
+        // Fallback: Kapitel-JSON
+        if ($chapter !== '') {
+            $safeCh = str_replace(['/', '\\'], '_', $chapter);
+            $chJson = __DIR__ . '/../data/kent_chapters/' . $safeCh . '.json';
+            if (file_exists($chJson)) {
+                $all = @json_decode(file_get_contents($chJson), true) ?: [];
+                $filtered = [];
+                $qLower = strtolower($q);
+                foreach ($all as $item) {
+                    if (empty($qLower) || strpos(strtolower($item['path'] ?? ''), $qLower) !== false) {
+                        $filtered[] = $item;
+                        if (count($filtered) >= $limit) break;
+                    }
+                }
+                sendJsonResponse(['success' => true, 'rubrics' => $filtered]);
+            }
+        }
+
+        sendJsonResponse(['success' => false, 'error' => 'Kent Datenbank nicht verfügbar'], 500);
+    }
+
+    // 4. Repertorisation
+    if ($subRoute === 'repertorize') {
+        $rubricIds = $body['rubricIds'] ?? [];
+        if (!is_array($rubricIds) || empty($rubricIds)) {
+            sendJsonResponse(['success' => true, 'results' => []]);
+        }
+
+        $pdo = $getKentPdo();
+        if ($pdo) {
+            $remedyNames = [];
+            $rStmt = $pdo->query("SELECT abbreviation, full_name FROM remedies");
+            while ($rRow = $rStmt->fetch(PDO::FETCH_ASSOC)) {
+                $remedyNames[strtolower($rRow['abbreviation'])] = $rRow['full_name'];
+                $remedyNames[$rRow['abbreviation']] = $rRow['full_name'];
+            }
+
+            $placeholders = implode(',', array_fill(0, count($rubricIds), '?'));
+            $stmt = $pdo->prepare("SELECT id, remedies_json FROM rubrics WHERE id IN ($placeholders)");
+            $stmt->execute(array_map('strval', $rubricIds));
+            $matched = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $remedyScores = [];
+            foreach ($matched as $m) {
+                $rid = (string)$m['id'];
+                $remedies = @json_decode($m['remedies_json'], true) ?: [];
+                foreach ($remedies as $remAbbrev => $grade) {
+                    $keyLower = strtolower($remAbbrev);
+                    if (!isset($remedyScores[$keyLower])) {
+                        $fullName = $remedyNames[$keyLower] ?? $remedyNames[$remAbbrev] ?? $remAbbrev;
+                        $remedyScores[$keyLower] = [
+                            'remedyKey' => $remAbbrev,
+                            'fullName' => $fullName,
+                            'hits' => 0,
+                            'score' => 0,
+                            'gradesPerRubric' => []
+                        ];
+                    }
+                    $remedyScores[$keyLower]['hits'] += 1;
+                    $remedyScores[$keyLower]['score'] += (int)$grade;
+                    $remedyScores[$keyLower]['gradesPerRubric'][$rid] = (int)$grade;
+                }
+            }
+
+            $totalSelected = count($matched);
+            $results = [];
+            foreach ($remedyScores as $data) {
+                $finalGrades = [];
+                foreach ($matched as $m) {
+                    $rid = (string)$m['id'];
+                    $finalGrades[$rid] = $data['gradesPerRubric'][$rid] ?? 0;
+                }
+                $results[] = [
+                    'remedyKey' => $data['remedyKey'],
+                    'fullName' => $data['fullName'],
+                    'hits' => $data['hits'],
+                    'score' => $data['score'],
+                    'gradesPerRubric' => $finalGrades,
+                    'totalSelectedRubrics' => $totalSelected
+                ];
+            }
+
+            usort($results, function($a, $b) {
+                if ($b['hits'] !== $a['hits']) {
+                    return $b['hits'] - $a['hits'];
+                }
+                if ($b['score'] !== $a['score']) {
+                    return $b['score'] - $a['score'];
+                }
+                return strcmp($a['remedyKey'], $b['remedyKey']);
+            });
+
+            sendJsonResponse(['success' => true, 'results' => $results]);
+        }
+
+        sendJsonResponse(['success' => false, 'error' => 'Datenbank nicht verfügbar'], 500);
+    }
+
+    // 5. Drilldown
+    if ($subRoute === 'drilldown') {
+        $chapter = trim($body['chapter'] ?? '');
+        $symptom = trim($body['symptom'] ?? '');
+        $zusatz = is_array($body['zusatz'] ?? null) ? $body['zusatz'] : [];
+
+        $pdo = $getKentPdo();
+        if ($pdo) {
+            if ($chapter === '') {
+                $stmt = $pdo->query("SELECT DISTINCT chapter FROM rubrics WHERE chapter != '' ORDER BY chapter ASC");
+                $chapters = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                sendJsonResponse([
+                    'success' => true,
+                    'nextLevelType' => 'chapter',
+                    'nextLevelIndex' => -1,
+                    'nextOptions' => $chapters,
+                    'rubrics' => []
+                ]);
+            }
+
+            if ($symptom === '') {
+                $stmt = $pdo->prepare("SELECT DISTINCT symptom FROM rubrics WHERE LOWER(chapter) = LOWER(?) AND symptom != '' ORDER BY symptom ASC");
+                $stmt->execute([$chapter]);
+                $symptoms = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                $stmt2 = $pdo->prepare("SELECT id, chapter, symptom, zusatz_json, path, remedies_json, remedy_count FROM rubrics WHERE LOWER(chapter) = LOWER(?) LIMIT 100");
+                $stmt2->execute([$chapter]);
+                $rows = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+                $rubrics = [];
+                foreach ($rows as $row) {
+                    $rubrics[] = [
+                        'id' => (string)$row['id'],
+                        'chapter' => $row['chapter'],
+                        'symptom' => $row['symptom'],
+                        'zusatz' => @json_decode($row['zusatz_json'], true) ?: [],
+                        'path' => $row['path'],
+                        'remedies' => @json_decode($row['remedies_json'], true) ?: [],
+                        'remedyCount' => (int)$row['remedy_count']
+                    ];
+                }
+
+                sendJsonResponse([
+                    'success' => true,
+                    'nextLevelType' => 'symptom',
+                    'nextLevelIndex' => 0,
+                    'nextOptions' => $symptoms,
+                    'rubrics' => $rubrics
+                ]);
+            }
+
+            $stmt = $pdo->prepare("SELECT id, chapter, symptom, zusatz_json, path, remedies_json, remedy_count FROM rubrics WHERE LOWER(chapter) = LOWER(?) AND LOWER(symptom) = LOWER(?)");
+            $stmt->execute([$chapter, $symptom]);
+            $allRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $depth = count($zusatz);
+            $filtered = [];
+            $nextOptionsSet = [];
+
+            foreach ($allRows as $r) {
+                $zusatzList = @json_decode($r['zusatz_json'], true) ?: [];
+                $matchesDepth = true;
+                for ($i = 0; $i < $depth; $i++) {
+                    if (!isset($zusatzList[$i]) || strtolower($zusatzList[$i]) !== strtolower($zusatz[$i])) {
+                        $matchesDepth = false;
+                        break;
+                    }
+                }
+
+                if ($matchesDepth) {
+                    $filtered[] = [
+                        'id' => (string)$r['id'],
+                        'chapter' => $r['chapter'],
+                        'symptom' => $r['symptom'],
+                        'zusatz' => $zusatzList,
+                        'path' => $r['path'],
+                        'remedies' => @json_decode($r['remedies_json'], true) ?: [],
+                        'remedyCount' => (int)$r['remedy_count']
+                    ];
+
+                    if (isset($zusatzList[$depth]) && $zusatzList[$depth] !== '') {
+                        $nextOptionsSet[$zusatzList[$depth]] = true;
+                    }
+                }
+            }
+
+            $nextOptions = array_keys($nextOptionsSet);
+            natcasesort($nextOptions);
+            $nextOptions = array_values($nextOptions);
+
+            sendJsonResponse([
+                'success' => true,
+                'nextLevelType' => 'zusatz',
+                'nextLevelIndex' => $depth,
+                'nextOptions' => $nextOptions,
+                'rubrics' => array_slice($filtered, 0, 150)
+            ]);
+        }
+
+        sendJsonResponse(['success' => false, 'error' => 'Datenbank nicht verfügbar'], 500);
+    }
+
+    sendJsonResponse(['error' => 'Unbekannte Kent-Route: ' . $subRoute], 404);
+}
+
+// =========================================================================
 // DEFAULT: Route nicht gefunden
 // =========================================================================
 sendJsonResponse(['error' => 'Endpoint not found', 'requestedRoute' => $route], 404);

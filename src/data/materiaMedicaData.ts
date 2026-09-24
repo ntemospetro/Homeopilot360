@@ -332,8 +332,16 @@ export function getLocalizedRemedy(entry: MateriaMedicaEntry, lang: LanguageCode
   };
 }
 
+const localizedRemediesCache = new Map<LanguageCode, LocalizedRemedy[]>();
+
 export function getLocalizedRemedies(lang: LanguageCode): LocalizedRemedy[] {
-  return MATERIA_MEDICA_ENTRIES.map((entry) => getLocalizedRemedy(entry, lang));
+  const cached = localizedRemediesCache.get(lang);
+  if (cached) {
+    return cached;
+  }
+  const remedies = MATERIA_MEDICA_ENTRIES.map((entry) => getLocalizedRemedy(entry, lang));
+  localizedRemediesCache.set(lang, remedies);
+  return remedies;
 }
 
 /**

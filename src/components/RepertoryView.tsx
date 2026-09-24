@@ -348,48 +348,58 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
     setSelectedRemedyForModal(null);
     setModalHistory([]);
     
-    // 1. Check in local classical polychrests
+    // 1. Check in local classical polychrests and Materia Medica database
     const cleanKey = remedyKey.toLowerCase().replace(/\./g, '').trim();
     const localizedList = getLocalizedRemedies(language);
     
     // Comprehensive mapping of homeopathic abbreviations and common synonyms to database IDs
-    // This allows instant matching for common repertory abbreviations
     const ALIAS_ID_MAP: Record<string, string> = {
-      'rhus-t': 'rhus-toxicodendron',
-      'rhus-tox': 'rhus-toxicodendron',
-      'rhus': 'rhus-toxicodendron',
-      'acon': 'aconitum-napellus',
-      'aconitum': 'aconitum-napellus',
-      'bell': 'belladonna',
-      'chin': 'cinchona-officinalis',
-      'china': 'cinchona-officinalis',
+      'arg-n': 'argentum-nitricum',
+      'argn': 'argentum-nitricum',
+      'arg-m': 'argentum-metallicum',
+      'argm': 'argentum-metallicum',
+      'arg': 'argentum-metallicum',
+      'aur-m': 'aurum-metallicum',
+      'aur': 'aurum-metallicum',
       'calc-c': 'calcarea-carbonica',
       'calc-carb': 'calcarea-carbonica',
-      'calc-f': 'calcarea-fluorica',
+      'calc': 'calcarea-carbonica',
       'calc-p': 'calcarea-phosphorica',
+      'calc-f': 'calcarea-fluorica',
       'mag-p': 'magnesia-phosphorica',
       'mag-phos': 'magnesia-phosphorica',
       'nat-m': 'natrium-muriaticum',
       'nat-mur': 'natrium-muriaticum',
+      'nat-c': 'natrium-carbonicum',
+      'nat-s': 'natrium-sulphuricum',
       'hep': 'hepar',
       'hepar-s': 'hepar',
       'kali-c': 'kali-carbonicum',
       'kali-b': 'kali-bichromicum',
+      'kali-bi': 'kali-bichromicum',
+      'kali-p': 'kali-phosphoricum',
+      'kali-s': 'kali-sulphuricum',
       'carb-v': 'carbo-vegetabilis',
       'ant-t': 'antimonium-tartaricum',
       'ant-c': 'antimonium-crudum',
       'merc': 'mercurius',
+      'merc-c': 'mercurius-corrosivus',
       'phos-ac': 'phosphoricum-acidum',
+      'ph-ac': 'phosphoricum-acidum',
       'nit-ac': 'nitricum-acidum',
       'flu-ac': 'fluoricum-acidum',
       'ferr-m': 'ferrum-metallicum',
+      'ferr-p': 'ferrum-phosphoricum',
       'zinc-m': 'zincum-metallicum',
+      'zinc': 'zincum-metallicum',
       'plumb-m': 'plumbum-metallicum',
       'plumb': 'plumbum-metallicum',
+      'plb': 'plumbum-metallicum',
       'bry': 'bryonia',
       'bryo': 'bryonia',
       'puls': 'pulsatilla',
       'ars': 'arsenicum-album',
+      'ars-a': 'arsenicum-album',
       'lyc': 'lycopodium',
       'sep': 'sepia',
       'sil': 'silicea',
@@ -398,6 +408,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
       'phos': 'phosphorus',
       'lach': 'lachesis',
       'gel': 'gelsemium',
+      'gels': 'gelsemium',
       'thu': 'thuja',
       'thuj': 'thuja',
       'ign': 'ignatia',
@@ -407,97 +418,133 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
       'apis': 'apis',
       'staph': 'staphisagria',
       'caust': 'causticum',
-      'graph': 'graphites'
+      'graph': 'graphites',
+      'rhus-t': 'rhus-toxicodendron',
+      'rhus-tox': 'rhus-toxicodendron',
+      'rhus': 'rhus-toxicodendron',
+      'chin': 'cinchona-officinalis',
+      'china': 'cinchona-officinalis',
+      'coloc': 'colocynthis',
+      'dros': 'drosera',
+      'dulc': 'dulcamara',
+      'ham': 'hamamelis',
+      'hyos': 'hyoscyamus',
+      'iod': 'iodum',
+      'ip': 'ipecacuanha',
+      'kreos': 'kreosotum',
+      'med': 'medorrhinum',
+      'op': 'opium',
+      'petr': 'petroleum',
+      'plat': 'platinum-metallicum',
+      'psor': 'psorinum',
+      'pyrog': 'pyrogenium',
+      'ruta': 'ruta-graveolens',
+      'sabad': 'sabadilla',
+      'sabin': 'sabina',
+      'samb': 'sambucus-nigra',
+      'sang': 'sanguinaria',
+      'sec': 'secale-cornutum',
+      'spong': 'spongia',
+      'stann': 'stannum-metallicum',
+      'stram': 'stramonium',
+      'sulph': 'sulphur',
+      'symph': 'symphytum',
+      'syph': 'syphilinum',
+      'tab': 'tabacum',
+      'tarent': 'tarentula',
+      'tub': 'tuberculinum',
+      'verat': 'veratrum-album'
     };
 
-    const targetIdFromAlias = ALIAS_ID_MAP[cleanKey.replace(/\s+/g, '-')];
+    const normalize = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normKey = normalize(remedyKey);
+    const normFull = normalize(fullName);
 
-    const matched = localizedList.find(r => 
-      r.id.toLowerCase() === cleanKey || 
-      (targetIdFromAlias && r.id === targetIdFromAlias) ||
-      r.latinName.toLowerCase() === cleanKey ||
-      r.latinName.toLowerCase().includes(cleanKey) ||
-      (r.aliases && r.aliases.some(a => a.toLowerCase().replace(/\./g, '').trim() === cleanKey))
-    );
+    const targetIdFromAlias = ALIAS_ID_MAP[cleanKey.replace(/\s+/g, '-')] || ALIAS_ID_MAP[normKey];
+
+    const matched = localizedList.find(r => {
+      const normId = normalize(r.id);
+      const normLatin = normalize(r.latinName);
+      const normCommon = normalize(r.commonName);
+
+      // Direct match with alias map
+      if (targetIdFromAlias && (r.id === targetIdFromAlias || normId === normalize(targetIdFromAlias))) return true;
+
+      // Exact match with full name or ID
+      if (normFull && (normLatin === normFull || normId === normFull)) return true;
+
+      // Exact match with key
+      if (normKey && (normId === normKey || normLatin === normKey)) return true;
+
+      // Substring / prefix matches for Latin names
+      if (normFull && normFull.length >= 4 && (normLatin.startsWith(normFull) || normFull.startsWith(normLatin) || normLatin.includes(normFull))) return true;
+
+      // Aliases in remedy
+      if (r.aliases && r.aliases.some(a => {
+        const na = normalize(a);
+        return na === normKey || na === normFull;
+      })) return true;
+
+      // Common name match
+      if (normCommon && normFull && normCommon === normFull) return true;
+
+      return false;
+    });
 
     if (matched) {
       setSelectedRemedyForModal(matched);
       return;
     }
 
-    // 2. Fallback to Gemini AI Medication Profiles
-    setIsLoadingRemedy(true);
+    // 2. Immediate instant profile for repertory remedies without freezing UI
+    const searchName = fullName || remedyKey;
+    const instantRemedy: LocalizedRemedy = {
+      id: cleanKey,
+      latinName: searchName,
+      categoryKey: 'other',
+      commonName: remedyKey,
+      category: 'Homöopathisches Arzneimittel',
+      origin: 'Klassisches Repertorium nach J. T. Kent.',
+      essence: `Arzneimittel ${searchName} aus dem Kent-Repertorium.`,
+      mainIndications: [`Klinische Symptomrubriken im Kent-Repertorium (${remedyKey})`],
+      keynotes: [`Symptomenrubriken im Repertorium unter ${remedyKey}`],
+      mindEmotional: 'Charakteristisches Gemüts- und Allgemeinbild nach Kent.',
+      modalitiesBetter: ['Individuelle Modalitäten nach Prüfung'],
+      modalitiesWorse: ['Individuelle Verschlimmerungen nach Prüfung'],
+      potenciesAndDosage: 'D6, D12, C30, C200, 1M',
+      sphereOfAction: ['Organsysteme entsprechend Kent-Rubriken'],
+      differentialRemedies: [],
+      searchKeywords: []
+    };
+    setSelectedRemedyForModal(instantRemedy);
+
+    // Optional background enhancement (non-blocking)
     try {
-      const searchName = fullName || remedyKey;
       const res = await fetch(`/api/medications/details?name=${encodeURIComponent(searchName)}&lang=${encodeURIComponent(language)}`);
-      const data = await res.json();
-      
-      if (data && data.details) {
-        const d = data.details;
-        const fallbackRemedy: LocalizedRemedy = {
-          id: cleanKey,
-          latinName: d.latinName || searchName,
-          categoryKey: 'other',
-          commonName: d.commonName || 'Arzneimittel',
-          category: d.category || 'Homöopathisches Mittel',
-          origin: d.origin || d.monographText || '',
-          essence: d.essence || d.monographText || 'Keine Angabe vorhanden.',
-          mainIndications: Array.isArray(d.mainIndications) ? d.mainIndications : (d.mainIndications ? [d.mainIndications] : []),
-          keynotes: Array.isArray(d.keynotes) ? d.keynotes : (d.keynotes ? [d.keynotes] : []),
-          mindEmotional: d.mindEmotional || 'Keine psychischen Leitsymptome gelistet.',
-          modalitiesBetter: Array.isArray(d.modalitiesBetter) ? d.modalitiesBetter : (d.modalitiesBetter ? [d.modalitiesBetter] : []),
-          modalitiesWorse: Array.isArray(d.modalitiesWorse) ? d.modalitiesWorse : (d.modalitiesWorse ? [d.modalitiesWorse] : []),
-          potenciesAndDosage: d.potenciesAndDosage || 'D6, D12, C30, C200',
-          sphereOfAction: Array.isArray(d.sphereOfAction) ? d.sphereOfAction : [],
-          differentialRemedies: Array.isArray(d.differentialRemedies) ? d.differentialRemedies : [],
-          searchKeywords: []
-        };
-        setSelectedRemedyForModal(fallbackRemedy);
-      } else {
-        // Fallback profile if API details fail
-        const fallbackRemedy: LocalizedRemedy = {
-          id: cleanKey,
-          latinName: searchName,
-          categoryKey: 'other',
-          commonName: remedyKey,
-          category: 'Homöopathisches Arzneimittel',
-          origin: 'Teil des Kent-Repertoriums.',
-          essence: 'Dieses Arzneimittel ist Teil des Kent-Repertoriums. Für detaillierte klinische Profile konsultieren Sie bitte die Materia Medica.',
-          mainIndications: [],
-          keynotes: [],
-          mindEmotional: '',
-          modalitiesBetter: [],
-          modalitiesWorse: [],
-          potenciesAndDosage: 'D6, D12, C30, C200',
-          sphereOfAction: [],
-          differentialRemedies: [],
-          searchKeywords: []
-        };
-        setSelectedRemedyForModal(fallbackRemedy);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.details) {
+          const d = data.details;
+          setSelectedRemedyForModal(prev => {
+            if (!prev || prev.id !== cleanKey) return prev;
+            return {
+              ...prev,
+              origin: d.origin || d.monographText || prev.origin,
+              essence: d.essence || d.monographText || prev.essence,
+              mainIndications: Array.isArray(d.mainIndications) && d.mainIndications.length > 0 ? d.mainIndications : prev.mainIndications,
+              keynotes: Array.isArray(d.keynotes) && d.keynotes.length > 0 ? d.keynotes : prev.keynotes,
+              mindEmotional: d.mindEmotional || prev.mindEmotional,
+              modalitiesBetter: Array.isArray(d.modalitiesBetter) && d.modalitiesBetter.length > 0 ? d.modalitiesBetter : prev.modalitiesBetter,
+              modalitiesWorse: Array.isArray(d.modalitiesWorse) && d.modalitiesWorse.length > 0 ? d.modalitiesWorse : prev.modalitiesWorse,
+              potenciesAndDosage: d.potenciesAndDosage || prev.potenciesAndDosage,
+              sphereOfAction: Array.isArray(d.sphereOfAction) && d.sphereOfAction.length > 0 ? d.sphereOfAction : prev.sphereOfAction,
+              differentialRemedies: Array.isArray(d.differentialRemedies) && d.differentialRemedies.length > 0 ? d.differentialRemedies : prev.differentialRemedies
+            };
+          });
+        }
       }
-    } catch (err) {
-      console.error("Error fetching remedy details from AI:", err);
-      const fallbackRemedy: LocalizedRemedy = {
-        id: cleanKey,
-        latinName: fullName || remedyKey,
-        categoryKey: 'other',
-        commonName: remedyKey,
-        category: 'Homöopathisches Arzneimittel',
-        origin: 'Fehler beim Laden der Live-Daten.',
-        essence: 'Materia Medica Profil konnte nicht geladen werden.',
-        mainIndications: [],
-        keynotes: [],
-        mindEmotional: '',
-        modalitiesBetter: [],
-        modalitiesWorse: [],
-        potenciesAndDosage: '',
-        sphereOfAction: [],
-        differentialRemedies: [],
-        searchKeywords: []
-      };
-      setSelectedRemedyForModal(fallbackRemedy);
-    } finally {
-      setIsLoadingRemedy(false);
+    } catch {
+      // Ignore background fetch error since instant profile is already displayed
     }
   };
 

@@ -1,0 +1,2498 @@
+[
+  {
+    "abbreviation": "Abies-c.",
+    "fullName": "Abies Canadensis"
+  },
+  {
+    "abbreviation": "Abies-n.",
+    "fullName": "Abies Nigra"
+  },
+  {
+    "abbreviation": "Abrot.",
+    "fullName": "Abrotanum"
+  },
+  {
+    "abbreviation": "Absin.",
+    "fullName": "Absinthium"
+  },
+  {
+    "abbreviation": "Acal.",
+    "fullName": "Acalypha Indica"
+  },
+  {
+    "abbreviation": "Acet-ac.",
+    "fullName": "Aceticum Acidum"
+  },
+  {
+    "abbreviation": "Acon-c.",
+    "fullName": "Aconitum Cammarum"
+  },
+  {
+    "abbreviation": "Acon-f.",
+    "fullName": "Aconitum Ferox"
+  },
+  {
+    "abbreviation": "Acon-l.",
+    "fullName": "Aconitum Lycoctonum"
+  },
+  {
+    "abbreviation": "Acon.",
+    "fullName": "Aconitum Napellus"
+  },
+  {
+    "abbreviation": "Act-sp.",
+    "fullName": "Actaea Spicata"
+  },
+  {
+    "abbreviation": "Aesc-g.",
+    "fullName": "Aesculus Glabra"
+  },
+  {
+    "abbreviation": "Aesc.",
+    "fullName": "Aesculus Hippocastanum"
+  },
+  {
+    "abbreviation": "Aeth.",
+    "fullName": "Aethusa Cynapium"
+  },
+  {
+    "abbreviation": "Agar-em.",
+    "fullName": "Agaricus Emeticus"
+  },
+  {
+    "abbreviation": "Agar-ph.",
+    "fullName": "Agaricus Phalloides"
+  },
+  {
+    "abbreviation": "Agar.",
+    "fullName": "Agaricus Muscarius"
+  },
+  {
+    "abbreviation": "Agn.",
+    "fullName": "Agnus Castus"
+  },
+  {
+    "abbreviation": "Ail.",
+    "fullName": "Ailanthus Glandulosa"
+  },
+  {
+    "abbreviation": "Alco.",
+    "fullName": "Alcoholus"
+  },
+  {
+    "abbreviation": "Alet.",
+    "fullName": "Aletris Farinosa"
+  },
+  {
+    "abbreviation": "All-c.",
+    "fullName": "Allium Cepa"
+  },
+  {
+    "abbreviation": "All-s.",
+    "fullName": "Allium Sativum"
+  },
+  {
+    "abbreviation": "Aloe",
+    "fullName": "Aloe Socotrina"
+  },
+  {
+    "abbreviation": "Alst-c.",
+    "fullName": "Alstonia Constricta"
+  },
+  {
+    "abbreviation": "Alum-met.",
+    "fullName": "Aluminium Metallicum"
+  },
+  {
+    "abbreviation": "Alum-sil.",
+    "fullName": "Aluminium Silicicum"
+  },
+  {
+    "abbreviation": "Alum.",
+    "fullName": "Alumina"
+  },
+  {
+    "abbreviation": "Alumn.",
+    "fullName": "Alumen"
+  },
+  {
+    "abbreviation": "Am-be.",
+    "fullName": "Ammonium Benzoicum"
+  },
+  {
+    "abbreviation": "Am-br.",
+    "fullName": "Ammonium Bromatum"
+  },
+  {
+    "abbreviation": "Am-c.",
+    "fullName": "Ammonium Carbonicum"
+  },
+  {
+    "abbreviation": "Am-caust.",
+    "fullName": "Ammonium Causticum"
+  },
+  {
+    "abbreviation": "Am-m.",
+    "fullName": "Ammonium Muriaticum"
+  },
+  {
+    "abbreviation": "Ambr.",
+    "fullName": "Ambra Grisea"
+  },
+  {
+    "abbreviation": "Aml-n.",
+    "fullName": "Amylenum Nitrosum"
+  },
+  {
+    "abbreviation": "Ammc.",
+    "fullName": "Ammoniacum Gummi"
+  },
+  {
+    "abbreviation": "Amph.",
+    "fullName": "Amphisbaena Vermicularis"
+  },
+  {
+    "abbreviation": "Amyg-am.",
+    "fullName": "Amygdalus Amarae"
+  },
+  {
+    "abbreviation": "Amyg-p.",
+    "fullName": "Amygdalus Persica"
+  },
+  {
+    "abbreviation": "Anac-oc.",
+    "fullName": "Anacardium Occidentale"
+  },
+  {
+    "abbreviation": "Anac.",
+    "fullName": "Anacardium Orientale"
+  },
+  {
+    "abbreviation": "Anag.",
+    "fullName": "Anagallis Arvensis"
+  },
+  {
+    "abbreviation": "Anan.",
+    "fullName": "Anantherum Muricatum"
+  },
+  {
+    "abbreviation": "Ang.",
+    "fullName": "Angustura Vera"
+  },
+  {
+    "abbreviation": "Ango.",
+    "fullName": "Angophora Lanceolata"
+  },
+  {
+    "abbreviation": "Anil.",
+    "fullName": "Anilinum"
+  },
+  {
+    "abbreviation": "Anis.",
+    "fullName": "Anisum Stellatum"
+  },
+  {
+    "abbreviation": "Ant-ar.",
+    "fullName": "Antimonium Arsenicosum"
+  },
+  {
+    "abbreviation": "Ant-c.",
+    "fullName": "Antimonium Crudum"
+  },
+  {
+    "abbreviation": "Ant-m.",
+    "fullName": "Antimonium Muriaticum"
+  },
+  {
+    "abbreviation": "Ant-o.",
+    "fullName": "Antimonium Oxydatum"
+  },
+  {
+    "abbreviation": "Ant-s.",
+    "fullName": "Antimonium Sulphuratum Auratum"
+  },
+  {
+    "abbreviation": "Ant-t.",
+    "fullName": "Antimonium Tartaricum"
+  },
+  {
+    "abbreviation": "Anth.",
+    "fullName": "Anthemis Nobilis"
+  },
+  {
+    "abbreviation": "Anthr.",
+    "fullName": "Anthracinum"
+  },
+  {
+    "abbreviation": "Anthro.",
+    "fullName": "Anthrakokali"
+  },
+  {
+    "abbreviation": "Ap-g.",
+    "fullName": "Apium Graveolens"
+  },
+  {
+    "abbreviation": "Aphis.",
+    "fullName": "Aphis Chenopodii Glauci"
+  },
+  {
+    "abbreviation": "Apis",
+    "fullName": "Apis Mellifera"
+  },
+  {
+    "abbreviation": "Apoc-a.",
+    "fullName": "Apocynum Androsaemifolium"
+  },
+  {
+    "abbreviation": "Apoc.",
+    "fullName": "Apocynum Cannabinum"
+  },
+  {
+    "abbreviation": "Apom.",
+    "fullName": "Apomorphinum Hydrochloricum"
+  },
+  {
+    "abbreviation": "Aral.",
+    "fullName": "Aralia Racemosa"
+  },
+  {
+    "abbreviation": "Aran-s.",
+    "fullName": "Aranea Scinencia"
+  },
+  {
+    "abbreviation": "Aran.",
+    "fullName": "Aranea Diadema"
+  },
+  {
+    "abbreviation": "Arg-cy.",
+    "fullName": "Argentum Cyanatum"
+  },
+  {
+    "abbreviation": "Arg-m.",
+    "fullName": "Argentum Muriaticum"
+  },
+  {
+    "abbreviation": "Arg-n.",
+    "fullName": "Argentum Nitricum"
+  },
+  {
+    "abbreviation": "Arg.",
+    "fullName": "Argentum Metallicum"
+  },
+  {
+    "abbreviation": "Arn.",
+    "fullName": "Arnica Montana"
+  },
+  {
+    "abbreviation": "Ars-h.",
+    "fullName": "Arsenicum Hydrogenisatum"
+  },
+  {
+    "abbreviation": "Ars-i.",
+    "fullName": "Arsenicum Iodatum"
+  },
+  {
+    "abbreviation": "Ars-met.",
+    "fullName": "Arsenicum Metallicum"
+  },
+  {
+    "abbreviation": "Ars-n.",
+    "fullName": "Arsenicum Nitricum"
+  },
+  {
+    "abbreviation": "Ars-s-f.",
+    "fullName": "Arsenicum Sulphuratum Flavum"
+  },
+  {
+    "abbreviation": "Ars-s-r.",
+    "fullName": "Arsenicum Sulphuratum Rubrum"
+  },
+  {
+    "abbreviation": "Ars.",
+    "fullName": "Arsenicum Album"
+  },
+  {
+    "abbreviation": "Art-v.",
+    "fullName": "Artemisia Vulgaris"
+  },
+  {
+    "abbreviation": "Arum-d.",
+    "fullName": "Arum Dracontium"
+  },
+  {
+    "abbreviation": "Arum-i.",
+    "fullName": "Arum Italicum"
+  },
+  {
+    "abbreviation": "Arum-m.",
+    "fullName": "Arum Maculatum"
+  },
+  {
+    "abbreviation": "Arum-t.",
+    "fullName": "Arum Triphyllum"
+  },
+  {
+    "abbreviation": "Arund-d.",
+    "fullName": "Arundo Donax"
+  },
+  {
+    "abbreviation": "Asaf.",
+    "fullName": "Asa Foetida"
+  },
+  {
+    "abbreviation": "Asar.",
+    "fullName": "Asarum Officinale"
+  },
+  {
+    "abbreviation": "Asc-c.",
+    "fullName": "Asclepias Cornuti"
+  },
+  {
+    "abbreviation": "Asc-t.",
+    "fullName": "Asclepias Tuberosa"
+  },
+  {
+    "abbreviation": "Asim.",
+    "fullName": "Asimina Triloba"
+  },
+  {
+    "abbreviation": "Aspar.",
+    "fullName": "Asparagus Officinalis"
+  },
+  {
+    "abbreviation": "Astac.",
+    "fullName": "Cancer Fluviatilis"
+  },
+  {
+    "abbreviation": "Aster.",
+    "fullName": "Asterias Rubens"
+  },
+  {
+    "abbreviation": "Atro.",
+    "fullName": "Atropinum Purum"
+  },
+  {
+    "abbreviation": "Aur-ar.",
+    "fullName": "Aurum Arsenicum"
+  },
+  {
+    "abbreviation": "Aur-i.",
+    "fullName": "Aurum Iodatum"
+  },
+  {
+    "abbreviation": "Aur-m-n.",
+    "fullName": "Aurum Muriaticum Natronatum"
+  },
+  {
+    "abbreviation": "Aur-m.",
+    "fullName": "Aurum Muriaticum"
+  },
+  {
+    "abbreviation": "Aur-s.",
+    "fullName": "Aurum Sulphuratum"
+  },
+  {
+    "abbreviation": "Aur.",
+    "fullName": "Aurum Metallicum"
+  },
+  {
+    "abbreviation": "Bad.",
+    "fullName": "Badiaga"
+  },
+  {
+    "abbreviation": "Bals-p.",
+    "fullName": "Balsamum Peruvianum"
+  },
+  {
+    "abbreviation": "Bapt.",
+    "fullName": "Baptisia Tinctoria"
+  },
+  {
+    "abbreviation": "Bar-acet.",
+    "fullName": "Baryta Acetica"
+  },
+  {
+    "abbreviation": "Bar-c.",
+    "fullName": "Baryta Carbonica"
+  },
+  {
+    "abbreviation": "Bar-i.",
+    "fullName": "Baryta Iodata"
+  },
+  {
+    "abbreviation": "Bar-m.",
+    "fullName": "Baryta Muriatica"
+  },
+  {
+    "abbreviation": "Bart.",
+    "fullName": "Bartfelder Aqua"
+  },
+  {
+    "abbreviation": "Bell-p.",
+    "fullName": "Bellis Perennis"
+  },
+  {
+    "abbreviation": "Bell.",
+    "fullName": "Belladonna"
+  },
+  {
+    "abbreviation": "Benz-ac.",
+    "fullName": "Benzoicum Acidum"
+  },
+  {
+    "abbreviation": "Benz.",
+    "fullName": "Benzolum"
+  },
+  {
+    "abbreviation": "Berb.",
+    "fullName": "Berberis Vulgaris"
+  },
+  {
+    "abbreviation": "Bism-ox.",
+    "fullName": "Bismuthum Oxydatum"
+  },
+  {
+    "abbreviation": "Blatta",
+    "fullName": "Blatta Orientalis"
+  },
+  {
+    "abbreviation": "Bol.",
+    "fullName": "Polyporus Officinalis"
+  },
+  {
+    "abbreviation": "Bor-ac.",
+    "fullName": "Boricum Acidum"
+  },
+  {
+    "abbreviation": "Bor.",
+    "fullName": "Borax Veneta"
+  },
+  {
+    "abbreviation": "Both-l.",
+    "fullName": "Bothrops Lanceolatus"
+  },
+  {
+    "abbreviation": "Bov.",
+    "fullName": "Bovista Lycoperdon"
+  },
+  {
+    "abbreviation": "Brach.",
+    "fullName": "Brachyglottis Repanda"
+  },
+  {
+    "abbreviation": "Brom.",
+    "fullName": "Bromum"
+  },
+  {
+    "abbreviation": "Bruc.",
+    "fullName": "Brucea Antidysenterica"
+  },
+  {
+    "abbreviation": "Bry.",
+    "fullName": "Bryonia Alba"
+  },
+  {
+    "abbreviation": "Bufo",
+    "fullName": "Bufo Rana"
+  },
+  {
+    "abbreviation": "Bufo-s.",
+    "fullName": "Bufo Sahytiensis"
+  },
+  {
+    "abbreviation": "Cact.",
+    "fullName": "Cactus Grandiflorus"
+  },
+  {
+    "abbreviation": "Cadm-s.",
+    "fullName": "Cadmium Sulphuratum"
+  },
+  {
+    "abbreviation": "Cahin.",
+    "fullName": "Cainca"
+  },
+  {
+    "abbreviation": "Caj.",
+    "fullName": "Cajuputum"
+  },
+  {
+    "abbreviation": "Calad.",
+    "fullName": "Caladium Seguinum"
+  },
+  {
+    "abbreviation": "Calc-acet.",
+    "fullName": "Calcarea Acetica"
+  },
+  {
+    "abbreviation": "Calc-ar.",
+    "fullName": "Calcarea Arsenicosa"
+  },
+  {
+    "abbreviation": "Calc-caust.",
+    "fullName": "Calcarea Caustica"
+  },
+  {
+    "abbreviation": "Calc-f.",
+    "fullName": "Calcarea Fluorica"
+  },
+  {
+    "abbreviation": "Calc-i.",
+    "fullName": "Calcarea Iodata"
+  },
+  {
+    "abbreviation": "Calc-p.",
+    "fullName": "Calcarea Phosphorica"
+  },
+  {
+    "abbreviation": "Calc-s.",
+    "fullName": "Calcarea Sulphurica"
+  },
+  {
+    "abbreviation": "Calc-sil.",
+    "fullName": "Calcarea Silicata"
+  },
+  {
+    "abbreviation": "Calc.",
+    "fullName": "Calcarea Carbonica"
+  },
+  {
+    "abbreviation": "Calen.",
+    "fullName": "Calendula Officinalis"
+  },
+  {
+    "abbreviation": "Calli.",
+    "fullName": "Calliandra Houstoni"
+  },
+  {
+    "abbreviation": "Calo.",
+    "fullName": "Calotropis Gigantea"
+  },
+  {
+    "abbreviation": "Camph.",
+    "fullName": "Camphora Officinalis"
+  },
+  {
+    "abbreviation": "Canch.",
+    "fullName": "Canchalagua"
+  },
+  {
+    "abbreviation": "Cann-i.",
+    "fullName": "Cannabis Indica"
+  },
+  {
+    "abbreviation": "Cann-s.",
+    "fullName": "Cannabis Sativa"
+  },
+  {
+    "abbreviation": "Canth.",
+    "fullName": "Cantharis Vesicatoria"
+  },
+  {
+    "abbreviation": "Caps.",
+    "fullName": "Capsicum Annuum"
+  },
+  {
+    "abbreviation": "Carb-ac.",
+    "fullName": "Carbolicum Acidum"
+  },
+  {
+    "abbreviation": "Carb-an.",
+    "fullName": "Carbo Animalis"
+  },
+  {
+    "abbreviation": "Carb-v.",
+    "fullName": "Carbo Vegetabilis"
+  },
+  {
+    "abbreviation": "Carbn-h.",
+    "fullName": "Carboneum Hydrogenisatum"
+  },
+  {
+    "abbreviation": "Carbn-o.",
+    "fullName": "Carboneum Oxygenisatum"
+  },
+  {
+    "abbreviation": "Carbn-s.",
+    "fullName": "Carboneum Sulphuratum"
+  },
+  {
+    "abbreviation": "Card-b.",
+    "fullName": "Carduus Benedictus"
+  },
+  {
+    "abbreviation": "Card-m.",
+    "fullName": "Carduus Marianus"
+  },
+  {
+    "abbreviation": "Carl.",
+    "fullName": "Carlsbad Aqua"
+  },
+  {
+    "abbreviation": "Casc.",
+    "fullName": "Cascarilla"
+  },
+  {
+    "abbreviation": "Cast-eq.",
+    "fullName": "Castor Equi"
+  },
+  {
+    "abbreviation": "Cast.",
+    "fullName": "Castoreum Canadense"
+  },
+  {
+    "abbreviation": "Casta-v.",
+    "fullName": "Castanea Vesca"
+  },
+  {
+    "abbreviation": "Caul.",
+    "fullName": "Caulophyllum Thalictroides"
+  },
+  {
+    "abbreviation": "Caust.",
+    "fullName": "Causticum"
+  },
+  {
+    "abbreviation": "Cean.",
+    "fullName": "Ceanothus Americanus"
+  },
+  {
+    "abbreviation": "Cedr.",
+    "fullName": "Cedron"
+  },
+  {
+    "abbreviation": "Cench.",
+    "fullName": "Cenchris Contortrix"
+  },
+  {
+    "abbreviation": "Cent.",
+    "fullName": "Centaurea Tagana"
+  },
+  {
+    "abbreviation": "Cere-b.",
+    "fullName": "Cereus Bonplandii"
+  },
+  {
+    "abbreviation": "Cere-s.",
+    "fullName": "Cereus Serpentinus"
+  },
+  {
+    "abbreviation": "Cham.",
+    "fullName": "Chamomilla"
+  },
+  {
+    "abbreviation": "Chel.",
+    "fullName": "Chelidonium Majus"
+  },
+  {
+    "abbreviation": "Chen-a.",
+    "fullName": "Chenopodium Ambrosioides & Var. Anthelminticum"
+  },
+  {
+    "abbreviation": "Chen-v.",
+    "fullName": "Chenopodium Vulvaria"
+  },
+  {
+    "abbreviation": "Chim-m.",
+    "fullName": "Chimaphila Maculata"
+  },
+  {
+    "abbreviation": "Chim.",
+    "fullName": "Chimaphila Umbellata"
+  },
+  {
+    "abbreviation": "Chin-ar.",
+    "fullName": "Chininum Arsenicosum"
+  },
+  {
+    "abbreviation": "Chin-b.",
+    "fullName": "China Boliviana"
+  },
+  {
+    "abbreviation": "Chin-s.",
+    "fullName": "Chininum Sulphuricum"
+  },
+  {
+    "abbreviation": "Chin.",
+    "fullName": "China Officinalis"
+  },
+  {
+    "abbreviation": "Chion.",
+    "fullName": "Chionanthus Virginica"
+  },
+  {
+    "abbreviation": "Chlf.",
+    "fullName": "Chloroformum"
+  },
+  {
+    "abbreviation": "Chlol.",
+    "fullName": "Chloralum Hydratum"
+  },
+  {
+    "abbreviation": "Chlor.",
+    "fullName": "Chlorum"
+  },
+  {
+    "abbreviation": "Chol.",
+    "fullName": "Cholesterinum"
+  },
+  {
+    "abbreviation": "Chr-ac.",
+    "fullName": "Chromicum Acidum"
+  },
+  {
+    "abbreviation": "Chr-o.",
+    "fullName": "Chromium Oxydatum"
+  },
+  {
+    "abbreviation": "Cic.",
+    "fullName": "Cicuta Virosa"
+  },
+  {
+    "abbreviation": "Cimic.",
+    "fullName": "Cimicifuga Racemosa"
+  },
+  {
+    "abbreviation": "Cimx.",
+    "fullName": "Cimex Lectularius"
+  },
+  {
+    "abbreviation": "Cina",
+    "fullName": "Cina Maritima"
+  },
+  {
+    "abbreviation": "Cinch.",
+    "fullName": "Cinchoninum Sulphuricum"
+  },
+  {
+    "abbreviation": "Cinnam.",
+    "fullName": "Cinnamomum Zeylanicum"
+  },
+  {
+    "abbreviation": "Cinnb.",
+    "fullName": "Cinnabaris"
+  },
+  {
+    "abbreviation": "Cist.",
+    "fullName": "Cistus Canadensis"
+  },
+  {
+    "abbreviation": "Cit-a.",
+    "fullName": "Citrus Aurantium L."
+  },
+  {
+    "abbreviation": "Cit-ac.",
+    "fullName": "Citricum Acidum"
+  },
+  {
+    "abbreviation": "Clem.",
+    "fullName": "Clematis Erecta"
+  },
+  {
+    "abbreviation": "Cob.",
+    "fullName": "Cobaltum Metallicum"
+  },
+  {
+    "abbreviation": "Coc-c.",
+    "fullName": "Coccus Cacti"
+  },
+  {
+    "abbreviation": "Coca",
+    "fullName": "Coca"
+  },
+  {
+    "abbreviation": "Cocain.",
+    "fullName": "Cocainum Hydrochloricum"
+  },
+  {
+    "abbreviation": "Cocc.",
+    "fullName": "Cocculus Indicus"
+  },
+  {
+    "abbreviation": "Cocci-s.",
+    "fullName": "Coccinella Septempunctata"
+  },
+  {
+    "abbreviation": "Coch.",
+    "fullName": "Cochlearia Armoracia"
+  },
+  {
+    "abbreviation": "Cod.",
+    "fullName": "Codeinum"
+  },
+  {
+    "abbreviation": "Coff-t.",
+    "fullName": "Coffea Tosta"
+  },
+  {
+    "abbreviation": "Coff.",
+    "fullName": "Coffea Cruda"
+  },
+  {
+    "abbreviation": "Colch.",
+    "fullName": "Colchicum Autumnale"
+  },
+  {
+    "abbreviation": "Coll.",
+    "fullName": "Collinsonia Canadensis"
+  },
+  {
+    "abbreviation": "Coloc.",
+    "fullName": "Colocynthis"
+  },
+  {
+    "abbreviation": "Colos.",
+    "fullName": "Colostrum"
+  },
+  {
+    "abbreviation": "Com.",
+    "fullName": "Comocladia Dentata"
+  },
+  {
+    "abbreviation": "Con.",
+    "fullName": "Conium Maculatum"
+  },
+  {
+    "abbreviation": "Conv.",
+    "fullName": "Convallaria Majalis"
+  },
+  {
+    "abbreviation": "Convo-d.",
+    "fullName": "Convolvulus Duartinus"
+  },
+  {
+    "abbreviation": "Cop.",
+    "fullName": "Copaiva Officinalis"
+  },
+  {
+    "abbreviation": "Cor-r.",
+    "fullName": "Corallium Rubrum"
+  },
+  {
+    "abbreviation": "Cori-r.",
+    "fullName": "Coriaria Ruscifolia"
+  },
+  {
+    "abbreviation": "Corn-f.",
+    "fullName": "Cornus Florida"
+  },
+  {
+    "abbreviation": "Corn-s.",
+    "fullName": "Cornus Sericea"
+  },
+  {
+    "abbreviation": "Corn.",
+    "fullName": "Cornus Circinata"
+  },
+  {
+    "abbreviation": "Cot.",
+    "fullName": "Cotyledon Umbilicus"
+  },
+  {
+    "abbreviation": "Croc.",
+    "fullName": "Crocus Sativus"
+  },
+  {
+    "abbreviation": "Crot-c.",
+    "fullName": "Crotalus Cascavella"
+  },
+  {
+    "abbreviation": "Crot-h.",
+    "fullName": "Crotalus Horridus"
+  },
+  {
+    "abbreviation": "Croto-t.",
+    "fullName": "Croton Tiglium"
+  },
+  {
+    "abbreviation": "Cub.",
+    "fullName": "Cubeba Officinalis"
+  },
+  {
+    "abbreviation": "Culx.",
+    "fullName": "Culex Musca"
+  },
+  {
+    "abbreviation": "Cund.",
+    "fullName": "Cundurango"
+  },
+  {
+    "abbreviation": "Cupr-acet.",
+    "fullName": "Cuprum Aceticum"
+  },
+  {
+    "abbreviation": "Cupr-ar.",
+    "fullName": "Cuprum Arsenicosum"
+  },
+  {
+    "abbreviation": "Cupr-n.",
+    "fullName": "Cuprum Nitricum"
+  },
+  {
+    "abbreviation": "Cupr-s.",
+    "fullName": "Cuprum Sulphuricum"
+  },
+  {
+    "abbreviation": "Cupr.",
+    "fullName": "Cuprum Metallicum"
+  },
+  {
+    "abbreviation": "Cur.",
+    "fullName": "Curare"
+  },
+  {
+    "abbreviation": "Cycl.",
+    "fullName": "Cyclamen Europaeum"
+  },
+  {
+    "abbreviation": "Cypr.",
+    "fullName": "Cypripedium Pubescens"
+  },
+  {
+    "abbreviation": "Daph.",
+    "fullName": "Daphne Indica"
+  },
+  {
+    "abbreviation": "Der.",
+    "fullName": "Derris Pinnata"
+  },
+  {
+    "abbreviation": "Dig.",
+    "fullName": "Digitalis Purpurea"
+  },
+  {
+    "abbreviation": "Dios.",
+    "fullName": "Dioscorea Villosa"
+  },
+  {
+    "abbreviation": "Dirc.",
+    "fullName": "Dirca Palustris"
+  },
+  {
+    "abbreviation": "Dol.",
+    "fullName": "Dolichos Pruriens"
+  },
+  {
+    "abbreviation": "Dor.",
+    "fullName": "Doryphora Decemlineata"
+  },
+  {
+    "abbreviation": "Dros.",
+    "fullName": "Drosera Rotundifolia"
+  },
+  {
+    "abbreviation": "Dubin.",
+    "fullName": "Duboisinum"
+  },
+  {
+    "abbreviation": "Dulc.",
+    "fullName": "Dulcamara"
+  },
+  {
+    "abbreviation": "Echi.",
+    "fullName": "Echinacea Angustifolia"
+  },
+  {
+    "abbreviation": "Elaps",
+    "fullName": "Elaps Corallinus"
+  },
+  {
+    "abbreviation": "Elat.",
+    "fullName": "Elaterium"
+  },
+  {
+    "abbreviation": "Epig.",
+    "fullName": "Epigea Repens"
+  },
+  {
+    "abbreviation": "Equis.",
+    "fullName": "Equisetum Hyemale"
+  },
+  {
+    "abbreviation": "Erech.",
+    "fullName": "Erechthites Hieracifolia"
+  },
+  {
+    "abbreviation": "Erig.",
+    "fullName": "Erigeron Canadense"
+  },
+  {
+    "abbreviation": "Ery-a.",
+    "fullName": "Eryngium Aquaticum"
+  },
+  {
+    "abbreviation": "Ether",
+    "fullName": "Ether"
+  },
+  {
+    "abbreviation": "Eucal.",
+    "fullName": "Eucalyptus Globulus"
+  },
+  {
+    "abbreviation": "Eug.",
+    "fullName": "Eugenia Jambos"
+  },
+  {
+    "abbreviation": "Euon.",
+    "fullName": "Euonymus Europaea"
+  },
+  {
+    "abbreviation": "Eup-per.",
+    "fullName": "Eupatorium Perfoliatum"
+  },
+  {
+    "abbreviation": "Eup-pur.",
+    "fullName": "Eupatorium Purpureum"
+  },
+  {
+    "abbreviation": "Euph.",
+    "fullName": "Euphorbium Officinarum"
+  },
+  {
+    "abbreviation": "Euphr.",
+    "fullName": "Euphrasia Officinalis"
+  },
+  {
+    "abbreviation": "Eupi.",
+    "fullName": "Eupionum"
+  },
+  {
+    "abbreviation": "Fago.",
+    "fullName": "Fagopyrum Esculentum"
+  },
+  {
+    "abbreviation": "Ferr-acet.",
+    "fullName": "Ferrum Aceticum"
+  },
+  {
+    "abbreviation": "Ferr-ar.",
+    "fullName": "Ferrum Arsenicosum"
+  },
+  {
+    "abbreviation": "Ferr-i.",
+    "fullName": "Ferrum Iodatum"
+  },
+  {
+    "abbreviation": "Ferr-m.",
+    "fullName": "Ferrum Muriaticum"
+  },
+  {
+    "abbreviation": "Ferr-ma.",
+    "fullName": "Ferrum Magneticum"
+  },
+  {
+    "abbreviation": "Ferr-p.",
+    "fullName": "Ferrum Phosphoricum"
+  },
+  {
+    "abbreviation": "Ferr-pic.",
+    "fullName": "Ferrum Picricum"
+  },
+  {
+    "abbreviation": "Ferr-s.",
+    "fullName": "Ferrum Sulphuricum"
+  },
+  {
+    "abbreviation": "Ferr.",
+    "fullName": "Ferrum Metallicum"
+  },
+  {
+    "abbreviation": "Fil.",
+    "fullName": "Filix Mas"
+  },
+  {
+    "abbreviation": "Fl-ac.",
+    "fullName": "Fluoricum Acidum"
+  },
+  {
+    "abbreviation": "Form.",
+    "fullName": "Formica Rufa"
+  },
+  {
+    "abbreviation": "Frag.",
+    "fullName": "Fragaria Vesca"
+  },
+  {
+    "abbreviation": "Gad.",
+    "fullName": "Gadus Morrhua"
+  },
+  {
+    "abbreviation": "Gall-ac.",
+    "fullName": "Gallicum Acidum"
+  },
+  {
+    "abbreviation": "Gamb.",
+    "fullName": "Gambogia"
+  },
+  {
+    "abbreviation": "Gels.",
+    "fullName": "Gelsemium Sempervirens"
+  },
+  {
+    "abbreviation": "Genist.",
+    "fullName": "Genista Tinctoria"
+  },
+  {
+    "abbreviation": "Gent-c.",
+    "fullName": "Gentiana Cruciata"
+  },
+  {
+    "abbreviation": "Gent-l.",
+    "fullName": "Gentiana Lutea"
+  },
+  {
+    "abbreviation": "Ger.",
+    "fullName": "Geranium Maculatum"
+  },
+  {
+    "abbreviation": "Get.",
+    "fullName": "Gettysburg Aqua"
+  },
+  {
+    "abbreviation": "Gins.",
+    "fullName": "Ginseng Quinquefolium"
+  },
+  {
+    "abbreviation": "Glon.",
+    "fullName": "Glonoinum"
+  },
+  {
+    "abbreviation": "Gnaph.",
+    "fullName": "Gnaphalium Polycephalum"
+  },
+  {
+    "abbreviation": "Goss.",
+    "fullName": "Gossypium Herbaceum"
+  },
+  {
+    "abbreviation": "Gran.",
+    "fullName": "Granatum"
+  },
+  {
+    "abbreviation": "Graph.",
+    "fullName": "Graphites"
+  },
+  {
+    "abbreviation": "Grat.",
+    "fullName": "Gratiola Officinalis"
+  },
+  {
+    "abbreviation": "Grin.",
+    "fullName": "Grindelia Robusta"
+  },
+  {
+    "abbreviation": "Guai.",
+    "fullName": "Guajacum Officinale"
+  },
+  {
+    "abbreviation": "Guano",
+    "fullName": "Guano Australis"
+  },
+  {
+    "abbreviation": "Guare.",
+    "fullName": "Guarea Trichiloides"
+  },
+  {
+    "abbreviation": "Gymn.",
+    "fullName": "Gymnocladus Canadensis"
+  },
+  {
+    "abbreviation": "Haem.",
+    "fullName": "Haematoxylon Campechianum"
+  },
+  {
+    "abbreviation": "Ham.",
+    "fullName": "Hamamelis Virginiana"
+  },
+  {
+    "abbreviation": "Hedeo.",
+    "fullName": "Hedeoma Pulegioides"
+  },
+  {
+    "abbreviation": "Hell.",
+    "fullName": "Helleborus Niger"
+  },
+  {
+    "abbreviation": "Helo.",
+    "fullName": "Heloderma (+ -h., + -s.)"
+  },
+  {
+    "abbreviation": "Helon.",
+    "fullName": "Helonias Dioica"
+  },
+  {
+    "abbreviation": "Hep.",
+    "fullName": "Hepar Sulphur"
+  },
+  {
+    "abbreviation": "Hipp.",
+    "fullName": "Hippomanes"
+  },
+  {
+    "abbreviation": "Hippoz.",
+    "fullName": "Hippozaeninum"
+  },
+  {
+    "abbreviation": "Hom.",
+    "fullName": "Homarus Gammarus"
+  },
+  {
+    "abbreviation": "Hura",
+    "fullName": "Hura Crepitans, Brasiliensis"
+  },
+  {
+    "abbreviation": "Hydr-ac.",
+    "fullName": "Hydrocyanicum Acidum"
+  },
+  {
+    "abbreviation": "Hydr.",
+    "fullName": "Hydrastis Canadensis"
+  },
+  {
+    "abbreviation": "Hydrang.",
+    "fullName": "Hydrangea Arborescens"
+  },
+  {
+    "abbreviation": "Hydrc.",
+    "fullName": "Hydrocotyle Asiatica"
+  },
+  {
+    "abbreviation": "Hyos.",
+    "fullName": "Hyoscyamus Niger"
+  },
+  {
+    "abbreviation": "Hyper.",
+    "fullName": "Hypericum Perforatum"
+  },
+  {
+    "abbreviation": "Iber.",
+    "fullName": "Iberis Amara"
+  },
+  {
+    "abbreviation": "Ictod.",
+    "fullName": "Ictodes Foetida"
+  },
+  {
+    "abbreviation": "Ign.",
+    "fullName": "Ignatia Amara"
+  },
+  {
+    "abbreviation": "Ind.",
+    "fullName": "Indium Metallicum"
+  },
+  {
+    "abbreviation": "Indg.",
+    "fullName": "Indigo Tinctoria"
+  },
+  {
+    "abbreviation": "Ingluv.",
+    "fullName": "Ingluvin"
+  },
+  {
+    "abbreviation": "Inul.",
+    "fullName": "Inula Helenium"
+  },
+  {
+    "abbreviation": "Iod.",
+    "fullName": "Iodium"
+  },
+  {
+    "abbreviation": "Iodof.",
+    "fullName": "Iodoformium"
+  },
+  {
+    "abbreviation": "Ip.",
+    "fullName": "Ipecacuanha"
+  },
+  {
+    "abbreviation": "Ipom.",
+    "fullName": "Ipomoea Purpurea"
+  },
+  {
+    "abbreviation": "Irid.",
+    "fullName": "Iridium Metallicum"
+  },
+  {
+    "abbreviation": "Iris",
+    "fullName": "Iris Versicolor"
+  },
+  {
+    "abbreviation": "Iris-fl.",
+    "fullName": "Iris Florentina"
+  },
+  {
+    "abbreviation": "Iris-foe.",
+    "fullName": "Iris Foetidissima"
+  },
+  {
+    "abbreviation": "Jab.",
+    "fullName": "Jaborandi"
+  },
+  {
+    "abbreviation": "Jac-c.",
+    "fullName": "Jacaranda Caroba"
+  },
+  {
+    "abbreviation": "Jac.",
+    "fullName": "Jacaranda Gualandai"
+  },
+  {
+    "abbreviation": "Jal.",
+    "fullName": "Jalapa"
+  },
+  {
+    "abbreviation": "Jatr.",
+    "fullName": "Jatropha Curcas"
+  },
+  {
+    "abbreviation": "Jug-c.",
+    "fullName": "Juglans Cinerea"
+  },
+  {
+    "abbreviation": "Jug-r.",
+    "fullName": "Juglans Regia"
+  },
+  {
+    "abbreviation": "Junc.",
+    "fullName": "Juncus Effusus"
+  },
+  {
+    "abbreviation": "Juni-v.",
+    "fullName": "Juniperus Virginiana"
+  },
+  {
+    "abbreviation": "Kali-acet.",
+    "fullName": "Kalium Aceticum"
+  },
+  {
+    "abbreviation": "Kali-ar.",
+    "fullName": "Kalium Arsenicosum"
+  },
+  {
+    "abbreviation": "Kali-bi.",
+    "fullName": "Kalium Bichromicum"
+  },
+  {
+    "abbreviation": "Kali-br.",
+    "fullName": "Kalium Bromatum"
+  },
+  {
+    "abbreviation": "Kali-c.",
+    "fullName": "Kalium Carbonicum"
+  },
+  {
+    "abbreviation": "Kali-chl.",
+    "fullName": "Kalium Chloricum"
+  },
+  {
+    "abbreviation": "Kali-cy.",
+    "fullName": "Kalium Cyanatum"
+  },
+  {
+    "abbreviation": "Kali-fcy.",
+    "fullName": "Kalium Ferrocyanatum"
+  },
+  {
+    "abbreviation": "Kali-i.",
+    "fullName": "Kalium Iodatum"
+  },
+  {
+    "abbreviation": "Kali-m.",
+    "fullName": "Kalium Muriaticum"
+  },
+  {
+    "abbreviation": "Kali-ma.",
+    "fullName": "Kalium Permanganatum"
+  },
+  {
+    "abbreviation": "Kali-n.",
+    "fullName": "Kalium Nitricum"
+  },
+  {
+    "abbreviation": "Kali-ox.",
+    "fullName": "Kalium Oxalicum"
+  },
+  {
+    "abbreviation": "Kali-p.",
+    "fullName": "Kalium Phosphoricum"
+  },
+  {
+    "abbreviation": "Kali-s.",
+    "fullName": "Kalium Sulphuricum"
+  },
+  {
+    "abbreviation": "Kalm.",
+    "fullName": "Kalmia Latifolia"
+  },
+  {
+    "abbreviation": "Kaol.",
+    "fullName": "Kaolinum"
+  },
+  {
+    "abbreviation": "Kiss.",
+    "fullName": "Kissingen Aqua"
+  },
+  {
+    "abbreviation": "Kreos.",
+    "fullName": "Kreosotum"
+  },
+  {
+    "abbreviation": "Lac-ac.",
+    "fullName": "Lacticum Acidum"
+  },
+  {
+    "abbreviation": "Lac-c.",
+    "fullName": "Lac Caninum"
+  },
+  {
+    "abbreviation": "Lac-d.",
+    "fullName": "Lac Vaccinum Defloratum"
+  },
+  {
+    "abbreviation": "Lac-f.",
+    "fullName": "Lac Felinum"
+  },
+  {
+    "abbreviation": "Lach.",
+    "fullName": "Lachesis Muta"
+  },
+  {
+    "abbreviation": "Lachn.",
+    "fullName": "Lachnanthes Tinctoria"
+  },
+  {
+    "abbreviation": "Lact.",
+    "fullName": "Lactuca Virosa"
+  },
+  {
+    "abbreviation": "Lam.",
+    "fullName": "Lamium Album"
+  },
+  {
+    "abbreviation": "Lap-a.",
+    "fullName": "Lapis Albus"
+  },
+  {
+    "abbreviation": "Lappa",
+    "fullName": "Lappa Arctium"
+  },
+  {
+    "abbreviation": "Lat-m.",
+    "fullName": "Latrodectus Mactans"
+  },
+  {
+    "abbreviation": "Lath.",
+    "fullName": "Lathyrus Sativus"
+  },
+  {
+    "abbreviation": "Laur.",
+    "fullName": "Laurocerasus"
+  },
+  {
+    "abbreviation": "Lava-h.",
+    "fullName": "Lava Hekla"
+  },
+  {
+    "abbreviation": "Lec.",
+    "fullName": "Lecithinum"
+  },
+  {
+    "abbreviation": "Led.",
+    "fullName": "Ledum Palustre"
+  },
+  {
+    "abbreviation": "Lem-m.",
+    "fullName": "Lemna Minor"
+  },
+  {
+    "abbreviation": "Lepi.",
+    "fullName": "Lepidium Bonariense"
+  },
+  {
+    "abbreviation": "Lept.",
+    "fullName": "Leptandra Virginica"
+  },
+  {
+    "abbreviation": "Lil-t.",
+    "fullName": "Lilium Tigrinum"
+  },
+  {
+    "abbreviation": "Linu-c.",
+    "fullName": "Linum Catharticum"
+  },
+  {
+    "abbreviation": "Lith-c.",
+    "fullName": "Lithium Carbonicum"
+  },
+  {
+    "abbreviation": "Lith-m.",
+    "fullName": "Lithium Muriaticum"
+  },
+  {
+    "abbreviation": "Lob-c.",
+    "fullName": "Lobelia Cardinalis"
+  },
+  {
+    "abbreviation": "Lob-s.",
+    "fullName": "Lobelia Syphilitica"
+  },
+  {
+    "abbreviation": "Lob.",
+    "fullName": "Lobelia Inflata"
+  },
+  {
+    "abbreviation": "Lup.",
+    "fullName": "Lupulus Humulus"
+  },
+  {
+    "abbreviation": "Lyc.",
+    "fullName": "Lycopodium Clavatum"
+  },
+  {
+    "abbreviation": "Lycpr.",
+    "fullName": "Lycopersicon Esculentum"
+  },
+  {
+    "abbreviation": "Lycps.",
+    "fullName": "Lycopus Virginicus"
+  },
+  {
+    "abbreviation": "Lyss.",
+    "fullName": "Hydrophobinum"
+  },
+  {
+    "abbreviation": "M-arct.",
+    "fullName": "Magnetis Polus Arcticus"
+  },
+  {
+    "abbreviation": "M-aust.",
+    "fullName": "Magnetis Polus Australis"
+  },
+  {
+    "abbreviation": "Mag-c.",
+    "fullName": "Magnesium Carbonicum"
+  },
+  {
+    "abbreviation": "Mag-m.",
+    "fullName": "Magnesium Muriaticum"
+  },
+  {
+    "abbreviation": "Mag-p.",
+    "fullName": "Magnesium Phosphoricum"
+  },
+  {
+    "abbreviation": "Mag-s.",
+    "fullName": "Magnesium Sulphuricum"
+  },
+  {
+    "abbreviation": "Maland.",
+    "fullName": "Malandrinum"
+  },
+  {
+    "abbreviation": "Malar.",
+    "fullName": "Malaria Nosode"
+  },
+  {
+    "abbreviation": "Manc.",
+    "fullName": "Mancinella"
+  },
+  {
+    "abbreviation": "Mang-m.",
+    "fullName": "Manganum Muriaticum"
+  },
+  {
+    "abbreviation": "Mang.",
+    "fullName": "Manganum Aceticum (+ -c.)"
+  },
+  {
+    "abbreviation": "Med.",
+    "fullName": "Medorrhinum"
+  },
+  {
+    "abbreviation": "Meli.",
+    "fullName": "Melilotus Officinalis"
+  },
+  {
+    "abbreviation": "Menis.",
+    "fullName": "Menispermum Canadense"
+  },
+  {
+    "abbreviation": "Menth.",
+    "fullName": "Mentha Piperita"
+  },
+  {
+    "abbreviation": "Meny.",
+    "fullName": "Menyanthes Trifoliata"
+  },
+  {
+    "abbreviation": "Meph.",
+    "fullName": "Mephitis Putorius"
+  },
+  {
+    "abbreviation": "Merc-acet.",
+    "fullName": "Mercurius Aceticus"
+  },
+  {
+    "abbreviation": "Merc-c.",
+    "fullName": "Mercurius Corrosivus"
+  },
+  {
+    "abbreviation": "Merc-cy.",
+    "fullName": "Mercurius Cyanatus"
+  },
+  {
+    "abbreviation": "Merc-d.",
+    "fullName": "Mercurius Dulcis"
+  },
+  {
+    "abbreviation": "Merc-i-f.",
+    "fullName": "Mercurius Iodatus Flavus"
+  },
+  {
+    "abbreviation": "Merc-i-r.",
+    "fullName": "Mercurius Iodatus Ruber"
+  },
+  {
+    "abbreviation": "Merc-n.",
+    "fullName": "Mercurius Nitricus"
+  },
+  {
+    "abbreviation": "Merc-pr-r.",
+    "fullName": "Mercurius Praecipitatus Ruber"
+  },
+  {
+    "abbreviation": "Merc-s.",
+    "fullName": "Mercurius Sulphuricus"
+  },
+  {
+    "abbreviation": "Merc.",
+    "fullName": "Mercurius Solubilis"
+  },
+  {
+    "abbreviation": "Merl.",
+    "fullName": "Mercurialis Perennis"
+  },
+  {
+    "abbreviation": "Mez.",
+    "fullName": "Mezereum"
+  },
+  {
+    "abbreviation": "Mill.",
+    "fullName": "Millefolium Herba"
+  },
+  {
+    "abbreviation": "Mit.",
+    "fullName": "Mitchella Repens"
+  },
+  {
+    "abbreviation": "Morph.",
+    "fullName": "Morphinum and salts"
+  },
+  {
+    "abbreviation": "Mosch.",
+    "fullName": "Moschus"
+  },
+  {
+    "abbreviation": "Mur-ac.",
+    "fullName": "Muriaticum Acidum"
+  },
+  {
+    "abbreviation": "Murx.",
+    "fullName": "Murex Purpurea"
+  },
+  {
+    "abbreviation": "Mygal.",
+    "fullName": "Mygale Lasiodora"
+  },
+  {
+    "abbreviation": "Myos.",
+    "fullName": "Myosotis Symphytifolia"
+  },
+  {
+    "abbreviation": "Myric.",
+    "fullName": "Myrica Cerifera"
+  },
+  {
+    "abbreviation": "Myris.",
+    "fullName": "Myristica Sebifera"
+  },
+  {
+    "abbreviation": "Myrt-c.",
+    "fullName": "Myrtus Communis"
+  },
+  {
+    "abbreviation": "Naja",
+    "fullName": "Naja Tripudians"
+  },
+  {
+    "abbreviation": "Naphtin.",
+    "fullName": "Naphthalinum"
+  },
+  {
+    "abbreviation": "Narcot.",
+    "fullName": "Narcotinum"
+  },
+  {
+    "abbreviation": "Nat-acet.",
+    "fullName": "Natrium Aceticum"
+  },
+  {
+    "abbreviation": "Nat-ar.",
+    "fullName": "Natrium Arsenicosum"
+  },
+  {
+    "abbreviation": "Nat-c.",
+    "fullName": "Natrium Carbonicum"
+  },
+  {
+    "abbreviation": "Nat-hchls.",
+    "fullName": "Natrium Hypochlorosum"
+  },
+  {
+    "abbreviation": "Nat-m.",
+    "fullName": "Natrium Muriaticum"
+  },
+  {
+    "abbreviation": "Nat-n.",
+    "fullName": "Natrium Nitricum"
+  },
+  {
+    "abbreviation": "Nat-p.",
+    "fullName": "Natrium Phosphoricum"
+  },
+  {
+    "abbreviation": "Nat-s.",
+    "fullName": "Natrium Sulphuricum"
+  },
+  {
+    "abbreviation": "Nicc-s.",
+    "fullName": "Niccolum Sulphuricum"
+  },
+  {
+    "abbreviation": "Nicc.",
+    "fullName": "Niccolum Metallicum"
+  },
+  {
+    "abbreviation": "Nit-ac.",
+    "fullName": "Nitricum Acidum"
+  },
+  {
+    "abbreviation": "Nit-m-ac.",
+    "fullName": "Nitromuriaticum Acidum"
+  },
+  {
+    "abbreviation": "Nit-s-d.",
+    "fullName": "Nitri Spiritus Dulcis"
+  },
+  {
+    "abbreviation": "Nitro-o.",
+    "fullName": "Nitrogenium Oxygenatum"
+  },
+  {
+    "abbreviation": "Nitrob.",
+    "fullName": "Nitrobenzolum"
+  },
+  {
+    "abbreviation": "Nuph.",
+    "fullName": "Nuphar Luteum"
+  },
+  {
+    "abbreviation": "Nux-m.",
+    "fullName": "Nux Moschata"
+  },
+  {
+    "abbreviation": "Nux-v.",
+    "fullName": "Nux Vomica"
+  },
+  {
+    "abbreviation": "Nym.",
+    "fullName": "Nymphaea Odorata"
+  },
+  {
+    "abbreviation": "Oci.",
+    "fullName": "Ocimum Canum"
+  },
+  {
+    "abbreviation": "Oena.",
+    "fullName": "Oenanthe Crocata"
+  },
+  {
+    "abbreviation": "Ol-an.",
+    "fullName": "Oleum Animale Aethereum"
+  },
+  {
+    "abbreviation": "Ol-j.",
+    "fullName": "Oleum Jecoris Aselli"
+  },
+  {
+    "abbreviation": "Olnd.",
+    "fullName": "Oleander"
+  },
+  {
+    "abbreviation": "Onos.",
+    "fullName": "Onosmodium Virginianum"
+  },
+  {
+    "abbreviation": "Op.",
+    "fullName": "Opium"
+  },
+  {
+    "abbreviation": "Orig.",
+    "fullName": "Origanum Majorana"
+  },
+  {
+    "abbreviation": "Osm.",
+    "fullName": "Osmium Metallicum (+ -ac.)"
+  },
+  {
+    "abbreviation": "Ov.",
+    "fullName": "Oophorinum"
+  },
+  {
+    "abbreviation": "Ox-ac.",
+    "fullName": "Oxalicum Acidum"
+  },
+  {
+    "abbreviation": "Oxyt.",
+    "fullName": "Oxytropis Lamberti"
+  },
+  {
+    "abbreviation": "Ozone",
+    "fullName": "Ozonum"
+  },
+  {
+    "abbreviation": "Paeon.",
+    "fullName": "Paeonia Officinalis"
+  },
+  {
+    "abbreviation": "Pall.",
+    "fullName": "Palladium Metallicum"
+  },
+  {
+    "abbreviation": "Par.",
+    "fullName": "Paris Quadrifolia"
+  },
+  {
+    "abbreviation": "Pareir.",
+    "fullName": "Pareira Brava"
+  },
+  {
+    "abbreviation": "Paull-p.",
+    "fullName": "Paullinia Pinnata"
+  },
+  {
+    "abbreviation": "Ped.",
+    "fullName": "Pediculus Capitis"
+  },
+  {
+    "abbreviation": "Pen.",
+    "fullName": "Penthorum Sedoides"
+  },
+  {
+    "abbreviation": "Peti.",
+    "fullName": "Petiveria Tetandra"
+  },
+  {
+    "abbreviation": "Petr.",
+    "fullName": "Petroleum"
+  },
+  {
+    "abbreviation": "Petros.",
+    "fullName": "Petroselinum Sativum"
+  },
+  {
+    "abbreviation": "Ph-ac.",
+    "fullName": "Phosphoricum Acidum"
+  },
+  {
+    "abbreviation": "Phal.",
+    "fullName": "Phallus Impudicus"
+  },
+  {
+    "abbreviation": "Phel.",
+    "fullName": "Phellandrium Aquaticum"
+  },
+  {
+    "abbreviation": "Phos.",
+    "fullName": "Phosphorus"
+  },
+  {
+    "abbreviation": "Phys.",
+    "fullName": "Physostigma Venenosum"
+  },
+  {
+    "abbreviation": "Phyt.",
+    "fullName": "Phytolacca Decandra"
+  },
+  {
+    "abbreviation": "Pic-ac.",
+    "fullName": "Picricum Acidum"
+  },
+  {
+    "abbreviation": "Pin-s.",
+    "fullName": "Pinus Silvestris"
+  },
+  {
+    "abbreviation": "Pip-m.",
+    "fullName": "Piper Methysticum"
+  },
+  {
+    "abbreviation": "Pip-n.",
+    "fullName": "Piper Nigrum"
+  },
+  {
+    "abbreviation": "Plan.",
+    "fullName": "Plantago Major"
+  },
+  {
+    "abbreviation": "Plat-m.",
+    "fullName": "Platinum Muriaticum"
+  },
+  {
+    "abbreviation": "Plat.",
+    "fullName": "Platinum Metallicum"
+  },
+  {
+    "abbreviation": "Plb.",
+    "fullName": "Plumbum Metallicum"
+  },
+  {
+    "abbreviation": "Plect.",
+    "fullName": "Plectranthus Fruticosus"
+  },
+  {
+    "abbreviation": "Plumbg.",
+    "fullName": "Plumbago Littoralis"
+  },
+  {
+    "abbreviation": "Podo.",
+    "fullName": "Podophyllum Peltatum"
+  },
+  {
+    "abbreviation": "Polyg.",
+    "fullName": "Polygonum Hydropiperoides"
+  },
+  {
+    "abbreviation": "Pop.",
+    "fullName": "Populus Tremuloides"
+  },
+  {
+    "abbreviation": "Prun-p.",
+    "fullName": "Prunus Padus"
+  },
+  {
+    "abbreviation": "Prun.",
+    "fullName": "Prunus Spinosa"
+  },
+  {
+    "abbreviation": "Psor.",
+    "fullName": "Psorinum"
+  },
+  {
+    "abbreviation": "Ptel.",
+    "fullName": "Ptelea Trifoliata"
+  },
+  {
+    "abbreviation": "Puls-n.",
+    "fullName": "Pulsatilla Nuttaliana"
+  },
+  {
+    "abbreviation": "Puls.",
+    "fullName": "Pulsatilla Pratensis"
+  },
+  {
+    "abbreviation": "Pulx.",
+    "fullName": "Pulex Irritans"
+  },
+  {
+    "abbreviation": "Pyrog.",
+    "fullName": "Pyrogenium"
+  },
+  {
+    "abbreviation": "Pyrus",
+    "fullName": "Pyrus Americana"
+  },
+  {
+    "abbreviation": "Rad-br.",
+    "fullName": "Radium Bromatum"
+  },
+  {
+    "abbreviation": "Ran-a.",
+    "fullName": "Ranunculus Acris"
+  },
+  {
+    "abbreviation": "Ran-b.",
+    "fullName": "Ranunculus Bulbosus"
+  },
+  {
+    "abbreviation": "Ran-s.",
+    "fullName": "Ranunculus Sceleratus"
+  },
+  {
+    "abbreviation": "Raph.",
+    "fullName": "Raphanus Sativus"
+  },
+  {
+    "abbreviation": "Rat.",
+    "fullName": "Ratanhia Peruviana"
+  },
+  {
+    "abbreviation": "Rheum",
+    "fullName": "Rheum Palmatum"
+  },
+  {
+    "abbreviation": "Rhod.",
+    "fullName": "Rhododendron Chrysanthum"
+  },
+  {
+    "abbreviation": "Rhus-a.",
+    "fullName": "Rhus Aromatica"
+  },
+  {
+    "abbreviation": "Rhus-g.",
+    "fullName": "Rhus Glabra"
+  },
+  {
+    "abbreviation": "Rhus-r.",
+    "fullName": "Rhus Radicans"
+  },
+  {
+    "abbreviation": "Rhus-t.",
+    "fullName": "Rhus Toxicodendron"
+  },
+  {
+    "abbreviation": "Rhus-v.",
+    "fullName": "Rhus Venenata"
+  },
+  {
+    "abbreviation": "Rob.",
+    "fullName": "Robinia Pseudacacia"
+  },
+  {
+    "abbreviation": "Rumx.",
+    "fullName": "Rumex Crispus"
+  },
+  {
+    "abbreviation": "Ruta",
+    "fullName": "Ruta Graveolens"
+  },
+  {
+    "abbreviation": "Sabad.",
+    "fullName": "Sabadilla"
+  },
+  {
+    "abbreviation": "Sabal",
+    "fullName": "Sabal Serrulata"
+  },
+  {
+    "abbreviation": "Sabin.",
+    "fullName": "Sabina"
+  },
+  {
+    "abbreviation": "Sac-alb.",
+    "fullName": "Saccharum Album"
+  },
+  {
+    "abbreviation": "Sac-l.",
+    "fullName": "Saccharum Lactis"
+  },
+  {
+    "abbreviation": "Sal-ac.",
+    "fullName": "Salicylicum Acidum"
+  },
+  {
+    "abbreviation": "Salam.",
+    "fullName": "Salamandra Maculata"
+  },
+  {
+    "abbreviation": "Salx-n.",
+    "fullName": "Salix Nigra"
+  },
+  {
+    "abbreviation": "Samb.",
+    "fullName": "Sambucus Nigra"
+  },
+  {
+    "abbreviation": "Sang.",
+    "fullName": "Sanguinaria Canadensis"
+  },
+  {
+    "abbreviation": "Sanguin-n.",
+    "fullName": "Sanguinarinum Nitricum"
+  },
+  {
+    "abbreviation": "Sanic.",
+    "fullName": "Sanicula Aqua"
+  },
+  {
+    "abbreviation": "Sant.",
+    "fullName": "Santoninum"
+  },
+  {
+    "abbreviation": "Sarr.",
+    "fullName": "Sarracenia Purpurea"
+  },
+  {
+    "abbreviation": "Sars.",
+    "fullName": "Sarsaparilla Officinalis"
+  },
+  {
+    "abbreviation": "Scut.",
+    "fullName": "Scutellaria Lateriflora"
+  },
+  {
+    "abbreviation": "Sec.",
+    "fullName": "Secale Cornutum"
+  },
+  {
+    "abbreviation": "Sel.",
+    "fullName": "Selenium Metallicum"
+  },
+  {
+    "abbreviation": "Senec.",
+    "fullName": "Senecio Aureus"
+  },
+  {
+    "abbreviation": "Seneg.",
+    "fullName": "Senega"
+  },
+  {
+    "abbreviation": "Senn.",
+    "fullName": "Senna"
+  },
+  {
+    "abbreviation": "Sep.",
+    "fullName": "Sepia Officinalis"
+  },
+  {
+    "abbreviation": "Serp.",
+    "fullName": "Serpentaria Aristolochia"
+  },
+  {
+    "abbreviation": "Sil.",
+    "fullName": "Silicea Terra"
+  },
+  {
+    "abbreviation": "Sin-a.",
+    "fullName": "Sinapis Alba"
+  },
+  {
+    "abbreviation": "Sin-n.",
+    "fullName": "Sinapis Nigra"
+  },
+  {
+    "abbreviation": "Sol-m.",
+    "fullName": "Solanum Mammosum"
+  },
+  {
+    "abbreviation": "Sol-n.",
+    "fullName": "Solanum Nigrum"
+  },
+  {
+    "abbreviation": "Sol-t-ae.",
+    "fullName": "Solanum Tuberosum Aegrotans"
+  },
+  {
+    "abbreviation": "Solid.",
+    "fullName": "Solidago Virgaurea"
+  },
+  {
+    "abbreviation": "Spig-m.",
+    "fullName": "Spigelia Marylandica"
+  },
+  {
+    "abbreviation": "Spig.",
+    "fullName": "Spigelia Anthelmia"
+  },
+  {
+    "abbreviation": "Spira.",
+    "fullName": "Spiranthes Autumnalis"
+  },
+  {
+    "abbreviation": "Spong.",
+    "fullName": "Spongia Tosta"
+  },
+  {
+    "abbreviation": "Squil.",
+    "fullName": "Squilla Maritima"
+  },
+  {
+    "abbreviation": "Stann.",
+    "fullName": "Stannum Metallicum"
+  },
+  {
+    "abbreviation": "Staph.",
+    "fullName": "Staphysagria"
+  },
+  {
+    "abbreviation": "Stel.",
+    "fullName": "Stellaria Media"
+  },
+  {
+    "abbreviation": "Stict.",
+    "fullName": "Sticta Pulmonaria"
+  },
+  {
+    "abbreviation": "Still.",
+    "fullName": "Stillingia Sylvatica"
+  },
+  {
+    "abbreviation": "Stram.",
+    "fullName": "Stramonium"
+  },
+  {
+    "abbreviation": "Stront-c.",
+    "fullName": "Strontium Carbonicum"
+  },
+  {
+    "abbreviation": "Stroph.",
+    "fullName": "Strophanthus Hispidus"
+  },
+  {
+    "abbreviation": "Stry.",
+    "fullName": "Strychninum"
+  },
+  {
+    "abbreviation": "Sul-ac.",
+    "fullName": "Sulphuricum Acidum"
+  },
+  {
+    "abbreviation": "Sul-i.",
+    "fullName": "Sulphur Iodatum"
+  },
+  {
+    "abbreviation": "Sulph.",
+    "fullName": "Sulphur"
+  },
+  {
+    "abbreviation": "Sumb.",
+    "fullName": "Sumbulus Moschatus"
+  },
+  {
+    "abbreviation": "Sym-r.",
+    "fullName": "Symphoricarpus Racemosus"
+  },
+  {
+    "abbreviation": "Symph.",
+    "fullName": "Symphytum Officinale"
+  },
+  {
+    "abbreviation": "Syph.",
+    "fullName": "Syphilinum"
+  },
+  {
+    "abbreviation": "Tab.",
+    "fullName": "Tabacum"
+  },
+  {
+    "abbreviation": "Tanac.",
+    "fullName": "Tanacetum Vulgare"
+  },
+  {
+    "abbreviation": "Tarax.",
+    "fullName": "Taraxacum Officinale"
+  },
+  {
+    "abbreviation": "Tarent-c.",
+    "fullName": "Tarentula Cubensis"
+  },
+  {
+    "abbreviation": "Tarent.",
+    "fullName": "Tarentula Hispanica"
+  },
+  {
+    "abbreviation": "Tart-ac.",
+    "fullName": "Tartaricum Acidum"
+  },
+  {
+    "abbreviation": "Tax.",
+    "fullName": "Taxus Baccata"
+  },
+  {
+    "abbreviation": "Tell.",
+    "fullName": "Tellurium"
+  },
+  {
+    "abbreviation": "Tep.",
+    "fullName": "Teplitz Aqua"
+  },
+  {
+    "abbreviation": "Ter.",
+    "fullName": "Terebinthiniae Oleum"
+  },
+  {
+    "abbreviation": "Teucr.",
+    "fullName": "Teucrium Marum Verum"
+  },
+  {
+    "abbreviation": "Thal.",
+    "fullName": "Thallium Metallicum (+ -act.)"
+  },
+  {
+    "abbreviation": "Thea",
+    "fullName": "Thea Chinensis"
+  },
+  {
+    "abbreviation": "Ther.",
+    "fullName": "Theridion Curassavicum"
+  },
+  {
+    "abbreviation": "Thlaspi",
+    "fullName": "Thlaspi Bursa Pastoris"
+  },
+  {
+    "abbreviation": "Thuj.",
+    "fullName": "Thuja Occidentalis"
+  },
+  {
+    "abbreviation": "Til.",
+    "fullName": "Tilia Europaea"
+  },
+  {
+    "abbreviation": "Tong.",
+    "fullName": "Tongo Odorata"
+  },
+  {
+    "abbreviation": "Trif-p.",
+    "fullName": "Trifolium Pratense"
+  },
+  {
+    "abbreviation": "Tril.",
+    "fullName": "Trillium Pendulum"
+  },
+  {
+    "abbreviation": "Trio.",
+    "fullName": "Triosteum Perfoliatum"
+  },
+  {
+    "abbreviation": "Trom.",
+    "fullName": "Trombidium Muscae Domesticae"
+  },
+  {
+    "abbreviation": "Tub.",
+    "fullName": "Tuberculinum Bovinum Kent"
+  },
+  {
+    "abbreviation": "Tus-p.",
+    "fullName": "Tussilago Petasites"
+  },
+  {
+    "abbreviation": "Upa.",
+    "fullName": "Upas Tiente"
+  },
+  {
+    "abbreviation": "Uran-n.",
+    "fullName": "Uranium Nitricum"
+  },
+  {
+    "abbreviation": "Urt-u.",
+    "fullName": "Urtica Urens"
+  },
+  {
+    "abbreviation": "Ust.",
+    "fullName": "Ustilago Maydis"
+  },
+  {
+    "abbreviation": "Uva",
+    "fullName": "Uva Ursi"
+  },
+  {
+    "abbreviation": "Vac.",
+    "fullName": "Vaccininum"
+  },
+  {
+    "abbreviation": "Valer.",
+    "fullName": "Valeriana Officinalis"
+  },
+  {
+    "abbreviation": "Vario.",
+    "fullName": "Variolinum"
+  },
+  {
+    "abbreviation": "Verat-v.",
+    "fullName": "Veratrum Viride"
+  },
+  {
+    "abbreviation": "Verat.",
+    "fullName": "Veratrum Album"
+  },
+  {
+    "abbreviation": "Verb.",
+    "fullName": "Verbascum Thapsus"
+  },
+  {
+    "abbreviation": "Vesp.",
+    "fullName": "Vespa Crabro"
+  },
+  {
+    "abbreviation": "Vib.",
+    "fullName": "Viburnum Opulus"
+  },
+  {
+    "abbreviation": "Vinc.",
+    "fullName": "Vinca Minor"
+  },
+  {
+    "abbreviation": "Viol-o.",
+    "fullName": "Viola Odorata"
+  },
+  {
+    "abbreviation": "Viol-t.",
+    "fullName": "Viola Tricolor"
+  },
+  {
+    "abbreviation": "Vip.",
+    "fullName": "Vipera Berus"
+  },
+  {
+    "abbreviation": "Visc.",
+    "fullName": "Viscum Album"
+  },
+  {
+    "abbreviation": "Wies.",
+    "fullName": "Wiesbaden Aqua"
+  },
+  {
+    "abbreviation": "Wild.",
+    "fullName": "Wildbad Aqua"
+  },
+  {
+    "abbreviation": "Wye.",
+    "fullName": "Wyethia Helenoides"
+  },
+  {
+    "abbreviation": "Xan.",
+    "fullName": "Xantoxylum Fraxineum"
+  },
+  {
+    "abbreviation": "Yuc.",
+    "fullName": "Yucca Filamentosa"
+  },
+  {
+    "abbreviation": "Zinc-acet.",
+    "fullName": "Zincum Aceticum"
+  },
+  {
+    "abbreviation": "Zinc-m.",
+    "fullName": "Zincum Muriaticum"
+  },
+  {
+    "abbreviation": "Zinc-o.",
+    "fullName": "Zincum Oxydatum"
+  },
+  {
+    "abbreviation": "Zinc-s.",
+    "fullName": "Zincum Sulphuricum"
+  },
+  {
+    "abbreviation": "Zinc.",
+    "fullName": "Zincum Metallicum"
+  },
+  {
+    "abbreviation": "Zing.",
+    "fullName": "Zingiber Officinale"
+  },
+  {
+    "abbreviation": "Ziz.",
+    "fullName": "Zizia Aurea"
+  }
+]
