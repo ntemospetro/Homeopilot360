@@ -62,8 +62,7 @@ import {
   Activity,
   X,
   BookOpen,
-  Database,
-  Languages
+  Database
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -76,9 +75,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onLogout,
 }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'therapists' | 'packages' | 'tokens' | 'stripe' | 'terms' | 'config' | 'requests' | 'organon' | 'import_materia_medica' | 'import_repertorium' | 'translations'>(() => getStoredAdminTab() as any || 'therapists');
+  const [activeTab, setActiveTab] = useState<'therapists' | 'packages' | 'tokens' | 'stripe' | 'terms' | 'config' | 'requests' | 'organon' | 'import_materia_medica' | 'import_repertorium'>(() => getStoredAdminTab() as any || 'therapists');
 
-  const handleSelectTab = (tab: 'therapists' | 'packages' | 'tokens' | 'stripe' | 'terms' | 'config' | 'requests' | 'organon' | 'import_materia_medica' | 'import_repertorium' | 'translations') => {
+  const handleSelectTab = (tab: 'therapists' | 'packages' | 'tokens' | 'stripe' | 'terms' | 'config' | 'requests' | 'organon' | 'import_materia_medica' | 'import_repertorium') => {
     setActiveTab(tab);
     navigateTo('admin', { adminTab: tab });
   };
@@ -90,7 +89,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   useEffect(() => {
     const handleAdminTabChange = (e: Event) => {
       const tab = (e as CustomEvent).detail;
-      if (tab && ['therapists', 'packages', 'tokens', 'stripe', 'terms', 'config', 'requests', 'organon', 'import_materia_medica', 'import_repertorium', 'translations'].includes(tab)) {
+      if (tab && ['therapists', 'packages', 'tokens', 'stripe', 'terms', 'config', 'requests', 'organon', 'import_materia_medica', 'import_repertorium'].includes(tab)) {
         setActiveTab(tab);
       }
     };
@@ -436,26 +435,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </button>
 
-            <button
-              id="admin-nav-translations"
-              onClick={() => handleSelectTab('translations')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors cursor-pointer ${
-                activeTab === 'translations'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-sm border border-transparent'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Languages className="w-4 h-4 text-indigo-400" />
-                <span>{t('adminNavTranslations')}</span>
-              </div>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-semibold ${
-                activeTab === 'translations' ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-800'
-              }`}>
-                Studio
-              </span>
-            </button>
-
             {/* Import Menu Section */}
             <div className="pt-2 pb-1">
               <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
@@ -594,10 +573,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {activeTab === 'organon' && (
         <OrganonView />
-      )}
-
-      {activeTab === 'translations' && (
-        <AdminTranslationStudio />
       )}
 
       {activeTab === 'import_materia_medica' && (
