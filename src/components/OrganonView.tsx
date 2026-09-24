@@ -220,6 +220,27 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
       // ignore
     }
   }, [enableHahnemannCrossCheck]);
+
+  const [enableRatio, setEnableRatio] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('organon_enable_ratio');
+      if (saved !== null) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // ignore
+    }
+    return true; // Standardmäßig EIN
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('organon_enable_ratio', JSON.stringify(enableRatio));
+    } catch {
+      // ignore
+    }
+  }, [enableRatio]);
+
   const [viewLayout, setViewLayout] = useState<'tabs' | 'sideBySide'>('tabs');
   const [activeTab, setActiveTab] = useState<'gemini' | 'openai' | 'arbitrator' | 'endpruefer'>('gemini');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -440,11 +461,27 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
     }
   };
 
-  const fetchEndpruefer = async (rawTextStr: string, arbRes: any) => {
-    if (!arbRes) return;
+  const fetchEndpruefer = async (
+    rawTextStr: string,
+    arbRes: any,
+    gRes?: any,
+    oRes?: any,
+    ratioEnabled: boolean = enableRatio
+  ) => {
+    const target: 'ratio' | 'genius' | 'genius_optimus' = ratioEnabled
+      ? 'ratio'
+      : (oRes || compareResult?.openai)
+        ? 'genius_optimus'
+        : 'genius';
+
+    if (target === 'ratio' && !arbRes) return;
+    if (target === 'genius' && !gRes && !analysisResult) return;
+
     setIsEndpruefend(true);
     try {
-      const result = await runEndprueferAnalysis(rawTextStr, arbRes, language);
+      const effectiveG = gRes || analysisResult;
+      const effectiveO = oRes || compareResult?.openai;
+      const result = await runEndprueferAnalysis(rawTextStr, arbRes, language, target, effectiveG, effectiveO);
       setEndprueferResult(result);
     } catch (e) {
       console.warn("Endprüfer execution notice:", e);
@@ -454,6 +491,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
   };
 
   const fetchArbitration = async (gemini: any, openai: any, force: boolean = false) => {
+    if (!enableRatio) return;
     if (isArbitrating) return;
     if (arbitratorResult && !force && (arbitratorResult as any).__isServerResult) return;
     setIsArbitrating(true);
@@ -476,8 +514,8 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
           complete.__isServerResult = true;
           setArbitratorResult(complete);
           setIsArbitrating(false);
-          // Auto-trigger 4th stage (Endprüfer) with rawText and arbitratorResult only
-          fetchEndpruefer(narrationInput, complete);
+          // Auto-trigger 4th stage (Endprüfer)
+          fetchEndpruefer(narrationInput, complete, gemini, openai, true);
           return;
         }
       }
@@ -486,7 +524,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
       console.warn("API arbitrate notice, using complete client-side arbitration synthesis:", e);
       const fallbackArbitration = buildCompleteArbitratorResult(narrationInput, gemini, openai, null, language);
       setArbitratorResult(fallbackArbitration);
-      fetchEndpruefer(narrationInput, fallbackArbitration);
+      fetchEndpruefer(narrationInput, fallbackArbitration, gemini, openai, true);
     } finally {
       setIsArbitrating(false);
     }
@@ -512,25 +550,19 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
     setDebugStatus('Analysiere Text...');
 
     const shouldCrossCheck = enableGptCompare || enableHahnemannCrossCheck;
-    const initialSteps: LiveProcessStep[] = shouldCrossCheck
-      ? [
-          { id: 'patient_text', labelKey: 'organonStepPatientText', status: 'done' },
-          { id: 'text_decomposition', labelKey: 'organonStepTextDecomposition', status: 'done' },
-          { id: 'category_mapping', labelKey: 'organonStepCategoryMapping', status: 'active' },
-          { id: 'crosscheck', labelKey: 'organonStepCrossCheck', status: 'active' },
-          { id: 'arbitration', labelKey: 'organonStepArbitration', status: 'pending' },
-          { id: 'evidence_check', labelKey: 'organonStepEvidenceCheck', status: 'pending' },
-          { id: 'consolidation', labelKey: 'organonStepConsolidation', status: 'pending' },
-          { id: 'final_check', labelKey: 'organonStepFinalCheck', status: 'pending' },
-        ]
-      : [
-          { id: 'patient_text', labelKey: 'organonStepPatientText', status: 'done' },
-          { id: 'text_decomposition', labelKey: 'organonStepTextDecomposition', status: 'done' },
-          { id: 'category_mapping', labelKey: 'organonStepCategoryMapping', status: 'active' },
-          { id: 'evidence_check', labelKey: 'organonStepEvidenceCheck', status: 'pending' },
-          { id: 'consolidation', labelKey: 'organonStepConsolidation', status: 'pending' },
-          { id: 'final_check', labelKey: 'organonStepFinalCheck', status: 'pending' },
-        ];
+    const initialSteps: LiveProcessStep[] = [];
+    initialSteps.push({ id: 'patient_text', labelKey: 'organonStepPatientText', status: 'done' });
+    initialSteps.push({ id: 'text_decomposition', labelKey: 'organonStepTextDecomposition', status: 'done' });
+    initialSteps.push({ id: 'category_mapping', labelKey: 'organonStepCategoryMapping', status: 'active' });
+    if (shouldCrossCheck) {
+      initialSteps.push({ id: 'crosscheck', labelKey: 'organonStepCrossCheck', status: 'active' });
+    }
+    if (enableRatio) {
+      initialSteps.push({ id: 'arbitration', labelKey: 'organonStepArbitration', status: 'pending' });
+    }
+    initialSteps.push({ id: 'evidence_check', labelKey: 'organonStepEvidenceCheck', status: 'pending' });
+    initialSteps.push({ id: 'consolidation', labelKey: 'organonStepConsolidation', status: 'pending' });
+    initialSteps.push({ id: 'final_check', labelKey: 'organonStepFinalCheck', status: 'pending' });
     setLiveSteps(initialSteps);
 
     const onStepUpdate = (stepId: string, status: 'active' | 'done') => {
@@ -540,7 +572,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
     };
 
     try {
-      const result = await analyzeOrganonText(textToAnalyze, language, 'gemini', shouldCrossCheck, onStepUpdate);
+      const result = await analyzeOrganonText(textToAnalyze, language, 'gemini', shouldCrossCheck, onStepUpdate, enableRatio);
       setLiveSteps(prev => prev.map(s => ({ ...s, status: 'done' })));
       let gRes: any = null;
       let oRes: any = null;
@@ -557,23 +589,28 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
         oRes = null;
       }
 
-      // Build guaranteed complete evidence auditor result for all 10 categories, Table A and Table B
-      const completeArb = buildCompleteArbitratorResult(
-        textToAnalyze,
-        gRes,
-        oRes,
-        (result as any).arbitrator_result || null,
-        language
-      );
-      if ((result as any).arbitrator_result) {
-        completeArb.__isServerResult = true;
-      }
-      setArbitratorResult(completeArb);
-      fetchEndpruefer(textToAnalyze, completeArb);
+      if (enableRatio) {
+        // Build guaranteed complete evidence auditor result for all 10 categories, Table A and Table B
+        const completeArb = buildCompleteArbitratorResult(
+          textToAnalyze,
+          gRes,
+          oRes,
+          (result as any).arbitrator_result || null,
+          language
+        );
+        if ((result as any).arbitrator_result) {
+          completeArb.__isServerResult = true;
+        }
+        setArbitratorResult(completeArb);
+        fetchEndpruefer(textToAnalyze, completeArb, gRes, oRes, true);
 
-      // If server did not include full arbitrator_result, trigger background arbitration to refine
-      if (!(result as any).arbitrator_result) {
-        fetchArbitration(gRes, oRes, true);
+        // If server did not include full arbitrator_result, trigger background arbitration to refine
+        if (!(result as any).arbitrator_result) {
+          fetchArbitration(gRes, oRes, true);
+        }
+      } else {
+        setArbitratorResult(null);
+        fetchEndpruefer(textToAnalyze, null, gRes, oRes, false);
       }
 
       setDebugStatus('Analyse erfolgreich abgeschlossen.');
@@ -956,15 +993,20 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
     const effectiveG = updatedGemini || updatedAnalysis;
     if (effectiveG) {
       const effectiveO = updatedOpenai || compareResult?.openai || null;
-      updatedArb = buildCompleteArbitratorResult(
-        narrationInput,
-        effectiveG,
-        effectiveO,
-        null,
-        language
-      );
-      setArbitratorResult(updatedArb);
-      fetchEndpruefer(narrationInput, updatedArb);
+      if (enableRatio) {
+        updatedArb = buildCompleteArbitratorResult(
+          narrationInput,
+          effectiveG,
+          effectiveO,
+          null,
+          language
+        );
+        setArbitratorResult(updatedArb);
+        fetchEndpruefer(narrationInput, updatedArb, effectiveG, effectiveO, true);
+      } else {
+        setArbitratorResult(null);
+        fetchEndpruefer(narrationInput, null, effectiveG, effectiveO, false);
+      }
     }
 
     const updatedStage2: Record<string, any> = { ...stage2Records };
@@ -1290,6 +1332,13 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                   flagged: res.flagged_count ?? 0
                 })}
               </div>
+              <div className="text-[10px] font-semibold text-slate-700 mt-1">
+                {res.evaluated_target === 'genius'
+                  ? t('organonDecisorTargetGenius')
+                  : res.evaluated_target === 'genius_optimus'
+                    ? t('organonDecisorTargetGeniusOptimus')
+                    : t('organonDecisorTargetRatio')}
+              </div>
             </div>
           </div>
 
@@ -1354,7 +1403,11 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     {/* Schiedsrichter vs. Original */}
                     <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
                       <span className="font-semibold text-purple-900 block text-[10px] uppercase tracking-wider">
-                        {t('organonEndprueferArbiterResult')}
+                        {res.evaluated_target === 'genius'
+                          ? t('organonEndprueferGeniusResult')
+                          : res.evaluated_target === 'genius_optimus'
+                            ? t('organonEndprueferGeniusOptimusResult')
+                            : t('organonEndprueferArbiterResult')}
                       </span>
                       <p className="text-slate-800 leading-relaxed">{cat.schiedsrichter_result || '—'}</p>
                     </div>
@@ -1739,13 +1792,15 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
               >
                 {t('organonOptimusLabel')}
               </button>
-              <button
-                type="button"
-                onClick={() => { setActiveTab('arbitrator'); setIsResultsModalOpen(true); }}
-                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-purple-300 rounded-xl text-xs font-semibold border border-purple-500/30 transition-all cursor-pointer"
-              >
-                {t('organonStrictArbiterLabel')}
-              </button>
+              {enableRatio && (
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('arbitrator'); setIsResultsModalOpen(true); }}
+                  className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-purple-300 rounded-xl text-xs font-semibold border border-purple-500/30 transition-all cursor-pointer"
+                >
+                  {t('organonStrictArbiterLabel')}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => { setActiveTab('endpruefer'); setIsResultsModalOpen(true); }}
@@ -1953,6 +2008,25 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     </span>
                   </div>
                 </div>
+
+                {/* Switch 3: Ratio (Belegprüfer) (standardmäßig EIN) */}
+                <div className="flex items-center gap-3">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={enableRatio}
+                      onChange={(e) => setEnableRatio(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                  <div className="text-left">
+                    <span className="text-xs font-semibold text-slate-700 block">{t('organonRatioToggleLabel')}</span>
+                    <span className="text-[10px] text-slate-400 block">
+                      {enableRatio ? t('organonRatioActive') : t('organonRatioInactive')}
+                    </span>
+                  </div>
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-3 ml-auto">
                 <button
@@ -2074,17 +2148,19 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     >
                       {t('organonGeniusLabel')}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('arbitrator')}
-                      className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                        activeTab === 'arbitrator'
-                          ? 'border-purple-600 text-purple-900 bg-purple-50/50'
-                          : 'border-transparent text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      {t('organonStrictArbiterLabel')}
-                    </button>
+                    {enableRatio && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('arbitrator')}
+                        className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                          activeTab === 'arbitrator'
+                            ? 'border-purple-600 text-purple-900 bg-purple-50/50'
+                            : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        {t('organonStrictArbiterLabel')}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setActiveTab('endpruefer')}
@@ -2101,7 +2177,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
 
                   <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-4 space-y-4">
                     {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, t('organonGeniusLabel'))}
-                    {activeTab === 'arbitrator' && (
+                    {enableRatio && activeTab === 'arbitrator' && (
                       isArbitrating ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
                           <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
@@ -2135,8 +2211,8 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                           <p className="text-xs text-slate-600">{t('organonEndprueferNotStarted')}</p>
                           <button
                             type="button"
-                            onClick={() => arbitratorResult && fetchEndpruefer(narrationInput, arbitratorResult)}
-                            disabled={!arbitratorResult}
+                            onClick={() => fetchEndpruefer(narrationInput, arbitratorResult, compareResult.gemini, compareResult.openai, enableRatio)}
+                            disabled={enableRatio ? !arbitratorResult : !analysisResult}
                             className="px-4 py-2 bg-emerald-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-emerald-700 transition-colors"
                           >
                             {t('organonStartEndprueferNow')}
@@ -2183,7 +2259,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     </div>
                   </div>
 
-                  {compareResult.openai && (
+                  {enableRatio && compareResult.openai && (
                     <div className="bg-slate-50/70 rounded-xl border border-purple-200/80 p-4 space-y-3">
                       <div className="flex items-center justify-between pb-2 border-b border-purple-100">
                         <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
@@ -2218,10 +2294,10 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                         <Shield className="w-3.5 h-3.5 text-emerald-600" />
                         {t('organonEndprueferTabLabel')}
                       </span>
-                      {!endprueferResult && !isEndpruefend && arbitratorResult && (
+                      {!endprueferResult && !isEndpruefend && (enableRatio ? !!arbitratorResult : !!analysisResult) && (
                         <button
                           type="button"
-                          onClick={() => fetchEndpruefer(narrationInput, arbitratorResult)}
+                          onClick={() => fetchEndpruefer(narrationInput, arbitratorResult, compareResult.gemini, compareResult.openai, enableRatio)}
                           className="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-emerald-700"
                         >
                           {t('organonStartEndprueferNow')}
@@ -2267,17 +2343,19 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     >
                       {t('organonOptimusLabel')}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('arbitrator')}
-                      className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                        activeTab === 'arbitrator'
-                          ? 'border-purple-600 text-purple-900 bg-purple-50/50'
-                          : 'border-transparent text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      {t('organonStrictArbiterLabel')}
-                    </button>
+                    {enableRatio && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('arbitrator')}
+                        className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                          activeTab === 'arbitrator'
+                            ? 'border-purple-600 text-purple-900 bg-purple-50/50'
+                            : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        {t('organonStrictArbiterLabel')}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setActiveTab('endpruefer')}
@@ -2295,7 +2373,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                   <div className="bg-slate-50/90 rounded-xl border border-slate-200 p-4 space-y-4">
                     {activeTab === 'gemini' && renderThreeStageView(compareResult.gemini, t('organonGeniusLabel'))}
                     {activeTab === 'openai' && renderThreeStageView(compareResult.openai, t('organonOptimusLabel'))}
-                    {activeTab === 'arbitrator' && (
+                    {enableRatio && activeTab === 'arbitrator' && (
                       isArbitrating ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 space-y-3">
                           <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
@@ -2329,8 +2407,8 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                           <p className="text-xs text-slate-600">{t('organonEndprueferNotStarted')}</p>
                           <button
                             type="button"
-                            onClick={() => arbitratorResult && fetchEndpruefer(narrationInput, arbitratorResult)}
-                            disabled={!arbitratorResult}
+                            onClick={() => fetchEndpruefer(narrationInput, arbitratorResult, compareResult.gemini, compareResult.openai, enableRatio)}
+                            disabled={enableRatio ? !arbitratorResult : !analysisResult}
                             className="px-4 py-2 bg-emerald-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-emerald-700 transition-colors"
                           >
                             {t('organonStartEndprueferNow')}

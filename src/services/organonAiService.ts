@@ -736,7 +736,8 @@ export async function analyzeOrganonText(
   language: string = 'de',
   engine: string = 'gemini',
   compare: boolean = false,
-  onStepUpdate?: (stepId: string, status: 'active' | 'done') => void
+  onStepUpdate?: (stepId: string, status: 'active' | 'done') => void,
+  enableRatio: boolean = true
 ): Promise<OrganonAiAnalysisResult | OrganonCompareResult> {
   try {
     const res = await fetch('/api/organon/analyze', {
@@ -744,7 +745,7 @@ export async function analyzeOrganonText(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ rawText, language, engine, compare, stream: !!onStepUpdate }),
+      body: JSON.stringify({ rawText, language, engine, compare, stream: !!onStepUpdate, enableRatio }),
     });
 
     if (res.ok) {
@@ -960,7 +961,10 @@ export function validateQuoteAgainstRawText(
 export function createLocalDeterministicEndpruefer(
   rawText: string,
   arbitratorResult: any,
-  language: string = 'de'
+  language: string = 'de',
+  evaluationTarget: 'ratio' | 'genius' | 'genius_optimus' = 'ratio',
+  geniusResult?: any,
+  optimusResult?: any
 ): EndprueferResult {
   const missingPhrase = getMissingInfoPhrase(language);
   const categories = [
@@ -986,19 +990,50 @@ export function createLocalDeterministicEndpruefer(
   let flaggedCount = 0;
 
   for (const catDef of categories) {
-    const matchedArb = arbCats.find((c: any) =>
-      (c.category && c.category.toLowerCase().includes(catDef.key)) ||
-      (c.category_key && c.category_key.toLowerCase() === catDef.key) ||
-      (c.category && c.category.toLowerCase().includes(catDef.name.toLowerCase()))
-    );
+    let schiedsrichterResult = missingPhrase;
 
-    const schiedsrichterResult = (
-      matchedArb?.belegpruefer_neu ||
-      matchedArb?.schiedsrichter_result ||
-      matchedArb?.gemini_alt ||
-      matchedArb?.result_text ||
-      missingPhrase
-    ).trim();
+    if (evaluationTarget === 'genius' && geniusResult) {
+      const gStage1 = geniusResult?.three_stage?.stage1 || geniusResult?.stage1 || [];
+      const matchedG = gStage1.find((c: any) =>
+        (c.category_key && c.category_key.toLowerCase() === catDef.key) ||
+        (c.category_name && c.category_name.toLowerCase().includes(catDef.name.toLowerCase())) ||
+        (c.category && c.category.toLowerCase().includes(catDef.name.toLowerCase()))
+      );
+      schiedsrichterResult = (
+        matchedG?.result_text ||
+        matchedG?.result ||
+        matchedG?.text ||
+        missingPhrase
+      ).trim();
+    } else if (evaluationTarget === 'genius_optimus') {
+      const gStage1 = geniusResult?.three_stage?.stage1 || geniusResult?.stage1 || [];
+      const oStage1 = optimusResult?.three_stage?.stage1 || optimusResult?.stage1 || [];
+      const matchedG = gStage1.find((c: any) =>
+        (c.category_key && c.category_key.toLowerCase() === catDef.key) ||
+        (c.category_name && c.category_name.toLowerCase().includes(catDef.name.toLowerCase()))
+      );
+      const matchedO = oStage1.find((c: any) =>
+        (c.category_key && c.category_key.toLowerCase() === catDef.key) ||
+        (c.category_name && c.category_name.toLowerCase().includes(catDef.name.toLowerCase()))
+      );
+      const gText = (matchedG?.result_text || matchedG?.result || '').trim();
+      const oText = (matchedO?.result_text || matchedO?.result || '').trim();
+      schiedsrichterResult = (gText || oText || missingPhrase).trim();
+    } else {
+      const matchedArb = arbCats.find((c: any) =>
+        (c.category && c.category.toLowerCase().includes(catDef.key)) ||
+        (c.category_key && c.category_key.toLowerCase() === catDef.key) ||
+        (c.category && c.category.toLowerCase().includes(catDef.name.toLowerCase()))
+      );
+
+      schiedsrichterResult = (
+        matchedArb?.belegpruefer_neu ||
+        matchedArb?.schiedsrichter_result ||
+        matchedArb?.gemini_alt ||
+        matchedArb?.result_text ||
+        missingPhrase
+      ).trim();
+    }
 
     const isPseudoNormal = isPseudoNormalOrNegativeFinding(schiedsrichterResult, rawText);
     const isMissingPhrase = schiedsrichterResult === missingPhrase ||
@@ -1120,19 +1155,23 @@ export function createLocalDeterministicEndpruefer(
     flagged_count: flaggedCount,
     category_checks: categoryChecks,
     audit_changes: auditChanges,
-    final_corrected_output: categoryChecks.map(c => `${c.category}: ${c.minimal_correction}`).join('\n')
+    final_corrected_output: categoryChecks.map(c => `${c.category}: ${c.minimal_correction}`).join('\n'),
+    evaluated_target: evaluationTarget
   };
 }
 
 export async function runEndprueferAnalysis(
   rawText: string,
   arbitratorResult: any,
-  language: string = 'de'
+  language: string = 'de',
+  evaluationTarget: 'ratio' | 'genius' | 'genius_optimus' = 'ratio',
+  geniusResult?: any,
+  optimusResult?: any
 ): Promise<EndprueferResult> {
   const endpoints = [
-    { url: '/api/organon/endpruefer', body: { rawText, arbitratorResult, language } },
-    { url: '/api/organon/analyze', body: { action: 'endpruefer', rawText, arbitratorResult, language } },
-    { url: '/api/organon/arbitrate', body: { action: 'endpruefer', rawText, arbitratorResult, language } }
+    { url: '/api/organon/endpruefer', body: { rawText, arbitratorResult, language, evaluationTarget, geniusResult, optimusResult } },
+    { url: '/api/organon/analyze', body: { action: 'endpruefer', rawText, arbitratorResult, language, evaluationTarget, geniusResult, optimusResult } },
+    { url: '/api/organon/arbitrate', body: { action: 'endpruefer', rawText, arbitratorResult, language, evaluationTarget, geniusResult, optimusResult } }
   ];
 
   for (const ep of endpoints) {
@@ -1146,7 +1185,9 @@ export async function runEndprueferAnalysis(
       if (res.ok) {
         const data = await res.json();
         if (data.result && typeof data.result === 'object') {
-          return data.result as EndprueferResult;
+          const resObj = data.result as EndprueferResult;
+          resObj.evaluated_target = evaluationTarget;
+          return resObj;
         }
       }
     } catch (e) {
@@ -1154,7 +1195,7 @@ export async function runEndprueferAnalysis(
     }
   }
 
-  return createLocalDeterministicEndpruefer(rawText, arbitratorResult, language);
+  return createLocalDeterministicEndpruefer(rawText, arbitratorResult, language, evaluationTarget, geniusResult, optimusResult);
 }
 
 export interface ArbitratorEvaluationItem {

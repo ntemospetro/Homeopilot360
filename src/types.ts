@@ -811,5 +811,6 @@ export interface EndprueferResult {
   category_checks: EndprueferCategoryDecision[];
   audit_changes: EndprueferAuditChange[];
   final_corrected_output: string;
+  evaluated_target?: 'ratio' | 'genius' | 'genius_optimus';
 }
 
