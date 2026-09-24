@@ -873,35 +873,35 @@ export const MATERIA_MEDICA_PART3: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Droséra à feuilles rondes",
-        "origin": "Plante entière à fleurs fraîches de Drosera rotundifolia (Droseraceae).",
-        "essence": "The supreme whooping cough and spasmodic paroxysmal cough remedy: violent barking paroxysms following in such rapid succession that the patient can scarcely catch breath; cough begins the instant the head touches the pillow.",
+        "origin": "Plante entière fraîche du droséra (Droseraceae).",
+        "essence": "Le remède principal de la coqueluche spasmodique : quintes de toux aboyantes, si rapprochées que le patient peut à peine reprendre son souffle ; aggravation dès qu'il s'allonge vers minuit.",
         "mainIndications": [
-          "Whooping cough (pertussis) & severe paroxysmal cough",
-          "Tickling spasmodic cough with retching and vomiting of mucus",
-          "Enrouement chronique avec voix creuse et profonde chez les chanteurs"
+          "Coqueluche (pertussis) et toux spasmodique",
+          "Toux irritative avec haut-le-cœur et vomissements de mucus",
+          "Enrouement des chanteurs et orateurs avec voix profonde"
         ],
         "keynotes": [
-          "Paroxysms follow in rapid succession, patient nearly suffocates",
-          "Cough begins immediately upon lying down and head touching pillow",
-          "Must hold the chest and abdomen firmly with both hands while coughing",
-          "Violente aggravation après minuit"
+          "Les quintes de toux se succèdent si vite que le patient étouffe presque",
+          "La toux commence dès que la tête touche l'oreiller",
+          "Doit tenir sa poitrine ou son ventre à deux mains en toussant",
+          "Aggravation marquée après minuit"
         ],
-        "mindEmotional": "Suspicious of friends, obstinate, fretful during suffocative coughing.",
+        "mindEmotional": "Méfiant, têtu, agité pendant les quintes de toux.",
         "modalitiesBetter": [
-          "Assis droit dans le lit",
-          "Cool open air"
+          "S'asseoir bien droit",
+          "Air frais et pur"
         ],
         "modalitiesWorse": [
-          "Immediately upon lying down",
-          "After midnight",
-          "Warmth of bed",
-          "Speaking & laughing"
+          "Dès qu'il s'allonge",
+          "Après minuit",
+          "Chaleur du lit",
+          "Parler et rire"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In whooping cough C30 at bedtime and after paroxysms.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granules",
+        "potenciesAndDosage": "Aigu : D6, D12, C30. En cas de coqueluche C30 : 3–5 granules le soir et lors des quintes.",
+        "defaultTagesdosis": "2–3 doses de 5 granules",
         "sphereOfAction": [
-          "Larynx, Trachea & Bronchial Tree",
-          "Diaphragm & Respiratory Reflex"
+          "Larynx, trachée et bronches",
+          "Diaphragme et centre respiratoire"
         ],
         "differentialRemedies": [
           "Ipecacuanha",
@@ -910,50 +910,45 @@ export const MATERIA_MEDICA_PART3: MateriaMedicaEntry[] = [
           "Coccus cacti"
         ],
         "searchKeywords": [
-          "droséra à feuilles rondes",
-          "drosera rotundifolia",
-          "sundew",
-          "drosera",
-          "whooping cough",
-          "spasmodic cough",
-          "s'allonger pire",
+          "droséra",
+          "coqueluche",
+          "toux",
           "minuit",
-          "larynx, trachea & bronchial tree",
-          "diaphragm & respiratory reflex"
+          "étouffement"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Δροσέρα",
-        "origin": "Ολόκληρο φρέσκο ​​ανθοφόρο φυτό Drosera rotundifolia (Droseraceae).",
-        "essence": "Η υπέρτατη θεραπεία για τον κοκκύτη και τον σπασμωδικό παροξυσμικό βήχα: βίαια παροξυσμικά γαβγίσματα που ακολουθούν με τόσο γρήγορη διαδοχή που ο ασθενής μετά βίας μπορεί να πάρει ανάσα. ο βήχας αρχίζει τη στιγμή που το κεφάλι αγγίζει το μαξιλάρι.",
+        "origin": "Ολόκληρο φρέσκο φυτό της Δροσέρας (Droseraceae).",
+        "essence": "Το κύριο φάρμακο για τον σπασμωδικό κοκκύτη: Υλακώδεις, παροξυσμικοί βήχες, που διαδέχονται ο ένας τον άλλον τόσο γρήγορα που ο ασθενής μετά βίας μπορεί να πάρει ανάσα. Επιδείνωση αμέσως μόλις ξαπλώσει γύρω στα μεσάνυχτα.",
         "mainIndications": [
-          "Κοκκύτης (κοκκύτης) & σοβαρός παροξυσμικός βήχας",
-          "Γαργαλιστικός σπασμωδικός βήχας με τσίμπημα και έμετο βλέννας",
-          "Χρόνια βραχνάδα με βαθιά κούφια φωνή στους τραγουδιστές"
+          "Κοκκύτης (Pertussis) & σπασμωδικός ερεθιστικός βήχος",
+          "Βήχας με γαργάλημα, τάση για έμετο και εμετό βλέννας",
+          "Βραχνάδα σε τραγουδιστές και ομιλητές με βαθιά φωνή"
         ],
         "keynotes": [
-          "Οι παροξυσμοί ακολουθούν με ταχεία διαδοχή, ο ασθενής σχεδόν ασφυκτιά",
-          "Ο βήχας αρχίζει αμέσως μόλις ξαπλώσετε και το κεφάλι ακουμπήσει το μαξιλάρι",
-          "Πρέπει να κρατούν σταθερά το στήθος και την κοιλιά και με τα δύο χέρια ενώ βήχετε",
-          "Βίαια επιδείνωση μετά τα μεσάνυχτα"
+          "Οι κρίσεις βήχα διαδέχονται τόσο γρήγορα που ο ασθενής σχεδόν ασφυκτιά",
+          "Ο βήχας αρχίζει αμέσως μόλις το κεφάλι αγγίξει το μαξιλάρι",
+          "Πρέπει να κρατά το στήθος ή την κοιλιά με τα δύο χέρια όταν βήχει",
+          "Έντονη επιδείνωση μετά τα μεσάνυχτα"
         ],
-        "mindEmotional": "Καχύποπτος με φίλους, πεισματάρης, ταραχώδης κατά τον ασφυκτικό βήχα.",
+        "mindEmotional": "Καχύποπτος, πεισματάρης, ανήσυχος κατά τις κρίσεις βήχα.",
         "modalitiesBetter": [
-          "Καθισμένος όρθιος στο κρεβάτι",
-          "Δροσερό ανοιχτό αέρα"
+          "Όρθια καθιστή θέση",
+          "Φρέσκος δροσερός αέρας"
         ],
         "modalitiesWorse": [
-          "Αμέσως με την κατάκλιση",
+          "Αμέσως μόλις ξαπλώσει",
           "Μετά τα μεσάνυχτα",
-          "Η ζεστασιά του κρεβατιού",
-          "Μιλώντας & γελώντας"
+          "Ζέστη του κρεβατιού",
+          "Ομιλία & γέλιο"
         ],
-        "potenciesAndDosage": "Οξεία: D6, D12, C30 / 6C, 30C. Σε κοκκύτη C30 πριν τον ύπνο και μετά από παροξυσμούς.",
-        "defaultTagesdosis": "2–3 δόσεις των 3–5 σφαιριδίων",
+        "potenciesAndDosage": "Οξεία φάση: D6, D12, C30. Σε κοκκύτη C30: 3–5 σφαιρίδια το βράδυ και κατά την κρίση βήχα.",
+        "defaultTagesdosis": "2–3 δόσεις των 5 σφαιριδίων",
         "sphereOfAction": [
-          "Λάρυγγα, Τραχεία & Βρογχικό Δέντρο",
-          "Διάφραγμα & Αναπνευστικό Αντανακλαστικό"
+          "Λάρυγγας, τραχεία & βρόγχοι",
+          "Διάφραγμα & αναπνευστικό κέντρο"
         ],
         "differentialRemedies": [
           "Ipecacuanha",
@@ -963,49 +958,44 @@ export const MATERIA_MEDICA_PART3: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "δροσέρα",
-          "drosera rotundifolia",
-          "ηλιοβασίλεμα",
-          "drosera",
           "κοκκύτης",
-          "σπασμωδικός βήχας",
-          "ξαπλωμένος χειρότερα",
+          "βήχας",
           "μεσάνυχτα",
-          "λάρυγγα, τραχεία & βρογχικό δέντρο",
-          "διάφραγμα & αναπνευστικό αντανακλαστικό"
+          "ασφυξία"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Drosera",
-        "origin": "Whole fresh flowering plant of Drosera rotundifolia (Droseraceae).",
-        "essence": "The supreme whooping cough and spasmodic paroxysmal cough remedy: violent barking paroxysms following in such rapid succession that the patient can scarcely catch breath; cough begins the instant the head touches the pillow.",
+        "origin": "Intera pianta fresca della drosera (Droseraceae).",
+        "essence": "Il rimedio principale per la pertosse spasmodica: attacchi di tosse abbaiante, che si susseguono così rapidamente che il paziente riesce a malapena a respirare; aggravamento non appena si sdraia verso mezzanotte.",
         "mainIndications": [
-          "Whooping cough (pertussis) & severe paroxysmal cough",
-          "Tickling spasmodic cough with retching and vomiting of mucus",
-          "Chronic hoarseness with deep hollow voice in vocalists"
+          "Pertosse (pertussis) e tosse irritativa spasmodica",
+          "Tosse con solletico, con conati di vomito e vomito di muco",
+          "Raucedine in cantanti e oratori con voce profonda"
         ],
         "keynotes": [
-          "Paroxysms follow in rapid succession, patient nearly suffocates",
-          "Cough begins immediately upon lying down and head touching pillow",
-          "Must hold the chest and abdomen firmly with both hands while coughing",
-          "Violent aggravation after midnight"
+          "Gli attacchi di tosse si susseguono così velocemente che il paziente quasi soffoca",
+          "La tosse inizia non appena la testa tocca il cuscino",
+          "Deve tenersi il petto o l'addome con entrambe le mani quando tossisce",
+          "Aggravamento marcato dopo mezzanotte"
         ],
-        "mindEmotional": "Suspicious of friends, obstinate, fretful during suffocative coughing.",
+        "mindEmotional": "Sospettoso, ostinato, irrequieto durante gli attacchi di tosse.",
         "modalitiesBetter": [
-          "Sitting erect in bed",
-          "Cool open air"
+          "Posizione seduta eretta",
+          "Aria fresca e pura"
         ],
         "modalitiesWorse": [
-          "Immediately upon lying down",
-          "After midnight",
-          "Warmth of bed",
-          "Speaking & laughing"
+          "Non appena si sdraia",
+          "Dopo mezzanotte",
+          "Calore del letto",
+          "Parlare e ridere"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In whooping cough C30 at bedtime and after paroxysms.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: D6, D12, C30. In caso di pertosse C30: 3–5 granuli la sera e durante l'attacco di tosse.",
+        "defaultTagesdosis": "2–3 dosi da 5 granuli",
         "sphereOfAction": [
-          "Larynx, Trachea & Bronchial Tree",
-          "Diaphragm & Respiratory Reflex"
+          "Laringe, trachea e bronchi",
+          "Diaframma e centro respiratorio"
         ],
         "differentialRemedies": [
           "Ipecacuanha",
@@ -1015,48 +1005,44 @@ export const MATERIA_MEDICA_PART3: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "drosera",
-          "drosera rotundifolia",
-          "sundew",
-          "whooping cough",
-          "spasmodic cough",
-          "lying down worse",
-          "midnight",
-          "larynx, trachea & bronchial tree",
-          "diaphragm & respiratory reflex"
+          "pertosse",
+          "tosse",
+          "mezzanotte",
+          "soffocamento"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Росянка круглолистная",
-        "origin": "Whole fresh flowering plant of Drosera rotundifolia (Droseraceae).",
-        "essence": "The supreme whooping cough and spasmodic paroxysmal cough remedy: violent barking paroxysms following in such rapid succession that the patient can scarcely catch breath; cough begins the instant the head touches the pillow.",
+        "origin": "Цельное свежее растение росянки (Droseraceae).",
+        "essence": "Главное средство при спастическом коклюше: лающий, приступообразный кашель, следующий один за другим так быстро, что пациент едва успевает перевести дух; ухудшение сразу после того, как ложится в постель около полуночи.",
         "mainIndications": [
-          "Whooping cough (pertussis) & severe paroxysmal cough",
-          "Tickling spasmodic cough with retching and vomiting of mucus",
-          "Chronic hoarseness with deep hollow voice in vocalists"
+          "Коклюш (Pertussis) и судорожный раздражающий кашель",
+          "Щекочущий кашель с позывами на рвоту и рвотой слизью",
+          "Охриплость у певцов и ораторов с низким голосом"
         ],
         "keynotes": [
-          "Paroxysms follow in rapid succession, patient nearly suffocates",
-          "Cough begins immediately upon lying down and head touching pillow",
-          "Must hold the chest and abdomen firmly with both hands while coughing",
-          "Violent aggravation after midnight"
+          "Приступы кашля следуют так быстро, что пациент почти задыхается",
+          "Кашель начинается сразу, как только голова касается подушки",
+          "При кашле вынужден придерживать грудь или живот обеими руками",
+          "Выраженное ухудшение после полуночи"
         ],
-        "mindEmotional": "Suspicious of friends, obstinate, fretful during suffocative coughing.",
+        "mindEmotional": "Подозрительный, упрямый, беспокойный во время приступов кашля.",
         "modalitiesBetter": [
-          "Sitting erect in bed",
-          "Cool open air"
+          "Положение сидя прямо",
+          "Свежий прохладный воздух"
         ],
         "modalitiesWorse": [
-          "Immediately upon lying down",
-          "After midnight",
-          "Warmth of bed",
-          "Speaking & laughing"
+          "Сразу после того, как ложится",
+          "После полуночи",
+          "Тепло постели",
+          "Разговор и смех"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In whooping cough C30 at bedtime and after paroxysms.",
-        "defaultTagesdosis": "2–3 doses of 3–5 гранул",
+        "potenciesAndDosage": "Остро: D6, D12, C30. При коклюше C30: 3–5 гранул вечером и во время приступа кашля.",
+        "defaultTagesdosis": "2–3 приема по 5 гранул",
         "sphereOfAction": [
-          "Larynx, Trachea & Bronchial Tree",
-          "Diaphragm & Respiratory Reflex"
+          "Гортань, трахея и бронхи",
+          "Диафрагма и дыхательный центр"
         ],
         "differentialRemedies": [
           "Ipecacuanha",
@@ -1065,16 +1051,11 @@ export const MATERIA_MEDICA_PART3: MateriaMedicaEntry[] = [
           "Coccus cacti"
         ],
         "searchKeywords": [
-          "росянка круглолистная",
-          "drosera rotundifolia",
-          "sundew",
-          "drosera",
-          "whooping cough",
-          "spasmodic cough",
-          "lying down worse",
-          "midnight",
-          "larynx, trachea & bronchial tree",
-          "diaphragm & respiratory reflex"
+          "росянка",
+          "коклюш",
+          "кашель",
+          "полночь",
+          "удушье"
         ]
       }
     }

@@ -206,7 +206,7 @@ WICHTIGSTE METHODISCHE REGELN:
      c) "Keine ausreichend belegte Causa ermittelbar" (völlig gleichwertiges, valides Ergebnis!)`;
 
 const CAUSA_PRIMARY_MODEL = "gemini-3.8-flash";
-const CAUSA_FALLBACK_MODEL = "gemini-3.6-flash";
+const CAUSA_FALLBACK_MODEL = "gemini-3.8-flash";
 
 async function executeCausaAiGeneration(
   ai: GoogleGenAI,

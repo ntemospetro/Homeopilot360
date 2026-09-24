@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "Therapist": {
+      "title": "Therapist",
+      "description": "Therapist account profile in the homeopathy practice platform",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "PatientCase": {
+      "title": "PatientCase",
+      "description": "Patient medical record, anamnesis, and repertorization case",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "therapistId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id"]
+    },
+    "PackagePlan": {
+      "title": "PackagePlan",
+      "description": "Subscription tariff plan and feature limits",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "billingPeriod": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    }
+  },
+  "firestore": {
+    "/therapists/{therapistId}": {
+      "schema": "Therapist",
+      "description": "Stores therapist accounts"
+    },
+    "/cases/{caseId}": {
+      "schema": "PatientCase",
+      "description": "Stores patient anamnesis cases"
+    },
+    "/packages/{packageId}": {
+      "schema": "PackagePlan",
+      "description": "Stores available subscription plans"
+    },
+    "/therapist_balances/{therapistId}": {
+      "schema": "Therapist",
+      "description": "Stores balance and stripe status per therapist"
+    },
+    "/billing_payments/{paymentId}": {
+      "schema": "Therapist",
+      "description": "Stores billing transaction logs"
+    }
+  }
+}

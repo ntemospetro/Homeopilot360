@@ -8,7 +8,7 @@ export type LicenseStatus = 'UNKNOWN' | 'VERIFIED_ALLOWED' | 'RESTRICTED';
 export interface DatasetImportRecord {
   import_id: string;
   file_name: string;
-  format: 'JSON' | 'CSV' | 'TSV';
+  format: 'JSON' | 'CSV' | 'TSV' | 'SQL';
   source_work: string;
   source_edition: string | null;
   source_language: string;
@@ -40,7 +40,7 @@ export interface ValidationErrorItem {
 
 export interface DryRunResult {
   file_name: string;
-  format: 'JSON' | 'CSV' | 'TSV';
+  format: 'JSON' | 'CSV' | 'TSV' | 'SQL';
   source_work: string;
   total_records: number;
   valid_records: number;
@@ -89,7 +89,7 @@ export function sanitizeRepertoryImportState(raw: any): {
     const sanitizedRecord: DatasetImportRecord = {
       import_id: typeof d.import_id === 'string' ? d.import_id : 'imp_' + Math.random(),
       file_name: typeof d.file_name === 'string' ? d.file_name : 'unknown.json',
-      format: d.format === 'CSV' || d.format === 'TSV' ? d.format : 'JSON',
+      format: d.format === 'CSV' || d.format === 'TSV' || d.format === 'SQL' ? d.format : 'JSON',
       source_work: typeof d.source_work === 'string' ? d.source_work : 'Unknown Source',
       source_edition: typeof d.source_edition === 'string' ? d.source_edition : null,
       source_language: typeof d.source_language === 'string' ? d.source_language : 'en',
@@ -103,7 +103,7 @@ export function sanitizeRepertoryImportState(raw: any): {
       active_since: typeof d.active_since === 'string' ? d.active_since : null,
       dry_run_result: d.dry_run_result && typeof d.dry_run_result === 'object' ? {
         file_name: typeof d.dry_run_result.file_name === 'string' ? d.dry_run_result.file_name : 'unknown.json',
-        format: d.dry_run_result.format === 'CSV' || d.dry_run_result.format === 'TSV' ? d.dry_run_result.format : 'JSON',
+        format: d.dry_run_result.format === 'CSV' || d.dry_run_result.format === 'TSV' || d.dry_run_result.format === 'SQL' ? d.dry_run_result.format : 'JSON',
         source_work: typeof d.dry_run_result.source_work === 'string' ? d.dry_run_result.source_work : 'Unknown Source',
         total_records: typeof d.dry_run_result.total_records === 'number' ? d.dry_run_result.total_records : 0,
         valid_records: typeof d.dry_run_result.valid_records === 'number' ? d.dry_run_result.valid_records : 0,
@@ -307,7 +307,44 @@ class RepertoryImportManagerService {
     return 'chk_' + Math.abs(hash).toString(16);
   }
 
-  public parseInputContent(content: string, format: 'JSON' | 'CSV' | 'TSV'): any[] {
+  public inspectContentChapters(content: string, format: 'JSON' | 'CSV' | 'TSV' | 'SQL'): { chapter: string; count: number; sampleRubrics: string[] }[] {
+    try {
+      const allItems = this.parseInputContent(content, format);
+      const chapterMap = new Map<string, { count: number; samples: string[] }>();
+
+      allItems.forEach(item => {
+        const ch = item.chapter || 'General';
+        if (!chapterMap.has(ch)) {
+          chapterMap.set(ch, { count: 0, samples: [] });
+        }
+        const entry = chapterMap.get(ch)!;
+        entry.count++;
+        if (entry.samples.length < 3 && item.rubric_text_original) {
+          entry.samples.push(item.rubric_text_original);
+        }
+      });
+
+      const result: { chapter: string; count: number; sampleRubrics: string[] }[] = [];
+      chapterMap.forEach((val, key) => {
+        result.push({
+          chapter: key,
+          count: val.count,
+          sampleRubrics: val.samples
+        });
+      });
+
+      result.sort((a, b) => b.count - a.count);
+      return result;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  public parseInputContent(
+    content: string, 
+    format: 'JSON' | 'CSV' | 'TSV' | 'SQL', 
+    filterKeyword?: string
+  ): any[] {
     if (format === 'JSON') {
       let parsed;
       try {
@@ -316,8 +353,129 @@ class RepertoryImportManagerService {
         throw new Error('INVALID_JSON_STRUCTURE');
       }
       const normalized = normalizeRepertoryJsonInput(parsed);
-      return normalized.records;
+      let records = normalized.records;
+      if (filterKeyword && filterKeyword.trim()) {
+        const kw = filterKeyword.toLowerCase();
+        records = records.filter(r => 
+          (r.chapter && r.chapter.toLowerCase().includes(kw)) ||
+          (r.rubric_text_original && r.rubric_text_original.toLowerCase().includes(kw)) ||
+          (r.rubric_id && r.rubric_id.toLowerCase().includes(kw))
+        );
+      }
+      return records;
     }
+
+    if (format === 'SQL') {
+      const items: any[] = [];
+      const insertRegex = /INSERT\s+INTO\s+([`"\w]+)\s*(?:\(([^)]+)\))?\s+VALUES\s*(.+?)(?:;|$)/gis;
+      let match;
+      while ((match = insertRegex.exec(content)) !== null) {
+        const tableName = match[1].replace(/[`"]/g, '');
+        const columnsStr = match[2];
+        const valuesBlock = match[3];
+
+        const columns = columnsStr ? columnsStr.split(',').map(c => c.trim().replace(/[`"]/g, '')) : [];
+        const tupleRegex = /\(([^)]+)\)/g;
+        let tupleMatch;
+        while ((tupleMatch = tupleRegex.exec(valuesBlock)) !== null) {
+          const valStr = tupleMatch[1];
+          const vals: string[] = [];
+          let currentVal = '';
+          let inString = false;
+          let escape = false;
+          for (let i = 0; i < valStr.length; i++) {
+            const char = valStr[i];
+            if (escape) {
+              currentVal += char;
+              escape = false;
+            } else if (char === '\\') {
+              escape = true;
+            } else if (char === '\'' || char === '"') {
+              inString = !inString;
+            } else if (char === ',' && !inString) {
+              vals.push(currentVal.trim().replace(/^['"]|['"]$/g, ''));
+              currentVal = '';
+            } else {
+              currentVal += char;
+            }
+          }
+          vals.push(currentVal.trim().replace(/^['"]|['"]$/g, ''));
+
+          const item: any = { _table: tableName };
+          if (columns.length > 0) {
+            columns.forEach((col, idx) => {
+              item[col] = vals[idx] !== undefined ? vals[idx] : '';
+            });
+          } else {
+            item.rubric_id = vals[0] || `sql_${items.length}`;
+            item.chapter = vals[1] || tableName;
+            item.rubric_text_original = vals[2] || vals[1] || '';
+          }
+
+          const normalizedItem = {
+            rubric_id: item.rubric_id || item.id || item.code || `sql_${items.length}`,
+            chapter: item.chapter || item.chapter_name || item.rubric_chapter || tableName,
+            rubric_text_original: item.rubric_text_original || item.text || item.rubric || item.name || '',
+            parent_rubric_id: item.parent_rubric_id || item.parent_id || null,
+            remedies: item.remedies ? (typeof item.remedies === 'string' ? JSON.parse(item.remedies) : item.remedies) : {}
+          };
+
+          items.push(normalizedItem);
+        }
+      }
+
+      if (items.length === 0) {
+        const lines = content.split('\n').filter(l => l.trim() !== '' && !l.trim().startsWith('--') && !l.trim().startsWith('/*') && l.trim().toLowerCase() !== '\\copy');
+        lines.forEach((line, idx) => {
+          const parts = line.split('\t').map(p => p.trim());
+          if (parts.length >= 2) {
+            // Tab-separated SQL dump row (e.g., source, rubric_id, parent_id, _, level, text, ...)
+            const potentialId = parts[1] !== '\\N' ? parts[1] : `sql_row_${idx}`;
+            const potentialParent = parts[2] && parts[2] !== '\\N' ? parts[2] : null;
+            const potentialText = parts[5] || parts[4] || parts[3] || parts[0];
+            
+            // Extract chapter from text if it starts with "Chapter, ..." or use part
+            let chapterName = 'General';
+            let rubricText = potentialText.replace(/^\\N$/, '').trim();
+            if (rubricText.includes(',')) {
+              const commaIdx = rubricText.indexOf(',');
+              const possibleChapter = rubricText.substring(0, commaIdx).trim();
+              if (possibleChapter.length > 1 && possibleChapter.length < 30) {
+                chapterName = possibleChapter;
+              }
+            }
+
+            items.push({
+              rubric_id: potentialId,
+              chapter: chapterName,
+              rubric_text_original: rubricText,
+              parent_rubric_id: potentialParent,
+              remedies: {}
+            });
+          } else {
+            items.push({
+              rubric_id: `sql_line_${idx}`,
+              chapter: 'General',
+              rubric_text_original: line.trim().replace(/^\\N$/, ''),
+              parent_rubric_id: null,
+              remedies: {}
+            });
+          }
+        });
+      }
+
+      let filteredItems = items;
+      if (filterKeyword && filterKeyword.trim()) {
+        const kw = filterKeyword.toLowerCase();
+        filteredItems = items.filter(i => 
+          (i.chapter && i.chapter.toLowerCase().includes(kw)) ||
+          (i.rubric_text_original && i.rubric_text_original.toLowerCase().includes(kw)) ||
+          (i.rubric_id && i.rubric_id.toLowerCase().includes(kw))
+        );
+      }
+      return filteredItems;
+    }
+
     // Simple CSV/TSV parser line by line
     const delimiter = format === 'TSV' ? '\t' : ',';
     const lines = content.split('\n').filter(l => l.trim() !== '');
@@ -332,12 +490,21 @@ class RepertoryImportManagerService {
       });
       items.push(obj);
     }
-    return items;
+
+    let filteredItems = items;
+    if (filterKeyword && filterKeyword.trim()) {
+      const kw = filterKeyword.toLowerCase();
+      filteredItems = items.filter(i => {
+        const str = Object.values(i).join(' ').toLowerCase();
+        return str.includes(kw);
+      });
+    }
+    return filteredItems;
   }
 
   public runDryRun(
     fileName: string,
-    format: 'JSON' | 'CSV' | 'TSV',
+    format: 'JSON' | 'CSV' | 'TSV' | 'SQL',
     rawText: string,
     meta: {
       source_work: string;
@@ -345,7 +512,8 @@ class RepertoryImportManagerService {
       source_language: string;
       license_status: LicenseStatus;
       license_note: string;
-    }
+    },
+    filterKeyword?: string
   ): { dataset: DatasetImportRecord; dryRun: DryRunResult } {
     let rawItems: any[] = [];
     const errors: ValidationErrorItem[] = [];
@@ -355,15 +523,9 @@ class RepertoryImportManagerService {
     const allRubricIds = new Set<string>();
 
     try {
-      if (format === 'JSON') {
+      if (format === 'JSON' && !filterKeyword) {
         const parsedJson = typeof rawText === 'string' ? JSON.parse(rawText) : rawText;
         const normalized = normalizeRepertoryJsonInput(parsedJson);
-        console.log('[REPERTORY_IMPORT_DIAGNOSTIC]', {
-          REPERTORY_IMPORT_BUILD_MARKER,
-          normalized_is_array: Array.isArray(normalized.records),
-          normalized_record_count: normalized.records?.length,
-          first_record_rubric_id: normalized.records?.[0]?.rubric_id
-        });
         rawItems = Array.isArray(normalized.records) ? normalized.records : [];
         if (normalized.source) {
           if (!meta.source_work && normalized.source.source_work) meta.source_work = normalized.source.source_work;
@@ -372,7 +534,7 @@ class RepertoryImportManagerService {
           if ((!meta.license_status || meta.license_status === 'UNKNOWN') && normalized.source.license_status) meta.license_status = normalized.source.license_status;
         }
       } else {
-        rawItems = this.parseInputContent(rawText, format);
+        rawItems = this.parseInputContent(rawText, format, filterKeyword);
       }
     } catch (e: any) {
       const errCode = e.message === 'INVALID_JSON_STRUCTURE' ? 'INVALID_JSON_STRUCTURE' : 'PARSING_ERROR';

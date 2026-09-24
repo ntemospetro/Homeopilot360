@@ -48,6 +48,7 @@ import { PatientDirectoryView } from './PatientDirectoryView';
 import { OrganonView } from './OrganonView';
 import { MateriaMedicaView } from './MateriaMedicaView';
 import { RepertoriumView } from './RepertoriumView';
+import { RepertoryView } from './RepertoryView';
 import { AcuteIntakeView } from './AcuteIntakeView';
 import { MedicationResearchView } from './MedicationResearchView';
 import { UserManualView } from './UserManualView';
@@ -179,7 +180,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { t, language } = useTranslation();
   const { termPatientenkartei, termPatient, termPatients } = useTerminology();
-  const [panelTab, setPanelTab] = useState<'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff'>(() => getStoredTherapistTab());
+  const [panelTab, setPanelTab] = useState<'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'repertory' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff'>(() => getStoredTherapistTab() as any);
   const [patientDirectoryAction, setPatientDirectoryAction] = useState<'new_patient' | 'select_patient' | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [lockedPageAttempt, setLockedPageAttempt] = useState<{ key: string; name: string } | null>(null);
@@ -201,6 +202,8 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
         return 'materiamedica';
       case 'repertorium':
         return 'repertorium';
+      case 'repertory':
+        return null; // Publicly accessible custom page
       case 'medications':
         return 'medications';
       case 'documentation':
@@ -224,6 +227,8 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
         return t('tabMateriaMedica');
       case 'repertorium':
         return t('tabRepertorium');
+      case 'repertory':
+        return t('tabRepertory');
       case 'medications':
         return t('tabMedications');
       case 'documentation':
@@ -237,7 +242,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
 
   const isTabAllowed = (tab: string): boolean => {
     const pageKey = getPagePermissionKeyForTab(tab);
-    if (!pageKey) return true; // Profile, tariff always allowed
+    if (!pageKey) return true; // Profile, tariff, custom repertory always allowed
     return tariffAccess.isPageAllowed(pageKey);
   };
 
@@ -247,7 +252,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
     return tariffAccess.isPageHidden(pageKey);
   };
 
-  const handleSelectTab = (tab: 'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff') => {
+  const handleSelectTab = (tab: 'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'repertory' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff') => {
     if (!isTabAllowed(tab)) {
       setLockedPageAttempt({ key: tab, name: getPageDisplayName(tab) });
       return;
@@ -2008,6 +2013,30 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
               </button>
             )}
 
+            {/* 3b. Repertory (Custom) */}
+            {!isTabHidden('repertory') && (
+              <button
+                type="button"
+                id="sidebar-nav-tab-repertory"
+                onClick={() => handleSelectTab('repertory')}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors cursor-pointer ${
+                  panelTab === 'repertory'
+                    ? 'bg-teal-50 text-teal-900 font-bold border border-teal-100/50'
+                    : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <BookOpen className={`w-4 h-4 ${isTabAllowed('repertory') ? 'text-teal-600' : 'text-slate-400'}`} />
+                  <span className={!isTabAllowed('repertory') ? 'text-slate-500' : ''}>{t('tabRepertory')}</span>
+                </div>
+                {!isTabAllowed('repertory') && (
+                  <span title={t('tariffPageLockedTooltip')}>
+                    <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  </span>
+                )}
+              </button>
+            )}
+
             {/* 4. Repertorisation */}
             {!isTabHidden('cases') && (
               <button
@@ -2308,6 +2337,15 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
             }));
           }}
           onGoToMateriaMedica={() => handleSelectTab('materiamedica')}
+        />
+      )}
+
+      {/* TAB CONTENT: REPERTORY (CUSTOM IMPORT) */}
+      {panelTab === 'repertory' && (
+        <RepertoryView
+          therapist={therapist}
+          currentCase={currentCase}
+          onSaveCase={(saved) => setCurrentCase(saved)}
         />
       )}
 

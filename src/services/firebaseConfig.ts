@@ -1,7 +1,8 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
+import appletConfig from '../../firebase-applet-config.json';
 
-export const FIREBASE_CONFIG = {
+export const FIREBASE_CONFIG = appletConfig || {
   projectId: "gen-lang-client-0954439437",
   appId: "1:1021774327269:web:273231150cd0e60982d30c",
   apiKey: "AIzaSyACtfbpcnDT54BwH7qQUmGzHVKDfCzyjDw",
@@ -22,15 +23,22 @@ export function getDb(): Firestore | null {
 
   try {
     const app = getApps().length > 0 ? getApp() : initializeApp(FIREBASE_CONFIG);
+    const dbId = FIREBASE_CONFIG.firestoreDatabaseId || undefined;
     try {
-      if (FIREBASE_CONFIG.firestoreDatabaseId) {
-        dbInstance = getFirestore(app, FIREBASE_CONFIG.firestoreDatabaseId);
-      } else {
+      // experimentalForceLongPolling avoids WebChannel stream buffering and
+      // prevents "Could not reach Cloud Firestore backend" connection errors in iframe/sandboxed environments.
+      dbInstance = initializeFirestore(app, {
+        experimentalForceLongPolling: true,
+        ignoreUndefinedProperties: true
+      }, dbId);
+    } catch {
+      // If already initialized with different settings or not supported
+      try {
+        dbInstance = getFirestore(app, dbId);
+      } catch (e2) {
+        console.warn('[Firebase] Fallback getFirestore:', e2);
         dbInstance = getFirestore(app);
       }
-    } catch (e) {
-      console.warn('[Firebase] Named database init fallback to default:', e);
-      dbInstance = getFirestore(app);
     }
     return dbInstance;
   } catch (err) {
@@ -38,3 +46,4 @@ export function getDb(): Firestore | null {
     return null;
   }
 }
+

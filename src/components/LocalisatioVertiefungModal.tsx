@@ -60,6 +60,7 @@ interface LocalisatioVertiefungModalProps {
   hahnemannCrossCheck?: boolean;
   isEmbedded?: boolean;
   onWorkflowComplete?: (finalLocalisatioText: string) => void;
+  onPartialChange?: (finalLocalisatioText: string) => void;
 }
 
 export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProps> = ({
@@ -71,7 +72,8 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
   onAdoptLocalisatio,
   hahnemannCrossCheck = false,
   isEmbedded = false,
-  onWorkflowComplete
+  onWorkflowComplete,
+  onPartialChange
 }) => {
   const { t, language } = useTranslation();
   const [state, setState] = useState<LocalisatioVertiefungState | null>(null);
@@ -152,6 +154,16 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
       } else if (state) {
         const nextState = await submitLocalisatioAnswer(rawText, state, currentAnswer, language, activeMode);
         setState(nextState);
+        if (onPartialChange) {
+          const finalSyms = Object.values(nextState.symptoms || {});
+          const summaryText = nextState.finalSummary?.overallResult || finalSyms.map(s => {
+            const fTexts = (s.facts || []).map(f => f.normalizedValue?.patientRawTerm || f.evidenceText).filter(Boolean);
+            return `${s.symptomLabel}: ${fTexts.join(', ') || 'Keine genaue Lokalisation'}`;
+          }).join('; ');
+          if (summaryText) {
+            onPartialChange(summaryText);
+          }
+        }
       }
     } catch (err) {
       console.error('[LocalisatioModal] Failed to submit answer:', err);

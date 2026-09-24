@@ -80,38 +80,41 @@ export async function initCloudSync(
   try {
     // 1. THERAPISTS SYNC
     const therapistsCol = collection(db, 'therapists');
-    const therapistsSnap = await getDocs(therapistsCol);
-
-    if (therapistsSnap.empty) {
-      // First-time seed: push existing local therapists to Firestore
-      const localTherapists = getLocalTherapists();
-      if (localTherapists.length > 0) {
-        console.log(`[CloudSync] Initial seed: uploading ${localTherapists.length} therapists to Firestore...`);
-        const batch = writeBatch(db);
-        for (const th of localTherapists) {
-          const ref = doc(db, 'therapists', th.id);
-          batch.set(ref, sanitizeForFirestore(th));
+    try {
+      const therapistsSnap = await getDocs(therapistsCol);
+      if (therapistsSnap.empty) {
+        // First-time seed: push existing local therapists to Firestore
+        const localTherapists = getLocalTherapists();
+        if (localTherapists.length > 0) {
+          console.log(`[CloudSync] Initial seed: uploading ${localTherapists.length} therapists to Firestore...`);
+          const batch = writeBatch(db);
+          for (const th of localTherapists) {
+            const ref = doc(db, 'therapists', th.id);
+            batch.set(ref, sanitizeForFirestore(th));
+          }
+          await batch.commit();
         }
-        await batch.commit();
+      } else {
+        // Cloud has therapists: merge them into local storage
+        const cloudTherapists: Therapist[] = [];
+        therapistsSnap.forEach(snap => {
+          cloudTherapists.push(snap.data() as Therapist);
+        });
+        const localTherapists = getLocalTherapists();
+        
+        // Union by ID (cloud authoritative, plus any local-only pending items)
+        const mergedMap = new Map<string, Therapist>();
+        for (const th of localTherapists) {
+          mergedMap.set(th.id, th);
+        }
+        for (const th of cloudTherapists) {
+          mergedMap.set(th.id, th);
+        }
+        const mergedList = Array.from(mergedMap.values());
+        saveLocalTherapists(mergedList);
       }
-    } else {
-      // Cloud has therapists: merge them into local storage
-      const cloudTherapists: Therapist[] = [];
-      therapistsSnap.forEach(snap => {
-        cloudTherapists.push(snap.data() as Therapist);
-      });
-      const localTherapists = getLocalTherapists();
-      
-      // Union by ID (cloud authoritative, plus any local-only pending items)
-      const mergedMap = new Map<string, Therapist>();
-      for (const th of localTherapists) {
-        mergedMap.set(th.id, th);
-      }
-      for (const th of cloudTherapists) {
-        mergedMap.set(th.id, th);
-      }
-      const mergedList = Array.from(mergedMap.values());
-      saveLocalTherapists(mergedList);
+    } catch (thErr: any) {
+      console.warn('[CloudSync] Therapists initial query notice (will sync via listener/offline cache):', thErr?.message || thErr);
     }
 
     // Real-time listener for Therapists
@@ -122,44 +125,51 @@ export async function initCloudSync(
           cloudTherapists.push(snap.data() as Therapist);
         });
         saveLocalTherapists(cloudTherapists);
+        setSyncStatus('synced');
       }
     }, (err) => {
-      console.warn('[CloudSync] Therapists listener warning:', err);
+      console.warn('[CloudSync] Therapists listener notice:', err?.message || err);
+      if (err?.code === 'unavailable') {
+        setSyncStatus('offline');
+      }
     });
 
     // 2. CASES SYNC
     const casesCol = collection(db, 'cases');
-    const casesSnap = await getDocs(casesCol);
-
-    if (casesSnap.empty) {
-      // First-time seed: push existing local cases to Firestore
-      const localCases = getLocalCases();
-      if (localCases.length > 0) {
-        console.log(`[CloudSync] Initial seed: uploading ${localCases.length} patient cases to Firestore...`);
-        const batch = writeBatch(db);
-        for (const c of localCases) {
-          const ref = doc(db, 'cases', c.id);
-          batch.set(ref, sanitizeForFirestore(c));
+    try {
+      const casesSnap = await getDocs(casesCol);
+      if (casesSnap.empty) {
+        // First-time seed: push existing local cases to Firestore
+        const localCases = getLocalCases();
+        if (localCases.length > 0) {
+          console.log(`[CloudSync] Initial seed: uploading ${localCases.length} patient cases to Firestore...`);
+          const batch = writeBatch(db);
+          for (const c of localCases) {
+            const ref = doc(db, 'cases', c.id);
+            batch.set(ref, sanitizeForFirestore(c));
+          }
+          await batch.commit();
         }
-        await batch.commit();
-      }
-    } else {
-      // Cloud has cases: merge them into local storage
-      const cloudCases: PatientCase[] = [];
-      casesSnap.forEach(snap => {
-        cloudCases.push(snap.data() as PatientCase);
-      });
-      const localCases = getLocalCases();
+      } else {
+        // Cloud has cases: merge them into local storage
+        const cloudCases: PatientCase[] = [];
+        casesSnap.forEach(snap => {
+          cloudCases.push(snap.data() as PatientCase);
+        });
+        const localCases = getLocalCases();
 
-      const mergedMap = new Map<string, PatientCase>();
-      for (const c of localCases) {
-        mergedMap.set(c.id, c);
+        const mergedMap = new Map<string, PatientCase>();
+        for (const c of localCases) {
+          mergedMap.set(c.id, c);
+        }
+        for (const c of cloudCases) {
+          mergedMap.set(c.id, c);
+        }
+        const mergedList = Array.from(mergedMap.values());
+        saveLocalCases(mergedList);
       }
-      for (const c of cloudCases) {
-        mergedMap.set(c.id, c);
-      }
-      const mergedList = Array.from(mergedMap.values());
-      saveLocalCases(mergedList);
+    } catch (caseErr: any) {
+      console.warn('[CloudSync] Cases initial query notice (will sync via listener/offline cache):', caseErr?.message || caseErr);
     }
 
     // Real-time listener for Cases
@@ -170,9 +180,13 @@ export async function initCloudSync(
           cloudCases.push(snap.data() as PatientCase);
         });
         saveLocalCases(cloudCases);
+        setSyncStatus('synced');
       }
     }, (err) => {
-      console.warn('[CloudSync] Cases listener warning:', err);
+      console.warn('[CloudSync] Cases listener notice:', err?.message || err);
+      if (err?.code === 'unavailable') {
+        setSyncStatus('offline');
+      }
     });
 
     // 3. PACKAGES SYNC (optional)
@@ -196,15 +210,25 @@ export async function initCloudSync(
           saveLocalPackages(cloudPkgs);
         }
       } catch (pkgErr) {
-        console.warn('[CloudSync] Package sync skipped:', pkgErr);
+        console.warn('[CloudSync] Package sync skipped or deferred:', pkgErr);
       }
     }
 
+    // Listen to network status changes to automatically adapt
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        setSyncStatus('synced');
+      });
+      window.addEventListener('offline', () => {
+        setSyncStatus('offline');
+      });
+    }
+
     setSyncStatus('synced');
-    console.log('[CloudSync] Firestore cloud database synchronized successfully.');
-  } catch (error) {
-    console.error('[CloudSync] Error during cloud synchronization:', error);
-    setSyncStatus('error');
+    console.log('[CloudSync] Firestore cloud database initialized.');
+  } catch (error: any) {
+    console.warn('[CloudSync] Operating in offline-first mode:', error?.message || error);
+    setSyncStatus('offline');
   }
 }
 

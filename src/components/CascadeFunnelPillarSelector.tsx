@@ -173,6 +173,23 @@ export const CascadeFunnelPillarSelector: React.FC<CascadeFunnelPillarSelectorPr
     }).join(', ');
   };
 
+  // Keep track of the latest callback to avoid infinite loops when parent callback changes
+  const onSelectionChangeRef = React.useRef(onSelectionChange);
+  React.useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+  }, [onSelectionChange]);
+
+  // Main synchronization effect to notify parent when selection changes safely in commit phase
+  const lastSerializedSelection = React.useRef<string>('');
+
+  React.useEffect(() => {
+    const synthesized = synthesizeText(selectedTier2Map);
+    if (synthesized !== lastSerializedSelection.current) {
+      lastSerializedSelection.current = synthesized;
+      onSelectionChangeRef.current(Object.values(selectedTier2Map), synthesized);
+    }
+  }, [selectedTier2Map]);
+
   // Synchronize direction changes for modalities without explicit Tier 3 qualification
   React.useEffect(() => {
     if (pillar === 'modalities' && activeDirection) {
@@ -190,8 +207,6 @@ export const CascadeFunnelPillarSelector: React.FC<CascadeFunnelPillarSelectorPr
           }
         }
         if (!changed) return prev;
-        const synthesized = synthesizeText(next, activeDirection);
-        onSelectionChange(Object.values(next), synthesized);
         return next;
       });
     }
@@ -216,8 +231,6 @@ export const CascadeFunnelPillarSelector: React.FC<CascadeFunnelPillarSelectorPr
           remedyHints: t2.remedyHints
         };
       }
-      const synthesized = synthesizeText(next);
-      onSelectionChange(Object.values(next), synthesized);
       return next;
     });
   };
@@ -234,8 +247,6 @@ export const CascadeFunnelPillarSelector: React.FC<CascadeFunnelPillarSelectorPr
           direction: dir
         }
       };
-      const synthesized = synthesizeText(next);
-      onSelectionChange(Object.values(next), synthesized);
       return next;
     });
   };
@@ -270,15 +281,12 @@ export const CascadeFunnelPillarSelector: React.FC<CascadeFunnelPillarSelectorPr
           remedyHints: t2.remedyHints
         };
       }
-      const synthesized = synthesizeText(next);
-      onSelectionChange(Object.values(next), synthesized);
       return next;
     });
   };
 
   const handleClearAll = () => {
     setSelectedTier2Map({});
-    onSelectionChange([], '');
   };
 
   const selectedCount = Object.keys(selectedTier2Map).length;

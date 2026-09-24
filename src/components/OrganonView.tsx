@@ -12,7 +12,7 @@ import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
 import { CausaVertiefungModal } from './CausaVertiefungModal';
 import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
 import { OrganonStage2WorkflowModal } from './OrganonStage2WorkflowModal';
-import { Stage2Category } from '../types/organonStage2Workflow';
+import { Stage2Category, STAGE2_CATEGORY_SEQUENCE } from '../types/organonStage2Workflow';
 import { OrganonLiveProgress, LiveProcessStep } from './OrganonLiveProgress';
 import { motion } from 'motion/react';
 import { 
@@ -142,6 +142,24 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
     }
     return null;
   });
+  const [stage2Records, setStage2Records] = useState<Record<string, any>>(() => {
+    if (patientCase?.organonAnalysis?.stage2Records) {
+      return patientCase.organonAnalysis.stage2Records;
+    }
+    return {};
+  });
+
+  // Keep state in sync if a different patient case is opened
+  useEffect(() => {
+    if (patientCase) {
+      setNarrationInput(patientCase.hauptbeschwerde || patientCase.spontanbericht || '');
+      setAnalysisResult(patientCase.organonAnalysis?.analysisResult || null);
+      setCompareResult(patientCase.organonAnalysis?.compareResult || null);
+      setArbitratorResult(patientCase.organonAnalysis?.arbitratorResult || null);
+      setEndprueferResult(patientCase.organonAnalysis?.endprueferResult || null);
+      setStage2Records(patientCase.organonAnalysis?.stage2Records || {});
+    }
+  }, [patientCase?.id]);
 
   useEffect(() => {
     if (patientCase && onSavePatientCase) {
@@ -150,17 +168,19 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
           ...patientCase,
           hauptbeschwerde: narrationInput,
           organonAnalysis: {
+            ...patientCase.organonAnalysis,
             analysisResult,
             compareResult,
             arbitratorResult,
             endprueferResult,
+            stage2Records,
             updatedAt: new Date().toISOString()
           }
         });
       }, 600);
       return () => clearTimeout(handler);
     }
-  }, [narrationInput, analysisResult, compareResult, arbitratorResult, endprueferResult]);
+  }, [narrationInput, analysisResult, compareResult, arbitratorResult, endprueferResult, stage2Records]);
   const [enableGptCompare, setEnableGptCompare] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('organon_enable_gpt_compare');
@@ -721,6 +741,16 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
         map['animus'] = txt;
       }
     });
+    // Also merge any partially entered stage2Records into the stage1ValuesMap so no data is lost!
+    if (stage2Records) {
+      Object.entries(stage2Records).forEach(([cat, rec]: [string, any]) => {
+        if (rec?.text && rec.text.trim()) {
+          map[cat] = rec.text.trim();
+          map[cat.toLowerCase()] = rec.text.trim();
+        }
+      });
+    }
+
     return map;
   };
 
@@ -741,6 +771,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
 
     const targetKeys = catKeyMap[category] || [];
 
+    let updatedAnalysis = analysisResult;
     if (analysisResult?.three_stage?.stage1) {
       const updatedStage1 = analysisResult.three_stage.stage1.map((item: any) => {
         const itemKey = (item.category_key || item.category_name || '').toLowerCase();
@@ -749,15 +780,17 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
         }
         return item;
       });
-      setAnalysisResult({
+      updatedAnalysis = {
         ...analysisResult,
         three_stage: {
           ...analysisResult.three_stage,
           stage1: updatedStage1
         }
-      });
+      };
+      setAnalysisResult(updatedAnalysis);
     }
 
+    let updatedCompare = compareResult;
     if (compareResult?.gemini?.three_stage?.stage1) {
       const updatedGStage1 = compareResult.gemini.three_stage.stage1.map((item: any) => {
         const itemKey = (item.category_key || item.category_name || '').toLowerCase();
@@ -766,7 +799,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
         }
         return item;
       });
-      setCompareResult({
+      updatedCompare = {
         ...compareResult,
         gemini: {
           ...compareResult.gemini,
@@ -774,6 +807,53 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
             ...compareResult.gemini.three_stage,
             stage1: updatedGStage1
           }
+        }
+      };
+      setCompareResult(updatedCompare);
+    }
+
+    const updatedStage2 = {
+      ...stage2Records,
+      [category]: {
+        category,
+        status: 'COMPLETED',
+        text,
+        timestamp: new Date().toISOString()
+      }
+    };
+    setStage2Records(updatedStage2);
+
+    if (patientCase && onSavePatientCase) {
+      onSavePatientCase({
+        ...patientCase,
+        hauptbeschwerde: narrationInput,
+        organonAnalysis: {
+          ...patientCase.organonAnalysis,
+          analysisResult: updatedAnalysis || analysisResult,
+          compareResult: updatedCompare || compareResult,
+          arbitratorResult,
+          endprueferResult,
+          stage2Records: updatedStage2,
+          updatedAt: new Date().toISOString()
+        }
+      });
+    }
+  };
+
+  const handleStage2RecordsChange = (newRecords: Record<Stage2Category, any>) => {
+    setStage2Records(newRecords);
+    if (patientCase && onSavePatientCase) {
+      onSavePatientCase({
+        ...patientCase,
+        hauptbeschwerde: narrationInput,
+        organonAnalysis: {
+          ...patientCase.organonAnalysis,
+          analysisResult,
+          compareResult,
+          arbitratorResult,
+          endprueferResult,
+          stage2Records: newRecords,
+          updatedAt: new Date().toISOString()
         }
       });
     }
@@ -872,10 +952,11 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
     }
 
     // Automatically recalculate Belegprüfer and Endprüfer with the deepened Stage 2 data!
+    let updatedArb: any = null;
     const effectiveG = updatedGemini || updatedAnalysis;
     if (effectiveG) {
       const effectiveO = updatedOpenai || compareResult?.openai || null;
-      const updatedArb = buildCompleteArbitratorResult(
+      updatedArb = buildCompleteArbitratorResult(
         narrationInput,
         effectiveG,
         effectiveO,
@@ -884,6 +965,41 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
       );
       setArbitratorResult(updatedArb);
       fetchEndpruefer(narrationInput, updatedArb);
+    }
+
+    const updatedStage2: Record<string, any> = { ...stage2Records };
+    STAGE2_CATEGORY_SEQUENCE.forEach(cat => {
+      const text = allResults[cat];
+      if (text && text.trim()) {
+        updatedStage2[cat] = {
+          category: cat,
+          status: 'COMPLETED',
+          text: text.trim(),
+          timestamp: new Date().toISOString()
+        };
+      }
+    });
+    setStage2Records(updatedStage2);
+
+    if (patientCase && onSavePatientCase) {
+      onSavePatientCase({
+        ...patientCase,
+        hauptbeschwerde: narrationInput,
+        organonAnalysis: {
+          ...patientCase.organonAnalysis,
+          analysisResult: updatedAnalysis || analysisResult,
+          compareResult: {
+            ...compareResult,
+            gemini: updatedGemini || compareResult?.gemini,
+            openai: updatedOpenai || compareResult?.openai
+          },
+          arbitratorResult: updatedArb || arbitratorResult,
+          endprueferResult,
+          stage2Records: updatedStage2,
+          stage2CompletedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      });
     }
 
     setIsStage2WorkflowModalOpen(false);
@@ -1508,10 +1624,12 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     ...patientCase,
                     hauptbeschwerde: narrationInput,
                     organonAnalysis: {
+                      ...patientCase?.organonAnalysis,
                       analysisResult,
                       compareResult,
                       arbitratorResult,
                       endprueferResult,
+                      stage2Records,
                       updatedAt: new Date().toISOString()
                     }
                   });
@@ -2275,6 +2393,8 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
         onClose={() => setIsStage2WorkflowModalOpen(false)}
         rawText={analysisResult?.raw_text || narrationInput}
         stage1Values={getStage1ValuesMap()}
+        initialRecords={stage2Records}
+        onRecordsChange={handleStage2RecordsChange}
         endprueferResult={endprueferResult}
         hahnemannCrossCheck={enableHahnemannCrossCheck}
         onHahnemannCrossCheckChange={(enabled) => setEnableHahnemannCrossCheck(enabled)}

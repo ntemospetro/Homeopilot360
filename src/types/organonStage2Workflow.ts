@@ -35,6 +35,8 @@ export interface CategoryResultRecord {
   category: Stage2Category;
   status: CategoryCompletionStatus;
   summaryText?: string;
+  text?: string;
+  timestamp?: string;
   completedAt?: string;
   details?: any;
 }

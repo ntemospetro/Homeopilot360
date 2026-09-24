@@ -34,17 +34,36 @@ export const AdminRepertoryImportModule: React.FC = () => {
   
   // Import Form State
   const [fileName, setFileName] = useState('');
-  const [fileFormat, setFileFormat] = useState<'JSON' | 'CSV' | 'TSV'>('JSON');
+  const [fileFormat, setFileFormat] = useState<'JSON' | 'CSV' | 'TSV' | 'SQL'>('JSON');
   const [rawFileContent, setRawFileContent] = useState('');
   const [sourceWork, setSourceWork] = useState('');
   const [sourceEdition, setSourceEdition] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState('de');
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus>('UNKNOWN');
   const [licenseNote, setLicenseNote] = useState('');
+  const [filterKeyword, setFilterKeyword] = useState('');
   
   // Active Dry Run State
   const [activeDryRunDataset, setActiveDryRunDataset] = useState<DatasetImportRecord | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [analyzedChapters, setAnalyzedChapters] = useState<{ chapter: string; count: number; sampleRubrics: string[] }[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleInspectChapters = () => {
+    if (!rawFileContent.trim()) {
+      alert('Bitte laden Sie zuerst eine SQL- oder Datendatei hoch bzw. fügen Sie den Inhalt ein.');
+      return;
+    }
+    setIsAnalyzing(true);
+    try {
+      const chapters = repertoryImportManager.inspectContentChapters(rawFileContent, fileFormat);
+      setAnalyzedChapters(chapters);
+    } catch (e) {
+      setAnalyzedChapters([]);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
   const [diagnosticError, setDiagnosticError] = useState<{
     current_stage: string;
     error_name: string;
@@ -83,6 +102,7 @@ export const AdminRepertoryImportModule: React.FC = () => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (ext === 'csv') setFileFormat('CSV');
     else if (ext === 'tsv') setFileFormat('TSV');
+    else if (ext === 'sql') setFileFormat('SQL');
     else setFileFormat('JSON');
 
     const reader = new FileReader();
@@ -123,7 +143,7 @@ export const AdminRepertoryImportModule: React.FC = () => {
         remedies_is_array: false
       });
 
-      current_stage = 'JSON_PARSE / JSON_NORMALIZE / SOURCE_METADATA / BUILD_DATASET / VALIDATE_RECORDS / VALIDATE_PARENT_REFERENCES / RESOLVE_REMEDIES / BUILD_REPORT / SAVE_STORAGE';
+      current_stage = 'JSON_PARSE / SQL_PARSE / JSON_NORMALIZE / SOURCE_METADATA / BUILD_DATASET / VALIDATE_RECORDS / VALIDATE_PARENT_REFERENCES / RESOLVE_REMEDIES / BUILD_REPORT / SAVE_STORAGE';
       const { dataset, dryRun } = repertoryImportManager.runDryRun(
         fileName || 'import_upload.json',
         fileFormat,
@@ -134,7 +154,8 @@ export const AdminRepertoryImportModule: React.FC = () => {
           source_language: sourceLanguage,
           license_status: licenseStatus,
           license_note: licenseNote
-        }
+        },
+        filterKeyword
       );
 
       current_stage = 'SET_REACT_STATE';
@@ -310,15 +331,82 @@ export const AdminRepertoryImportModule: React.FC = () => {
             </h2>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Datei auswählen (JSON, CSV, TSV - Max 5MB)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Datei auswählen (JSON, CSV, TSV, SQL - Max 5MB)</label>
               <input 
                 type="file" 
-                accept=".json,.csv,.tsv"
+                accept=".json,.csv,.tsv,.sql"
                 onChange={handleFileUploadMock}
                 className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer border border-slate-200 rounded-xl p-2"
               />
               {fileName && <p className="text-xs text-slate-500 mt-1">Ausgewählt: {fileName} ({fileFormat})</p>}
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-slate-700">Selektiver Filter (nur benötigte Daten importieren)</label>
+                <button
+                  type="button"
+                  onClick={handleInspectChapters}
+                  disabled={isAnalyzing}
+                  className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-medium transition-colors flex items-center space-x-1"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                  <span>SQL-Inhalt analysieren & Kapitel entdecken</span>
+                </button>
+              </div>
+              <input 
+                type="text" 
+                value={filterKeyword} 
+                onChange={e => setFilterKeyword(e.target.value)} 
+                placeholder="z.B. Kopf, Gemüt, Schmerz (leer lassen für alle Daten)"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <p className="text-xs text-slate-500 mt-1">Filtert die SQL- oder Datensatz-Einträge vor dem Import, sodass nur relevante Rubriken übernommen werden.</p>
+            </div>
+
+            {analyzedChapters.length > 0 && (
+              <div className="bg-indigo-50/60 border border-indigo-200 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-900 uppercase tracking-wide flex items-center space-x-1">
+                    <Database className="w-4 h-4 text-indigo-600" />
+                    <span>In SQL gefundene Kapitel ({analyzedChapters.length}):</span>
+                  </span>
+                  <button 
+                    onClick={() => setAnalyzedChapters([])}
+                    className="text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    Schließen
+                  </button>
+                </div>
+                <p className="text-xs text-indigo-700">Klicken Sie auf ein Kapitel, um es als Filter zu übernehmen oder zu importieren:</p>
+                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                  {analyzedChapters.map((ch, idx) => (
+                    <div 
+                      key={idx}
+                      onClick={() => setFilterKeyword(ch.chapter)}
+                      className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between ${
+                        filterKeyword.toLowerCase() === ch.chapter.toLowerCase() 
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+                          : 'bg-white text-slate-800 border-indigo-100 hover:bg-indigo-100/50'
+                      }`}
+                    >
+                      <div>
+                        <span className="font-semibold">{ch.chapter}</span>
+                        <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full ${filterKeyword.toLowerCase() === ch.chapter.toLowerCase() ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                          {ch.count} Einträge
+                        </span>
+                        {ch.sampleRubrics.length > 0 && (
+                          <div className={`mt-1 truncate max-w-xs ${filterKeyword.toLowerCase() === ch.chapter.toLowerCase() ? 'text-indigo-100' : 'text-slate-500'}`}>
+                            Beispiele: {ch.sampleRubrics.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                      <span className="font-medium text-[11px] underline">Auswählen</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>

@@ -545,64 +545,62 @@ export function formatMedicationMonograph(med: MedicationSuggestion, lang?: Lang
   } else {
     const name = med.name;
     const activeSub = med.activeSubstance || name;
-    const intro = `Hier ist die komplette Übersicht zu ${name} (${activeSub}) mit allen wichtigen Informationen zu Inhaltsstoffen, Dosierung, Nebenwirkungen, Kontraindikationen und Wechselwirkungen, übersichtlich für dich zusammengefasst.`;
+    const isHomoeo = (med.category || '').toLowerCase().includes('homöo') || (med.category || '').toLowerCase().includes('homeo') || (med.category || '').toLowerCase().includes('globuli');
 
     // 1. Wirkstoff und Inhaltsstoffe
     const cat = med.category || 'Fachinformation';
     const forms = Array.isArray(med.commonForms) && med.commonForms.length > 0 ? med.commonForms.join(', ') : 'Tablette';
-    const sec1 = `📝 1. Wirkstoff und Inhaltsstoffe\n${name} gehört zur Wirkstoffgruppe: ${cat}.\nHauptwirkstoff: ${activeSub}.\nDarreichungsformen: ${forms}. Hilfsstoffe sind der jeweiligen herstellerspezifischen Packungsbeilage zu entnehmen.`;
+    const sec1 = `📝 1. Wirkstoff und Inhaltsstoffe\n${name} (${cat}). Wirkstoff: ${activeSub}. Formen: ${forms}.`;
 
     // 2. Dosierung & Anwendung
     const dosages = Array.isArray(med.dosages || med.defaultDosages) && (med.dosages || med.defaultDosages)!.length > 0
       ? (med.dosages || med.defaultDosages)!.join(', ')
-      : 'Standarddosierung';
-    const intake = med.recommendedIntake || 'Nach ärztlicher Anweisung einnehmen.';
-    const sec2 = `💊 2. Dosierung & Anwendung\nDie Dosierung von ${name} (${activeSub}) wird von der behandelnden Ärztin oder dem Arzt streng individuell festgelegt. Es gilt der Grundsatz, das Medikament so niedrig dosiert und so kurz bzw. indikationsgerecht wie möglich anzuwenden, um Risiken zu minimieren.\nVerfügbare Dosierungsstärken: ${dosages}.\nEinnahmeempfehlung: ${intake}\nÄltere oder geschwächte Patienten: Bei älteren Personen oder Personen mit eingeschränkter Organfunktion (insb. Leber/Niere) ist eine engmaschige Dosisanpassung nach ärztlicher Rücksprache essenziell.`;
+      : 'Standard';
+    const intake = med.recommendedIntake || (isHomoeo ? '3-5 Globuli unter der Zunge zergehen lassen.' : 'Nach ärztlicher Anweisung einnehmen.');
+    const sec2 = `💊 2. Dosierung & Anwendung\nVerfügbare Stärken: ${dosages}.\nEinnahme: ${intake}`;
 
     // 3. Nebenwirkungen
     let nwContent = '';
     if (med.sideEffectsByFrequency && typeof med.sideEffectsByFrequency === 'object') {
       const parts: string[] = [];
-      if (med.sideEffectsByFrequency.veryCommon?.length) parts.push(`Sehr häufig (≥ 1/10): ${med.sideEffectsByFrequency.veryCommon.join(', ')}.`);
-      if (med.sideEffectsByFrequency.common?.length) parts.push(`Häufig (≥ 1/100 bis < 1/10): ${med.sideEffectsByFrequency.common.join(', ')}.`);
-      if (med.sideEffectsByFrequency.uncommon?.length) parts.push(`Gelegentlich (≥ 1/1.000 bis < 1/100): ${med.sideEffectsByFrequency.uncommon.join(', ')}.`);
-      if (med.sideEffectsByFrequency.rare?.length) parts.push(`Selten (≥ 1/10.000 bis < 1/1.000): ${med.sideEffectsByFrequency.rare.join(', ')}.`);
-      if (med.sideEffectsByFrequency.veryRare?.length) parts.push(`Sehr selten (< 1/10.000): ${med.sideEffectsByFrequency.veryRare.join(', ')}.`);
+      if (med.sideEffectsByFrequency.veryCommon?.length) parts.push(`Sehr häufig: ${med.sideEffectsByFrequency.veryCommon.join(', ')}.`);
+      if (med.sideEffectsByFrequency.common?.length) parts.push(`Häufig: ${med.sideEffectsByFrequency.common.join(', ')}.`);
+      if (med.sideEffectsByFrequency.uncommon?.length) parts.push(`Gelegentlich: ${med.sideEffectsByFrequency.uncommon.join(', ')}.`);
       if (parts.length > 0) nwContent = parts.join('\n');
     }
     if (!nwContent && Array.isArray(med.sideEffects) && med.sideEffects.length > 0) {
-      nwContent = `Häufige Begleiterscheinungen:\n${med.sideEffects.join('; ')}.`;
+      nwContent = `${med.sideEffects.join('; ')}.`;
     }
     if (!nwContent) {
-      nwContent = 'Keine behördlichen Angaben zu Nebenwirkungen in der Fachinformations-Kurzfassung hinterlegt.';
+      nwContent = isHomoeo ? 'Keine Nebenwirkungen in den üblichen Potenzen bekannt.' : 'Keine spezifischen Nebenwirkungen hinterlegt.';
     }
-    const risks = med.warnings || 'Keine gesonderten Risikohinweise in der Kurzinformation vermerkt.';
-    const sec3 = `⚠️ 3. Nebenwirkungen\n${nwContent}\nBesondere Risiken & Warnhinweise:\n${risks}`;
+    const risks = med.warnings;
+    const sec3 = `⚠️ 3. Nebenwirkungen\n${nwContent}${risks ? `\nRisiken: ${risks}` : ''}`;
 
-    // 4. Kontraindikationen (Gegenanzeigen)
-    let sec4 = `🚫 4. Kontraindikationen (Gegenanzeigen)\nUnter bestimmten gesundheitlichen Bedingungen darf ${name} entweder gar nicht oder nur nach strenger ärztlicher Nutzen-Risiko-Abwägung angewendet werden.`;
+    // 4. Kontraindikationen
+    let sec4 = `🚫 4. Kontraindikationen`;
     if (med.contraindications && (med.contraindications.absolute?.length || med.contraindications.relative?.length)) {
       if (med.contraindications.absolute?.length) {
-        sec4 += `\nAbsolute Gegenanzeigen (Anwendung ausgeschlossen):\n${med.contraindications.absolute.join(';\n')}.`;
+        sec4 += `\nAbsolut: ${med.contraindications.absolute.join('; ')}.`;
       }
       if (med.contraindications.relative?.length) {
-        sec4 += `\nRelative Gegenanzeigen (Besondere Vorsicht erforderlich):\n${med.contraindications.relative.join(';\n')}.`;
+        sec4 += `\nRelativ: ${med.contraindications.relative.join('; ')}.`;
       }
     } else if (med.warnings) {
-      sec4 += `\nBehördliche Gegenanzeigen & Vorsichtsmaßnahmen:\n${med.warnings}`;
+      sec4 += `\n${med.warnings}`;
     } else {
-      sec4 += `\nKeine gesonderten behördlichen Gegenanzeigen in den erfassten Daten hinterlegt. Bitte stets die ausführliche Fachinformation des jeweiligen Herstellers beachten.`;
+      sec4 += `\nKeine spezifischen Gegenanzeigen hinterlegt.`;
     }
 
-    // 5. Gefährliche Wechselwirkungen
-    let sec5 = `❌ 5. Gefährliche Wechselwirkungen\nDie Kombination von ${name} mit bestimmten anderen Substanzen kann die Wirkung unvorhersehbar verändern oder unerwünschte Reaktionen hervorrufen.`;
+    // 5. Wechselwirkungen
+    let sec5 = `❌ 5. Wechselwirkungen`;
     if (Array.isArray(med.interactions) && med.interactions.length > 0) {
-      sec5 += '\n' + med.interactions.map(i => `${i}.`).join('\n');
+      sec5 += '\n' + med.interactions.join('; ') + '.';
     } else {
-      sec5 += '\nKeine spezifischen Wechselwirkungen in den erfassten behördlichen Daten hinterlegt.';
+      sec5 += '\nKeine spezifischen Wechselwirkungen hinterlegt.';
     }
 
-    baseText = `${intro}\n\n${sec1}\n\n${sec2}\n\n${sec3}\n\n${sec4}\n\n${sec5}`;
+    baseText = `${sec1}\n\n${sec2}\n\n${sec3}\n\n${sec4}\n\n${sec5}`;
   }
 
   if (lang && lang !== 'de') {

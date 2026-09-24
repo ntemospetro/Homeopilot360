@@ -108,6 +108,7 @@ interface CategoryResultRecord {
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED_SUFFICIENT';
   text: string;
   timestamp?: string;
+  details?: any;
 }
 
 export interface OrganonStage2WorkflowModalProps {
@@ -119,6 +120,8 @@ export interface OrganonStage2WorkflowModalProps {
   hahnemannCrossCheck?: boolean;
   onHahnemannCrossCheckChange?: (enabled: boolean) => void;
   stage1Values?: Record<string, string>;
+  initialRecords?: Record<string, any>;
+  onRecordsChange?: (records: Record<Stage2Category, CategoryResultRecord>) => void;
   onAdoptCategoryResult?: (category: Stage2Category, text: string) => void;
   onWorkflowCompleted?: (allResults: Record<Stage2Category, string>) => void;
 }
@@ -132,6 +135,8 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   hahnemannCrossCheck,
   onHahnemannCrossCheckChange,
   stage1Values = {},
+  initialRecords = {},
+  onRecordsChange,
   onAdoptCategoryResult,
   onWorkflowCompleted
 }) => {
@@ -166,10 +171,13 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   const [records, setRecords] = useState<Record<Stage2Category, CategoryResultRecord>>(() => {
     const initial: Partial<Record<Stage2Category, CategoryResultRecord>> = {};
     STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
+      const existing = initialRecords?.[cat];
+      const s1Text = stage1Values[cat] || '';
       initial[cat] = {
         category: cat,
-        status: 'PENDING',
-        text: stage1Values[cat] || ''
+        status: existing?.status || (existing?.text ? 'IN_PROGRESS' : 'PENDING'),
+        text: existing?.text !== undefined ? existing.text : s1Text,
+        timestamp: existing?.timestamp
       };
     });
     return initial as Record<Stage2Category, CategoryResultRecord>;
@@ -178,6 +186,22 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   // Local editing text for slot categories (S3..S10)
   const [slotNoteInput, setSlotNoteInput] = useState<string>('');
   const [confirmExitOpen, setConfirmExitOpen] = useState<boolean>(false);
+  const [confirmNoSaveOpen, setConfirmNoSaveOpen] = useState<boolean>(false);
+  const [initialSessionRecords, setInitialSessionRecords] = useState<Record<Stage2Category, CategoryResultRecord> | null>(null);
+  const isInitializedRef = useRef<boolean>(false);
+
+  const hasSessionChanges = useMemo(() => {
+    if (!initialSessionRecords) return false;
+    return STAGE2_CATEGORY_SEQUENCE.some((cat) => {
+      const init = initialSessionRecords[cat];
+      const curr = records[cat];
+      const initText = (init?.text || '').trim();
+      const currText = (curr?.text || '').trim();
+      const initStatus = init?.status || 'PENDING';
+      const currStatus = curr?.status || 'PENDING';
+      return initText !== currText || initStatus !== currStatus;
+    });
+  }, [records, initialSessionRecords]);
 
   // Interactive Question Engine states for S3..S10 (Sensatio, Symptoma, Modalitäten, Concomitantia, Comorbiditas, Mens, Animus)
   const [catDeepenStates, setCatDeepenStates] = useState<Record<string, CategoryDeepenState>>({});
@@ -262,24 +286,40 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
 
   // When workflow opens or resets
   useEffect(() => {
-    if (isOpen) {
-      setCurrentStepIndex(0);
+    if (!isOpen) {
+      isInitializedRef.current = false;
+      setInitialSessionRecords(null);
+      return;
+    }
+
+    if (isOpen && !isInitializedRef.current) {
+      isInitializedRef.current = true;
       setConfirmExitOpen(false);
-      // Initialize seed values only on initial modal open - status is PENDING until deepened or confirmed
-      setRecords(() => {
-        const initial: Record<Stage2Category, CategoryResultRecord> = {} as any;
-        STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
-          const s1Text = stage1Values[cat] || '';
+      setConfirmNoSaveOpen(false);
+      
+      const initial: Record<Stage2Category, CategoryResultRecord> = {} as any;
+      STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
+        const existing = initialRecords?.[cat];
+        const s1Text = stage1Values[cat] || '';
+        if (existing && (existing.text !== undefined || existing.status === 'COMPLETED' || existing.status === 'SKIPPED_SUFFICIENT' || existing.status === 'IN_PROGRESS')) {
+          initial[cat] = {
+            category: cat,
+            status: existing.status || (existing.text ? 'IN_PROGRESS' : 'PENDING'),
+            text: existing.text !== undefined ? existing.text : s1Text,
+            timestamp: existing.timestamp
+          };
+        } else {
           initial[cat] = {
             category: cat,
             status: 'PENDING',
             text: s1Text
           };
-        });
-        return initial;
+        }
       });
+      setRecords(initial);
+      setInitialSessionRecords(initial);
     }
-  }, [isOpen]); // Only react to isOpen changes, NOT stage1Values updates!
+  }, [isOpen, initialRecords, stage1Values]);
 
   // Current active category
   const activeCategory: Stage2Category | null = useMemo(() => {
@@ -376,6 +416,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
       setCatAnswerInput('');
       if (res.summaryText) {
         setSlotNoteInput(res.summaryText);
+        handlePartialCategoryChange(activeCategory, res.summaryText);
       }
     } catch (err) {
       console.warn('Failed to submit category answer:', err);
@@ -385,16 +426,19 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   };
 
   // Handler when a category finishes and adopts findings
-  const handleCompleteCategory = (cat: Stage2Category, summaryText: string, skipped = false) => {
-    setRecords((prev) => ({
-      ...prev,
+  const handleCompleteCategory = (cat: Stage2Category, summaryText: string, skipped = false, details?: any) => {
+    const updated: Record<Stage2Category, CategoryResultRecord> = {
+      ...records,
       [cat]: {
         category: cat,
         status: skipped ? 'SKIPPED_SUFFICIENT' : 'COMPLETED',
         text: summaryText,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        details: details || records[cat]?.details
       }
-    }));
+    };
+    setRecords(updated);
+    onRecordsChange?.(updated);
 
     if (onAdoptCategoryResult && summaryText) {
       onAdoptCategoryResult(cat, summaryText);
@@ -402,6 +446,24 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
 
     // Advance automatically to the next step
     setCurrentStepIndex((prev) => Math.min(prev + 1, STAGE2_CATEGORY_SEQUENCE.length));
+  };
+
+  // Handler when a category has partial findings typed or submitted
+  const handlePartialCategoryChange = (cat: Stage2Category, partialText: string, details?: any) => {
+    if (!partialText.trim()) return;
+    const current = records[cat];
+    const updated: Record<Stage2Category, CategoryResultRecord> = {
+      ...records,
+      [cat]: {
+        category: cat,
+        status: current?.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS',
+        text: partialText,
+        timestamp: new Date().toISOString(),
+        details: details || current?.details
+      }
+    };
+    setRecords(updated);
+    onRecordsChange?.(updated);
   };
 
   const handleFinalizeWorkflow = (customRecords?: Record<Stage2Category, CategoryResultRecord>) => {
@@ -415,6 +477,8 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
       }
     });
 
+    onRecordsChange?.(targetRecords);
+
     if (onWorkflowCompleted) {
       onWorkflowCompleted(resultMap as Record<Stage2Category, string>);
     }
@@ -422,10 +486,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   };
 
   const handleSafeCloseRequest = () => {
-    const hasAnyProgress = Object.values(records).some(
-      (r) => r.status === 'COMPLETED' || r.status === 'SKIPPED_SUFFICIENT'
-    );
-    if (hasAnyProgress) {
+    if (hasSessionChanges) {
       setConfirmExitOpen(true);
     } else {
       onClose();
@@ -511,6 +572,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
             const isCurrent = idx === currentStepIndex;
             const isDone = rec?.status === 'COMPLETED';
             const isSkipped = rec?.status === 'SKIPPED_SUFFICIENT';
+            const isInProgress = !isDone && !isSkipped && (rec?.status === 'IN_PROGRESS' || Boolean(rec?.text && rec.text.trim()));
 
             return (
               <button
@@ -526,6 +588,8 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
                     ? 'bg-emerald-950/50 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900/40 font-medium'
                     : isSkipped
                     ? 'bg-amber-950/40 text-amber-300 border border-amber-500/30 hover:bg-amber-900/40 font-medium'
+                    : isInProgress
+                    ? 'bg-cyan-950/50 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-900/40 font-medium'
                     : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-850 hover:text-slate-200'
                 }`}
               >
@@ -534,6 +598,8 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
                     <Check className="w-3 h-3 text-emerald-300" />
                   ) : isSkipped ? (
                     '—'
+                  ) : isInProgress ? (
+                    '✎'
                   ) : (
                     idx + 1
                   )}
@@ -576,6 +642,9 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
               onAdoptCausa={(causaSummary) => {
                 handleCompleteCategory('CAUSA', causaSummary);
               }}
+              onPartialChange={(partialCausaText) => {
+                handlePartialCategoryChange('CAUSA', partialCausaText);
+              }}
             />
           )}
 
@@ -592,6 +661,9 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
               onAdoptLocalisatio={(locSummary) => {
                 handleCompleteCategory('LOCALISATIO', locSummary);
               }}
+              onPartialChange={(partialLocText) => {
+                handlePartialCategoryChange('LOCALISATIO', partialLocText);
+              }}
             />
           )}
 
@@ -600,12 +672,16 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
             <GenericCategoryDeepDiveModal
               category={activeCategory}
               rawText={rawText}
-              stage1Text={stage1Values[activeCategory] || ''}
+              stage1Text={records[activeCategory]?.text || stage1Values[activeCategory] || ''}
               dimensions={FROZEN_DIMENSIONS_MAP[activeCategory] || []}
               endprueferResult={endprueferResult}
               hahnemannCrossCheck={globalHahnemannCrossCheck}
-              onAdopt={(summary) => {
-                handleCompleteCategory(activeCategory, summary);
+              initialDetails={records[activeCategory]?.details}
+              onAdopt={(summary, details) => {
+                handleCompleteCategory(activeCategory, summary, false, details);
+              }}
+              onPartialChange={(partialText, details) => {
+                handlePartialCategoryChange(activeCategory, partialText, details);
               }}
             />
           )}
@@ -620,6 +696,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
               hahnemannCrossCheck={globalHahnemannCrossCheck}
               onUpdateRecords={(newRecords) => {
                 setRecords(newRecords);
+                onRecordsChange?.(newRecords);
                 if (onAdoptCategoryResult) {
                   STAGE2_CATEGORY_SEQUENCE.forEach((cat) => {
                     const txt = newRecords[cat]?.text;
@@ -641,34 +718,85 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
         </div>
       </motion.div>
 
-      {/* Confirmation Exit Modal */}
+      {/* 1. Confirmation Exit Modal (Save / Don't Save / Cancel) */}
       {confirmExitOpen && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/80 p-4">
-          <div className="bg-slate-900 border border-slate-700 p-5 rounded-2xl max-w-md w-full space-y-4 shadow-2xl text-slate-100">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-xs">
+          <div className="bg-slate-900 border border-slate-700/80 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl text-slate-100 animate-in fade-in zoom-in-95 duration-150">
             <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <span>Workflow beenden?</span>
+              <span>{t('stage2ConfirmExitTitle')}</span>
             </h4>
             <p className="text-xs text-slate-300 leading-relaxed">
-              {t('stage2CloseWorkflowConfirm')}
+              {t('stage2ConfirmExitDesc')}
             </p>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setConfirmExitOpen(false)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium cursor-pointer"
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium cursor-pointer"
               >
-                Fortsetzen
+                {t('stage2ConfirmExitCancelBtn')}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setConfirmExitOpen(false);
+                  setConfirmNoSaveOpen(true);
+                }}
+                className="px-3 py-2 bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 rounded-lg text-xs font-medium cursor-pointer"
+              >
+                {t('stage2ConfirmExitDiscardBtn')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmExitOpen(false);
+                  handleFinalizeWorkflow(records);
+                }}
+                className="px-3.5 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>{t('stage2ConfirmExitSaveBtn')}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Secondary Modal (Are you sure you don't want to save?) */}
+      {confirmNoSaveOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-xs">
+          <div className="bg-slate-900 border border-slate-700/80 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl text-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-500 animate-pulse" />
+              <span>{t('stage2ConfirmNoSaveTitle')}</span>
+            </h4>
+            <p className="text-xs text-slate-300 leading-relaxed font-semibold">
+              {t('stage2ConfirmNoSaveDesc')}
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmNoSaveOpen(false);
+                }}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold cursor-pointer"
+              >
+                {t('stage2ConfirmNoSaveBackBtn')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmNoSaveOpen(false);
+                  if (initialSessionRecords) {
+                    setRecords(initialSessionRecords);
+                    onRecordsChange?.(initialSessionRecords);
+                  }
                   onClose();
                 }}
-                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold cursor-pointer"
+                className="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold cursor-pointer"
               >
-                Beenden
+                {t('stage2ConfirmNoSaveDiscardBtn')}
               </button>
             </div>
           </div>

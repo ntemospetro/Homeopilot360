@@ -4,6 +4,7 @@ export const MATERIA_MEDICA_PART6: MateriaMedicaEntry[] = [
   {
     "id": "magnesia-phosphorica",
     "latinName": "Magnesium phosphoricum",
+    "aliases": ["Mag-p", "Mag-phos", "Magnesium Phos"],
     "categoryKey": "mineral",
     "isPolychrest": true,
     "importanceTier": 1,
@@ -171,228 +172,201 @@ export const MATERIA_MEDICA_PART6: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Minéral",
         "commonName": "Phosphate de magnésium",
-        "origin": "Pure magnesium phosphate.",
+        "origin": "Phosphate de magnésium pur.",
         "essence": "L'antispasmodique et analgésique homéopathique suprême : des douleurs fulgurantes, lancinantes et crampantes, soulagées rapidement par une chaleur locale et une pression ferme.",
         "mainIndications": [
           "Dysménorrhée (crampes menstruelles) et coliques abdominales",
-          "Biliary colic & spasmodic intestinal cramps",
-          "Trigeminal neuralgia & shooting electric nerve pains",
+          "Colique biliaire et crampes intestinales spasmodiques",
+          "Névralgie trigéminale et douleurs nerveuses fulgurantes",
           "Crampes aux mollets, spasmes musculaires et crampes de l'écrivain"
         ],
         "keynotes": [
-          "Pains promptly and dramatically relieved by heat, hot water bottles, and firm pressure",
-          "Cramps compel patient to double up",
-          "Pains shoot like an electric shock along nerves",
-          "Famously effective taken in hot water sips (\"Hot 7\")"
+          "Douleurs soulagées rapidement et spectaculairement par la chaleur, les bouillottes et une pression ferme",
+          "Les crampes obligent le patient à se plier en deux",
+          "Les douleurs traversent les nerfs comme un choc électrique",
+          "Particulièrement efficace pris par petites gorgées d'eau chaude (« Chaude 7 »)"
         ],
-        "mindEmotional": "Anxious, groans aloud with cramps, sensitive to pain.",
+        "mindEmotional": "Anxieux, gémit bruyamment lors des crampes, sensible à la douleur.",
         "modalitiesBetter": [
-          "Local heat & hot applications",
-          "Firm pressure & bending double",
-          "Friction/rubbing"
+          "Chaleur locale et applications chaudes",
+          "Pression ferme et position repliée",
+          "Friction et massage"
         ],
         "modalitiesWorse": [
-          "Cold air and cold applications",
-          "Light touching without firm pressure",
-          "Right side"
+          "Air froid et applications froides",
+          "Effleurement léger sans pression ferme",
+          "Côté droit"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6X, 12X. In acute spasms dissolve 10 tablets in hot water and sip.",
-        "defaultTagesdosis": "3 à 4 doses de 3 à 5 granulés",
+        "potenciesAndDosage": "Aigu : D6, D12, C30. En cas de spasmes aigus, dissoudre 10 comprimés dans de l'eau chaude et boire à gorgées.",
+        "defaultTagesdosis": "3–4 doses de 5 granules",
         "sphereOfAction": [
-          "Smooth & Striated Muscle (Spasms)",
-          "Sensory Nerve Trunks (Neuralgia)",
-          "Uterus & Abdominal Viscera"
+          "Muscles lisses et striés (spasmes)",
+          "Troncs nerveux sensoriels (névralgies)",
+          "Utérus et viscères abdominaux"
         ],
         "differentialRemedies": [
-          "Colocynthis (better pressure, anger causations)",
+          "Colocynthis",
           "Chamomilla",
-          "Dioscorea (better bending back)",
+          "Dioscorea",
           "Belladonna"
         ],
         "searchKeywords": [
           "phosphate de magnésium",
-          "magnesium phosphoricum",
-          "magnesium phosphate",
-          "mag phos",
-          "hot 7",
-          "cramps",
-          "coliques",
-          "dysmenorrhea",
-          "sciatique",
-          "la chaleur soulage",
-          "smooth & striated muscle (spasms)",
-          "sensory nerve trunks (neuralgia)",
-          "uterus & abdominal viscera"
+          "magnesia phosphorica",
+          "crampes",
+          "colique",
+          "dysménorrhée",
+          "chaleur"
         ]
       },
       "el": {
         "category": "Ορυκτό",
         "commonName": "Φωσφορικό μαγνήσιο",
         "origin": "Καθαρό φωσφορικό μαγνήσιο.",
-        "essence": "Το υπέρτατο ομοιοπαθητικό αντισπασμωδικό και αναλγητικό: αστραπιαία, εκτόξευση, κράμπες πόνοι που ανακουφίζονται άμεσα από την τοπική θερμότητα και τη σταθερή πίεση.",
+        "essence": "Το υπέρτατο ομοιοπαθητικό αντισπασμωδικό και αναλγητικό: αστραπιαία, σουβλερά, κράμπες πόνοι που ανακουφίζονται άμεσα από την τοπική θερμότητα και τη σταθερή πίεση.",
         "mainIndications": [
           "Δυσμηνόρροια (κράμπες περιόδου) & κοιλιακοί κολικοί",
           "Κολικοί χοληφόρων & σπασμωδικές εντερικές κράμπες",
-          "Νευραλγία τριδύμου & πόνοι ηλεκτρικού νεύρου",
+          "Νευραλγία τριδύμου & σουβλεροί πόνοι νεύρων",
           "Κράμπες στη γάμπα, μυϊκοί σπασμοί και κράμπα του συγγραφέα"
         ],
         "keynotes": [
-          "Οι πόνοι ανακουφίζονται άμεσα και δραματικά από τη θερμότητα, τα μπουκάλια ζεστού νερού και τη σταθερή πίεση",
+          "Οι πόνοι ανακουφίζονται άμεσα και δραματικά από τη θερμότητα, τις θερμοφόρες και τη σταθερή πίεση",
           "Οι κράμπες αναγκάζουν τον ασθενή να διπλασιαστεί",
-          "Οι πόνοι πέφτουν σαν ηλεκτροσόκ στα νεύρα",
-          "Διάσημα αποτελεσματική λήψη με γουλιές ζεστού νερού (\"Hot 7\")"
+          "Οι πόνοι διαπερνούν τα νεύρα σαν ηλεκτροσόκ",
+          "Φημισμένα αποτελεσματικό σε γουλιές ζεστού νερού («Hot 7»)"
         ],
         "mindEmotional": "Ανήσυχο, στενάζει δυνατά με κράμπες, ευαίσθητο στον πόνο.",
         "modalitiesBetter": [
           "Τοπική θερμότητα & θερμές εφαρμογές",
-          "Σκληρή πίεση & κάμψη διπλή",
-          "Τριβή/τριβή"
+          "Σταθερή πίεση & διπλή κάμψη",
+          "Τριβή"
         ],
         "modalitiesWorse": [
           "Ψυχρός αέρας και κρύες εφαρμογές",
           "Ελαφρύ άγγιγμα χωρίς σταθερή πίεση",
           "Δεξιά πλευρά"
         ],
-        "potenciesAndDosage": "Οξεία: D6, D12, C30 / 6X, 12X. Σε οξείς σπασμούς διαλύστε 10 ταμπλέτες σε ζεστό νερό και πιείτε.",
-        "defaultTagesdosis": "3–4 δόσεις των 3–5 σφαιριδίων",
+        "potenciesAndDosage": "Οξεία: D6, D12, C30. Σε οξείς σπασμούς διαλύστε 10 ταμπλέτες σε ζεστό νερό και πιείτε.",
+        "defaultTagesdosis": "3–4 δόσεις των 5 σφαιριδίων",
         "sphereOfAction": [
           "Λείοι και γραμμωτοί μύες (σπασμοί)",
           "Αισθητηριακοί νευρικοί κορμοί (Νευραλγία)",
           "Μήτρα & Σπλάχνα της Κοιλίας"
         ],
         "differentialRemedies": [
-          "Colocynthis (better pressure, anger causations)",
+          "Colocynthis",
           "Chamomilla",
-          "Dioscorea (better bending back)",
+          "Dioscorea",
           "Belladonna"
         ],
         "searchKeywords": [
           "φωσφορικό μαγνήσιο",
-          "magnesium phosphoricum",
-          "mag phos",
-          "ζεστό 7",
+          "magnesia phosphorica",
           "κράμπες",
-          "κολικούς",
+          "κολικοί",
           "δυσμηνόρροια",
-          "ισχιαλγία",
-          "ανακουφίζει από τη θερμότητα",
-          "λείοι και γραμμωτοί μύες (σπασμοί)",
-          "αισθητηριακοί νευρικοί κορμοί (νευραλγία)",
-          "μήτρα & σπλάχνα της κοιλίας"
+          "θερμότητα"
         ]
       },
       "it": {
         "category": "Minerale",
         "commonName": "Fosfato di magnesio",
-        "origin": "Pure magnesium phosphate.",
-        "essence": "The supreme homeopathic antispasmodic and analgesic: lightning-fast, darting, cramping pains relieved promptly by local heat and firm pressure.",
+        "origin": "Fosfato di magnesio puro.",
+        "essence": "L'antispasmodico e analgesico omeopatico supremo: dolori fulminei, trafittivi e crampiformi, alleviati prontamente da calore locale e pressione ferma.",
         "mainIndications": [
-          "Dysmenorrhea (menstrual cramps) & abdominal colics",
-          "Biliary colic & spasmodic intestinal cramps",
-          "Trigeminal neuralgia & shooting electric nerve pains",
-          "Calf cramps, muscular spasms, and writer’s cramp"
+          "Dismenorrea (crampi mestruali) e coliche addominali",
+          "Colica biliare e crampi intestinali spasmodici",
+          "Nevralgia trigeminale e dolori nervosi folgoranti",
+          "Crampi ai polpacci, spasmi muscolari e crampo dello scrivano"
         ],
         "keynotes": [
-          "Pains promptly and dramatically relieved by heat, hot water bottles, and firm pressure",
-          "Cramps compel patient to double up",
-          "Pains shoot like an electric shock along nerves",
-          "Famously effective taken in hot water sips (\"Hot 7\")"
+          "Dolori alleviati prontamente e drammaticamente da calore, borse dell'acqua calda e pressione ferma",
+          "I crampi costringono il paziente a rannicchiarsi",
+          "I dolori attraversano i nervi come una scossa elettrica",
+          "Estremamente efficace assunto a piccoli sorsi di acqua calda («Hot 7»)"
         ],
-        "mindEmotional": "Anxious, groans aloud with cramps, sensitive to pain.",
+        "mindEmotional": "Ansioso, geme ad alta voce per i crampi, sensibile al dolore.",
         "modalitiesBetter": [
-          "Local heat & hot applications",
-          "Firm pressure & bending double",
-          "Friction/rubbing"
+          "Calore locale e applicazioni calde",
+          "Pressione ferma e rannicchiarsi",
+          "Frizione"
         ],
         "modalitiesWorse": [
-          "Cold air and cold applications",
-          "Light touching without firm pressure",
-          "Right side"
+          "Aria fredda e applicazioni fredde",
+          "Tocco leggero senza pressione ferma",
+          "Lato destro"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6X, 12X. In acute spasms dissolve 10 tablets in hot water and sip.",
-        "defaultTagesdosis": "3–4 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: D6, D12, C30. Negli spasmi acuti sciogliere 10 compresse in acqua calda e sorseggiare.",
+        "defaultTagesdosis": "3–4 dosi da 5 granuli",
         "sphereOfAction": [
-          "Smooth & Striated Muscle (Spasms)",
-          "Sensory Nerve Trunks (Neuralgia)",
-          "Uterus & Abdominal Viscera"
+          "Muscoli lisci e striati (spasmi)",
+          "Tronchi nervosi sensoriali (nevralgie)",
+          "Utero e visceri addominali"
         ],
         "differentialRemedies": [
-          "Colocynthis (better pressure, anger causations)",
+          "Colocynthis",
           "Chamomilla",
-          "Dioscorea (better bending back)",
+          "Dioscorea",
           "Belladonna"
         ],
         "searchKeywords": [
           "fosfato di magnesio",
-          "magnesium phosphoricum",
-          "magnesium phosphate",
-          "mag phos",
-          "hot 7",
-          "cramps",
-          "colic",
-          "dysmenorrhea",
-          "sciatica",
-          "heat relieves",
-          "smooth & striated muscle (spasms)",
-          "sensory nerve trunks (neuralgia)",
-          "uterus & abdominal viscera"
+          "magnesia phosphorica",
+          "crampi",
+          "colica",
+          "dismenorrea",
+          "calore"
         ]
       },
       "ru": {
         "category": "Минеральный",
-        "commonName": "Фосфорнокислая магнезия / Магнезия фосфорика",
-        "origin": "Pure magnesium phosphate.",
-        "essence": "The supreme homeopathic antispasmodic and analgesic: lightning-fast, darting, cramping pains relieved promptly by local heat and firm pressure.",
+        "commonName": "Фосфат магния / Магнезия фосфорика",
+        "origin": "Чистый фосфат магния.",
+        "essence": "Главное гомеопатическое спазмолитическое и обезболивающее средство: молниеносные, стреляющие, судорожные боли, быстро облегчающиеся от местного тепла и твердого давления.",
         "mainIndications": [
-          "Dysmenorrhea (menstrual cramps) & abdominal colics",
-          "Biliary colic & spasmodic intestinal cramps",
-          "Trigeminal neuralgia & shooting electric nerve pains",
-          "Calf cramps, muscular spasms, and writer’s cramp"
+          "Дисменорея (менструальные спазмы) и боли в животе",
+          "Желчная колика и спастические кишечные колики",
+          "Тройничная невралгия и простреливающие нервные боли",
+          "Судороги икроножных мышц, мышечные спазмы и писчий спазм"
         ],
         "keynotes": [
-          "Pains promptly and dramatically relieved by heat, hot water bottles, and firm pressure",
-          "Cramps compel patient to double up",
-          "Pains shoot like an electric shock along nerves",
-          "Знаменитый эффект при приеме глотками горячей воды («Hot 7»)."
+          "Боли быстро и значительно уменьшаются от тепла, грелок и сильного давления",
+          "Спазмы заставляют пациента сгибаться пополам",
+          "Боли простреливают нервы подобно удару электрического тока",
+          "Знаменитый эффект при приеме глотками горячей воды («Hot 7»)"
         ],
-        "mindEmotional": "Anxious, groans aloud with cramps, sensitive to pain.",
+        "mindEmotional": "Тревожный, стонет от судорог, чувствительный к боли.",
         "modalitiesBetter": [
-          "Местное тепло и горячие применения",
-          "Firm pressure & bending double",
-          "Friction/rubbing"
+          "Местное тепло и согревающие компрессы",
+          "Сильное давление и сгибание пополам",
+          "Растирание"
         ],
         "modalitiesWorse": [
-          "Cold air and cold applications",
-          "Light touching without firm pressure",
-          "Right side"
+          "Холодный воздух и холодные аппликации",
+          "Легкое прикосновение без давления",
+          "Правая сторона"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6X, 12X. In acute spasms dissolve 10 tablets in hot water and sip.",
-        "defaultTagesdosis": "3–4 doses of 3–5 гранул",
+        "potenciesAndDosage": "Остро: D6, D12, C30. При острых спазмах растворить 10 таблеток в горячей воде и принимать по глотку.",
+        "defaultTagesdosis": "3–4 приема по 5 гранул",
         "sphereOfAction": [
-          "Smooth & Striated Muscle (Spasms)",
-          "Sensory Nerve Trunks (Neuralgia)",
-          "Uterus & Abdominal Viscera"
+          "Гладкая и поперечно-полосатая мускулатура (спазмы)",
+          "Чувствительные нервные стволы (невралгия)",
+          "Матка и органы брюшной полости"
         ],
         "differentialRemedies": [
-          "Colocynthis (better pressure, anger causations)",
+          "Colocynthis",
           "Chamomilla",
-          "Dioscorea (better bending back)",
+          "Dioscorea",
           "Belladonna"
         ],
         "searchKeywords": [
-          "фосфорнокислая магнезия / магнезия фосфорика",
-          "magnesium phosphoricum",
-          "magnesium phosphate",
-          "mag phos",
-          "hot 7",
-          "cramps",
+          "фосфат магния",
+          "магнезия фосфорика",
+          "судороги",
           "колики",
           "дисменорея",
-          "sciatica",
-          "heat relieves",
-          "smooth & striated muscle (spasms)",
-          "sensory nerve trunks (neuralgia)",
-          "uterus & abdominal viscera"
+          "тепло"
         ]
       }
     }

@@ -25,6 +25,16 @@ import { MATERIA_MEDICA_PART23 } from './materiaMedicaPart23';
 import { MATERIA_MEDICA_PART24 } from './materiaMedicaPart24';
 import { MATERIA_MEDICA_PART25 } from './materiaMedicaPart25';
 import { MATERIA_MEDICA_PART26 } from './materiaMedicaPart26';
+import { MATERIA_MEDICA_PART27 } from './materiaMedicaPart27';
+import { MATERIA_MEDICA_PART28 } from './materiaMedicaPart28';
+import { MATERIA_MEDICA_PART29 } from './materiaMedicaPart29';
+import { MATERIA_MEDICA_PART30 } from './materiaMedicaPart30';
+import { MATERIA_MEDICA_PART31 } from './materiaMedicaPart31';
+import { MATERIA_MEDICA_PART32 } from './materiaMedicaPart32';
+import { MATERIA_MEDICA_PART33 } from './materiaMedicaPart33';
+import { MATERIA_MEDICA_PART34 } from './materiaMedicaPart34';
+import { MATERIA_MEDICA_PART35 } from './materiaMedicaPart35';
+import { MATERIA_MEDICA_PART36 } from './materiaMedicaPart36';
 
 
 export type RemedyCategoryKey = 'plant' | 'mineral' | 'animal' | 'nosode' | 'acid' | 'other';
@@ -292,7 +302,17 @@ export const MATERIA_MEDICA_ENTRIES: MateriaMedicaEntry[] = deduplicateAndMergeM
   ...MATERIA_MEDICA_PART23,
   ...MATERIA_MEDICA_PART24,
   ...MATERIA_MEDICA_PART25,
-  ...MATERIA_MEDICA_PART26
+  ...MATERIA_MEDICA_PART26,
+  ...MATERIA_MEDICA_PART27,
+  ...MATERIA_MEDICA_PART28,
+  ...MATERIA_MEDICA_PART29,
+  ...MATERIA_MEDICA_PART30,
+  ...MATERIA_MEDICA_PART31,
+  ...MATERIA_MEDICA_PART32,
+  ...MATERIA_MEDICA_PART33,
+  ...MATERIA_MEDICA_PART34,
+  ...MATERIA_MEDICA_PART35,
+  ...MATERIA_MEDICA_PART36
 ]);
 
 export const ALL_REMEDIES_DATABASE = MATERIA_MEDICA_ENTRIES;

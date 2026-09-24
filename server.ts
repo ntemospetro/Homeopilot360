@@ -57,12 +57,26 @@ import {
   LOCALISATIO_DIMENSION_NAMES
 } from "./src/types/localisatioDeepDive";
 import { executeOrganonGlobalReview } from "./src/services/organonGlobalReviewEngine";
+import {
+  ensureKentDatabaseLoaded,
+  searchKentRubrics,
+  getKentRemedies,
+  getKentChapters,
+  getKentRubricById,
+  performKentRepertorisation,
+  getKentDrilldown
+} from "./serverKentRepertory";
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // Pre-load Kent database in the background on startup
+  ensureKentDatabaseLoaded().catch((err) => {
+    console.error("[KENT_BOOT] Background loading failed:", err);
+  });
 
   app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
@@ -2591,7 +2605,7 @@ Text:
         });
       } catch (e) {
         response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.8-flash",
           contents: prompt,
           config: { temperature: 0.1 },
         });
@@ -2676,7 +2690,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       } catch (primaryErr: any) {
         console.warn("Primary model failed, trying fallback model:", primaryErr);
         response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.8-flash",
           contents: prompt,
           config: {
             temperature: 0.2,
@@ -6738,6 +6752,79 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
         success: false,
         error: error?.message || 'E-Mail-Verbindung fehlgeschlagen. Bitte Zugangsdaten prüfen.',
       });
+    }
+  });
+
+  // ==========================================================================
+  // KENT REPERTORY API ENDPOINTS
+  // ==========================================================================
+  
+  // 1. Get list of distinct chapters
+  app.get("/api/kent/chapters", (req, res) => {
+    try {
+      const chapters = getKentChapters();
+      res.json({ success: true, chapters });
+    } catch (err: any) {
+      console.error("[KENT_API] Error getting chapters:", err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 2. Get list of all remedies in the Mittelverzeichnis
+  app.get("/api/kent/remedies", (req, res) => {
+    try {
+      const remedies = getKentRemedies();
+      res.json({ success: true, remedies });
+    } catch (err: any) {
+      console.error("[KENT_API] Error getting remedies:", err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 3. Search rubrics by keyword
+  app.get("/api/kent/search", (req, res) => {
+    try {
+      const q = String(req.query.q || "").trim();
+      const chapter = req.query.chapter ? String(req.query.chapter).trim() : undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : 100;
+      
+      const rubrics = searchKentRubrics(q, chapter, limit);
+      res.json({ success: true, rubrics });
+    } catch (err: any) {
+      console.error("[KENT_API] Error searching rubrics:", err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 4. Perform Kent scoring (repertorisation)
+  app.post("/api/kent/repertorize", (req, res) => {
+    try {
+      const { rubricIds } = req.body;
+      if (!Array.isArray(rubricIds)) {
+        return res.status(400).json({ success: false, error: "rubricIds must be an array of strings" });
+      }
+
+      const results = performKentRepertorisation(rubricIds);
+      res.json({ success: true, results });
+    } catch (err: any) {
+      console.error("[KENT_API] Error performing repertorisation:", err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 5. Dynamic Drill-down for hierarchical navigation
+  app.post("/api/kent/drilldown", (req, res) => {
+    try {
+      const { chapter, symptom, zusatz } = req.body;
+      const result = getKentDrilldown(
+        chapter ? String(chapter).trim() : undefined,
+        symptom ? String(symptom).trim() : undefined,
+        Array.isArray(zusatz) ? zusatz.map(String) : []
+      );
+      res.json({ success: true, ...result });
+    } catch (err: any) {
+      console.error("[KENT_API] Error performing drilldown:", err);
+      res.status(500).json({ success: false, error: err.message });
     }
   });
 

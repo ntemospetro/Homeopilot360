@@ -41,7 +41,9 @@ interface GenericCategoryDeepDiveModalProps {
   dimensions: Array<{ code: string; title: string; desc: string }>;
   endprueferResult?: any | null;
   hahnemannCrossCheck?: boolean;
-  onAdopt: (summaryText: string) => void;
+  onAdopt: (summaryText: string, details?: any) => void;
+  onPartialChange?: (currentText: string, details?: any) => void;
+  initialDetails?: any;
 }
 
 export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModalProps> = ({
@@ -51,7 +53,9 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
   dimensions,
   endprueferResult = null,
   hahnemannCrossCheck = false,
-  onAdopt
+  onAdopt,
+  onPartialChange,
+  initialDetails
 }) => {
   const { t, language } = useTranslation();
   const meta = STAGE2_CATEGORIES_METADATA[category] || { labelKey: category, dimensionsCode: category };
@@ -59,7 +63,8 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
   const [state, setState] = useState<CategoryDeepenState | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [answerInput, setAnswerInput] = useState<string>('');
-  const [showHistory, setShowHistory] = useState<boolean>(false);
+  const [showHistory, setShowHistory] = useState<boolean>(true);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showDimensions, setShowDimensions] = useState<boolean>(true);
   const [showFacts, setShowFacts] = useState<boolean>(true);
 
@@ -76,19 +81,24 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
   const prevInitKeyRef = useRef<string>('');
 
   useEffect(() => {
-    const initKey = `${category}|${rawText}|${stage1Text}|${hahnemannCrossCheck}`;
+    const detailsStr = JSON.stringify(initialDetails || {});
+    const initKey = `${category}|${rawText}|${stage1Text}|${hahnemannCrossCheck}|${detailsStr}`;
     if (prevInitKeyRef.current === initKey) return;
     prevInitKeyRef.current = initKey;
     setAnswerInput('');
-    setShowHistory(false);
+    setShowHistory(true);
+    setEditingIndex(null);
     setState(null);
     loadInitialState();
-  }, [category, rawText, stage1Text, hahnemannCrossCheck]);
+  }, [category, rawText, stage1Text, hahnemannCrossCheck, initialDetails]);
 
   const loadInitialState = async () => {
     const thisId = ++initRequestIdRef.current;
     setLoading(true);
     try {
+      const initialHistory = initialDetails?.questionHistory || [];
+      const initialFacts = initialDetails?.knownFacts || [];
+
       const res = await requestCategoryDeepen({
         action: 'init',
         category,
@@ -96,6 +106,8 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
         rawText,
         stage1Text,
         dimensions,
+        questionHistory: initialHistory,
+        knownFacts: initialFacts,
         language
       });
       if (thisId !== initRequestIdRef.current) return;
@@ -118,14 +130,24 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
     setLoading(true);
 
     try {
-      const nextHistory: CategoryHistoryItem[] = [
-        ...(state.questionHistory || []),
-        {
-          question: state.nextQuestion?.text || 'Frage',
-          answer: ans,
-          targetDimension: state.nextQuestion?.targetDimension
-        }
-      ];
+      let nextHistory: CategoryHistoryItem[];
+      if (editingIndex !== null) {
+        nextHistory = [...(state.questionHistory || [])];
+        nextHistory[editingIndex] = {
+          ...nextHistory[editingIndex],
+          answer: ans
+        };
+        setEditingIndex(null);
+      } else {
+        nextHistory = [
+          ...(state.questionHistory || []),
+          {
+            question: state.nextQuestion?.text || 'Frage',
+            answer: ans,
+            targetDimension: state.nextQuestion?.targetDimension
+          }
+        ];
+      }
 
       const res = await requestCategoryDeepen({
         action: 'step',
@@ -136,15 +158,36 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
         dimensions,
         questionHistory: nextHistory,
         knownFacts: state.knownFacts,
-        latestAnswer: ans,
+        latestAnswer: '', // Passing empty latestAnswer ensures the backend respects our nextHistory exactly as constructed
         language
       });
       setState(res);
+      const currentText = res.summaryText || (res.knownFacts || []).map(f => f.text).join('; ') || stage1Text;
+      if (currentText && onPartialChange) {
+        onPartialChange(currentText, {
+          questionHistory: res.questionHistory,
+          knownFacts: res.knownFacts,
+          dimensionStatus: res.dimensionStatus
+        });
+      }
     } catch (err) {
       console.error(`[GenericCategoryDeepDiveModal] Step error for ${category}:`, err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStartEditHistory = (idx: number) => {
+    if (!state || !state.questionHistory || !state.questionHistory[idx]) return;
+    setEditingIndex(idx);
+    setAnswerInput(state.questionHistory[idx].answer || '');
+    // Focus the answer textarea
+    setTimeout(() => {
+      const textarea = document.getElementById(`deepdive-answer-textarea-${category}`);
+      if (textarea) {
+        (textarea as HTMLTextAreaElement).focus();
+      }
+    }, 50);
   };
 
   const handleFinalize = async () => {
@@ -165,6 +208,14 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
         language
       });
       setState(res);
+      const currentText = res.summaryText || (res.knownFacts || []).map(f => f.text).join('; ') || stage1Text;
+      if (currentText && onPartialChange) {
+        onPartialChange(currentText, {
+          questionHistory: res.questionHistory,
+          knownFacts: res.knownFacts,
+          dimensionStatus: res.dimensionStatus
+        });
+      }
     } catch (err) {
       console.error(`[GenericCategoryDeepDiveModal] Finalize error for ${category}:`, err);
     } finally {
@@ -175,7 +226,11 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
   const handleAdoptResult = () => {
     if (!state) return;
     const finalTxt = state.summaryText || (state.knownFacts || []).map(f => f.text).join('; ') || stage1Text;
-    onAdopt(finalTxt);
+    onAdopt(finalTxt, {
+      questionHistory: state.questionHistory,
+      knownFacts: state.knownFacts,
+      dimensionStatus: state.dimensionStatus
+    });
   };
 
   const startVoiceRecording = () => {
@@ -296,47 +351,84 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
         </div>
       )}
 
-      {/* Active Question Card matching Causa */}
-      {state && !isFin && curQ && (
-        <div className="bg-gradient-to-br from-slate-850 to-slate-900 border border-teal-500/30 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 flex items-center justify-center shrink-0">
-                <Sparkles className="w-4 h-4" />
+      {/* Active Question Card (either normal next question, or the history question being edited) */}
+      {state && !isFin && (
+        editingIndex !== null ? (
+          <div className="bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-900 border border-indigo-500/40 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 ring-1 ring-indigo-500/30">
+            <div className="flex items-center justify-between border-b border-indigo-950 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 flex items-center justify-center shrink-0">
+                  <History className="w-4 h-4 text-indigo-400" />
+                </div>
+                <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                  Bisherige Antwort korrigieren / ergänzen (Frage {editingIndex + 1})
+                </span>
               </div>
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                {t('causaQuestionLabel')}
-              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingIndex(null);
+                  setAnswerInput('');
+                }}
+                className="text-[10px] px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors cursor-pointer"
+              >
+                Korrektur abbrechen
+              </button>
             </div>
-            {curQ.targetDimension && (
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-teal-500/20 text-teal-300 rounded border border-teal-500/40">
-                {t('causaTargetDimensionLabel')} {curQ.targetDimension}
-              </span>
-            )}
+
+            <p className="text-sm font-bold text-slate-100 leading-snug">
+              „{state.questionHistory[editingIndex]?.question || 'Frage'}“
+            </p>
+            
+            <div className="bg-indigo-950/20 border border-indigo-500/20 rounded-lg p-2.5 text-xs text-indigo-200">
+              <p className="leading-relaxed text-[11px]">
+                Passen Sie Ihre Antwort unten im Textfeld an. Klicken Sie anschließend auf <strong>„Änderung übernehmen & neu berechnen“</strong>.
+              </p>
+            </div>
           </div>
+        ) : (
+          curQ && (
+            <div className="bg-gradient-to-br from-slate-850 to-slate-900 border border-teal-500/30 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    {t('causaQuestionLabel')}
+                  </span>
+                </div>
+                {curQ.targetDimension && (
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-teal-500/20 text-teal-300 rounded border border-teal-500/40">
+                    {t('causaTargetDimensionLabel')} {curQ.targetDimension}
+                  </span>
+                )}
+              </div>
 
-          <p className="text-sm font-bold text-slate-100 leading-snug">
-            „{curQ.text}“
-          </p>
+              <p className="text-sm font-bold text-slate-100 leading-snug">
+                „{curQ.text}“
+              </p>
 
-          {curQ.orientationExample && (
-            <div className="bg-amber-950/20 border border-amber-500/30 rounded-lg p-2.5 text-xs text-amber-200">
-              <span className="text-[10px] font-bold text-amber-400 uppercase block mb-0.5">
-                {t('causaOrientationExampleLabel')}
-              </span>
-              <p className="italic leading-relaxed text-[11px] text-amber-300">„{curQ.orientationExample}“</p>
+              {curQ.orientationExample && (
+                <div className="bg-amber-950/20 border border-amber-500/30 rounded-lg p-2.5 text-xs text-amber-200">
+                  <span className="text-[10px] font-bold text-amber-400 uppercase block mb-0.5">
+                    {t('causaOrientationExampleLabel')}
+                  </span>
+                  <p className="italic leading-relaxed text-[11px] text-amber-300">„{curQ.orientationExample}“</p>
+                </div>
+              )}
+
+              {curQ.reason && (
+                <div className="text-xs text-slate-300 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">
+                    {t('causaReasonDimensionLabel')}
+                  </span>
+                  <p className="text-[11px] leading-relaxed text-slate-300">{curQ.reason}</p>
+                </div>
+              )}
             </div>
-          )}
-
-          {curQ.reason && (
-            <div className="text-xs text-slate-300 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase block">
-                {t('causaReasonDimensionLabel')}
-              </span>
-              <p className="text-[11px] leading-relaxed text-slate-300">{curQ.reason}</p>
-            </div>
-          )}
-        </div>
+          )
+        )
       )}
 
       {/* Finished Summary Card matching Causa */}
@@ -381,6 +473,7 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
 
           <div className="space-y-3">
             <textarea
+              id={`deepdive-answer-textarea-${category}`}
               value={answerInput}
               onChange={(e) => setAnswerInput(e.target.value)}
               onKeyDown={(e) => {
@@ -389,7 +482,7 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
                   handleAnswerSubmit();
                 }
               }}
-              placeholder={t('causaSharedAnswerPlaceholder')}
+              placeholder={editingIndex !== null ? "Geben Sie hier die berichtigte oder ergänzte Antwort ein..." : t('causaSharedAnswerPlaceholder')}
               className="w-full text-xs p-3.5 rounded-xl border border-slate-700/80 bg-slate-950 text-slate-100 placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500 min-h-[90px] resize-y"
               disabled={loading}
             />
@@ -411,26 +504,43 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
                     <span>{isRecording ? t('causaStopDictationBtn') : t('causaDictateAnswerBtn')}</span>
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => handleAnswerSubmit(t('stage2NoFurtherDetailsBtn'))}
-                  disabled={loading}
-                  className="px-3 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-750 border border-slate-700"
-                >
-                  {t('stage2NoFurtherDetailsBtn')}
-                </button>
+                
+                {editingIndex !== null ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingIndex(null);
+                      setAnswerInput('');
+                    }}
+                    disabled={loading}
+                    className="px-3 py-2 rounded-xl text-xs font-medium text-rose-400 bg-rose-950/20 hover:bg-rose-950/30 border border-rose-500/30 cursor-pointer"
+                  >
+                    Korrektur abbrechen
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleAnswerSubmit(t('stage2NoFurtherDetailsBtn'))}
+                    disabled={loading}
+                    className="px-3 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-750 border border-slate-700"
+                  >
+                    {t('stage2NoFurtherDetailsBtn')}
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleFinalize}
-                  disabled={loading}
-                  className="px-4 py-2 bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>{t('causaFinalizeBtn')}</span>
-                </button>
+                {editingIndex === null && (
+                  <button
+                    type="button"
+                    onClick={handleFinalize}
+                    disabled={loading}
+                    className="px-4 py-2 bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{t('causaFinalizeBtn')}</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -439,11 +549,69 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
                   className="px-4 py-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                  <span>{t('causaSubmitAnswerBtn')}</span>
+                  <span>
+                    {editingIndex !== null 
+                      ? "Änderung übernehmen & neu berechnen" 
+                      : t('causaSubmitAnswerBtn')}
+                  </span>
                 </button>
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Questions & Answers History Accordion */}
+      {state?.questionHistory && state.questionHistory.length > 0 && (
+        <div className="bg-slate-950/60 border border-slate-800 rounded-2xl overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowHistory(!showHistory)}
+            className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-300 bg-slate-900/80 hover:bg-slate-900 transition-colors cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <History className="w-4 h-4 text-teal-400" />
+              <span>Fragenverlauf & Antworten ({state.questionHistory.length})</span>
+            </span>
+            {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+
+          {showHistory && (
+            <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto divide-y divide-slate-800/60">
+              {state.questionHistory.map((item, idx) => (
+                <div key={idx} className={`pt-3 first:pt-0 flex flex-col md:flex-row md:items-start justify-between gap-4 group`}>
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded text-[9px] font-mono font-bold">
+                        Frage {idx + 1}
+                      </span>
+                      {item.targetDimension && (
+                        <span className="px-1.5 py-0.5 bg-teal-500/10 text-teal-300 border border-teal-500/20 rounded text-[9px] font-mono font-bold">
+                          {item.targetDimension}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-semibold text-slate-300">„{item.question}“</p>
+                    <div className="text-xs text-slate-200 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 mt-1 leading-relaxed italic">
+                      <span className="text-[10px] text-teal-400/80 font-bold block not-italic mb-1">Antwort:</span>
+                      {item.answer}
+                    </div>
+                  </div>
+                  <div className="flex items-center shrink-0 self-end md:self-start pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditHistory(idx)}
+                      disabled={loading}
+                      className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-750 text-teal-400 hover:text-teal-300 border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Berichtigen / Ergänzen</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

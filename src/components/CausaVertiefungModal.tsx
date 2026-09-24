@@ -54,6 +54,7 @@ interface CausaVertiefungModalProps {
   hahnemannCrossCheck?: boolean;
   isEmbedded?: boolean;
   onWorkflowComplete?: (finalCausaText: string) => void;
+  onPartialChange?: (causaText: string) => void;
 }
 
 export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
@@ -65,7 +66,8 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   onAdoptCausa,
   hahnemannCrossCheck = false,
   isEmbedded = false,
-  onWorkflowComplete
+  onWorkflowComplete,
+  onPartialChange
 }) => {
   const { t, language } = useTranslation();
   const [state, setState] = useState<CausaVertiefungState | null>(null);
@@ -279,6 +281,16 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
         setState(nextState);
         if (nextState.pipelineMode) {
           setActiveMode(nextState.pipelineMode);
+        }
+        if (onPartialChange) {
+          const summaryA = (nextState.finalSummary?.levelA_patientReported || []).join('; ');
+          const rawC = (nextState.finalSummary?.levelC_homeopathicInterpretation || [])
+            .filter(c => c && !c.includes('Klassische Einzelfall-Repertorisation'))
+            .join('; ');
+          const partialText = rawC ? `${summaryA} (${rawC})` : (summaryA || (nextState.knownFacts || []).map(f => f.text).filter(Boolean).join('; '));
+          if (partialText) {
+            onPartialChange(partialText);
+          }
         }
       }
     } catch (err) {

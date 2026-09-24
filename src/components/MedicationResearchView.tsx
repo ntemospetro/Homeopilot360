@@ -294,34 +294,14 @@ export const MedicationResearchView: React.FC<MedicationResearchViewProps> = ({
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (isLoadingDetail) {
-      setLoadProgress(6);
+      setLoadProgress(20);
       setIsFinishingLoad(false);
       interval = setInterval(() => {
         setLoadProgress(prev => {
-          // Organic, steady forward movement that never freezes throughout the entire loading duration
-          if (prev < 25) {
-            // Stage 1: Initializing & querying database (~3.5-4s)
-            return Math.min(25, prev + (0.45 + Math.random() * 0.45));
-          }
-          if (prev < 50) {
-            // Stage 2: Authority monographs (~4s)
-            return Math.min(50, prev + (0.28 + Math.random() * 0.32));
-          }
-          if (prev < 75) {
-            // Stage 3: Pharmacology & dosages (~5s)
-            return Math.min(75, prev + (0.18 + Math.random() * 0.24));
-          }
-          if (prev < 90) {
-            // Stage 4: Interactions & warnings (~5s)
-            return Math.min(90, prev + (0.12 + Math.random() * 0.16));
-          }
-          if (prev < 97.5) {
-            // Stage 5: Assembling data - continuously creeps forward smoothly, never stops!
-            return Math.min(97.5, prev + (0.04 + Math.random() * 0.05));
-          }
-          return Math.min(98.8, prev + 0.015);
+          if (prev >= 90) return 100;
+          return prev + 35 + Math.random() * 25;
         });
-      }, 90);
+      }, 40);
     } else if (loadProgress > 0) {
       // Completed! Shoot smoothly to 100% and finish smoothly with green checkmark
       setLoadProgress(100);
@@ -329,7 +309,7 @@ export const MedicationResearchView: React.FC<MedicationResearchViewProps> = ({
       const timer = setTimeout(() => {
         setIsFinishingLoad(false);
         setLoadProgress(0);
-      }, 550);
+      }, 300);
       return () => clearTimeout(timer);
     }
     return () => {

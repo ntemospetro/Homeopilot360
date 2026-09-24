@@ -588,33 +588,35 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Vegetale",
         "commonName": "Indaco selvatico",
-        "origin": "Fresh root bark of Baptisia tinctoria (Fabaceae).",
-        "essence": "Profound septic state with stupor (looks intoxicated), highly offensive discharges, and delusion of body being scattered into pieces.",
+        "origin": "Corteccia della radice fresca di Baptisia tinctoria (Fabaceae).",
+        "essence": "Gravi stati settici con ottundimento (sembra ubriaco), secrezioni maleodoranti e l'illusione che il corpo sia diviso in più parti.",
         "mainIndications": [
-          "Septic fever & typhoid states",
-          "Putrid tonsillitis & gangrenous sore throat",
-          "Profound bruised soreness in toxic flu"
+          "Febbre settica e stati tifoidei",
+          "Angina putrida e stomatite grave",
+          "Estrema prostrazione fisica durante l'influenza"
         ],
         "keynotes": [
-          "Feels scattered in pieces and struggles to toss them together",
-          "All discharges (breath, sweat, stool) intensely fetid",
-          "Besotted, dusky red, intoxicated facial expression"
+          "Sente il corpo fatto a pezzi e cerca di raccoglierli nel letto",
+          "Tutte le secrezioni (alito, sudore, feci) hanno un odore estremamente sgradevole",
+          "Viso rosso scuro, sguardo spento e ottuso (aspetto ebbro)",
+          "Si addormenta mentre risponde alle domande"
         ],
-        "mindEmotional": "Falls asleep while answering questions, stuporous, confused.",
+        "mindEmotional": "Confuso, aphasico, si addormenta a metà frase.",
         "modalitiesBetter": [
-          "Moderate movement"
+          "Movimento moderato",
+          "Aria aperta"
         ],
         "modalitiesWorse": [
-          "Pressure",
-          "On waking",
-          "Enclosed warm room"
+          "Pressione",
+          "Al risveglio",
+          "Ambienti chiusi e caldi"
         ],
-        "potenciesAndDosage": "D4 to C30 / 6C, 30C. Acute septic: D6 hourly.",
-        "defaultTagesdosis": "3–4 doses of 5 granuli",
+        "potenciesAndDosage": "D4 a C30. Negli stati settici acuti D6 ogni ora.",
+        "defaultTagesdosis": "3–4 dosi da 5 granuli",
         "sphereOfAction": [
-          "Blood & Reticuloendothelial System",
-          "Throat & Mucosa",
-          "Brain"
+          "Sangue e sistema immunitario",
+          "Mucose e gola",
+          "Cervello"
         ],
         "differentialRemedies": [
           "Pyrogenium",
@@ -623,49 +625,46 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Rhus tox"
         ],
         "searchKeywords": [
-          "indaco selvatico",
-          "baptisia tinctoria",
-          "septic",
-          "wild indigo",
+          "settico",
+          "indaco",
           "baptisia",
-          "scattered pieces",
-          "fetid",
-          "tifo",
-          "blood & reticuloendothelial system",
-          "throat & mucosa",
-          "brain"
+          "pezzi",
+          "feticτο",
+          "tifo"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Баптизия красильная",
-        "origin": "Fresh root bark of Baptisia tinctoria (Fabaceae).",
-        "essence": "Profound septic state with stupor (looks intoxicated), highly offensive discharges, and delusion of body being scattered into pieces.",
+        "origin": "Свежая кора корня Baptisia tinctoria (Fabaceae).",
+        "essence": "Тяжелые септические состояния с оглушенностью (вид как у пьяного), зловонными выделениями и ощущением, что тело распалось на части.",
         "mainIndications": [
-          "Septic fever & typhoid states",
-          "Putrid tonsillitis & gangrenous sore throat",
-          "Profound bruised soreness in toxic flu"
+          "Септическая лихорадка и тифозные состояния",
+          "Гнилостная ангина и тяжелый стоматит",
+          "Крайняя мышечная разбитость при гриппе"
         ],
         "keynotes": [
-          "Feels scattered in pieces and struggles to toss them together",
-          "All discharges (breath, sweat, stool) intensely fetid",
-          "Besotted, dusky red, intoxicated facial expression"
+          "Ощущение, что тело распалось на части, и попытки собрать их в постели",
+          "Все выделения (дыхание, пот, стул) крайне зловонны",
+          "Темно-красное, одутловатое, 'пьяное' лицо",
+          "Засыпает на полуслове, отвечая на вопросы"
         ],
-        "mindEmotional": "Falls asleep while answering questions, stuporous, confused.",
+        "mindEmotional": "Спутанность сознания, апатия, бред о разделении тела на части.",
         "modalitiesBetter": [
-          "Moderate movement"
+          "Свежий воздух",
+          "Холодное питье"
         ],
         "modalitiesWorse": [
-          "Pressure",
-          "On waking",
-          "Enclosed warm room"
+          "Давление",
+          "Пробуждение",
+          "Закрытые теплые помещения"
         ],
-        "potenciesAndDosage": "D4 to C30 / 6C, 30C. Acute septic: D6 hourly.",
-        "defaultTagesdosis": "3–4 doses of 5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. При септических состояниях C30: по 3–5 гранул 3 раза в день.",
+        "defaultTagesdosis": "2–3 приема по 3–5 гранул",
         "sphereOfAction": [
-          "Blood & Reticuloendothelial System",
-          "Throat & Mucosa",
-          "Brain"
+          "Кровь и иммунная система",
+          "Слизистые оболочки и зέβ",
+          "Головной мозг"
         ],
         "differentialRemedies": [
           "Pyrogenium",
@@ -674,19 +673,13 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Rhus tox"
         ],
         "searchKeywords": [
-          "баптизия красильная",
-          "baptisia tinctoria",
-          "septic",
-          "wild indigo",
-          "baptisia",
-          "scattered pieces",
-          "fetid",
-          "typhoid",
-          "blood & reticuloendothelial system",
-          "throat & mucosa",
-          "brain"
+          "баптизия",
+          "сепсис",
+          "зловоние",
+          "тиф",
+          "разбитость"
         ]
-      }
+      },
     }
   },
   {
@@ -936,32 +929,33 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Minerale",
         "commonName": "Carbonato di bario",
-        "origin": "Pure barium carbonate (BaCO3).",
-        "essence": "Developmental delay in children and senile decay in the elderly; chronically enlarged tonsils and extreme timidity before strangers.",
+        "origin": "Carbonato di bario puro (BaCO3).",
+        "essence": "Ritardo nello sviluppo fisico e mentale nei bambini; invecchiamento precoce negli anziani. Tonsille cronicamente ingrossate ed estrema timidezza verso gli estranei.",
         "mainIndications": [
-          "Recurrent tonsillitis & hypertrophic tonsils",
-          "Learning disabilities & developmental delay in children",
-          "Cerebral arteriosclerosis & memory loss in aged"
+          "Tonsillite ricorrente e ipertrofia tonsillare",
+          "Ritardo dello sviluppo e difficoltà di apprendimento nei bambini",
+          "Arteriosclerosi cerebrale e perdita di memoria negli anziani"
         ],
         "keynotes": [
-          "Enlarged indurated glands and huge tonsils",
-          "Child hides behind mother when strangers enter",
-          "Offensive foot sweat; suppression causes quinsy"
+          "Linfonodi ingrossati e tonsille enormi",
+          "Il bambino si nasconde dietro la madre davanti agli estranei",
+          "Sudore dei piedi maleodorante; la sua soppressione causa angina"
         ],
-        "mindEmotional": "Lack of self-confidence, timid, childish behavior in the aged.",
+        "mindEmotional": "Mancanza di fiducia in se stessi, timidezza, comportamento infantile negli anziani.",
         "modalitiesBetter": [
-          "Warm dry weather"
+          "Clima caldo e secco",
+          "Testa fasciata"
         ],
         "modalitiesWorse": [
-          "Cold damp drafts",
-          "After eating",
-          "In presence of strangers"
+          "Freddo e umidità",
+          "Pensare ai propri sintomi",
+          "Presenza di estranei"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 1-2 times daily 5 granuli.",
-        "defaultTagesdosis": "1-2 times daily 5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. 1-2 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "1-2 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Lymphatic System & Tonsils",
-          "Brain & Cerebral Arteries"
+          "Sistema linfatico e tonsille",
+          "Cervello e vasi sanguigni"
         ],
         "differentialRemedies": [
           "Calcarea carbonica",
@@ -970,47 +964,44 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Causticum"
         ],
         "searchKeywords": [
-          "carbonato di bario",
-          "baryta carbonica",
-          "barium",
-          "tonsils",
-          "quinsy",
-          "timidity",
-          "elderly",
-          "developmental delay",
-          "lymphatic system & tonsils",
-          "brain & cerebral arteries"
+          "bario",
+          "tonsille",
+          "ritardo",
+          "timidezza",
+          "anziani"
         ]
       },
       "ru": {
         "category": "Минеральный",
         "commonName": "Барита карбоника / Углекислый барий",
-        "origin": "Pure barium carbonate (BaCO3).",
-        "essence": "Developmental delay in children and senile decay in the elderly; chronically enlarged tonsils and extreme timidity before strangers.",
+        "origin": "Чистый карбонат бария (BaCO3).",
+        "essence": "Задержка умственного и физического развития у детей; преждевременное старение у пожилых людей. Хронически увеличенные миндалины и крайняя робость перед незнакомыми людьми.",
         "mainIndications": [
-          "Recurrent tonsillitis & hypertrophic tonsils",
-          "Learning disabilities & developmental delay in children",
-          "Церебральный атеросклероз и потеря памяти у пожилых людей"
+          "Рецидивирующий тонзиллит и гипертрофия миндалин",
+          "Задержка развития и трудности в обучении у детей",
+          "Церебральный атеросклероз и потеря памяти у пожилых людей",
+          "Увеличение лимφαтических узлов"
         ],
         "keynotes": [
-          "Enlarged indurated glands and huge tonsils",
-          "Child hides behind mother when strangers enter",
-          "Offensive foot sweat; suppression causes quinsy"
+          "Увеличенные плотные железы и огромные миндалины",
+          "Ребенок прячется за мать при виде незнакомых",
+          "Зловонный пот ног; подавление пота приводит к ангине"
         ],
-        "mindEmotional": "Lack of self-confidence, timid, childish behavior in the aged.",
+        "mindEmotional": "Недостаток уверенности в себе, застенчивость, детское поведение у стариков.",
         "modalitiesBetter": [
-          "Warm dry weather"
+          "Сухая теплая погода",
+          "Укутывание головы"
         ],
         "modalitiesWorse": [
-          "Cold damp drafts",
-          "After eating",
-          "In presence of strangers"
+          "Холод и сырость",
+          "Мысли о своих симптомах",
+          "В присутствии посторонних"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 1-2 times daily 5 гранул.",
-        "defaultTagesdosis": "1-2 times daily 5 гранул",
+        "potenciesAndDosage": "D12, C30. При хронических проблемах C30: 3–5 гранул один раз в неделю.",
+        "defaultTagesdosis": "1 прием по 3–5 гранул",
         "sphereOfAction": [
-          "Lymphatic System & Tonsils",
-          "Brain & Cerebral Arteries"
+          "Лимφαтическая система и миндалины",
+          "Головной мозг и сосуды"
         ],
         "differentialRemedies": [
           "Calcarea carbonica",
@@ -1019,16 +1010,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Causticum"
         ],
         "searchKeywords": [
-          "барита карбоника / углекислый барий",
-          "baryta carbonica",
-          "barium",
-          "tonsils",
-          "quinsy",
-          "timidity",
-          "elderly",
-          "developmental delay",
-          "lymphatic system & tonsils",
-          "brain & cerebral arteries"
+          "барита",
+          "миндалины",
+          "задержка развития",
+          "робость",
+          "старики"
         ]
       }
     }
@@ -1279,7 +1265,7 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         "essence": "Το υπέρτατο φάρμακο για ξαφνικές, έντονα βίαιες, σφύζουσες φλεγμονές με λαμπερή ζέστη, φλογερό κόκκινο πρόσωπο, διεσταλμένες κόρες και παραληρηματικό λήθαργο. αχνιστός ιδρώτας.",
         "mainIndications": [
           "Ξαφνικός υψηλός πυρετός με παραλήρημα και παραισθήσεις",
-          "Παλλόμενοι συμφορητικοί πονοκέφαλοι που επιδεινώνονται από το βάζο",
+          "Παλλόμενοι συμφορητικοί πονοκέφαλοι που επιδεινώνονται από τρανταγμό",
           "Οξεία φλογερή κόκκινη αμυγδαλίτιδα & οστρακιά",
           "Οξεία μαστίτιδα με ακτινοβολούμενες ραβδώσεις",
           "Ηλιαχτίδα & θερμική εξάντληση"
@@ -1289,7 +1275,7 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Λαμπερό ζεστό κεφάλι με παγωμένα κρύα χέρια και πόδια",
           "Διευρυμένες γυαλιστερές κόρες, φωτοφοβία, ευαίσθητες στο θόρυβο",
           "Αχνισμένος ιδρώτας στο κεφάλι",
-          "Βίαια επιδείνωση από το παραμικρό κούνημα βάζου ή κρεβατιού"
+          "Βίαια επιδείνωση από το παραμικρό κούνημα ή τρανταγμό του κρεβατιού"
         ],
         "mindEmotional": "Πυρετώδη παραλήρημα, δαγκώματα, χτυπήματα, παραισθήσεις μαύρα σκυλιά και φαντάσματα.",
         "modalitiesBetter": [
@@ -1298,7 +1284,7 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Ζεστό τύλιγμα"
         ],
         "modalitiesWorse": [
-          "Βάζο κρεβατιού & άγγιγμα",
+          "Τρανταγμός & άγγιγμα",
           "Έντονο φως, θόρυβος & ρεύμα",
           "Ξαπλωμένη επίπεδη",
           "3:00 μ.μ"
@@ -1312,9 +1298,9 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Δέρμα"
         ],
         "differentialRemedies": [
-          "Aconitum (dry skin, panic, thirst)",
-          "Gelsemium (dull, heavy, drowsy)",
-          "Apis (pink edema, cold better)"
+          "Aconitum (ξηρό δέρμα, πανικός, δίψα)",
+          "Gelsemium (θολή κατάσταση, βάρος, υπνηλία)",
+          "Apis (ροζ οίδημα, καλύτερα με κρύο)"
         ],
         "searchKeywords": [
           "μπελαντόνα",
@@ -1335,61 +1321,55 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Vegetale",
         "commonName": "Belladonna",
-        "origin": "Whole fresh flowering plant of Atropa belladonna (Solanaceae).",
-        "essence": "The supreme remedy for sudden, intensely violent, throbbing inflammations with glowing heat, fiery red face, dilated pupils, and delirious stupor; steaming sweat.",
+        "origin": "Intera pianta fresca fiorita di Atropa belladonna (Solanaceae).",
+        "essence": "Il grande rimedio per infiammazioni improvvise, acutissime e pulsanti con calore radiante, viso rosso fuoco, pupille dilatate e delirio; sudore che emana vapore.",
         "mainIndications": [
-          "Sudden high fever with delirium and hallucinations",
-          "Throbbing congestive headaches aggravated by jar",
-          "Acute fiery red tonsillitis & scarlet fever",
-          "Acute mastitis with radiating streaks",
-          "Sunstroke & heat exhaustion"
+          "Febbre alta improvvisa con allucinazioni e delirio",
+          "Cefalea pulsante e emicrania (peggio con ogni sobbalzo)",
+          "Angina tonsillare acuta rosso fuoco e scarlattina",
+          "Mastite acuta (seno rosso, caldo e teso)",
+          "Colpo de sole e colpo di calore"
         ],
         "keynotes": [
-          "Sudden explosive onset with throbbing hammering pain",
-          "Glowing hot head with icy cold hands and feet",
-          "Dilated glistening pupils, photophobia, sensitive to noise",
-          "Steaming sweat on head",
-          "Violent aggravation from slightest jar or bed shake"
+          "Inizio improvviso, dolore pulsante e martellante",
+          "Testa bollente con mani e piedi ghiacciati",
+          "Pupille dilatate e brillanti, sensibilità a luce e rumore",
+          "Sudore vaporoso sulla testa",
+          "Peggioramento con il minimo sobbalzo del letto"
         ],
-        "mindEmotional": "Feverish delirium, bites, strikes, hallucinates black dogs and specters.",
+        "mindEmotional": "Delirio febbrile con tendenza a mordere o colpire, allucinazioni di cani neri e spettri.",
         "modalitiesBetter": [
-          "Rest in a quiet dark room",
-          "Sitting semi-erect",
-          "Warm wrapping"
+          "Riposo in stanza buia e silenziosa",
+          "Posizione seduta eretta",
+          "Calore"
         ],
         "modalitiesWorse": [
-          "Jarring of bed & touch",
-          "Bright light, noise & draft",
-          "Lying flat",
-          "3:00 PM"
+          "Sobbalzi e contatto",
+          "Luce intensa, rumore e correnti d'aria",
+          "Stare sdraiati con la testa bassa",
+          "Alle ore 15:00"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In high fever C30 every 30–60 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: D6, D12, C30. In caso di febbre alta C30 ogni 30–60 minuti.",
+        "defaultTagesdosis": "3–4 dosi da 3–5 granuli",
         "sphereOfAction": [
-          "Central Nervous System & Brain",
-          "Vascular System",
-          "Mucous Membranes & Throat",
-          "Skin"
+          "Sistema nervoso centrale e cervello",
+          "Sistema vascolare e circolazione",
+          "Mucose e gola",
+          "Pelle"
         ],
         "differentialRemedies": [
-          "Aconitum (dry skin, panic, thirst)",
-          "Gelsemium (dull, heavy, drowsy)",
-          "Apis (pink edema, cold better)"
+          "Aconitum (pelle secca, panico, sete)",
+          "Gelsemium (ottundimento, pesantezza, sonnolenza)",
+          "Apis (edema rosato, migliora col freddo)"
         ],
         "searchKeywords": [
           "belladonna",
-          "atropa belladonna",
-          "deadly nightshade",
-          "fever",
-          "throbbing",
-          "faccia rossa",
-          "tonsillitis",
-          "delirium",
-          "sunstroke",
-          "central nervous system & brain",
-          "vascular system",
-          "mucous membranes & throat",
-          "skin"
+          "febbre",
+          "pulsazione",
+          "viso rosso",
+          "tonsillite",
+          "delirio",
+          "colpo di sole"
         ]
       },
       "ru": {
@@ -2062,33 +2042,33 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Vegetale",
         "commonName": "Crespino",
-        "origin": "Bark of the root of Berberis vulgaris (Berberidaceae).",
-        "essence": "Radiating, shooting, stitching pains darting outward from one point in all directions; renal calculi, biliary colic, and uric acid diathesis.",
+        "origin": "Corteccia della radice di Berberis vulgaris (Berberidaceae).",
+        "essence": "Dolori radianti, pungenti e trafittivi che si irradiano da un punto in tutte le direzioni; calcoli renali, coliche biliari e diatesi urica.",
         "mainIndications": [
-          "Renal colic & kidney stones (pain radiating down ureter into thighs/testes)",
-          "Biliary colic & hepatic congestion",
-          "Lumbago with intense bubbling stiffness"
+          "Colica renale e calcoli renali (il dolore si irradia verso l'uretere fino a cosce/testicoli)",
+          "Colica biliare e disturbi epatici",
+          "Lombaggine con rigidità e sensazione di gorgoglio"
         ],
         "keynotes": [
-          "Pains radiate outward in all directions",
-          "Bubbling or gurgling sensation in lumbar/renal area",
-          "Red, brick-dust sediment in urine"
+          "I dolori si irradiano verso l'esterno 'a raggiera'",
+          "Sensazione di gorgoglio o ribollio nella regione renale",
+          "Sedimento rosso, come polvere di mattoni, nelle urine"
         ],
-        "mindEmotional": "Apathetic, gloomy, irritable during severe pain.",
+        "mindEmotional": "Apatico, malinconico, irritabile durante gli attacchi di dolore.",
         "modalitiesBetter": [
-          "Quiet rest"
+          "Riposo assoluto"
         ],
         "modalitiesWorse": [
-          "Motion, jar & stepping hard",
-          "Standing",
-          "Riding or jar in car"
+          "Movimento e sobbalzi",
+          "Stare in piedi",
+          "Viaggi in auto o a cavallo"
         ],
-        "potenciesAndDosage": "D4 to C30 / 6C, 30C. In colic D6 every 15–30 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 granuli",
+        "potenciesAndDosage": "D4 a C30. In caso di colica D6 ogni 15–30 minuti.",
+        "defaultTagesdosis": "3–4 dosi da 3–5 granuli",
         "sphereOfAction": [
-          "Kidneys & Ureters",
-          "Gallbladder & Liver",
-          "Lumbar Spine"
+          "Reni e ureteri",
+          "Cistifellea e fegato",
+          "Colonna lombare"
         ],
         "differentialRemedies": [
           "Lycopodium",
@@ -2098,47 +2078,42 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "crespino",
-          "berberis vulgaris",
-          "barberry",
-          "renal colic",
-          "calcolo renale",
-          "biliary colic",
-          "radiating pain",
-          "kidneys & ureters",
-          "gallbladder & liver",
-          "lumbar spine"
+          "colica renale",
+          "calcoli",
+          "colica biliare",
+          "radiante"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Барбарис обыкновенный",
-        "origin": "Bark of the root of Berberis vulgaris (Berberidaceae).",
-        "essence": "Radiating, shooting, stitching pains darting outward from one point in all directions; renal calculi, biliary colic, and uric acid diathesis.",
+        "origin": "Кора корня Berberis vulgaris (Berberidaceae).",
+        "essence": "Иррадиирующие, стреляющие, колющие боли, расходящиеся из одной точки во всех направлениях; почечные колики, желчные колики и мочекислый диатез.",
         "mainIndications": [
-          "Renal colic & kidney stones (pain radiating down ureter into thighs/testes)",
-          "Biliary colic & hepatic congestion",
-          "Lumbago with intense bubbling stiffness"
+          "Почечная колика и камни в почках (боль отдает вниз по мочеточникам в бедра/яички)",
+          "Желчная колика и застойные явления в печени",
+          "Люмбаго с ощущением оцепенения и 'бурления' в пояснице"
         ],
         "keynotes": [
-          "Pains radiate outward in all directions",
-          "Bubbling or gurgling sensation in lumbar/renal area",
-          "Red, brick-dust sediment in urine"
+          "Боли расходятся веерообразно во всех направлениях",
+          "Ощущение бурления или пульсации в области почек",
+          "Красный, похожий на кирпичную пыль осадок в моче"
         ],
-        "mindEmotional": "Apathetic, gloomy, irritable during severe pain.",
+        "mindEmotional": "Апатичный, мрачный, раздражительный во время сильной боли.",
         "modalitiesBetter": [
-          "Quiet rest"
+          "Спокойный отдых"
         ],
         "modalitiesWorse": [
-          "Motion, jar & stepping hard",
-          "Standing",
-          "Riding or jar in car"
+          "Движение и тряска",
+          "Стояние",
+          "Езда верхом или в автомобиле"
         ],
-        "potenciesAndDosage": "D4 to C30 / 6C, 30C. In colic D6 every 15–30 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 гранул",
+        "potenciesAndDosage": "D4 - C30. При коликах D6 каждые 15–30 мин.",
+        "defaultTagesdosis": "3–4 приема по 3–5 гранул",
         "sphereOfAction": [
-          "Kidneys & Ureters",
-          "Gallbladder & Liver",
-          "Lumbar Spine"
+          "Почки и мочеточники",
+          "Желчный пузырь и печень",
+          "Поясничный отдел позвоночника"
         ],
         "differentialRemedies": [
           "Lycopodium",
@@ -2147,16 +2122,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Pareira brava"
         ],
         "searchKeywords": [
-          "барбарис обыкновенный",
-          "berberis vulgaris",
-          "barberry",
-          "renal colic",
-          "kidney stone",
-          "biliary colic",
-          "radiating pain",
-          "kidneys & ureters",
-          "gallbladder & liver",
-          "lumbar spine"
+          "барбарис",
+          "почечная колика",
+          "камни в почках",
+          "желчная колика",
+          "иррадиация"
         ]
       }
     }
@@ -2403,33 +2373,33 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Minerale",
         "commonName": "Borace",
-        "origin": "Pure sodium borate.",
-        "essence": "Dread of downward motion (swings, elevator, putting baby down in crib) and painful aphthous ulcers in mouth and gums.",
+        "origin": "Borato di sodio puro (Na2B4O7 · 10H2O).",
+        "essence": "Paura del movimento verso il basso (altalena, ascensore, essere messi nella culla) e afte dolorose in bocca e sulle gengive.",
         "mainIndications": [
-          "Dread of downward motion in infants & motion sickness",
-          "Painful oral aphthae & thrush in nursing infants",
-          "Infertility & leucorrhea resembling hot water"
+          "Paura del movimento discendente nei neonati e chinetosi",
+          "Afte orali dolorose e mughetto nei lattanti",
+          "Leucorrea calda come acqua bollente"
         ],
         "keynotes": [
-          "Infant cries and grasps crib tightly when being laid down",
-          "Extreme hyperacusis to sudden sharp noises (distant shots, thunder)",
-          "Mouth is hot, sensitive with bleeding aphthous ulcers"
+          "Il bambino piange e si aggrappa non appena viene adagiato nel letto",
+          "Iperacusia estrema: sussulta per ogni rumore improvviso",
+          "Mucosa orale calda e dolente con afte che sanguinano facilmente"
         ],
-        "mindEmotional": "Anxious, easily startled by unexpected sounds.",
+        "mindEmotional": "Ansioso, spaventato da ogni rumore inaspettato.",
         "modalitiesBetter": [
-          "Pressure",
-          "After midnight"
+          "Pressione",
+          "Dopo mezzanotte"
         ],
         "modalitiesWorse": [
-          "Downward motion (elevators, downward rocking)",
-          "Sudden noise"
+          "Movimento verso il basso (ascensore, essere messi giù)",
+          "Rumore improvviso"
         ],
-        "potenciesAndDosage": "D6 to C30 / 6C, 30C. 2 times daily 5 granuli.",
-        "defaultTagesdosis": "2 times daily 5 granuli",
+        "potenciesAndDosage": "D6 a C30. 2 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "2 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Vestibular & Nervous System",
-          "Oral Mucous Membranes",
-          "Urogenital Organs"
+          "Sistema nervoso e vestibolare",
+          "Mucosa orale",
+          "Apparato urogenitale"
         ],
         "differentialRemedies": [
           "Gelsemium",
@@ -2438,47 +2408,42 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "borace",
-          "borax veneta",
-          "borax",
-          "downward motion",
-          "aphthae",
-          "thrush",
-          "elevator fear",
-          "vestibular & nervous system",
-          "oral mucous membranes",
-          "urogenital organs"
+          "movimento discendente",
+          "afte",
+          "mughetto",
+          "ascensore"
         ]
       },
       "ru": {
         "category": "Минеральный",
-        "commonName": "Бура / Боракс",
-        "origin": "Pure sodium borate.",
-        "essence": "Dread of downward motion (swings, elevator, putting baby down in crib) and painful aphthous ulcers in mouth and gums.",
+        "commonName": "Бура / Боραкс",
+        "origin": "Чистый борат натрия (Na2B4O7 · 10H2O).",
+        "essence": "Страх движения вниз (качели, лифт, укладывание ребенка в кроватку) и болезненные афтозные язвы во рту и на деснах.",
         "mainIndications": [
-          "Dread of downward motion in infants & motion sickness",
-          "Painful oral aphthae & thrush in nursing infants",
-          "Infertility & leucorrhea resembling hot water"
+          "Страх движения вниз у младенцев и укачивание",
+          "Болезненные афты во рту и молочница у грудных детей",
+          "Бели, горячие как горячая вода"
         ],
         "keynotes": [
-          "Infant cries and grasps crib tightly when being laid down",
-          "Extreme hyperacusis to sudden sharp noises (distant shots, thunder)",
-          "Mouth is hot, sensitive with bleeding aphthous ulcers"
+          "Ребенок кричит и цепляется за кроватку, когда его кладут",
+          "Крайняя чувствительность к внезапным резким звукам (выстрел, гром)",
+          "Полость рта горячая, слизистая чувствительна с кровоточащими афтами"
         ],
-        "mindEmotional": "Anxious, easily startled by unexpected sounds.",
+        "mindEmotional": "Тревожный, пугливый, вздрагивает от неожиданных звуков.",
         "modalitiesBetter": [
-          "Pressure",
-          "After midnight"
+          "Давление",
+          "После полуночи"
         ],
         "modalitiesWorse": [
-          "Downward motion (elevators, downward rocking)",
-          "Sudden noise"
+          "Движение вниз (лифт, укладывание)",
+          "Внезапный шум"
         ],
-        "potenciesAndDosage": "D6 to C30 / 6C, 30C. 2 times daily 5 гранул.",
-        "defaultTagesdosis": "2 times daily 5 гранул",
+        "potenciesAndDosage": "D6 - C30. 2 раза в день по 5 гранул.",
+        "defaultTagesdosis": "2 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Vestibular & Nervous System",
-          "Oral Mucous Membranes",
-          "Urogenital Organs"
+          "Вестибулярный аппарат и нервная система",
+          "Слизистая оболочка полости рта",
+          "Мочеполовые органы"
         ],
         "differentialRemedies": [
           "Gelsemium",
@@ -2486,16 +2451,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Natrium muriaticum"
         ],
         "searchKeywords": [
-          "бура / боракс",
-          "borax veneta",
-          "borax",
-          "downward motion",
+          "бура",
+          "движение вниз",
           "афты",
-          "thrush",
-          "elevator fear",
-          "vestibular & nervous system",
-          "oral mucous membranes",
-          "urogenital organs"
+          "молочница",
+          "лифт"
         ]
       }
     }
@@ -2735,178 +2695,146 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "el": {
         "category": "Φυτικό",
         "commonName": "Βρυωνία",
-        "origin": "Φρέσκια ρίζα Bryonia alba (Cucurbitaceae).",
-        "essence": "Το υπέρτατο φάρμακο για τη φλεγμονή των ορωδών μεμβρανών (υπεζωκότας, αρθρώσεις, περιτόναιο). Ράψιμο σχιστικοί πόνοι που επιδεινώνονται με την παραμικρή κίνηση και ανακουφίζονται από την απόλυτη ανάπαυση και τη σκληρή πίεση στην επώδυνη πλευρά. μεγάλη δίψα.",
+        "origin": "Φρέσκια ρίζα του Bryonia alba (Cucurbitaceae).",
+        "essence": "Ακραία ξηρότητα όλων των βλεννογόνων και πόνος που επιδεινώνεται με την παραμικρή κίνηση. Ο ασθενής θέλει να μένει απόλυτα ακίνητος και διψά για μεγάλες ποσότητες κρύου νερού.",
         "mainIndications": [
-          "Πλευρίτιδα & ξηρός βήχας με ραφή (κρατά το στήθος με τα δύο χέρια)",
-          "Οξεία αρθρίτιδα με θερμές πρησμένες αρθρώσεις που ανακουφίζεται με σφιχτό τύλιγμα",
-          "Ερεθισμός του περιτοναίου και σκωληκοειδίτιδα (κάθε βάζο είναι βασανιστικό)",
-          "Διχασμός εκρήξεις πονοκεφάλους κρατώντας κροτάφους",
-          "Δυσκοιλιότητα με ξηρά, σκληρά κόπρανα σαν καμένα"
+          "Πλευρίτιδα & πνευμονία με πόνο που βελτιώνεται με την πίεση",
+          "Ρευματισμοί & αρθρίτιδα με ζεστές, πρησμένες αρθρώσεις",
+          "Σκληρή, ξηρή δυσκοιλιότητα (σαν καμένη)",
+          "Έντονος πονοκέφαλος που χειροτερεύει με την κίνηση των ματιών"
         ],
         "keynotes": [
-          "Επιδείνωση από την παραμικρή κίνηση (ακόμη και κινούμενα μάτια)",
-          "Ανακούφιση από τη σταθερή σκληρή πίεση και την κατάκλιση στην επώδυνη πλευρά",
-          "Υπερβολική ξηρότητα όλων των βλεννογόνων",
-          "Δίψα για μεγάλες ποσότητες κρύου νερού σε μεγάλα χρονικά διαστήματα",
-          "Παραληρηματική περιπέτεια για τις καθημερινές δουλειές"
+          "Επιδείνωση με την παραμικρή κίνηση (ακόμη και η αναπνοή πονάει)",
+          "Βελτίωση με την πίεση στην πάσχουσα πλευρά",
+          "Μεγάλη δίψα για μεγάλες ποσότητες κρύου νερού σε αραιά διαστήματα",
+          "Ακραία ξηρότητα χειλιών και στόματος"
         ],
-        "mindEmotional": "Ευερέθιστος, θέλει να μείνει μόνος στην ησυχία, ανησυχεί για επαγγελματικές υποθέσεις σε πυρετό.",
+        "mindEmotional": "Ευερέθιστος, μιλάει για τις δουλειές του στο παραλήρημα, θέλει να πάει σπίτι του.",
         "modalitiesBetter": [
-          "Απόλυτη ησυχία ανάπαυσης",
-          "Ξαπλωμένη στην επώδυνη πλευρά",
-          "Σκληρή πίεση",
-          "Κρύες κομπρέσες"
+          "Απόλυτη ηρεμία & ακινησία",
+          "Πίεση στο επώδυνο σημείο",
+          "Κρύα ποτά"
         ],
         "modalitiesWorse": [
-          "Οποιαδήποτε κίνηση και ταραχή",
-          "Ζεστό και ζεστό δωμάτιο",
-          "Το πρωί γύρω στις 9:00 π.μ"
+          "Παραμικρή κίνηση",
+          "Ζέστη",
+          "Πρωί (όταν σηκώνεται)"
         ],
-        "potenciesAndDosage": "Οξεία: D6, D12, C30 / 6C, 30C. Στη ραφή πόνος C30 κάθε 1–2 ώρες.",
+        "potenciesAndDosage": "D6, D12, C30. Σε οξείες φλεγμονές C30: 3–5 σφαιρίδια κάθε 2–3 ώρες.",
         "defaultTagesdosis": "2–3 δόσεις των 3–5 σφαιριδίων",
         "sphereOfAction": [
-          "Ορώδεις μεμβράνες (Υπεζωκότος, Περιτόναιο, Υδροβόλιο)",
-          "Αναπνευστική οδός",
-          "Γαστρεντερικό κανάλι"
+          "Ορώδεις μεμβράνες (υπεζωκότας, περιτόναιο)",
+          "Αρθρώσεις",
+          "Βλεννογόνοι & Πεπτικό"
         ],
         "differentialRemedies": [
-          "Rhus tox (better on motion)",
-          "Aconitum (sudden panic)",
-          "Belladonna (throbbing)"
+          "Rhus tox (βελτιώνεται με την κίνηση)",
+          "Arnica",
+          "Aconitum"
         ],
         "searchKeywords": [
           "βρυωνία",
-          "bryonia alba",
-          "βρυόνια",
-          "λευκή βρυονιά",
-          "χειρότερη κίνηση",
-          "καλύτερη πίεση",
-          "πλευρίτιδα",
-          "ξηρός βήχας",
+          "ακινησία",
+          "ξηρότητα",
           "δίψα",
-          "πόνος στις αρθρώσεις",
-          "ορώδεις μεμβράνες (υπεζωκότος, περιτόναιο, υδροβόλιο)",
-          "αναπνευστική οδός",
-          "γαστρεντερικό κανάλι"
+          "πλευρίτιδα",
+          "δυσκοιλιότητα"
         ]
       },
       "it": {
         "category": "Vegetale",
-        "commonName": "Brionia bianca",
-        "origin": "Fresh root of Bryonia alba (Cucurbitaceae).",
-        "essence": "The supreme remedy for inflammation of serous membranes (pleura, joints, peritoneum). Stitching tearing pains aggravated by slightest motion and relieved by absolute rest and hard pressure on painful side; large thirst.",
+        "commonName": "Brionia",
+        "origin": "Radice fresca di Bryonia alba (Cucurbitaceae).",
+        "essence": "Il grande rimedio per le infiammazioni delle membrane sierose (pleura, articolazioni). Dolori pungenti che peggiorano con il minimo movimento e migliorano con l'immobilità assoluta e la pressione forte sul lato dolente; grande sete.",
         "mainIndications": [
-          "Pleurisy & stitching dry cough (holds chest with both hands)",
-          "Acute arthritis with hot swollen joints relieved by firm wrapping",
-          "Peritoneal irritation & appendicitis (every jar excruciating)",
-          "Splitting bursting headaches holding temples",
-          "Constipation with dry, hard stools as if burnt"
+          "Pleurite e tosse secca e pungente (si tiene il petto tossendo)",
+          "Artrite acuta e articolazioni gonfie (meglio con pressione forte)",
+          "Peritonite e appendicite (ogni sobbalzo è doloroso)",
+          "Stipsi con feci dure e secche come bruciate"
         ],
         "keynotes": [
-          "Aggravation from the slightest motion (even moving eyes)",
-          "Relief from firm hard pressure and lying on painful side",
-          "Excessive dryness of all mucous membranes",
-          "Thirst for large quantities of cold water at long intervals",
-          "Delirious rambling about daily business"
+          "Peggioramento con il minimo movimento (anche degli occhi)",
+          "Miglioramento con la pressione forte e sdraiandosi sul lato dolente",
+          "Sete intensa di grandi quantità di acqua fredda a lunghi intervalli",
+          "Secchezza estrema di tutte le mucose"
         ],
-        "mindEmotional": "Irritable, wants to be left alone in quiet, worries about business affairs in fever.",
+        "mindEmotional": "Irritabile, desidera essere lasciato in pace, parla dei suoi affari nel delirio febbrile.",
         "modalitiesBetter": [
-          "Absolute quiet rest",
-          "Lying on painful side",
-          "Hard pressure",
-          "Cold compresses"
+          "Riposo assoluto",
+          "Pressione forte",
+          "Sdraiarsi sul lato dolente"
         ],
         "modalitiesWorse": [
-          "Any motion & jarring",
-          "Warmth & warm room",
-          "Morning around 9:00 AM"
+          "Ogni minimo movimento",
+          "Calore e ambienti caldi",
+          "Al mattino (ore 9:00)"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In stitching pain C30 every 1–2 hours.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: D6, D12, C30. In caso di tosse pungente C30: 3–5 granuli ogni 1–2 ore.",
+        "defaultTagesdosis": "2–3 dosi da 3–5 granuli",
         "sphereOfAction": [
-          "Serous Membranes (Pleura, Peritoneum, Synovia)",
-          "Respiratory Tract",
-          "Gastrointestinal Canal"
+          "Membrane sierose (pleura, peritoneo, sinovia)",
+          "Apparato respiratorio",
+          "Apparato digerente"
         ],
         "differentialRemedies": [
-          "Rhus tox (better on motion)",
-          "Aconitum (sudden panic)",
-          "Belladonna (throbbing)"
+          "Rhus tox (migliora col movimento)",
+          "Aconitum",
+          "Belladonna"
         ],
         "searchKeywords": [
-          "brionia bianca",
-          "bryonia alba",
-          "bryonia",
-          "white bryony",
-          "motion worse",
-          "pressure better",
-          "pleurisy",
-          "dry cough",
-          "thirst",
-          "joint pain",
-          "serous membranes (pleura, peritoneum, synovia)",
-          "respiratory tract",
-          "gastrointestinal canal"
+          "brionia",
+          "movimento",
+          "sete",
+          "pleurite",
+          "secchezza"
         ]
       },
       "ru": {
         "category": "Растительный",
-        "commonName": "Бриония белая / Переступень",
-        "origin": "Fresh root of Bryonia alba (Cucurbitaceae).",
-        "essence": "The supreme remedy for inflammation of serous membranes (pleura, joints, peritoneum). Stitching tearing pains aggravated by slightest motion and relieved by absolute rest and hard pressure on painful side; large thirst.",
+        "commonName": "Бриония / Переступень белый",
+        "origin": "Свежий корень Bryonia alba (Cucurbitaceae).",
+        "essence": "Главное средство при воспалении серозных оболочек (плевра, суставы). Колющие боли, которые невыносимо усиливаются при малейшем движении и облегчаются в абсолютном покое и при сильном давлении на больную сторону; сильная жажда.",
         "mainIndications": [
-          "Pleurisy & stitching dry cough (holds chest with both hands)",
-          "Acute arthritis with hot swollen joints relieved by firm wrapping",
-          "Peritoneal irritation & appendicitis (every jar excruciating)",
-          "Splitting bursting headaches holding temples",
-          "Constipation with dry, hard stools as if burnt"
+          "Плеврит и сухой колющий кашель (держится за грудь при кашле)",
+          "Острый артрит и отек суставов (лучше от сильного давления)",
+          "Аппендицит и раздражение брюшины (любое сотрясение болезненно)",
+          "Запор с сухим, твердым стулом, как будто обожженным"
         ],
         "keynotes": [
-          "Aggravation from the slightest motion (even moving eyes)",
-          "Relief from firm hard pressure and lying on painful side",
-          "Excessive dryness of all mucous membranes",
-          "Thirst for large quantities of cold water at long intervals",
-          "Delirious rambling about daily business"
+          "Ухудшение от малейшего движения (даже движения глаз)",
+          "Улучшение в покое и лежа на больной стороне",
+          "Сильная жажда: пьет помногу холодной воды через большие промежутки времени",
+          "Крайняя сухость всех слизистых оболочек"
         ],
-        "mindEmotional": "Irritable, wants to be left alone in quiet, worries about business affairs in fever.",
+        "mindEmotional": "Мрачный, раздражительный, хочет, чтобы его оставили в покое; в бреду говорит о делах.",
         "modalitiesBetter": [
-          "Absolute quiet rest",
-          "Lying on painful side",
-          "Hard pressure",
-          "Cold compresses"
+          "Абсолютный покой",
+          "Сильное давление",
+          "Лежа на больной стороне"
         ],
         "modalitiesWorse": [
-          "Any motion & jarring",
-          "Warmth & warm room",
-          "Morning around 9:00 AM"
+          "Любое движение и сотрясение",
+          "Тепло и жаркое помещение",
+          "Утром (около 9:00)"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In stitching pain C30 every 1–2 hours.",
-        "defaultTagesdosis": "2–3 doses of 3–5 гранул",
+        "potenciesAndDosage": "Остро: D6, D12, C30. При колющих болях C30: по 3–5 гранул каждые 1–2 часа.",
+        "defaultTagesdosis": "2–3 приема по 3–5 гранул",
         "sphereOfAction": [
-          "Serous Membranes (Pleura, Peritoneum, Synovia)",
-          "Respiratory Tract",
-          "Gastrointestinal Canal"
+          "Серозные оболочки (плевра, брюшина, суставы)",
+          "Органы дыхания",
+          "Желудочно-кишечный тракт"
         ],
         "differentialRemedies": [
-          "Rhus tox (better on motion)",
-          "Aconitum (sudden panic)",
-          "Belladonna (throbbing)"
+          "Rhus tox (лучше в движении)",
+          "Aconitum",
+          "Belladonna"
         ],
         "searchKeywords": [
-          "бриония белая / переступень",
-          "bryonia alba",
-          "bryonia",
-          "white bryony",
-          "motion worse",
-          "pressure better",
-          "pleurisy",
-          "dry cough",
-          "thirst",
-          "joint pain",
-          "serous membranes (pleura, peritoneum, synovia)",
-          "respiratory tract",
-          "gastrointestinal canal"
+          "бриония",
+          "переступень",
+          "движение",
+          "жажда",
+          "плеврит"
         ]
       }
     }
@@ -3441,233 +3369,197 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Minéral",
         "commonName": "Calcaire d’huîtres",
-        "origin": "Middle layer of the oyster shell (Ostrea edulis).",
-        "essence": "The supreme metabolic and constitutional polychrest: chilly, head drenching in sweat during sleep, delayed dentition and bone closure, intense craving for boiled eggs; exhaustion from overwork.",
+        "origin": "Couche moyenne de la coquille d'huître (Ostrea edulis).",
+        "essence": "Le grand remède métabolique et constitutionnel : frileux, sueurs de la tête pendant le sommeil, retard de dentition et de fermeture des os, désir intense d'œufs à la coque ; épuisement par surmenage.",
         "mainIndications": [
-          "Failure to thrive, delayed dentition & open fontanelles in children",
-          "Recurrent catarrhs with swollen lymphatic glands",
-          "Chronic burnout in conscientious overburdened individuals",
-          "Osteoporosis, rickets & delayed fracture healing",
-          "Sluggish metabolism & easy weight gain"
+          "Retard de croissance, dentition tardive et fontanelles ouvertes chez l'enfant",
+          "Infections récurrentes avec ganglions lymphatiques gonflés",
+          "Burnout chronique chez les personnes consciencieuses surmenées",
+          "Ostéoporose, rachitisme et retard de consolidation des fractures"
         ],
         "keynotes": [
-          "La sueur aigre et abondante de la tête mouille complètement l'oreiller pendant le sommeil",
-          "Constant chilliness with cold damp feet (feels like damp socks)",
-          "Intense craving for eggs (especially soft-boiled) and indigestible items",
-          "Dyspnea and exhaustion from climbing stairs or physical exertion",
-          "Constipé avec paradoxalement une meilleure sensation lorsque les intestins sont liés"
+          "Sueur de tête acide et abondante qui mouille l'oreiller pendant le sommeil",
+          "Frilosité constante avec pieds froids et humides",
+          "Désir intense d'œufs (surtout à la coque)",
+          "Dyspnée et épuisement en montant les escaliers ou à l'effort physique"
         ],
-        "mindEmotional": "Anxious, fears losing mind or that people will observe their confusion. Overwhelmed by responsibilities.",
+        "mindEmotional": "Anxieux, peur de perdre la raison ou que les autres remarquent sa faiblesse. Consciencieux.",
         "modalitiesBetter": [
-          "Dry warm weather",
-          "Lying on painful side",
-          "Dark quiet room"
+          "Temps sec et chaud",
+          "Couché sur le côté douloureux",
+          "Dans l'obscurité"
         ],
         "modalitiesWorse": [
-          "Cold and damp weather",
-          "Physical exertion & ascending stairs",
-          "Full moon"
+          "Froid et humidité",
+          "Effort physique et monter les escaliers",
+          "Pleine lune"
         ],
-        "potenciesAndDosage": "Constitutional: C30, C200. 1 dose weekly or monthly.",
-        "defaultTagesdosis": "1 dose of 5 granules",
+        "potenciesAndDosage": "Constitutionnel : C30, C200. 1 dose par semaine ou par mois.",
+        "defaultTagesdosis": "1 dose de 5 granules",
         "sphereOfAction": [
           "Os, dents et système squelettique",
-          "Lymphatic System & Glands",
-          "Metabolism & Digestion"
+          "Système lymphatique et glandes",
+          "Métabolisme et digestion"
         ],
         "differentialRemedies": [
-          "Silicea (lean, chilly)",
-          "Calcarea phosphorica (tall, slender)",
-          "Sulfur (warm-blooded)"
+          "Silicea",
+          "Calcarea phosphorica",
+          "Sulfur"
         ],
         "searchKeywords": [
           "calcaire d’huîtres",
-          "calcarea carbonica",
           "calcium",
-          "oyster shell",
-          "bones",
-          "teething",
-          "eggs craving",
-          "sueur de tête",
-          "fontanelle",
-          "épuisement",
-          "os, dents et système squelettique",
-          "lymphatic system & glands",
-          "metabolism & digestion"
+          "os",
+          "dentition",
+          "oeufs",
+          "sueur de tête"
         ]
       },
       "el": {
         "category": "Ορυκτό",
-        "commonName": "Ασβέστιο στρειδιού",
+        "commonName": "Ανθρακικό ασβέστιο (από κέλυφος στρειδιού)",
         "origin": "Μεσαίο στρώμα του κελύφους του στρειδιού (Ostrea edulis).",
-        "essence": "Το υπέρτατο μεταβολικό και δομικό πολύχρωμο: ψυχρός, ιδρώτα στο κεφάλι κατά τη διάρκεια του ύπνου, καθυστερημένη οδοντοφυΐα και κλείσιμο των οστών, έντονη λαχτάρα για βραστά αυγά. εξάντληση από υπερκόπωση.",
+        "essence": "Το μεγάλο φάρμακο του μεταβολισμού και της ιδιοσυγκρασίας: Κρυώνει εύκολα, ιδρώνει στο κεφάλι κατά τον ύπνο, καθυστερημένη οδοντοφυΐα, επιθυμία για αυγά.",
         "mainIndications": [
-          "Αποτυχία ευδοκίμησης, καθυστερημένη οδοντοφυΐα και άνοιγμα των φοντανέλλων στα παιδιά",
-          "Υποτροπιάζουσες καταρροές με διογκωμένους λεμφαδένες",
-          "Χρόνια εξουθένωση σε ευσυνείδητα υπερφορτωμένα άτομα",
-          "Οστεοπόρωση, ραχίτιδα & καθυστερημένη επούλωση κατάγματος",
-          "Υποτονικός μεταβολισμός και εύκολη αύξηση βάρους"
+          "Καθυστέρηση στην ανάπτυξη και την οδοντοφυΐα στα παιδιά",
+          "Υποτροπιάζουσες λοιμώξεις με διογκωμένους λεμφαδένες",
+          "Χρόνια κόπωση μετά από υπερκόπωση σε ευσυνείδητα άτομα",
+          "Οστεοπόρωση και καθυστερημένη πώρωση καταγμάτων"
         ],
         "keynotes": [
-          "Ξινός άφθονος ιδρώτας βρέχει το μαξιλάρι εντελώς κατά τη διάρκεια του ύπνου",
-          "Συνεχής ψύχρα με κρύα υγρά πόδια (αισθάνεται σαν υγρές κάλτσες)",
-          "Έντονη λαχτάρα για αυγά (ειδικά μαλακά) και δύσπεπτα είδη",
-          "Δύσπνοια και εξάντληση από το ανέβασμα σκαλοπατιών ή τη σωματική καταπόνηση",
-          "Δυσκοιλιότητα με παραδόξως καλύτερη αίσθηση όταν δεσμεύονται τα έντερα"
+          "Άφθονος ιδρώτας στο κεφάλι που βρέχει το μαξιλάρι στον ύπνο",
+          "Συνεχής αίσθηση κρύου και υγρά, κρύα πόδια",
+          "Έντονη επιθυμία για αυγά (ειδικά μελάτα)",
+          "Δύσπνοια και εξάντληση στο ανέβασμα σκάλας"
         ],
-        "mindEmotional": "Ανήσυχοι, φόβοι ότι θα χάσουν το μυαλό τους ή ότι οι άνθρωποι θα παρατηρήσουν τη σύγχυσή τους. Κατακλύζονται από ευθύνες.",
+        "mindEmotional": "Αγχώδης, φοβάται μήπως χάσει το μυαλό του ή μήπως οι άλλοι προσέξουν τη σύγχυσή του.",
         "modalitiesBetter": [
-          "Ξηρός ζεστός καιρός",
-          "Ξαπλωμένη στην επώδυνη πλευρά",
-          "Σκοτεινό ήσυχο δωμάτιο"
+          "Ξηρός και ζεστός καιρός",
+          "Ξάπλωμα στην επώδυνη πλευρά",
+          "Σκοτάδι"
         ],
         "modalitiesWorse": [
-          "Κρύος και υγρός καιρός",
-          "Σωματική καταπόνηση & άνοδος σκάλας",
+          "Κρύο και υγρασία",
+          "Σωματική προσπάθεια & ανέβασμα σκάλας",
           "Πανσέληνος"
         ],
-        "potenciesAndDosage": "Συνταγματική: C30, C200. 1 δόση εβδομαδιαία ή μηνιαία.",
+        "potenciesAndDosage": "Ιδιοσυγκρασιακά: C30, C200. Μία δόση την εβδομάδα ή τον μήνα.",
         "defaultTagesdosis": "1 δόση των 5 σφαιριδίων",
         "sphereOfAction": [
-          "Οστά, δόντια & σκελετικό σύστημα",
-          "Λεμφικό Σύστημα & Αδένες",
-          "Μεταβολισμός & Πέψη"
+          "Οστά, δόντια & σκελετό",
+          "Λεμφικό σύστημα & αδένες",
+          "Μεταβολισμός"
         ],
         "differentialRemedies": [
-          "Silicea (lean, chilly)",
-          "Calcarea phosphorica (tall, slender)",
-          "Sulfur (warm-blooded)"
+          "Silicea",
+          "Calcarea phosphorica",
+          "Sulfur"
         ],
         "searchKeywords": [
-          "ασβέστιο στρειδιού",
-          "calcarea carbonica",
-          "ασβεστίου",
-          "κέλυφος στρειδιού",
+          "ασβέστιο",
           "οστά",
           "οδοντοφυΐα",
-          "λαχτάρα για αυγά",
-          "ιδρώτας στο κεφάλι",
-          "fontanelle",
-          "εξάντληση",
-          "οστά, δόντια & σκελετικό σύστημα",
-          "λεμφικό σύστημα & αδένες",
-          "μεταβολισμός & πέψη"
+          "αυγά",
+          "ιδρώτας κεφαλής",
+          "εξάντληση"
         ]
       },
       "it": {
         "category": "Minerale",
-        "commonName": "Carbonato di calcio d’ostrica",
-        "origin": "Middle layer of the oyster shell (Ostrea edulis).",
-        "essence": "The supreme metabolic and constitutional polychrest: chilly, head drenching in sweat during sleep, delayed dentition and bone closure, intense craving for boiled eggs; exhaustion from overwork.",
+        "commonName": "Carbonato di calcio d'ostrica",
+        "origin": "Strato intermedio della conchiglia d'ostrica (Ostrea edulis).",
+        "essence": "Il grande rimedio metabolico e costituzionale: freddoloso, sudorazione della testa durante il sonno, ritardo nella dentizione e chiusura delle ossa, intenso desiderio di uova alla coque; esaurimento da eccesso di lavoro.",
         "mainIndications": [
-          "Failure to thrive, delayed dentition & open fontanelles in children",
-          "Recurrent catarrhs with swollen lymphatic glands",
-          "Chronic burnout in conscientious overburdened individuals",
-          "Osteoporosis, rickets & delayed fracture healing",
-          "Sluggish metabolism & easy weight gain"
+          "Ritardo nella crescita e nella dentizione, fontanelle aperte nei bambini",
+          "Infezioni ricorrenti con ingrossamento delle ghiandole linfatiche",
+          "Esaurimento cronico in persone coscienziose e sovraccariche",
+          "Osteoporosi e ritardo nella consolidazione delle fratture"
         ],
         "keynotes": [
-          "Sour profuse head sweat wets pillow completely during sleep",
-          "Constant chilliness with cold damp feet (feels like damp socks)",
-          "Intense craving for eggs (especially soft-boiled) and indigestible items",
-          "Dyspnea and exhaustion from climbing stairs or physical exertion",
-          "Constipated with paradoxically better feeling when bowels are bound"
+          "Sudore acido e abbondante alla testa che bagna il cuscino nel sonno",
+          "Freddolosità costante con piedi freddi e umidi",
+          "Intenso desiderio di uova (specialmente alla coque)",
+          "Dispnea ed esaurimento salendo le scale o sotto sforzo fisico"
         ],
-        "mindEmotional": "Anxious, fears losing mind or that people will observe their confusion. Overwhelmed by responsibilities.",
+        "mindEmotional": "Ansioso, teme di perdere la ragione o che gli altri notino la sua debolezza.",
         "modalitiesBetter": [
-          "Dry warm weather",
-          "Lying on painful side",
-          "Dark quiet room"
+          "Tempo secco e caldo",
+          "Sdraiarsi sul lato dolente",
+          "Al buio"
         ],
         "modalitiesWorse": [
-          "Cold and damp weather",
-          "Physical exertion & ascending stairs",
-          "Full moon"
+          "Freddo e umidità",
+          "Sforzo fisico e salire le scale",
+          "Luna piena"
         ],
-        "potenciesAndDosage": "Constitutional: C30, C200. 1 dose weekly or monthly.",
-        "defaultTagesdosis": "1 dose of 5 granuli",
+        "potenciesAndDosage": "Costituzionale: C30, C200. 1 dose a settimana o al mese.",
+        "defaultTagesdosis": "1 dose da 5 granuli",
         "sphereOfAction": [
-          "Bones, Teeth & Skeletal System",
-          "Lymphatic System & Glands",
-          "Metabolism & Digestion"
+          "Ossa, denti e sistema scheletrico",
+          "Sistema linfatico e ghiandole",
+          "Metabolismo e digestione"
         ],
         "differentialRemedies": [
-          "Silicea (lean, chilly)",
-          "Calcarea phosphorica (tall, slender)",
-          "Sulfur (warm-blooded)"
+          "Silicea",
+          "Calcarea phosphorica",
+          "Sulfur"
         ],
         "searchKeywords": [
-          "carbonato di calcio d’ostrica",
-          "calcarea carbonica",
-          "calcium",
-          "oyster shell",
+          "carbonato di calcio",
           "ossa",
-          "teething",
-          "eggs craving",
-          "head sweat",
-          "fontanelle",
-          "exhaustion",
-          "bones, teeth & skeletal system",
-          "lymphatic system & glands",
-          "metabolism & digestion"
+          "dentizione",
+          "uova",
+          "sudore testa",
+          "esaurimento"
         ]
       },
       "ru": {
         "category": "Минеральный",
         "commonName": "Калькарея карбоника / Углекислая известь",
-        "origin": "Middle layer of the oyster shell (Ostrea edulis).",
-        "essence": "The supreme metabolic and constitutional polychrest: chilly, head drenching in sweat during sleep, delayed dentition and bone closure, intense craving for boiled eggs; exhaustion from overwork.",
+        "origin": "Средний слой раковины устрицы (Ostrea edulis).",
+        "essence": "Главное средство для обмена веществ и конституции: зябкость, сильный пот на голове во время сна, задержка развития костей и зубов, сильное желание яиц всμятку.",
         "mainIndications": [
-          "Failure to thrive, delayed dentition & open fontanelles in children",
-          "Recurrent catarrhs with swollen lymphatic glands",
-          "Chronic burnout in conscientious overburdened individuals",
-          "Osteoporosis, rickets & delayed fracture healing",
-          "Sluggish metabolism & easy weight gain"
+          "Нарушения развития, задержка прорезывания зубов у детей",
+          "Рецидивирующие инфекции с увеличением лимфоузлов",
+          "Хроническая усталость у добросовестных людей после переутомления",
+          "Остеопороз и замедленное срастание переломов"
         ],
         "keynotes": [
-          "Sour profuse head sweat wets pillow completely during sleep",
-          "Constant chilliness with cold damp feet (feels like damp socks)",
-          "Intense craving for eggs (especially soft-boiled) and indigestible items",
-          "Dyspnea and exhaustion from climbing stairs or physical exertion",
-          "Constipated with paradoxically better feeling when bowels are bound"
+          "Кислый обильный пот на голове, подушка становится мокрой во сне",
+          "Постоянная зябкость и холодные влажные стопы",
+          "Сильное желание яиц (особенно всμятку) и несъедобных вещей",
+          "Одышка и истощение при подъеме по лестнице"
         ],
-        "mindEmotional": "Anxious, fears losing mind or that people will observe their confusion. Overwhelmed by responsibilities.",
+        "mindEmotional": "Тревожный, боится сойти с ума или что другие заметят его слабость. Ответственный.",
         "modalitiesBetter": [
-          "Dry warm weather",
-          "Lying on painful side",
-          "Dark quiet room"
+          "Сухая теплая погода",
+          "Лежа на больной стороне",
+          "В темноте"
         ],
         "modalitiesWorse": [
-          "Cold and damp weather",
-          "Physical exertion & ascending stairs",
-          "Full moon"
+          "Холод и сырость",
+          "Физическое напряжение и подъем по лестнице",
+          "Полнолуние"
         ],
-        "potenciesAndDosage": "Constitutional: C30, C200. 1 dose weekly or monthly.",
-        "defaultTagesdosis": "1 dose of 5 гранул",
+        "potenciesAndDosage": "Конституционально: C30, C200. 1 раз в неделю или в месяц.",
+        "defaultTagesdosis": "1 прием по 5 гранул",
         "sphereOfAction": [
-          "Bones, Teeth & Skeletal System",
-          "Lymphatic System & Glands",
-          "Metabolism & Digestion"
+          "Кости, зубы и скелетная система",
+          "Лимфатическая система и железы",
+          "Обмен веществ"
         ],
         "differentialRemedies": [
-          "Silicea (lean, chilly)",
-          "Calcarea phosphorica (tall, slender)",
-          "Sulfur (warm-blooded)"
+          "Silicea",
+          "Calcarea phosphorica",
+          "Sulfur"
         ],
         "searchKeywords": [
-          "калькарея карбоника / углекислая известь",
-          "calcarea carbonica",
+          "калькарея карбоника",
           "кальций",
-          "oyster shell",
-          "bones",
-          "teething",
-          "eggs craving",
-          "head sweat",
-          "fontanelle",
-          "exhaustion",
-          "bones, teeth & skeletal system",
-          "lymphatic system & glands",
-          "metabolism & digestion"
+          "кости",
+          "зубы",
+          "яйца",
+          "пот головы"
         ]
       }
     }
@@ -3825,51 +3717,44 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         "category": "Minéral",
         "commonName": "Fluorure de calcium",
         "origin": "Fluorure de calcium pur (CaF2).",
-        "essence": "Loss of elasticity in fibers and vessels: stony-hard glandular indurations, bone exostoses, ligamentous relaxation, and varicose veins.",
+        "essence": "Perte d'élasticité des fibres et des vaisseaux : indurations glandulaires dures comme de la pierre, exostoses osseuses, relâchement ligamentaire et varices.",
         "mainIndications": [
-          "Bone spurs, ganglions, and calcaneal spurs",
+          "Exostoses, ganglions et épines calcanéennes",
           "Laxité ligamentaire sévère et varices",
-          "Deficient dental enamel & rapid tooth decay"
+          "Émail dentaire déficient et caries rapides"
         ],
         "keynotes": [
-          "Induration dure et pierreuse des glandes, des ligaments et des os",
-          "Fissures, fissures et gerçures dans les paumes et les plantes",
-          "Initial stiffness relieved by continued gentle motion"
+          "Induration pierreuse des glandes, des ligaments et des os",
+          "Fissures, crevasses et gerçures dans les paumes et les plantes",
+          "Raideur initiale soulagée par un mouvement continu"
         ],
-        "mindEmotional": "Constant unwarranted dread of financial ruin and poverty.",
+        "mindEmotional": "Crainte constante et injustifiée de la ruine financière et de la pauvreté.",
         "modalitiesBetter": [
-          "Heat and warm applications",
-          "Continued motion"
+          "Chaleur et applications chaudes",
+          "Mouvement continu"
         ],
         "modalitiesWorse": [
-          "Cold and damp weather",
-          "Beginning of motion"
+          "Temps froid et humide",
+          "Début du mouvement"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6X, 12X. 2-3 times daily 5 granules.",
-        "defaultTagesdosis": "2-3 times daily 5 granules",
+        "potenciesAndDosage": "D6, D12, C30. 2 à 3 fois par jour 5 granules.",
+        "defaultTagesdosis": "2 à 3 fois par jour 5 granules",
         "sphereOfAction": [
-          "Connective Tissue & Elastic Fibers",
-          "Bones & Dental Enamel",
-          "Veins"
+          "Tissu conjonctif et fibres élastiques",
+          "Os et émail dentaire",
+          "Veines"
         ],
         "differentialRemedies": [
           "Silicea",
           "Ruta",
-          "Calcarea phosphorica",
-          "Fluoricum acidum"
+          "Calcarea phosphorica"
         ],
         "searchKeywords": [
           "fluorure de calcium",
-          "calcarea fluorica",
-          "fluoride of lime",
-          "bone spur",
+          "exostose",
           "ganglion",
-          "elasticity",
-          "varices",
-          "calcium fluoride",
-          "connective tissue & elastic fibers",
-          "bones & dental enamel",
-          "veins"
+          "élasticité",
+          "varices"
         ]
       },
       "el": {
@@ -3925,103 +3810,89 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Minerale",
         "commonName": "Fluoruro di calcio",
-        "origin": "Pure calcium fluoride (CaF2).",
-        "essence": "Loss of elasticity in fibers and vessels: stony-hard glandular indurations, bone exostoses, ligamentous relaxation, and varicose veins.",
+        "origin": "Fluoruro di calcio puro (CaF2).",
+        "essence": "Perdita di elasticità delle fibre e dei vasi: indurimenti ghiandolari duri come pietra, esostosi ossee, rilassamento dei legamenti e vene varicose.",
         "mainIndications": [
-          "Bone spurs, ganglions, and calcaneal spurs",
-          "Severe ligamentous laxity & varicose veins",
-          "Deficient dental enamel & rapid tooth decay"
+          "Esostosi, gangli e speroni calcaneari",
+          "Grave lassità legamentosa e vene varicose",
+          "Smalto dentale carente e carie rapida"
         ],
         "keynotes": [
-          "Stony-hard induration of glands, ligaments, and bones",
-          "Cracks, fissures, and chaps in palms and soles",
-          "Initial stiffness relieved by continued gentle motion"
+          "Indurimento pietroso di ghiandole, legamenti e ossa",
+          "Crepe, fessure e ragadi sui palmi e sulle piante",
+          "Rigidità iniziale che migliora con il movimento continuato"
         ],
-        "mindEmotional": "Constant unwarranted dread of financial ruin and poverty.",
+        "mindEmotional": "Timore costante e ingiustificato di rovina finanziaria e povertà.",
         "modalitiesBetter": [
-          "Heat and warm applications",
-          "Continued motion"
+          "Calore e applicazioni calde",
+          "Movimento continuato"
         ],
         "modalitiesWorse": [
-          "Cold and damp weather",
-          "Beginning of motion"
+          "Tempo freddo e umido",
+          "Inizio del movimento"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6X, 12X. 2-3 times daily 5 granuli.",
-        "defaultTagesdosis": "2-3 times daily 5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. 2-3 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "2-3 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Connective Tissue & Elastic Fibers",
-          "Bones & Dental Enamel",
-          "Veins"
+          "Tessuto connettivo e fibre elastiche",
+          "Ossa e smalto dentale",
+          "Vene"
         ],
         "differentialRemedies": [
           "Silicea",
           "Ruta",
-          "Calcarea phosphorica",
-          "Fluoricum acidum"
+          "Calcarea phosphorica"
         ],
         "searchKeywords": [
           "fluoruro di calcio",
-          "calcarea fluorica",
-          "fluoride of lime",
-          "bone spur",
-          "ganglion",
-          "elasticity",
-          "varicose",
-          "calcium fluoride",
-          "connective tissue & elastic fibers",
-          "bones & dental enamel",
-          "veins"
+          "esostosi",
+          "ganglio",
+          "elasticità",
+          "varici"
         ]
       },
       "ru": {
         "category": "Минеральный",
         "commonName": "Калькарея флюорика / Фтористый кальций",
-        "origin": "Pure calcium fluoride (CaF2).",
-        "essence": "Loss of elasticity in fibers and vessels: stony-hard glandular indurations, bone exostoses, ligamentous relaxation, and varicose veins.",
+        "origin": "Чистый фторид кальция (CaF2).",
+        "essence": "Потеря эластичности волокон и сосудов: каменисто-твердые уплотнения желез, костные экзостозы, слабость связок и варикозное расширение вен.",
         "mainIndications": [
-          "Bone spurs, ganglions, and calcaneal spurs",
-          "Severe ligamentous laxity & varicose veins",
-          "Deficient dental enamel & rapid tooth decay"
+          "Костные шпоры, ганглии и пяточные шпоры",
+          "Выраженная слабость связок и варикоз",
+          "Дефекты зубной эмали и быстрый кариес"
         ],
         "keynotes": [
-          "Stony-hard induration of glands, ligaments, and bones",
-          "Cracks, fissures, and chaps in palms and soles",
-          "Initial stiffness relieved by continued gentle motion"
+          "Каменисто-твердое уплотнение желез, связок и костей",
+          "Трещины и ороговения на ладонях и подошвах",
+          "Начальная скованность, которая проходит при продолжении движения"
         ],
-        "mindEmotional": "Constant unwarranted dread of financial ruin and poverty.",
+        "mindEmotional": "Постоянный неоправданный страх финансового краха и бедности.",
         "modalitiesBetter": [
-          "Heat and warm applications",
-          "Continued motion"
+          "Тепло и горячие компрессы",
+          "Продолжительное движение"
         ],
         "modalitiesWorse": [
-          "Cold and damp weather",
-          "Beginning of motion"
+          "Холодная и влажная погода",
+          "Начало движения"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6X, 12X. 2-3 times daily 5 гранул.",
-        "defaultTagesdosis": "2-3 times daily 5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. 2-3 раза в день по 5 гранул.",
+        "defaultTagesdosis": "2-3 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Connective Tissue & Elastic Fibers",
-          "Bones & Dental Enamel",
-          "Veins"
+          "Соединительная ткань и эластичные волокна",
+          "Кости и зубная эмаль",
+          "Вены"
         ],
         "differentialRemedies": [
           "Silicea",
           "Ruta",
-          "Calcarea phosphorica",
-          "Fluoricum acidum"
+          "Calcarea phosphorica"
         ],
         "searchKeywords": [
-          "калькарея флюорика / фтористый кальций",
-          "calcarea fluorica",
-          "fluoride of lime",
-          "bone spur",
-          "ganglion",
-          "elasticity",
-          "varicose",
-          "calcium fluoride",
-          "connective tissue & elastic fibers",
-          "bones & dental enamel",
-          "veins"
+          "фтористый кальций",
+          "шпора",
+          "ганглий",
+          "эластичность",
+          "варикоз"
         ]
       }
     }
@@ -4178,52 +4049,46 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Minéral",
         "commonName": "Phosphate de calcium",
-        "origin": "Phosphate de calcium pur.",
-        "essence": "Growing pains in rapidly shooting adolescents, delayed union of fractures, craving for smoked salty bacon/ham, and restless discontent.",
+        "origin": "Phosphate de calcium pur (CaHPO4 · 2H2O).",
+        "essence": "Douleurs de croissance chez les adolescents à croissance rapide, retard de consolidation des fractures, désir de viande fumée et salée, mécontentement chronique.",
         "mainIndications": [
-          "Growing pains & poor posture in slender teens",
-          "Guérison retardée des fractures osseuses et des callosités",
-          "Schoolgirl headaches from study fatigue"
+          "Douleurs de croissance et mauvaise posture chez les adolescents",
+          "Retard de consolidation osseuse et calus lent",
+          "Maux de tête scolaires par fatigue intellectuelle"
         ],
         "keynotes": [
-          "Intense craving for smoked meat, bacon, and salty food",
-          "Maux de tête chez les écoliers dus à une tension cognitive",
-          "Fontanelles remain widely open in infants"
+          "Désir intense de viande fumée, jambon, lard et aliments salés",
+          "Maux de tête chez les écoliers après l'effort cognitif",
+          "Fontanelles restant longtemps ouvertes chez les nourrissons"
         ],
-        "mindEmotional": "Discontented, restless wanderlust, constantly sighs.",
+        "mindEmotional": "Mécontent, toujours envie d'être ailleurs (envie de voyager), soupire fréquemment.",
         "modalitiesBetter": [
-          "Summer season",
-          "Warm dry weather"
+          "En été",
+          "Temps chaud et sec"
         ],
         "modalitiesWorse": [
-          "Cold damp drafts",
-          "Fonte des neiges et changements climatiques",
-          "Mental exertion"
+          "Temps froid et humide",
+          "Changement de temps et fonte des neiges",
+          "Effort mental"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6X, 12X. 2 times daily 5 granules.",
-        "defaultTagesdosis": "2 times daily 5 granules",
+        "potenciesAndDosage": "D6, D12, C30. 2 fois par jour 5 granules.",
+        "defaultTagesdosis": "2 fois par jour 5 granules",
         "sphereOfAction": [
-          "Bones & Cartilage",
-          "Hematopoiesis",
-          "Adolescent Growth"
+          "Os et cartilages",
+          "Hématopoïèse",
+          "Croissance"
         ],
         "differentialRemedies": [
           "Calcarea carbonica",
           "Phosphorus",
-          "Tuberculinum",
-          "Silicea"
+          "Tuberculinum"
         ],
         "searchKeywords": [
           "phosphate de calcium",
-          "calcarea phosphorica",
-          "calcium phosphate",
-          "growing pains",
+          "douleurs de croissance",
           "fracture",
-          "school headache",
-          "smoked meat",
-          "bones & cartilage",
-          "hematopoiesis",
-          "adolescent growth"
+          "maux de tête",
+          "viande fumée"
         ]
       },
       "el": {
@@ -4279,103 +4144,91 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Minerale",
         "commonName": "Fosfato di calcio",
-        "origin": "Pure calcium phosphate.",
-        "essence": "Growing pains in rapidly shooting adolescents, delayed union of fractures, craving for smoked salty bacon/ham, and restless discontent.",
+        "origin": "Fosfato di calcio puro (CaHPO4 · 2H2O).",
+        "essence": "Dolori di crescita in adolescenti a crescita rapida, ritardo nella consolidazione delle fratture, desiderio di carne affumicata e salata, malcontento cronico.",
         "mainIndications": [
-          "Growing pains & poor posture in slender teens",
-          "Delayed bone fracture healing & calluses",
-          "Schoolgirl headaches from study fatigue"
+          "Dolori di crescita e cattiva postura negli adolescenti",
+          "Ritardo nella guarigione delle fratture ossee e callo lento",
+          "Mal di testa scolastico per affaticamento mentale"
         ],
         "keynotes": [
-          "Intense craving for smoked meat, bacon, and salty food",
-          "Headaches in school children from cognitive strain",
-          "Fontanelles remain widely open in infants"
+          "Intenso desiderio di carne affumicata, pancetta e cibi salati",
+          "Mal di testa negli scolari dopo lo sforzo cognitivo",
+          "Fontanelle che rimangono aperte a lungo nei neonati"
         ],
-        "mindEmotional": "Discontented, restless wanderlust, constantly sighs.",
+        "mindEmotional": "Scontento, irrequieto, desiderio di viaggiare, sospira spesso.",
         "modalitiesBetter": [
-          "Summer season",
-          "Warm dry weather"
+          "In estate",
+          "Tempo caldo e secco"
         ],
         "modalitiesWorse": [
-          "Cold damp drafts",
-          "Melting snow & weather change",
-          "Mental exertion"
+          "Tempo freddo e umido",
+          "Cambiamento di tempo e scioglimento della neve",
+          "Sforzo mentale"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6X, 12X. 2 times daily 5 granuli.",
-        "defaultTagesdosis": "2 times daily 5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. 2 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "2 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Bones & Cartilage",
-          "Hematopoiesis",
-          "Adolescent Growth"
+          "Ossa e cartilagini",
+          "Ematopoiesi",
+          "Crescita"
         ],
         "differentialRemedies": [
           "Calcarea carbonica",
           "Phosphorus",
-          "Tuberculinum",
-          "Silicea"
+          "Tuberculinum"
         ],
         "searchKeywords": [
           "fosfato di calcio",
-          "calcarea phosphorica",
-          "calcium phosphate",
-          "growing pains",
-          "fracture",
-          "school headache",
-          "smoked meat",
-          "bones & cartilage",
-          "hematopoiesis",
-          "adolescent growth"
+          "dolori crescita",
+          "frattura",
+          "mal di testa",
+          "carne affumicata"
         ]
       },
       "ru": {
         "category": "Минеральный",
         "commonName": "Калькарея фосфорика / Фосфорнокислый кальций",
-        "origin": "Pure calcium phosphate.",
-        "essence": "Growing pains in rapidly shooting adolescents, delayed union of fractures, craving for smoked salty bacon/ham, and restless discontent.",
+        "origin": "Чистый фосфат кальция (CaHPO4 · 2H2O).",
+        "essence": "Боли роста у быстрорастущих подростков, замедленное срастание переломов, желание копченого и соленого, хроническое недовольство.",
         "mainIndications": [
-          "Growing pains & poor posture in slender teens",
-          "Delayed bone fracture healing & calluses",
-          "Schoolgirl headaches from study fatigue"
+          "Боли роста и нарушение осанки у подростков",
+          "Замедленное срастание переломов и слабая костная мозоль",
+          "Школьные головные боли при умственном переутомлении"
         ],
         "keynotes": [
-          "Intense craving for smoked meat, bacon, and salty food",
-          "Headaches in school children from cognitive strain",
-          "Fontanelles remain widely open in infants"
+          "Сильное желание копченого мяса, ветчины, сала и соленого",
+          "Головные боли у школьников после когнитивной нагрузки",
+          "Роднички остаются открытыми долгое время"
         ],
-        "mindEmotional": "Discontented, restless wanderlust, constantly sighs.",
+        "mindEmotional": "Недовольный, беспокойный, тяга к перемене мест, часто вздыхает.",
         "modalitiesBetter": [
-          "Summer season",
-          "Warm dry weather"
+          "Летом",
+          "Теплая сухая погода"
         ],
         "modalitiesWorse": [
-          "Cold damp drafts",
-          "Melting snow & weather change",
-          "Mental exertion"
+          "Холодная сырая погода",
+          "Смена погоды и таяние снега",
+          "Умственное напряжение"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6X, 12X. 2 times daily 5 гранул.",
-        "defaultTagesdosis": "2 times daily 5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. 2 раза в день по 5 гранул.",
+        "defaultTagesdosis": "2 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Bones & Cartilage",
-          "Hematopoiesis",
-          "Adolescent Growth"
+          "Кости и хрящи",
+          "Кроветворение",
+          "Рост"
         ],
         "differentialRemedies": [
           "Calcarea carbonica",
           "Phosphorus",
-          "Tuberculinum",
-          "Silicea"
+          "Tuberculinum"
         ],
         "searchKeywords": [
-          "калькарея фосфорика / фосфорнокислый кальций",
-          "calcarea phosphorica",
-          "calcium phosphate",
-          "growing pains",
-          "fracture",
-          "school headache",
-          "smoked meat",
-          "bones & cartilage",
-          "hematopoiesis",
-          "adolescent growth"
+          "калькарея фосфорика",
+          "боли роста",
+          "перелом",
+          "головная боль",
+          "копченое"
         ]
       }
     }
@@ -4530,201 +4383,177 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Souci officinal",
-        "origin": "Fresh flowering aerial parts of Calendula officinalis (Asteraceae).",
-        "essence": "The supreme homeopathic antiseptic and wound healer for lacerated, ragged, open wounds: prevents suppuration and promotes clean granulation.",
+        "origin": "Parties aériennes fleuries fraîches de Calendula officinalis (Asteraceae).",
+        "essence": "L'antiseptique et cicatrisant homéopathique suprême pour les plaies déchirées, irrégulières et ouvertes : empêche la suppuration et favorise le tissu de granulation.",
         "mainIndications": [
-          "Lacerated ragged wounds, cuts, and scrapes",
-          "Postoperative wound recovery & dental socket healing",
-          "Brûlures superficielles et fissures cutanées crues"
+          "Plaies lacérées, coupures et écorchures",
+          "Troubles de la cicatrisation après opérations et extractions dentaires",
+          "Brûlures superficielles et inflammations cutanées"
         ],
         "keynotes": [
-          "Excessive raw soreness out of proportion to injury",
-          "Promotes healthy clean scar-free granulation",
-          "Prevents septic suppuration in open wounds"
+          "Plaies avec douleur intense et tendance à la suppuration",
+          "Excellente granulation sans cicatrice",
+          "Douleur disproportionnée par rapport à la blessure visible"
         ],
-        "mindEmotional": "Fretful, anxious during painful dressing changes.",
+        "mindEmotional": "Anxieux, irritable en cas de douleur, craint le contact avec la plaie.",
         "modalitiesBetter": [
-          "Warmth",
-          "Repos absolu de la partie blessée"
+          "Chaleur",
+          "Repos complet de la partie blessée"
         ],
         "modalitiesWorse": [
           "Froid humide",
           "Mouvement de la zone blessée"
         ],
-        "potenciesAndDosage": "Locally: Dilute mother tincture (1:10) wash; Internally: D4 to C30 / 6C. 2-3 times daily 5 granules.",
-        "defaultTagesdosis": "2-3 times daily 5 granules",
+        "potenciesAndDosage": "Local : teinture mère diluée (1:10) en compresse ; Interne D4 à C30, 2-3 fois par jour 5 granules.",
+        "defaultTagesdosis": "2 à 3 fois par jour 5 granules",
         "sphereOfAction": [
-          "Skin & Lacerated Edges",
-          "Mucosa",
-          "Soft Tissue Granulation"
+          "Peau et bords des plaies",
+          "Muqueuses",
+          "Tissus mous"
         ],
         "differentialRemedies": [
-          "Arnica (blunt trauma)",
-          "Hypericum (nerve rich parts)",
-          "Staphisagria (clean incised cuts)"
+          "Arnica",
+          "Hypericum",
+          "Staphisagria"
         ],
         "searchKeywords": [
-          "souci officinal",
-          "calendula officinalis",
-          "marigold",
-          "wound healing",
-          "laceration",
-          "cuts",
-          "antiseptic",
-          "granulation",
-          "skin & lacerated edges",
-          "mucosa",
-          "soft tissue granulation"
+          "souci",
+          "cicatrisation",
+          "plaie",
+          "coupure",
+          "suppuration"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Καλέντουλα",
-        "origin": "Φρέσκα ανθισμένα εναέρια μέρη Calendula officinalis (Asteraceae).",
-        "essence": "Το υπέρτατο ομοιοπαθητικό αντισηπτικό και επουλωτικό πληγών για πληγές, κουρελιασμένες, ανοιχτές πληγές: αποτρέπει την εξόγκωση και προάγει την καθαρή κοκκοποίηση.",
+        "origin": "Φρέσκα ανθισμένα μέρη του Calendula officinalis (Asteraceae).",
+        "essence": "Το ομοιοπαθητικό επουλωτικό για ανοιχτές, σχισμένες και τραυματισμένες πληγές: εμποδίζει τη διαπύηση και προάγει την επούλωση.",
         "mainIndications": [
-          "Τραυματισμένα τραύματα, κοψίματα και γρατζουνιές",
-          "Μετεγχειρητική αποκατάσταση τραύματος & επούλωση οδοντικών κόγχων",
-          "Επιφανειακά εγκαύματα και ακατέργαστες ρωγμές του δέρματος"
+          "Σχισμένες πληγές, κοψίματα και εκδορές",
+          "Διαταραχές επούλωσης μετά από χειρουργεία & εξαγωγές δοντιών",
+          "Επιφανειακά εγκαύματα & φλεγμονές"
         ],
         "keynotes": [
-          "Υπερβολικός ακατέργαστος πόνος δυσανάλογος με τον τραυματισμό",
-          "Προωθεί την υγιή καθαρή κοκκοποίηση χωρίς ουλές",
-          "Αποτρέπει τη σηπτική εξόγκωση σε ανοιχτά τραύματα"
+          "Πληγές με έντονο πόνο και τάση για πύον",
+          "Εξαιρετική επούλωση χωρίς ουλές",
+          "Πόνος δυσανάλογος με το μέγεθος του τραύματος"
         ],
-        "mindEmotional": "Ανήσυχο, ανήσυχο κατά τη διάρκεια επώδυνων αλλαγών στο ντύσιμο.",
+        "mindEmotional": "Ανήσυχος, ευερέθιστος λόγω πόνου, φοβάται το άγγιγμα της πληγής.",
         "modalitiesBetter": [
-          "Ζεστασιά",
-          "Απόλυτη ανάπαυση του τραυματισμένου μέρους"
+          "Ζέστη",
+          "Απόλυτη ηρεμία"
         ],
         "modalitiesWorse": [
           "Υγρό κρύο",
-          "Κίνηση της τραυματισμένης περιοχής"
+          "Κίνηση του τραυματισμένου μέρους"
         ],
-        "potenciesAndDosage": "Τοπικά: Αραιωμένο μητρικό βάμμα (1:10) πλύση. Εσωτερικά: D4 έως C30 / 6C. 2-3 φορές την ημέρα 5 σφαιρίδια.",
+        "potenciesAndDosage": "Τοπικά: Αραιωμένο βάμμα (1:10). Εσωτερικά: D4 έως C30, 2-3 φορές την ημέρα 5 σφαιρίδια.",
         "defaultTagesdosis": "2-3 φορές την ημέρα 5 σφαιρίδια",
         "sphereOfAction": [
-          "Δέρμα & Λαξευμένες άκρες",
-          "Βλεννογόνος",
-          "Κοκκοποίηση μαλακών ιστών"
+          "Δέρμα & χείλη πληγών",
+          "Βλεννογόνοι",
+          "Μαλακά μόρια"
         ],
         "differentialRemedies": [
-          "Arnica (blunt trauma)",
-          "Hypericum (nerve rich parts)",
-          "Staphisagria (clean incised cuts)"
+          "Arnica",
+          "Hypericum",
+          "Staphisagria"
         ],
         "searchKeywords": [
           "καλέντουλα",
-          "calendula officinalis",
-          "κατιφές",
-          "επούλωση πληγών",
-          "ρήξη",
-          "περικοπές",
-          "αντισηπτικό",
-          "κοκκοποίηση",
-          "δέρμα & λαξευμένες άκρες",
-          "βλεννογόνος",
-          "κοκκοποίηση μαλακών ιστών"
+          "επούλωση",
+          "πληγή",
+          "πύον",
+          "χειρουργείο"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Calendula",
-        "origin": "Fresh flowering aerial parts of Calendula officinalis (Asteraceae).",
-        "essence": "The supreme homeopathic antiseptic and wound healer for lacerated, ragged, open wounds: prevents suppuration and promotes clean granulation.",
+        "origin": "Parti aeree fiorite fresche di Calendula officinalis (Asteraceae).",
+        "essence": "L'antisettico e cicatrizzante omeopatico per ferite lacero-contuse, irregolari e aperte: previene la suppurazione e promuove il tessuto di granulazione.",
         "mainIndications": [
-          "Lacerated ragged wounds, cuts, and scrapes",
-          "Postoperative wound recovery & dental socket healing",
-          "Superficial burns and raw skin fissures"
+          "Ferite lacero-contuse, tagli ed escoriazioni",
+          "Disturbi della cicatrizzazione dopo interventi e trazioni dentarie",
+          "Ustioni superficiali e infiammazioni cutanee"
         ],
         "keynotes": [
-          "Excessive raw soreness out of proportion to injury",
-          "Promotes healthy clean scar-free granulation",
-          "Prevents septic suppuration in open wounds"
+          "Ferite con forte dolore e tendenza alla suppurazione",
+          "Ottima granulazione senza cicatrici",
+          "Dolore sproporzionato rispetto alla lesione visibile"
         ],
-        "mindEmotional": "Fretful, anxious during painful dressing changes.",
+        "mindEmotional": "Ansioso, irritabile per il dolore, teme il contatto con la ferita.",
         "modalitiesBetter": [
-          "Warmth",
-          "Absolute rest of the wounded part"
+          "Calore",
+          "Riposo assoluto della parte ferita"
         ],
         "modalitiesWorse": [
-          "Damp cold",
-          "Motion of injured area"
+          "Freddo umido",
+          "Movimento della zona ferita"
         ],
-        "potenciesAndDosage": "Locally: Dilute mother tincture (1:10) wash; Internally: D4 to C30 / 6C. 2-3 times daily 5 granuli.",
-        "defaultTagesdosis": "2-3 times daily 5 granuli",
+        "potenciesAndDosage": "Locale: tintura madre diluita (1:10) in impacchi; Interno D4 a C30, 2-3 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "2-3 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Skin & Lacerated Edges",
-          "Mucosa",
-          "Soft Tissue Granulation"
+          "Pelle e bordi delle ferite",
+          "Mucose",
+          "Tessuti molli"
         ],
         "differentialRemedies": [
-          "Arnica (blunt trauma)",
-          "Hypericum (nerve rich parts)",
-          "Staphisagria (clean incised cuts)"
+          "Arnica",
+          "Hypericum",
+          "Staphisagria"
         ],
         "searchKeywords": [
           "calendula",
-          "calendula officinalis",
-          "marigold",
-          "wound healing",
-          "laceration",
-          "cuts",
-          "antiseptic",
-          "granulation",
-          "skin & lacerated edges",
-          "mucosa",
-          "soft tissue granulation"
+          "cicatrizzazione",
+          "ferita",
+          "taglio",
+          "suppurazione"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Календула / Ноготки",
-        "origin": "Fresh flowering aerial parts of Calendula officinalis (Asteraceae).",
-        "essence": "The supreme homeopathic antiseptic and wound healer for lacerated, ragged, open wounds: prevents suppuration and promotes clean granulation.",
+        "origin": "Свежие цветущие надземные части календулы (Asteraceae).",
+        "essence": "Гомеопатическое антисептическое и ранозаживляющее средство для рваных, неровных, открытых ран: предотвращает нагноение и способствует росту грануляций.",
         "mainIndications": [
-          "Lacerated ragged wounds, cuts, and scrapes",
-          "Postoperative wound recovery & dental socket healing",
-          "Superficial burns and raw skin fissures"
+          "Рваные, резаные раны и ссадины",
+          "Нарушения заживления после операций и удаления зубов",
+          "Поверхностные ожоги и воспаления кожи"
         ],
         "keynotes": [
-          "Excessive raw soreness out of proportion to injury",
-          "Promotes healthy clean scar-free granulation",
-          "Prevents septic suppuration in open wounds"
+          "Раны с сильной болью и склонностью к нагноению",
+          "Превосходная грануляция без образования рубцов",
+          "Боль непропорционально сильнее видимого повреждения"
         ],
-        "mindEmotional": "Fretful, anxious during painful dressing changes.",
+        "mindEmotional": "Беспокойный, раздражительный при боли, боится прикосновения к ране.",
         "modalitiesBetter": [
-          "Warmth",
-          "Absolute rest of the wounded part"
+          "Тепло",
+          "Абсолютный покой поврежденной части"
         ],
         "modalitiesWorse": [
-          "Damp cold",
-          "Motion of injured area"
+          "Сырой холод",
+          "Движение в области раны"
         ],
-        "potenciesAndDosage": "Locally: Dilute mother tincture (1:10) wash; Internally: D4 to C30 / 6C. 2-3 times daily 5 гранул.",
-        "defaultTagesdosis": "2-3 times daily 5 гранул",
+        "potenciesAndDosage": "Местно: разведенная настойка (1:10) для промываний; внутрь D4–C30 2–3 раза в день по 5 гранул.",
+        "defaultTagesdosis": "2–3 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Skin & Lacerated Edges",
-          "Mucosa",
-          "Soft Tissue Granulation"
+          "Кожа и края ран",
+          "Слизистые оболочки",
+          "Мягкие ткани"
         ],
         "differentialRemedies": [
-          "Arnica (blunt trauma)",
-          "Hypericum (nerve rich parts)",
-          "Staphisagria (clean incised cuts)"
+          "Arnica",
+          "Hypericum",
+          "Staphisagria"
         ],
         "searchKeywords": [
-          "календула / ноготки",
-          "calendula officinalis",
-          "marigold",
-          "wound healing",
-          "laceration",
-          "cuts",
-          "антисептик",
-          "granulation",
-          "skin & lacerated edges",
-          "mucosa",
-          "soft tissue granulation"
+          "календула",
+          "заживление ран",
+          "рваная рана",
+          "нагноение",
+          "операция"
         ]
       }
     }
@@ -4878,33 +4707,33 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Camphre",
-        "origin": "Gum camphor distilled from the wood of Cinnamomum camphora (Lauraceae).",
-        "essence": "Icy cold state of collapse: body feels deathly cold to touch like marble, yet the patient violently rejects being covered.",
+        "origin": "Huile essentielle distillée du bois du camphrier (Lauraceae).",
+        "essence": "État de collapsus glacial : le corps est froid comme du marbre au toucher, mais le patient rejette paradoxalement toute couverture.",
         "mainIndications": [
-          "Acute circulatory collapse and shock",
-          "First chilly stage of malignant influenza",
-          "Sudden prostrating watery choleroid diarrhea with icy coldness"
+          "Collapsus circulatoire aigu et état de choc",
+          "Stade initial de refroidissement lors d'une grippe sévère",
+          "Diarrhée aqueuse soudaine avec froid glacial"
         ],
         "keynotes": [
-          "Corps glacial comme un cadavre mais ne supportant pas les couvertures",
-          "Violently throws off blankets despite freezing skin",
-          "Sudden rapid sinking of vital forces"
+          "Le corps semble froid comme un cadavre",
+          "Rejette vigoureusement toute couverture malgré le froid extrême",
+          "Déclin rapide et soudain des forces vitales"
         ],
-        "mindEmotional": "Anxious, terrified in the dark, afraid to be left alone.",
+        "mindEmotional": "Anxieux, paniqué, peur d'être seul dans le noir.",
         "modalitiesBetter": [
-          "Warm room",
-          "Thinking of the complaint"
+          "Chambre chaude",
+          "Penser à ses troubles"
         ],
         "modalitiesWorse": [
-          "Cold open air",
+          "Froid et courants d'air",
           "Être couvert"
         ],
-        "potenciesAndDosage": "1X to 6X / D1 to D6. In collapse repeated small doses.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granules",
+        "potenciesAndDosage": "D1 à D6. En cas de collapsus, doses répétées de quelques granules.",
+        "defaultTagesdosis": "2 à 3 prises de 3 à 5 granules",
         "sphereOfAction": [
-          "Vasomotor Centers & Circulation",
-          "Autonomic Nervous System",
-          "Digestive Canal"
+          "Centres vasomoteurs et circulation",
+          "Système nerveux autonome",
+          "Tube digestif"
         ],
         "differentialRemedies": [
           "Carbo vegetabilis",
@@ -4913,16 +4742,9 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "camphre",
-          "cinnamomum camphora",
-          "camphor",
-          "collapse",
-          "icy cold",
-          "uncovering",
-          "shock",
-          "circulatory failure",
-          "vasomotor centers & circulation",
-          "autonomic nervous system",
-          "digestive canal"
+          "collapsus",
+          "glacial",
+          "choc"
         ]
       },
       "el": {
@@ -4977,33 +4799,33 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Vegetale",
         "commonName": "Canfora",
-        "origin": "Gum camphor distilled from the wood of Cinnamomum camphora (Lauraceae).",
-        "essence": "Icy cold state of collapse: body feels deathly cold to touch like marble, yet the patient violently rejects being covered.",
+        "origin": "Olio essenziale distillato dal legno del canforo (Lauraceae).",
+        "essence": "Stato di collasso glaciale: il corpo è freddo come il marmo al tatto, ma il paziente rifiuta paradossalmente di essere coperto.",
         "mainIndications": [
-          "Acute circulatory collapse and shock",
-          "First chilly stage of malignant influenza",
-          "Sudden prostrating watery choleroid diarrhea with icy coldness"
+          "Collasso circolatorio acuto e stato di shock",
+          "Stadio iniziale di raffreddamento in influenze gravi",
+          "Diarrea acquosa improvvisa con freddo glaciale"
         ],
         "keynotes": [
-          "Body icy cold like a corpse yet cannot bear covers",
-          "Violently throws off blankets despite freezing skin",
-          "Sudden rapid sinking of vital forces"
+          "Il corpo sembra freddo come un cadavere",
+          "Rifiuta vigorosamente ogni coperta nonostante il freddo estremo",
+          "Declino rapido e improvviso delle forze vitali"
         ],
-        "mindEmotional": "Anxious, terrified in the dark, afraid to be left alone.",
+        "mindEmotional": "Ansioso, panico, paura di stare solo al buio.",
         "modalitiesBetter": [
-          "Warm room",
-          "Thinking of the complaint"
+          "Stanza calda",
+          "Pensare ai propri disturbi"
         ],
         "modalitiesWorse": [
-          "Cold open air",
-          "Being covered up"
+          "Freddo e correnti d'aria",
+          "Essere coperto"
         ],
-        "potenciesAndDosage": "1X to 6X / D1 to D6. In collapse repeated small doses.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granuli",
+        "potenciesAndDosage": "D1 a D6. In caso di collasso, dosi ripetute di pochi granuli.",
+        "defaultTagesdosis": "2-3 dosi da 3-5 granuli",
         "sphereOfAction": [
-          "Vasomotor Centers & Circulation",
-          "Autonomic Nervous System",
-          "Digestive Canal"
+          "Centri vasomotori e circolazione",
+          "Sistema nervoso autonomo",
+          "Canale digerente"
         ],
         "differentialRemedies": [
           "Carbo vegetabilis",
@@ -5012,48 +4834,41 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "canfora",
-          "cinnamomum camphora",
-          "camphor",
-          "collapse",
-          "icy cold",
-          "uncovering",
-          "shock",
-          "circulatory failure",
-          "vasomotor centers & circulation",
-          "autonomic nervous system",
-          "digestive canal"
+          "collasso",
+          "glaciale",
+          "shock"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Камфора",
-        "origin": "Gum camphor distilled from the wood of Cinnamomum camphora (Lauraceae).",
-        "essence": "Icy cold state of collapse: body feels deathly cold to touch like marble, yet the patient violently rejects being covered.",
+        "origin": "Эфирное масло, дистиллированное из древесины камфорного дерева (Lauraceae).",
+        "essence": "Ледяное состояние коллапса: тело холодное как мрамор на ощупь, но пациент парадоксальным образом отказывается укрываться.",
         "mainIndications": [
-          "Acute circulatory collapse and shock",
-          "First chilly stage of malignant influenza",
-          "Sudden prostrating watery choleroid diarrhea with icy coldness"
+          "Острый сосудистый коллапс и шоковое состояние",
+          "Начальная стадия озноба при тяжелом гриппе",
+          "Внезапная водянистая диарея с ледяным холодом"
         ],
         "keynotes": [
-          "Body icy cold like a corpse yet cannot bear covers",
-          "Violently throws off blankets despite freezing skin",
-          "Sudden rapid sinking of vital forces"
+          "Тело кажется ледяным, как у трупа",
+          "Энергично сбрасывает любое одеяло, несмотря на крайний холод",
+          "Внезапный резкий упадок жизненных сил"
         ],
-        "mindEmotional": "Тревожный, напуганный темнотой, боящийся остаться один.",
+        "mindEmotional": "Тревожный, паникует, боится быть один в темноте.",
         "modalitiesBetter": [
-          "Warm room",
-          "Thinking of the complaint"
+          "Теплая комната",
+          "Мысли о своих жалобах"
         ],
         "modalitiesWorse": [
-          "Cold open air",
-          "Being covered up"
+          "Холод и сквозняки",
+          "Укрывание"
         ],
-        "potenciesAndDosage": "От 1X до 6X / от D1 до D6. При коллапсе повторяют малые дозы.",
-        "defaultTagesdosis": "2–3 doses of 3–5 гранул",
+        "potenciesAndDosage": "D1–D6. При коллапсе повторяющиеся приемы по несколько гранул.",
+        "defaultTagesdosis": "2–3 приема по 3–5 гранул",
         "sphereOfAction": [
-          "Vasomotor Centers & Circulation",
-          "Autonomic Nervous System",
-          "Digestive Canal"
+          "Вазомоторные центры и кровообращение",
+          "Вегетативная нервная система",
+          "Пищеварительный тракт"
         ],
         "differentialRemedies": [
           "Carbo vegetabilis",
@@ -5062,16 +4877,9 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "камфора",
-          "cinnamomum camphora",
-          "camphor",
-          "collapse",
-          "icy cold",
-          "uncovering",
-          "shock",
-          "circulatory failure",
-          "vasomotor centers & circulation",
-          "autonomic nervous system",
-          "digestive canal"
+          "коллапс",
+          "ледяной",
+          "шок"
         ]
       }
     }
@@ -5233,209 +5041,181 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Animal",
         "commonName": "Cantharide",
-        "origin": "Dried whole beetle Cantharis vesicatoria (Meloidae).",
-        "essence": "Intolerable burning, cutting, scalding pains in urethra and bladder; constant tenesmus with drop-by-drop bloody scalding urination; blistering burns.",
+        "origin": "Scarabée entier séché (Meloidae).",
+        "essence": "Douleurs brûlantes, coupantes et cuisantes intolérables dans l'urètre et la vessie ; ténesme constant avec miction sanglante goutte à goutte ; brûlures avec cloques.",
         "mainIndications": [
-          "Acute hemorrhagic cystitis with scalding burning",
-          "Brûlures et échaudures au deuxième degré",
-          "Violent burning inflammation of mucous surfaces"
+          "Cystite hémorragique aiguë avec brûlures cuisantes",
+          "Brûlures et échaudures au deuxième degré avec cloques",
+          "Inflammation brûlante violente des muqueuses"
         ],
         "keynotes": [
-          "Burning like fire before, during, and after urination",
-          "Constant intolerable urge, passing only drops of bloody urine",
+          "Brûlure comme du feu avant, pendant et après la miction",
+          "Envie constante et intolérable, n'évacuant que des gouttes d'urine sanglante",
           "Vésication et formation de cloques sur la peau"
         ],
-        "mindEmotional": "Furieux d'une agonie intense, d'une frénésie sexuelle, d'une agitation frénétique.",
+        "mindEmotional": "Furieux à cause de l'agonie intense, frénésie sexuelle, agitation extrême.",
         "modalitiesBetter": [
           "Applications chaudes et repos",
           "Frottement doux"
         ],
         "modalitiesWorse": [
-          "Urination",
-          "Drinking cold water/coffee",
+          "Miction",
+          "Boire de l'eau froide ou du café",
           "Toucher"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In acute cystitis D6 every 15–30 min.",
-        "defaultTagesdosis": "3 à 4 doses de 3 à 5 granulés",
+        "potenciesAndDosage": "Aigu : D6, D12, C30. En cas de cystite aiguë, D6 toutes les 15–30 min.",
+        "defaultTagesdosis": "3 à 4 prises de 3 à 5 granules",
         "sphereOfAction": [
-          "Urinary Bladder & Urethra",
-          "Skin (Vesication)",
-          "Mucous Membranes"
+          "Vessie et urètre",
+          "Peau (vésication)",
+          "Muqueuses"
         ],
         "differentialRemedies": [
           "Apis mellifica",
           "Berberis",
-          "Sarsaparilla",
-          "Staphisagria"
+          "Sarsaparilla"
         ],
         "searchKeywords": [
           "cantharide",
-          "cantharis vesicatoria",
-          "spanish fly",
-          "cystitis",
-          "urine brûlante",
-          "tenesmus",
-          "blistering",
-          "brûlures",
-          "urinary bladder & urethra",
-          "skin (vesication)",
-          "mucous membranes"
+          "cystite",
+          "brûlure",
+          "vessie",
+          "cloques"
         ]
       },
       "el": {
         "category": "Ζωικό",
         "commonName": "Κανθαρίδα",
         "origin": "Αποξηραμένο ολόκληρο σκαθάρι Cantharis vesicatoria (Meloidae).",
-        "essence": "Αφόρητοι πόνοι καύσου, κοψίματος, εγκαυμάτων στην ουρήθρα και την ουροδόχο κύστη. σταθερός τενεσμός με σταγόνα-σταγόνα αιματηρή ζεμάτιστη ούρηση. εγκαύματα με φουσκάλες.",
+        "essence": "Αφόρητοι πόνοι καύσου, κοψίματος και εγκαυμάτων στην ουρήθρα και την ουροδόχο κύστη. Συνεχής τενεσμός με αιματηρή ούρηση σταγόνα-σταγόνα. Εγκαύματα με φουσκάλες.",
         "mainIndications": [
-          "Οξεία αιμορραγική κυστίτιδα με ζεμάτισμα",
-          "Εγκαύματα και εγκαύματα δευτέρου βαθμού με φουσκάλες",
-          "Βίαια καύση φλεγμονή των βλεννογόνων επιφανειών"
+          "Οξεία αιμορραγική κυστίτιδα με έντονο κάψιμο",
+          "Εγκαύματα δευτέρου βαθμού με φουσκάλες",
+          "Βίαιη φλεγμονή των βλεννογόνων με αίσθημα καύσου"
         ],
         "keynotes": [
           "Κάψιμο σαν φωτιά πριν, κατά τη διάρκεια και μετά την ούρηση",
-          "Συνεχής αφόρητη ορμή, διοχέτευση μόνο σταγόνων αιματηρών ούρων",
-          "Σχηματισμός φλύκταινες και φλύκταινες στο δέρμα"
+          "Συνεχής αφόρητη ανάγκη, με αποβολή μόνο σταγόνων αιματηρών ούρων",
+          "Σχηματισμός φουσκαλών στο δέρμα"
         ],
-        "mindEmotional": "Έξαλλος από την έντονη αγωνία, τον σεξουαλικό παροξυσμό, την ξέφρενη ανησυχία.",
+        "mindEmotional": "Έξαλλος από την έντονη αγωνία, σεξουαλικός παροξυσμός, ακραία ανησυχία.",
         "modalitiesBetter": [
-          "Ζεστές εφαρμογές & ξεκούραση",
+          "Ζεστές κομπρέσες & ανάπαυση",
           "Απαλό τρίψιμο"
         ],
         "modalitiesWorse": [
-          "Ουροποίηση",
-          "Πίνοντας κρύο νερό/καφέ",
-          "Αγγίξτε"
+          "Ούρηση",
+          "Πίνοντας κρύο νερό ή καφέ",
+          "Άγγιγμα"
         ],
-        "potenciesAndDosage": "Οξεία: D6, D12, C30 / 6C, 30C. Στην οξεία κυστίτιδα D6 κάθε 15–30 λεπτά.",
+        "potenciesAndDosage": "Οξεία: D6, D12, C30. Στην οξεία κυστίτιδα D6 κάθε 15–30 λεπτά.",
         "defaultTagesdosis": "3–4 δόσεις των 3–5 σφαιριδίων",
         "sphereOfAction": [
-          "Ουροδόχος κύστη & Ουρήθρα",
-          "Δέρμα (Vesication)",
-          "Βλεννώδεις μεμβράνες"
+          "Ουροδόχος κύστη & ουρήθρα",
+          "Δέρμα (φουσκάλες)",
+          "Βλεννογόνοι"
         ],
         "differentialRemedies": [
           "Apis mellifica",
           "Berberis",
-          "Sarsaparilla",
-          "Staphisagria"
+          "Sarsaparilla"
         ],
         "searchKeywords": [
           "κανθαρίδα",
-          "cantharis vesicatoria",
-          "ισπανική μύγα",
           "κυστίτιδα",
-          "καύση ούρων",
-          "τενεσμός",
-          "φουσκάλες",
-          "εγκαύματα",
-          "ουροδόχος κύστη & ουρήθρα",
-          "δέρμα (vesication)",
-          "βλεννώδεις μεμβράνες"
+          "κάψιμο",
+          "ούρα",
+          "εγκαύματα"
         ]
       },
       "it": {
         "category": "Animale",
         "commonName": "Cantaride",
-        "origin": "Dried whole beetle Cantharis vesicatoria (Meloidae).",
-        "essence": "Intolerable burning, cutting, scalding pains in urethra and bladder; constant tenesmus with drop-by-drop bloody scalding urination; blistering burns.",
+        "origin": "Coleottero intero essiccato (Meloidae).",
+        "essence": "Dolori brucianti, taglienti e cocenti intollerabili nell'uretra e nella vescica; tenesmo costante con minzione sanguinolenta goccia a goccia; ustioni con vesciche.",
         "mainIndications": [
-          "Acute hemorrhagic cystitis with scalding burning",
-          "Second-degree blistering burns and scalds",
-          "Violent burning inflammation of mucous surfaces"
+          "Cistite emorragica acuta con bruciore cocente",
+          "Ustioni e scottature di secondo grado con vesciche",
+          "Violenta infiammazione bruciante delle mucose"
         ],
         "keynotes": [
-          "Burning like fire before, during, and after urination",
-          "Constant intolerable urge, passing only drops of bloody urine",
-          "Vesication and blister formation on skin"
+          "Bruciore come fuoco prima, durante e dopo la minzione",
+          "Urgenza costante e intollerabile, espellendo solo gocce di urina sanguinolenta",
+          "Vescicazione e formazione di bolle sulla pelle"
         ],
-        "mindEmotional": "Furious from intense agony, sexual frenzy, frenzied restlessness.",
+        "mindEmotional": "Furioso a causa dell'agonia intensa, frenesia sessuale, irrequietezza estrema.",
         "modalitiesBetter": [
-          "Warm applications & rest",
-          "Gentle rubbing"
+          "Applicazioni calde e riposo",
+          "Sfregamento dolce"
         ],
         "modalitiesWorse": [
-          "Urination",
-          "Drinking cold water/coffee",
-          "Touch"
+          "Minzione",
+          "Bere acqua fredda o caffè",
+          "Contatto"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In acute cystitis D6 every 15–30 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: D6, D12, C30. In caso di cistite acuta, D6 ogni 15–30 min.",
+        "defaultTagesdosis": "3-4 dosi da 3-5 granuli",
         "sphereOfAction": [
-          "Urinary Bladder & Urethra",
-          "Skin (Vesication)",
-          "Mucous Membranes"
+          "Vescica e uretra",
+          "Pelle (vescicazione)",
+          "Mucose"
         ],
         "differentialRemedies": [
           "Apis mellifica",
           "Berberis",
-          "Sarsaparilla",
-          "Staphisagria"
+          "Sarsaparilla"
         ],
         "searchKeywords": [
           "cantaride",
-          "cantharis vesicatoria",
-          "spanish fly",
           "cistite",
-          "burning urine",
-          "tenesmus",
-          "blistering",
-          "burns",
-          "urinary bladder & urethra",
-          "skin (vesication)",
-          "mucous membranes"
+          "bruciore",
+          "vescica",
+          "vesciche"
         ]
       },
       "ru": {
         "category": "Животный",
         "commonName": "Шпанская мушка",
-        "origin": "Dried whole beetle Cantharis vesicatoria (Meloidae).",
-        "essence": "Intolerable burning, cutting, scalding pains in urethra and bladder; constant tenesmus with drop-by-drop bloody scalding urination; blistering burns.",
+        "origin": "Высушенный жук шпанская мушка (Meloidae).",
+        "essence": "Непереносимые жгучие, режущие и обжигающие боли в уретре и мочевом пузыре; постоянные тенезмы с выделением кровянистой мочи по каплям; ожоги с пузырями.",
         "mainIndications": [
-          "Acute hemorrhagic cystitis with scalding burning",
-          "Second-degree blistering burns and scalds",
-          "Violent burning inflammation of mucous surfaces"
+          "Острый геморрагический цистит с жгучей болью",
+          "Ожоги второй степени с образованием пузырей",
+          "Сильное жгучее воспаление слизистых оболочек"
         ],
         "keynotes": [
-          "Burning like fire before, during, and after urination",
-          "Constant intolerable urge, passing only drops of bloody urine",
-          "Vesication and blister formation on skin"
+          "Жжение как от огня до, во время и после мочеиспускания",
+          "Постоянные невыносимые позывы, выделение мочи по каплям с кровью",
+          "Образование пузырей и везикул на коже"
         ],
-        "mindEmotional": "Furious from intense agony, sexual frenzy, frenzied restlessness.",
+        "mindEmotional": "Ярость от сильной агонии, сексуальное возбуждение, неистовое беспокойство.",
         "modalitiesBetter": [
-          "Warm applications & rest",
-          "Gentle rubbing"
+          "Теплые компрессы и покой",
+          "Легкое растирание"
         ],
         "modalitiesWorse": [
-          "Urination",
-          "Drinking cold water/coffee",
-          "Touch"
+          "Мочеиспускание",
+          "Питье холодной воды или кофе",
+          "Прикосновение"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In acute cystitis D6 every 15–30 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 гранул",
+        "potenciesAndDosage": "Остро: D6, D12, C30. При остром цистите D6 каждые 15–30 мин.",
+        "defaultTagesdosis": "3–4 приема по 3–5 гранул",
         "sphereOfAction": [
-          "Urinary Bladder & Urethra",
-          "Skin (Vesication)",
-          "Mucous Membranes"
+          "Мочевой пузырь и уретра",
+          "Кожа (образование пузырей)",
+          "Слизистые оболочки"
         ],
         "differentialRemedies": [
           "Apis mellifica",
           "Berberis",
-          "Sarsaparilla",
-          "Staphisagria"
+          "Sarsaparilla"
         ],
         "searchKeywords": [
           "шпанская мушка",
-          "cantharis vesicatoria",
-          "spanish fly",
-          "cystitis",
-          "burning urine",
-          "tenesmus",
-          "blistering",
-          "burns",
-          "urinary bladder & urethra",
-          "skin (vesication)",
-          "mucous membranes"
+          "цистит",
+          "жжение",
+          "мочевой пузырь",
+          "ожоги"
         ]
       }
     }
@@ -5606,220 +5386,188 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         "category": "Végétal",
         "commonName": "Charbon végétal",
         "origin": "Charbon de bois de bouleau ou de hêtre.",
-        "essence": "The \"Reviver of the Dying\": extreme collapse with icy coldness, air hunger (desires to be fanned vigorously), and massive flatulent distension of upper abdomen.",
+        "essence": "Le « ranimateur des mourants » : collapsus extrême avec froid glacial, besoin d'air (veut être éventé vigoureusement) et distension flatulente massive du haut de l'abdomen.",
         "mainIndications": [
           "Collapsus circulatoire et choc avec sueurs froides",
-          "Massive flatulence & tympanites of upper abdomen",
-          "Chronic hoarseness worse in evening",
-          "Senile asthma with severe dyspnea and air hunger"
+          "Flatulences massives et tympanisme du haut de l'abdomen",
+          "Enrouement chronique, pire le soir",
+          "Asthme sénile avec dyspnée sévère et besoin d'air"
         ],
         "keynotes": [
-          "Patient is icy cold yet gasps for air and demands to be fanned",
-          "Haut de l'abdomen distendu comme un tambour, soulagé uniquement par des éructations",
-          "Breath is cold, tongue is cold, knees are icy"
+          "Le patient est glacial mais cherche de l'air et demande à être éventé",
+          "Haut de l'abdomen distendu comme un tambour, soulagé seulement par des éructations",
+          "Haleine froide, langue froide, genoux glacés"
         ],
-        "mindEmotional": "Apathetic, sluggish, stuporous, indifferent to everything.",
+        "mindEmotional": "Apathique, lent, stuporeux, indifférent à tout.",
         "modalitiesBetter": [
-          "Being fanned vigorously",
-          "Eructations",
-          "Cool open air"
+          "Être éventé vigoureusement",
+          "Éructations",
+          "Air frais et ouvert"
         ],
         "modalitiesWorse": [
-          "Warmth & stuffy rooms",
-          "Fatty food & butter",
+          "Chaleur et pièces étouffantes",
+          "Aliments gras et beurre",
           "Allongé à plat dans son lit"
         ],
-        "potenciesAndDosage": "Aigu : C30, C200. Lors d'un effondrement critique, C30 se répétait fréquemment.",
-        "defaultTagesdosis": "1–2 doses of 3–5 granules",
+        "potenciesAndDosage": "Aigu : C30, C200. En cas de collapsus critique, C30 répété fréquemment.",
+        "defaultTagesdosis": "1 à 2 prises de 3 à 5 granules",
         "sphereOfAction": [
-          "Venous Circulation & Capillaries",
-          "Upper Gastrointestinal Tract",
-          "Respiratory System"
+          "Circulation veineuse et capillaires",
+          "Tube digestif supérieur",
+          "Système respiratoire"
         ],
         "differentialRemedies": [
-          "Lycopodium (lower abdomen gas)",
+          "Lycopodium",
           "Arsenicum album",
-          "China (flatulence)",
-          "Camphora"
+          "China"
         ],
         "searchKeywords": [
           "charbon végétal",
-          "carbo vegetabilis",
-          "vegetable charcoal",
-          "collapse",
-          "air hunger",
-          "fanning",
-          "flatulence",
-          "eructations",
-          "haleine froide",
-          "venous circulation & capillaries",
-          "upper gastrointestinal tract",
-          "respiratory system"
+          "collapsus",
+          "besoin d'air",
+          "éventer",
+          "flatulences"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Φυτικός άνθρακας",
         "origin": "Κάρβουνο από ξύλο σημύδας ή οξιάς.",
-        "essence": "The \"Reviver of the Dying\": ακραία κατάρρευση με παγωμένη ψυχρότητα, πείνα στον αέρα (επιθυμίες να φουσκώσει έντονα) και μαζική μετεωρική διάταση της άνω κοιλίας.",
+        "essence": "Ο «αναζωογονητής των ετοιμοθάνατων»: ακραία κατάρρευση με παγωμένη ψυχρότητα, ανάγκη για αέρα (θέλει να τον ανεμίζουν έντονα) και μεγάλη διάταση της άνω κοιλίας από αέρια.",
         "mainIndications": [
           "Κυκλοφορική κατάρρευση & σοκ με κρύο ιδρώτα",
-          "Μαζικός μετεωρισμός & τυμπανίτες άνω κοιλίας",
-          "Χρόνια βραχνάδα χειρότερη το βράδυ",
-          "Γεροντικό άσθμα με σοβαρή δύσπνοια και πείνα στον αέρα"
+          "Έντονος μετεωρισμός & τυμπανισμός άνω κοιλίας",
+          "Χρόνια βραχνάδα, χειρότερη το βράδυ",
+          "Γεροντικό άσθμα με σοβαρή δύσπνοια"
         ],
         "keynotes": [
-          "Ο ασθενής είναι παγωμένος, αλλά λαχανιάζει αέρα και απαιτεί να τον αερίσει",
-          "Το άνω μέρος της κοιλιάς διευρύνθηκε σαν τύμπανο, ανακουφιζόταν μόνο από τις εκρήξεις",
-          "Η αναπνοή είναι κρύα, η γλώσσα κρύα, τα γόνατα παγωμένα"
+          "Ο ασθενής είναι παγωμένος αλλά ζητά επίμονα αέρα και θέλει να τον ανεμίζουν",
+          "Άνω κοιλία τεντωμένη σαν τύμπανο, ανακουφίζεται μόνο με ερυγές",
+          "Αναπνοή κρύα, γλώσσα κρύα, γόνατα παγωμένα"
         ],
-        "mindEmotional": "Απαθής, νωθρός, λυσσασμένος, αδιάφορος για τα πάντα.",
+        "mindEmotional": "Απαθής, νωθρός, σε κατάσταση ληθάργου, αδιάφορος για τα πάντα.",
         "modalitiesBetter": [
-          "Όντας ανεμιστήρας δυναμικά",
-          "Eructations",
-          "Δροσερό ανοιχτό αέρα"
+          "Έντονο ανέμισμα",
+          "Ερυγές",
+          "Δροσερός ανοιχτός αέρας"
         ],
         "modalitiesWorse": [
-          "Ζεστασιά και βουλωμένα δωμάτια",
-          "Λιπαρά τρόφιμα & βούτυρο",
-          "Ξαπλωμένη στο κρεβάτι"
+          "Ζέστη και κλειστοί χώροι",
+          "Λιπαρά φαγητά & βούτυρο",
+          "Ξάπλωμα ανάσκελα στο κρεβάτι"
         ],
-        "potenciesAndDosage": "Οξεία: C30, C200. Σε κρίσιμη κατάρρευση το C30 επαναλαμβάνεται συχνά.",
+        "potenciesAndDosage": "Οξεία: C30, C200. Σε κατάρρευση, συχνές δόσεις C30.",
         "defaultTagesdosis": "1–2 δόσεις των 3–5 σφαιριδίων",
         "sphereOfAction": [
-          "Φλεβική κυκλοφορία & τριχοειδή αγγεία",
-          "Ανώτερο Γαστρεντερικό Σύστημα",
+          "Φλεβική κυκλοφορία & τριχοειδή",
+          "Ανώτερο πεπτικό",
           "Αναπνευστικό σύστημα"
         ],
         "differentialRemedies": [
-          "Lycopodium (lower abdomen gas)",
+          "Lycopodium",
           "Arsenicum album",
-          "China (flatulence)",
-          "Camphora"
+          "China"
         ],
         "searchKeywords": [
           "φυτικός άνθρακας",
-          "carbo vegetabilis",
-          "φυτικό κάρβουνο",
           "κατάρρευση",
-          "πείνα αέρα",
-          "ανεμιστήρας",
-          "μετεωρισμός",
-          "κατασκευές",
-          "κρύα ανάσα",
-          "φλεβική κυκλοφορία & τριχοειδή αγγεία",
-          "ανώτερο γαστρεντερικό σύστημα",
-          "αναπνευστικό σύστημα"
+          "αέρας",
+          "ανέμισμα",
+          "μετεωρισμός"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Carbone vegetale",
-        "origin": "Charcoal made from birch or beech wood.",
-        "essence": "The \"Reviver of the Dying\": extreme collapse with icy coldness, air hunger (desires to be fanned vigorously), and massive flatulent distension of upper abdomen.",
+        "origin": "Carbone di legna di betulla o faggio.",
+        "essence": "Il «rianimatore dei morenti»: collasso estremo con freddo glaciale, fame d'aria (desidera essere sventolato vigorosamente) e massiccia distensione gassosa dell'addome superiore.",
         "mainIndications": [
-          "Circulatory collapse & shock with cold sweat",
-          "Massive flatulence & tympanites of upper abdomen",
-          "Chronic hoarseness worse in evening",
-          "Senile asthma with severe dyspnea and air hunger"
+          "Collasso circolatorio e shock con sudore freddo",
+          "Flatulenza massiccia e timpanismo dell'addome superiore",
+          "Raucedine cronica, peggio la sera",
+          "Asma senile con grave dispnea e fame d'aria"
         ],
         "keynotes": [
-          "Patient is icy cold yet gasps for air and demands to be fanned",
-          "Upper abdomen distended like a drum, relieved only by eructations",
-          "Breath is cold, tongue is cold, knees are icy"
+          "Il paziente è gelido ma ansima per l'aria e chiede di essere sventolato",
+          "Addome superiore disteso come un tamburo, alleviato solo da eruttazioni",
+          "Respiro freddo, lingua fredda, ginocchia gelide"
         ],
-        "mindEmotional": "Apathetic, sluggish, stuporous, indifferent to everything.",
+        "mindEmotional": "Apatico, lento, stuporoso, indifferente a tutto.",
         "modalitiesBetter": [
-          "Being fanned vigorously",
-          "Eructations",
-          "Cool open air"
+          "Essere sventolato vigorosamente",
+          "Eruttazioni",
+          "Aria fresca e aperta"
         ],
         "modalitiesWorse": [
-          "Warmth & stuffy rooms",
-          "Fatty food & butter",
-          "Lying flat in bed"
+          "Calore e stanze chiuse",
+          "Cibi grassi e burro",
+          "Sdraiato in piano nel letto"
         ],
-        "potenciesAndDosage": "Acute: C30, C200. In critical collapse C30 repeated frequently.",
-        "defaultTagesdosis": "1–2 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: C30, C200. In caso di collasso critico, C30 ripetuto frequentemente.",
+        "defaultTagesdosis": "1-2 dosi da 3-5 granuli",
         "sphereOfAction": [
-          "Venous Circulation & Capillaries",
-          "Upper Gastrointestinal Tract",
-          "Respiratory System"
+          "Circolazione venosa e capillari",
+          "Tratto gastrointestinale superiore",
+          "Sistema respiratorio"
         ],
         "differentialRemedies": [
-          "Lycopodium (lower abdomen gas)",
+          "Lycopodium",
           "Arsenicum album",
-          "China (flatulence)",
-          "Camphora"
+          "China"
         ],
         "searchKeywords": [
           "carbone vegetale",
-          "carbo vegetabilis",
-          "vegetable charcoal",
-          "collapse",
-          "air hunger",
-          "fanning",
-          "flatulence",
-          "eructations",
-          "cold breath",
-          "venous circulation & capillaries",
-          "upper gastrointestinal tract",
-          "respiratory system"
+          "collasso",
+          "fame d'aria",
+          "sventolare",
+          "flatulenza"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Древесный уголь",
-        "origin": "Charcoal made from birch or beech wood.",
-        "essence": "The \"Reviver of the Dying\": extreme collapse with icy coldness, air hunger (desires to be fanned vigorously), and massive flatulent distension of upper abdomen.",
+        "origin": "Уголь из древесины березы или бука.",
+        "essence": "«Оживитель умирающих»: крайний коллапс с ледяным холодом, «жажда воздуха» (хочет, чтобы его энергично обмахивали) и сильное вздутие верхней части живота.",
         "mainIndications": [
-          "Circulatory collapse & shock with cold sweat",
-          "Massive flatulence & tympanites of upper abdomen",
-          "Chronic hoarseness worse in evening",
-          "Senile asthma with severe dyspnea and air hunger"
+          "Циркуляторный коллапс и шок с холодным потом",
+          "Сильный метеоризм и тимпанит верхней части живота",
+          "Хроническая охриплость, усиливающаяся к вечеру",
+          "Старческая астма с тяжелой одышкой и тягой к воздуху"
         ],
         "keynotes": [
-          "Patient is icy cold yet gasps for air and demands to be fanned",
-          "Upper abdomen distended like a drum, relieved only by eructations",
-          "Breath is cold, tongue is cold, knees are icy"
+          "Пациент ледяной, но задыхается и требует, чтобы его обмахивали",
+          "Верхняя часть живота вздута как барабан, облегчение только от отрыжки",
+          "Дыхание холодное, язык холодный, колени ледяные"
         ],
-        "mindEmotional": "Apathetic, sluggish, stuporous, indifferent to everything.",
+        "mindEmotional": "Апатичный, вялый, в состоянии ступора, безразличен ко всему.",
         "modalitiesBetter": [
-          "Being fanned vigorously",
-          "Eructations",
-          "Cool open air"
+          "Энергичное обмахивание",
+          "Отрыжка",
+          "Прохладный открытый воздух"
         ],
         "modalitiesWorse": [
-          "Warmth & stuffy rooms",
-          "Fatty food & butter",
-          "Lying flat in bed"
+          "Тепло и душные помещения",
+          "Жирная пища и масло",
+          "Лежа плашмя в постели"
         ],
-        "potenciesAndDosage": "Acute: C30, C200. In critical collapse C30 repeated frequently.",
-        "defaultTagesdosis": "1–2 doses of 3–5 гранул",
+        "potenciesAndDosage": "Остро: C30, C200. При критическом коллапсе C30 часто повторять.",
+        "defaultTagesdosis": "1–2 приема по 3–5 гранул",
         "sphereOfAction": [
-          "Venous Circulation & Capillaries",
-          "Upper Gastrointestinal Tract",
-          "Respiratory System"
+          "Венозное кровообращение и капилляры",
+          "Верхний отдел ЖКТ",
+          "Дыхательная система"
         ],
         "differentialRemedies": [
-          "Lycopodium (lower abdomen gas)",
+          "Lycopodium",
           "Arsenicum album",
-          "China (flatulence)",
-          "Camphora"
+          "China"
         ],
         "searchKeywords": [
           "древесный уголь",
-          "carbo vegetabilis",
-          "vegetable charcoal",
-          "collapse",
-          "air hunger",
-          "раздувание",
-          "flatulence",
-          "eructations",
-          "cold breath",
-          "venous circulation & capillaries",
-          "upper gastrointestinal tract",
-          "respiratory system"
+          "коллапс",
+          "жажда воздуха",
+          "обмахивание",
+          "метеоризм"
         ]
       }
     }
@@ -5997,232 +5745,198 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Minéral",
         "commonName": "Causticum",
-        "origin": "Hahnemann’s preparation of slaked lime and potassium bisulfate.",
-        "essence": "Sympathie intense pour les autres et rébellion contre l'injustice ; paralysies progressives (cordes vocales, vessie), enrouement matinal et amélioration par temps humide et pluvieux.",
+        "origin": "Préparation de Hahnemann à partir de chaux éteinte et de bisulfate de potassium.",
+        "essence": "Sens aigu de la justice et profonde sympathie pour autrui ; paralysies progressives (cordes vocales, vessie), enrouement et amélioration par temps chaud et humide.",
         "mainIndications": [
-          "Hoarseness & aphonia worse in the morning",
-          "Stress incontinence when coughing or sneezing",
-          "Bell’s palsy / facial paralysis after dry cold wind",
-          "Joint stiffness & shortening of flexor tendons",
-          "Painful burns and old contracted scars"
+          "Enrouement et perte de voix (surtout le matin)",
+          "Incontinence urinaire en toussant ou en éternuant",
+          "Paralysie faciale après exposition au vent froid",
+          "Raideur articulaire et rétraction des tendons",
+          "Anciennes cicatrices de brûlures douloureuses"
         ],
         "keynotes": [
           "Enrouement matinal avec sensation de brûlure dans le larynx",
-          "Involuntary spurting of urine when coughing or laughing",
-          "Marked amelioration in wet damp rainy weather (opposite of Rhus tox)",
-          "Intense empathy and intolerance of injustice"
+          "Pertes d'urine involontaires en toussant ou en riant",
+          "Amélioration marquée par temps de pluie humide (contraire de Rhus tox)",
+          "Le patient ne supporte pas l'injustice faite aux autres"
         ],
-        "mindEmotional": "Deeply sympathetic toward the suffering of others, champions justice.",
+        "mindEmotional": "Profonde sympathie pour la souffrance d'autrui, lutte contre l'injustice.",
         "modalitiesBetter": [
-          "Damp wet rainy weather",
-          "Warmth of bed"
+          "Temps humide et pluvieux",
+          "Chaleur du lit"
         ],
         "modalitiesWorse": [
-          "Dry cold winds & drafts",
-          "Clear cold days",
-          "Morning on waking"
+          "Vent sec et froid",
+          "Courants d'air",
+          "Le matin au réveil"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 1-2 times daily 5 granules.",
-        "defaultTagesdosis": "1-2 times daily 5 granules",
+        "potenciesAndDosage": "D6, D12, C30. 1 à 2 fois par jour 5 granules.",
+        "defaultTagesdosis": "1 à 2 fois par jour 5 granules",
         "sphereOfAction": [
-          "Système Nerveux Moteur",
-          "Larynx & Vocal Cords",
-          "Bladder & Sphincter",
-          "Tendons & Joints"
+          "Nerfs moteurs et SNC",
+          "Larynx et cordes vocales",
+          "Vessie",
+          "Articulations et tendons"
         ],
         "differentialRemedies": [
           "Rhus toxicodendron",
           "Gelsemium",
-          "Phosphorus",
-          "Arum triphyllum"
+          "Phosphorus"
         ],
         "searchKeywords": [
           "causticum",
-          "causticum hahnemanni",
-          "caustique",
-          "sympathy",
-          "injustice",
-          "paralysis",
-          "incontinence",
-          "rainy better",
+          "justice",
+          "paralysie",
           "enrouement",
-          "système nerveux moteur",
-          "larynx & vocal cords",
-          "bladder & sphincter",
-          "tendons & joints"
+          "incontinence"
         ]
       },
       "el": {
         "category": "Ορυκτό",
         "commonName": "Καυστικό",
         "origin": "Παρασκευή του Hahnemann από σβησμένο ασβέστη και όξινο θειικό κάλιο.",
-        "essence": "Έντονη συμπάθεια για τους άλλους και εξέγερση ενάντια στην αδικία. σταδιακή προοδευτική παράλυση (φωνητικές χορδές, ουροδόχος κύστη), πρωινή βραχνάδα και βελτίωση σε υγρό βροχερό καιρό.",
+        "essence": "Επαναστατικό αίσθημα δικαιοσύνης και συμπάθεια για τους άλλους. Σταδιακή προοδευτική παράλυση (φωνητικές χορδές, κύστη), βραχνάδα και βελτίωση σε υγρό, ζεστό καιρό.",
         "mainIndications": [
-          "Βραχνάδα και αφωνία χειρότερη το πρωί",
-          "Ακράτεια από στρες κατά το βήχα ή το φτέρνισμα",
-          "Παράλυση Bell / παράλυση προσώπου μετά από ξηρό κρύο αέρα",
-          "Δυσκαμψία της άρθρωσης & βράχυνση καμπτήρων τενόντων",
-          "Επώδυνα εγκαύματα και παλιές ουλές"
+          "Βραχνάδα και αφωνία (κυρίως το πρωί)",
+          "Ακράτεια ούρων κατά το βήχα ή το φτέρνισμα",
+          "Παράλυση προσώπου μετά από έκθεση σε κρύο αέρα",
+          "Δυσκαμψία αρθρώσεων και βράχυνση τενόντων",
+          "Παλιές επώδυνες ουλές από εγκαύματα"
         ],
         "keynotes": [
-          "Πρωινή βραχνάδα με καυστική ωμότητα στο λάρυγγα",
-          "Ακούσια εκτόξευση ούρων όταν βήχετε ή γελάτε",
-          "Σημαντική βελτίωση σε υγρό υγρό βροχερό καιρό (απέναντι από το Rhus tox)",
-          "Έντονη ενσυναίσθηση και μισαλλοδοξία στην αδικία"
+          "Πρωινή βραχνάδα με αίσθημα καύσου και πληγής στο λάρυγγα",
+          "Ακούσια απώλεια ούρων με το βήχα ή το γέλιο",
+          "Σημαντική βελτίωση σε υγρό, βροχερό καιρό (σε αντίθεση με το Rhus tox)",
+          "Ο ασθενής δεν αντέχει την αδικία προς τους άλλους"
         ],
-        "mindEmotional": "Βαθιά συμπαθής προς τα βάσανα των άλλων, υπερασπίζεται τη δικαιοσύνη.",
+        "mindEmotional": "Βαθιά συμπάθεια για τον πόνο των άλλων, αγώνας κατά της αδικίας.",
         "modalitiesBetter": [
-          "Υγρός υγρός βροχερός καιρός",
-          "Η ζεστασιά του κρεβατιού"
+          "Υγρός, βροχερός καιρός",
+          "Ζεστασιά του κρεβατιού"
         ],
         "modalitiesWorse": [
-          "Ξηροί κρύοι άνεμοι & ρεύματα",
-          "Καθαρές κρύες μέρες",
-          "Πρωί στο ξύπνημα"
+          "Ξηρός, κρύος άνεμος",
+          "Ρεύματα αέρα",
+          "Το πρωί με το ξύπνημα"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 1-2 φορές την ημέρα 5 σφαιρίδια.",
+        "potenciesAndDosage": "D6, D12, C30. 1-2 φορές την ημέρα 5 σφαιρίδια.",
         "defaultTagesdosis": "1-2 φορές την ημέρα 5 σφαιρίδια",
         "sphereOfAction": [
-          "Κινητικό Νευρικό Σύστημα",
-          "Λάρυγγα & Φωνητικές Χορδές",
-          "Κύστη & Σφιγκτήρας",
-          "Τένοντες & Αρθρώσεις"
+          "Κινητικά νεύρα & ΚΝΣ",
+          "Λάρυγγας & φωνητικές χορδές",
+          "Ουροδόχος κύστη",
+          "Αρθρώσεις & τένοντες"
         ],
         "differentialRemedies": [
           "Rhus toxicodendron",
           "Gelsemium",
-          "Phosphorus",
-          "Arum triphyllum"
+          "Phosphorus"
         ],
         "searchKeywords": [
           "καυστικό",
-          "causticum hahnemanni",
           "συμπάθεια",
-          "αδικία",
+          "δικαιοσύνη",
           "παράλυση",
           "ακράτεια",
-          "βροχερό καλύτερα",
-          "βραχνάδα",
-          "κινητικό νευρικό σύστημα",
-          "λάρυγγα & φωνητικές χορδές",
-          "κύστη & σφιγκτήρας",
-          "τένοντες & αρθρώσεις"
+          "βραχνάδα"
         ]
       },
       "it": {
         "category": "Minerale",
         "commonName": "Caustico di Hahnemann",
-        "origin": "Hahnemann’s preparation of slaked lime and potassium bisulfate.",
-        "essence": "Intense sympathy for others and rebellion against injustice; gradual progressive paralyses (vocal cords, bladder), morning hoarseness, and amelioration in damp rainy weather.",
+        "origin": "Preparazione speciale di Hahnemann da calce spenta e bisolfato di potassio.",
+        "essence": "Senso di giustizia ribelle e profonda simpatia per gli altri; paralisi progressive graduali (corde vocali, vescica), raucedine e miglioramento con tempo umido e caldo.",
         "mainIndications": [
-          "Hoarseness & aphonia worse in the morning",
-          "Stress incontinence when coughing or sneezing",
-          "Bell’s palsy / facial paralysis after dry cold wind",
-          "Joint stiffness & shortening of flexor tendons",
-          "Painful burns and old contracted scars"
+          "Raucedine e perdita della voce (specialmente al mattino)",
+          "Incontinenza urinaria tossendo o starnutendo",
+          "Paralisi facciale dopo esposizione a vento freddo",
+          "Rigidità articolare e retrazione dei tendini",
+          "Vecchie cicatrici da ustione dolorose"
         ],
         "keynotes": [
-          "Morning hoarseness with burning rawness in larynx",
-          "Involuntary spurting of urine when coughing or laughing",
-          "Marked amelioration in wet damp rainy weather (opposite of Rhus tox)",
-          "Intense empathy and intolerance of injustice"
+          "Raucedine mattutina con dolore bruciante nella laringe",
+          "Perdita involontaria di urina tossendo o ridendo",
+          "Miglioramento marcato con tempo piovoso e umido (contrario di Rhus tox)",
+          "Il paziente non tollera le ingiustizie verso gli altri"
         ],
-        "mindEmotional": "Deeply sympathetic toward the suffering of others, champions justice.",
+        "mindEmotional": "Profonda simpatia per le sofferenze altrui, lotta contro l'ingiustizia.",
         "modalitiesBetter": [
-          "Damp wet rainy weather",
-          "Warmth of bed"
+          "Tempo umido e piovoso",
+          "Calore del letto"
         ],
         "modalitiesWorse": [
-          "Dry cold winds & drafts",
-          "Clear cold days",
-          "Morning on waking"
+          "Vento secco e freddo",
+          "Correnti d'aria",
+          "Al mattino al risveglio"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 1-2 times daily 5 granuli.",
-        "defaultTagesdosis": "1-2 times daily 5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. 1-2 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "1-2 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Motor Nervous System",
-          "Larynx & Vocal Cords",
-          "Bladder & Sphincter",
-          "Tendons & Joints"
+          "Nervi motori e SNC",
+          "Laringe e corde vocali",
+          "Vescica urinaria",
+          "Articolazioni e tendini"
         ],
         "differentialRemedies": [
           "Rhus toxicodendron",
           "Gelsemium",
-          "Phosphorus",
-          "Arum triphyllum"
+          "Phosphorus"
         ],
         "searchKeywords": [
-          "caustico di hahnemann",
-          "causticum hahnemanni",
           "causticum",
-          "sympathy",
-          "injustice",
-          "paralysis",
-          "incontinence",
-          "rainy better",
-          "hoarseness",
-          "motor nervous system",
-          "larynx & vocal cords",
-          "bladder & sphincter",
-          "tendons & joints"
+          "giustizia",
+          "paralisi",
+          "raucedine",
+          "incontinenza"
         ]
       },
       "ru": {
         "category": "Минеральный",
         "commonName": "Каустикум Ганемана",
-        "origin": "Hahnemann’s preparation of slaked lime and potassium bisulfate.",
-        "essence": "Intense sympathy for others and rebellion against injustice; gradual progressive paralyses (vocal cords, bladder), morning hoarseness, and amelioration in damp rainy weather.",
+        "origin": "Особый препарат по Ганеману из свежегашеной извести и бисульфата калия.",
+        "essence": "Мятежное чувство справедливости и глубокое сочувствие к другим; постепенно прогрессирующие параличи (голосовые связки, мочевой пузырь), охриплость и улучшение в теплую влажную погоду.",
         "mainIndications": [
-          "Hoarseness & aphonia worse in the morning",
-          "Stress incontinence when coughing or sneezing",
-          "Bell’s palsy / facial paralysis after dry cold wind",
-          "Joint stiffness & shortening of flexor tendons",
-          "Painful burns and old contracted scars"
+          "Охриплость и потеря голоса (особенно по утрам)",
+          "Недержание мочи при кашле или чихании",
+          "Паралич лицевого нерва после холодного ветра",
+          "Скованность суставов и укорочение сухожилий",
+          "Старые болезненные шрамы от ожогов"
         ],
         "keynotes": [
-          "Morning hoarseness with burning rawness in larynx",
-          "Involuntary spurting of urine when coughing or laughing",
-          "Marked amelioration in wet damp rainy weather (opposite of Rhus tox)",
-          "Intense empathy and intolerance of injustice"
+          "Утренняя охриплость с ощущением жгучей ссадины в гортани",
+          "Непроизвольное мочеиспускание при кашле или смехе",
+          "Заметное улучшение во влажную дождливую погоду (противоположность Rhus tox)",
+          "Пациент не выносит несправедливости по отношению к другим"
         ],
-        "mindEmotional": "Deeply sympathetic toward the suffering of others, champions justice.",
+        "mindEmotional": "Глубокое сочувствие к страданиям других, борьба с несправедливостью.",
         "modalitiesBetter": [
-          "Damp wet rainy weather",
-          "Warmth of bed"
+          "Влажная дождливая погода",
+          "Тепло постели"
         ],
         "modalitiesWorse": [
-          "Dry cold winds & drafts",
-          "Clear cold days",
-          "Morning on waking"
+          "Сухой холодный ветер",
+          "Сквозняки",
+          "Утром при пробуждении"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 1-2 times daily 5 гранул.",
-        "defaultTagesdosis": "1-2 times daily 5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. 1–2 раза в день по 5 гранул.",
+        "defaultTagesdosis": "1–2 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Motor Nervous System",
-          "Larynx & Vocal Cords",
-          "Мочевой пузырь и сфинктер",
-          "Tendons & Joints"
+          "Двигательные нервы и ЦНС",
+          "Гортань и голосовые связки",
+          "Мочевой пузырь",
+          "Суставы и сухожилия"
         ],
         "differentialRemedies": [
           "Rhus toxicodendron",
           "Gelsemium",
-          "Phosphorus",
-          "Arum triphyllum"
+          "Phosphorus"
         ],
         "searchKeywords": [
-          "каустикум ганемана",
-          "causticum hahnemanni",
-          "causticum",
-          "sympathy",
-          "injustice",
-          "paralysis",
-          "incontinence",
-          "rainy better",
-          "hoarseness",
-          "motor nervous system",
-          "larynx & vocal cords",
-          "мочевой пузырь и сфинктер",
-          "tendons & joints"
+          "каустикум",
+          "справедливость",
+          "паралич",
+          "охриплость",
+          "недержание"
         ]
       }
     }
@@ -6402,232 +6116,201 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Camomille vraie",
-        "origin": "Whole fresh blooming plant of Matricaria chamomilla (Asteraceae).",
-        "essence": "Extreme hypersensitivity to pain with frantic anger and snappish irritability; infant teething troubles with one cheek red and hot, the other pale and cold; calmed only when carried.",
+        "origin": "Plante fraîche entière en fleurs (Asteraceae).",
+        "essence": "Hypersensibilité extrême à la douleur avec colère frénétique et irritabilité cassante ; troubles de la dentition chez les nourrissons avec une joue rouge et chaude, l'autre pâle et froide ; l'enfant ne se calme que lorsqu'il est porté.",
         "mainIndications": [
-          "Painful teething in infants & toddlers",
-          "Irritable pain states & colic with violent temper tantrums",
-          "Severe dysmenorrhea with unbearable labor-like pains",
+          "Dentition douloureuse chez les nourrissons et les jeunes enfants",
+          "États de douleur irritable et coliques avec crises de colère violentes",
+          "Dysménorrhée sévère avec douleurs insupportables de type travail",
           "Insomnie due à l'irritabilité nerveuse et à l'abus de café"
         ],
         "keynotes": [
           "Les douleurs sont totalement insupportables, poussant le patient à une rage frénétique",
-          "One cheek flushed and hot, the other pale and cool",
-          "Child demands toys and tosses them away in anger",
-          "Amelioration only by being carried constantly",
+          "Une joue rouge et chaude, l'autre pâle et froide",
+          "L'enfant réclame des objets puis les rejette avec colère",
+          "Amélioration uniquement en étant porté constamment",
           "Selles verdâtres sentant l’œuf pourri"
         ],
-        "mindEmotional": "Méchant, vif, furieux de la douleur, incivil, rejette la consolation.",
+        "mindEmotional": "Hargneux, cassant, furieux de douleur, impoli, rejette la consolation.",
         "modalitiesBetter": [
-          "Being carried about in arms",
-          "Warm wet weather"
+          "Être porté dans les bras",
+          "Temps chaud et humide"
         ],
         "modalitiesWorse": [
           "Colère et dépit",
-          "Night around 9:00 PM",
-          "Coffee and narcotics",
-          "Cold wind"
+          "La nuit vers 21h00",
+          "Café et narcotiques",
+          "Vent froid"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In teething crises C30 every 30–60 min.",
-        "defaultTagesdosis": "3 à 4 doses de 3 à 5 granulés",
+        "potenciesAndDosage": "Aigu : D6, D12, C30. En cas de crise de dentition, C30 toutes les 30 à 60 min.",
+        "defaultTagesdosis": "3 à 4 prises de 3 à 5 granules",
         "sphereOfAction": [
-          "Central Nervous System & Temperament",
-          "Canal gastro-intestinal",
+          "Système nerveux central et tempérament",
+          "Tube digestif",
           "Dents et nerfs dentaires"
         ],
         "differentialRemedies": [
-          "Aconitum (anxiety, fright)",
-          "Belladonna (hot throbbing)",
-          "Pulsatilla (mild, tearful)",
-          "Colocynthis (doubling up)"
+          "Aconitum",
+          "Belladonna",
+          "Pulsatilla",
+          "Colocynthis"
         ],
         "searchKeywords": [
-          "camomille vraie",
-          "matricaria chamomilla",
-          "chamomile",
-          "teething",
-          "anger",
-          "irritability",
-          "carried better",
-          "one red cheek",
-          "coliques",
-          "pain sensitivity",
-          "central nervous system & temperament",
-          "canal gastro-intestinal",
-          "dents et nerfs dentaires"
+          "camomille",
+          "dentition",
+          "colère",
+          "douleur",
+          "coliques"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Χαμομήλι",
-        "origin": "Ολόκληρο φρέσκο ​​ανθισμένο φυτό Matricaria chamomilla (Asteraceae).",
-        "essence": "Εξαιρετική υπερευαισθησία στον πόνο με ξέφρενο θυμό και εκνευρισμό. προβλήματα οδοντοφυΐας στα βρέφη με το ένα μάγουλο κόκκινο και ζεστό, το άλλο χλωμό και ψυχρό. ηρεμούσε μόνο όταν κουβαλήθηκε.",
+        "origin": "Ολόκληρο φρέσκο ανθισμένο φυτό (Asteraceae).",
+        "essence": "Εξαιρετική υπερευαισθησία στον πόνο με έξαλλο θυμό και ευερεθιστότητα. Προβλήματα οδοντοφυΐας στα βρέφη με το ένα μάγουλο κόκκινο και ζεστό, το άλλο χλωμό και κρύο. Το παιδί ηρεμεί μόνο όταν το κρατούν στην αγκαλιά.",
         "mainIndications": [
           "Επώδυνη οδοντοφυΐα σε βρέφη και νήπια",
-          "Ευερέθιστες καταστάσεις πόνου & κολικοί με βίαιες εκρήξεις θυμού",
-          "Σοβαρή δυσμηνόρροια με αφόρητους πόνους που μοιάζουν με τοκετό",
-          "Αϋπνία από νευρική ευερεθιστότητα και κατάχρηση καφέ"
+          "Καταστάσεις πόνου και κολικοί με βίαια ξεσπάσματα θυμού",
+          "Σοβαρή δυσμηνόρροια με αφόρητους πόνους",
+          "Αϋπνία από νευρική υπερένταση και κατάχρηση καφέ"
         ],
         "keynotes": [
-          "Οι πόνοι είναι εντελώς αφόρητοι, οδηγώντας τον ασθενή σε ξέφρενη οργή",
-          "Το ένα μάγουλο κοκκινισμένο και ζεστό, το άλλο χλωμό και δροσερό",
-          "Το παιδί απαιτεί παιχνίδια και τα πετάει με θυμό",
-          "Βελτίωση μόνο με συνεχή μεταφορά",
-          "Πρασινοπράσινο σκαμνί που μυρίζει σαν σάπια αυγά"
+          "Οι πόνοι είναι εντελώς αφόρητοι και προκαλούν έξαλλο θυμό",
+          "Το ένα μάγουλο κόκκινο και ζεστό, το άλλο χλωμό και κρύο",
+          "Το παιδί ζητά πράγματα και μετά τα πετάει θυμωμένα",
+          "Βελτίωση μόνο με τη συνεχή μεταφορά στην αγκαλιά",
+          "Πρασινωπά κόπρανα που μυρίζουν σαν κλούβια αυγά"
         ],
-        "mindEmotional": "Μοχθηρός, αιφνιδιαστικός, έξαλλος από τον πόνο, αγενής, απορρίπτει την παρηγοριά.",
+        "mindEmotional": "Κακεντρεχής, απότομος, έξαλλος από τον πόνο, αγενής, αρνείται την παρηγοριά.",
         "modalitiesBetter": [
-          "Μεταφέρονται στα χέρια",
-          "Ζεστός υγρός καιρός"
+          "Μεταφορά στην αγκαλιά",
+          "Ζεστός, υγρός καιρός"
         ],
         "modalitiesWorse": [
-          "Θυμός & οργή",
-          "Νύχτα γύρω στις 9:00 μ.μ",
+          "Θυμός και εκνευρισμός",
+          "Νύχτα γύρω στις 9:00 μ.μ.",
           "Καφές και ναρκωτικά",
           "Κρύος άνεμος"
         ],
-        "potenciesAndDosage": "Οξεία: D6, D12, C30 / 6C, 30C. Σε κρίσεις οδοντοφυΐας C30 κάθε 30–60 λεπτά.",
+        "potenciesAndDosage": "Οξεία: D6, D12, C30. Σε κρίσεις οδοντοφυΐας, C30 κάθε 30–60 λεπτά.",
         "defaultTagesdosis": "3–4 δόσεις των 3–5 σφαιριδίων",
         "sphereOfAction": [
-          "Κεντρικό Νευρικό Σύστημα & Ιδιοσυγκρασία",
-          "Γαστρεντερικό κανάλι",
-          "Δόντια & Οδοντιατρικά Νεύρα"
+          "Κεντρικό νευρικό σύστημα & ιδιοσυγκρασία",
+          "Πεπτικός σωλήνας",
+          "Δόντια & οδοντικά νεύρα"
         ],
         "differentialRemedies": [
-          "Aconitum (anxiety, fright)",
-          "Belladonna (hot throbbing)",
-          "Pulsatilla (mild, tearful)",
-          "Colocynthis (doubling up)"
+          "Aconitum",
+          "Belladonna",
+          "Pulsatilla",
+          "Colocynthis"
         ],
         "searchKeywords": [
           "χαμομήλι",
-          "matricaria chamomilla",
           "οδοντοφυΐα",
-          "θυμό",
-          "ευερεθιστότητα",
-          "μεταφέρθηκε καλύτερα",
-          "ένα κόκκινο μάγουλο",
-          "κολικούς",
-          "ευαισθησία στον πόνο",
-          "κεντρικό νευρικό σύστημα & ιδιοσυγκρασία",
-          "γαστρεντερικό κανάλι",
-          "δόντια & οδοντιατρικά νεύρα"
+          "θυμός",
+          "πόνος",
+          "κολικοί"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Camomilla comune",
-        "origin": "Whole fresh blooming plant of Matricaria chamomilla (Asteraceae).",
-        "essence": "Extreme hypersensitivity to pain with frantic anger and snappish irritability; infant teething troubles with one cheek red and hot, the other pale and cold; calmed only when carried.",
+        "origin": "Pianta fresca intera in fiore (Asteraceae).",
+        "essence": "Ipersensibilità estrema al dolore con rabbia frenetica e irritabilità; disturbi della dentizione nei neonati con una guancia rossa e calda, l'altra pallida e fredda; il bambino si calma solo quando viene portato in braccio.",
         "mainIndications": [
-          "Painful teething in infants & toddlers",
-          "Irritable pain states & colic with violent temper tantrums",
-          "Severe dysmenorrhea with unbearable labor-like pains",
-          "Insomnia from nervous irritability and coffee abuse"
+          "Dentizione dolorosa nei neonati e nei bambini piccoli",
+          "Stati di dolore irritabile e coliche con violenti scoppi d'ira",
+          "Dismenorrea grave con dolori insopportabili simili al parto",
+          "Insonnia da ipereccitabilità nervosa e abuso di caffè"
         ],
         "keynotes": [
-          "Pains are utterly unbearable, driving patient to frantic rage",
-          "One cheek flushed and hot, the other pale and cool",
-          "Child demands toys and tosses them away in anger",
-          "Amelioration only by being carried constantly",
-          "Greenish stool smelling like rotten eggs"
+          "I dolori sono del tutto insopportabili e portano a una rabbia frenetica",
+          "Una guancia rossa e calda, l'altra pallida e fredda",
+          "Il bambino chiede oggetti e poi li getta via con rabbia",
+          "Miglioramento solo venendo portato costantemente in braccio",
+          "Feci verdastre con odore di uova marce"
         ],
-        "mindEmotional": "Spiteful, snappish, furious from pain, uncivil, rejects consolation.",
+        "mindEmotional": "Dispettoso, brusco, furioso per il dolore, scortese, rifiuta la consolazione.",
         "modalitiesBetter": [
-          "Being carried about in arms",
-          "Warm wet weather"
+          "Essere portato in braccio",
+          "Tempo caldo e umido"
         ],
         "modalitiesWorse": [
-          "Anger & vexation",
-          "Night around 9:00 PM",
-          "Coffee and narcotics",
-          "Cold wind"
+          "Rabbia e irritazione",
+          "Di notte verso le 21:00",
+          "Caffè e narcotici",
+          "Vento freddo"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In teething crises C30 every 30–60 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: D6, D12, C30. In caso di crisi di dentizione, C30 ogni 30-60 min.",
+        "defaultTagesdosis": "3-4 dosi da 3-5 granuli",
         "sphereOfAction": [
-          "Central Nervous System & Temperament",
-          "Gastrointestinal Canal",
-          "Teeth & Dental Nerves"
+          "Sistema nervoso centrale e temperamento",
+          "Canale gastrointestinale",
+          "Denti e nervi dentali"
         ],
         "differentialRemedies": [
-          "Aconitum (anxiety, fright)",
-          "Belladonna (hot throbbing)",
-          "Pulsatilla (mild, tearful)",
-          "Colocynthis (doubling up)"
+          "Aconitum",
+          "Belladonna",
+          "Pulsatilla",
+          "Colocynthis"
         ],
         "searchKeywords": [
-          "camomilla comune",
-          "matricaria chamomilla",
-          "chamomile",
-          "teething",
-          "anger",
-          "irritability",
-          "carried better",
-          "one red cheek",
-          "colic",
-          "pain sensitivity",
-          "central nervous system & temperament",
-          "gastrointestinal canal",
-          "teeth & dental nerves"
+          "camomilla",
+          "dentizione",
+          "rabbia",
+          "dolore",
+          "coliche"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Ромашка аптечная",
-        "origin": "Whole fresh blooming plant of Matricaria chamomilla (Asteraceae).",
-        "essence": "Extreme hypersensitivity to pain with frantic anger and snappish irritability; infant teething troubles with one cheek red and hot, the other pale and cold; calmed only when carried.",
+        "origin": "Цельное свежее цветущее растение (Asteraceae).",
+        "essence": "Крайняя гиперчувствительность к боли с яростью и резкой раздражительностью; проблемы при прорезывании зубов у младенцев: одна щека красная и горячая, другая бледная и холодная; ребенок успокаивается только на руках.",
         "mainIndications": [
-          "Painful teething in infants & toddlers",
-          "Irritable pain states & colic with violent temper tantrums",
-          "Severe dysmenorrhea with unbearable labor-like pains",
-          "Insomnia from nervous irritability and coffee abuse"
+          "Болезненное прорезывание зубов у младенцев и детей",
+          "Болевые состояния и колики с бурными вспышками гнева",
+          "Тяжелая дисменорея с невыносимыми схваткообразными болями",
+          "Бессонница от нервного перевозбуждения и злоупотребления кофе"
         ],
         "keynotes": [
-          "Pains are utterly unbearable, driving patient to frantic rage",
-          "One cheek flushed and hot, the other pale and cool",
-          "Child demands toys and tosses them away in anger",
-          "Amelioration only by being carried constantly",
-          "Greenish stool smelling like rotten eggs"
+          "Боли совершенно невыносимы, доводят пациента до неистового гнева",
+          "Одна щека красная и горячая, другая бледная и холодная",
+          "Ребенок требует игрушки и гневно отбрасывает их",
+          "Улучшение только тогда, когда ребенка постоянно носят на руках",
+          "Зеленоватый стул с запахом тухлых яиц"
         ],
-        "mindEmotional": "Spiteful, snappish, furious from pain, uncivil, rejects consolation.",
+        "mindEmotional": "Злобный, резкий, яростный от боли, грубый, отвергает утешение.",
         "modalitiesBetter": [
-          "Being carried about in arms",
-          "Warm wet weather"
+          "Когда носят на руках",
+          "Теплая влажная погода"
         ],
         "modalitiesWorse": [
-          "Anger & vexation",
-          "Night around 9:00 PM",
-          "Coffee and narcotics",
-          "Cold wind"
+          "Гнев и досада",
+          "Ночью около 21:00",
+          "Кофе и наркотические средства",
+          "Холодный ветер"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In teething crises C30 every 30–60 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 гранул",
+        "potenciesAndDosage": "Остро: D6, D12, C30. При кризисах прорезывания зубов C30 каждые 30–60 мин.",
+        "defaultTagesdosis": "3–4 приема по 3–5 гранул",
         "sphereOfAction": [
-          "Central Nervous System & Temperament",
-          "Gastrointestinal Canal",
-          "Teeth & Dental Nerves"
+          "Центральная нервная система и темперамент",
+          "Пищеварительный тракт",
+          "Зубы и зубные нервы"
         ],
         "differentialRemedies": [
-          "Aconitum (anxiety, fright)",
-          "Belladonna (hot throbbing)",
-          "Pulsatilla (mild, tearful)",
-          "Colocynthis (doubling up)"
+          "Aconitum",
+          "Belladonna",
+          "Pulsatilla",
+          "Colocynthis"
         ],
         "searchKeywords": [
-          "ромашка аптечная",
-          "matricaria chamomilla",
           "ромашка",
-          "teething",
-          "anger",
-          "irritability",
-          "carried better",
-          "one red cheek",
-          "колики",
-          "pain sensitivity",
-          "central nervous system & temperament",
-          "gastrointestinal canal",
-          "teeth & dental nerves"
+          "прорезывание зубов",
+          "гнев",
+          "боль",
+          "колики"
         ]
       }
     }
@@ -7171,38 +6854,38 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Quinquina rouge",
-        "origin": "Dried bark of Cinchona pubescens (Rubiaceae).",
-        "essence": "Hahnemann’s foundational proving remedy: debility and exhaustion following loss of vital fluids (blood, sweat, diarrhea, prolonged nursing); tympanitic bloating of entire abdomen and hypersensitivity of skin to light touch.",
+        "origin": "Écorce séchée du quinquina (Rubiaceae).",
+        "essence": "Le remède de base de Hahnemann : faiblesse et épuisement après perte de liquides vitaux (sang, sueur, diarrhée, allaitement prolongé) ; météorisme de tout l'abdomen et extrême sensibilité de la peau au toucher léger.",
         "mainIndications": [
-          "Exhaustion following hemorrhages, diarrhea & lactation",
-          "Ballonnements tympaniques de tout l'abdomen sans soulagement des flatulences",
-          "Periodic intermittent fevers with chills and profuse sweat",
-          "Tinnitus and vertigo from anemia and fluid loss"
+          "Épuisement après perte de sang, diarrhée ou allaitement prolongé",
+          "Météorisme et coliques flatulentes (tout l'abdomen tendu comme un tambour)",
+          "Fièvres intermittentes périodiques avec frissons et sueurs",
+          "Acouphènes et vertiges après anémie"
         ],
         "keynotes": [
-          "Ailments from loss of vital bodily fluids",
-          "Slightest touch is painful, yet hard firm pressure relieves",
-          "Entire abdomen bloated tight like a drum; no relief from passing gas",
-          "Strict periodicity of attacks (every alternate day)"
+          "Perte de liquides organiques comme cause de tous les troubles",
+          "Le toucher léger est insupportable, mais une pression forte soulage",
+          "Tout l'abdomen est gonflé comme un tambour, l'émission de gaz ne soulage pas",
+          "Périodicité stricte des symptômes (tous les 2 ou 3 jours)"
         ],
-        "mindEmotional": "Touchy, irritable, builds grand heroic castles in the air at night.",
+        "mindEmotional": "Irritable, insatisfait, se livre à des fantasmes héroïques au lit.",
         "modalitiesBetter": [
-          "Hard firm pressure",
-          "Warmth",
-          "Bending double"
+          "Pression forte",
+          "Chaleur",
+          "Se plier en deux"
         ],
         "modalitiesWorse": [
-          "Slight touch & draft of air",
-          "Loss of vital fluids",
-          "After meals"
+          "Toucher léger et courants d'air",
+          "Perte de liquides",
+          "Après les repas"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 2 times daily 5 granules.",
-        "defaultTagesdosis": "2 times daily 5 granules",
+        "potenciesAndDosage": "D6, D12, C30. Après perte de sang/diarrhée, 2 fois par jour 5 granules.",
+        "defaultTagesdosis": "2 fois par jour 5 granules",
         "sphereOfAction": [
-          "Blood & Circulation",
-          "Canal gastro-intestinal",
-          "Spleen & Liver",
-          "Nervous System"
+          "Sang et circulation",
+          "Tube digestif",
+          "Rate et foie",
+          "Système nerveux"
         ],
         "differentialRemedies": [
           "Carbo vegetabilis",
@@ -7210,57 +6893,48 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Ferrum metallicum"
         ],
         "searchKeywords": [
-          "quinquina rouge",
-          "cinchona pubescens / china",
-          "cinchona",
-          "chine",
-          "fluid loss",
-          "hemorrhage",
+          "quinquina",
+          "faiblesse",
+          "perte de liquides",
           "ballonnements",
-          "débilité",
-          "periodicity",
-          "tinnitus",
-          "blood & circulation",
-          "canal gastro-intestinal",
-          "spleen & liver",
-          "nervous system"
+          "acouphènes"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Κίνα",
-        "origin": "Αποξηραμένος φλοιός Cinchona pubescens (Rubiaceae).",
-        "essence": "Το θεμελιώδες αποδεικτικό φάρμακο του Hahnemann: αδυναμία και εξάντληση μετά από απώλεια ζωτικών υγρών (αίμα, ιδρώτας, διάρροια, παρατεταμένη θηλασμός). τυμπανικό φούσκωμα ολόκληρης της κοιλιάς και υπερευαισθησία του δέρματος στο ελαφρύ άγγιγμα.",
+        "origin": "Αποξηραμένος φλοιός του δέντρου Cinchona (Rubiaceae).",
+        "essence": "Το πρώτο φάρμακο που απέδειξε ο Hahnemann: Αδυναμία και εξάντληση μετά από απώλεια ζωτικών υγρών (αίμα, ιδρώτας, διάρροια, θηλασμός). Τυμπανισμός όλης της κοιλιάς και υπερευαισθησία στο ελαφρύ άγγιγμα.",
         "mainIndications": [
-          "Εξάντληση μετά από αιμορραγίες, διάρροιες & γαλουχία",
-          "Τυμπανικό φούσκωμα ολόκληρης της κοιλιάς χωρίς ανακούφιση από φουσκώματα",
-          "Περιοδικοί διαλείποντες πυρετοί με ρίγη και άφθονο ιδρώτα",
-          "Εμβοές και ίλιγγος από αναιμία και απώλεια υγρών"
+          "Εξάντληση μετά από απώλεια αίματος, διάρροια ή μακρύ θηλασμό",
+          "Μετεωρισμός και κολικοί (όλη η κοιλιά τεντωμένη σαν τύμπανο)",
+          "Περιοδικός πυρετός με ρίγη και ιδρώτα",
+          "Εμβοές και ίλιγγος μετά από αναιμία"
         ],
         "keynotes": [
-          "Παθήσεις από απώλεια ζωτικών σωματικών υγρών",
-          "Το παραμικρό άγγιγμα είναι επώδυνο, αλλά η σκληρή σταθερή πίεση ανακουφίζει",
-          "Ολόκληρη η κοιλιά φουσκωμένη σφιχτή σαν τύμπανο. καμία ανακούφιση από τη διέλευση αερίου",
-          "Αυστηρή περιοδικότητα επιθέσεων (κάθε εναλλακτική μέρα)"
+          "Απώλεια υγρών ως αιτία όλων των ενοχλημάτων",
+          "Το ελαφρύ άγγιγμα είναι ανυπόφορο, αλλά η σταθερή πίεση ανακουφίζει",
+          "Όλη η κοιλιά είναι τυμπανισμένη, η αποβολή αερίων δεν φέρνει ανακούφιση",
+          "Αυστηρή περιοδικότητα των συμπτωμάτων (κάθε 2η ή 3η μέρα)"
         ],
-        "mindEmotional": "Συγκινητικός, οξύθυμος, χτίζει μεγάλα ηρωικά κάστρα στον αέρα τη νύχτα.",
+        "mindEmotional": "Οξύθυμος, ανικανοποίητος, πλάθει ηρωικά σενάρια στο μυαλό του ενώ είναι στο κρεβάτι.",
         "modalitiesBetter": [
-          "Σκληρή σταθερή πίεση",
+          "Σταθερή πίεση",
           "Ζεστασιά",
-          "Κάμψη διπλή"
+          "Δίπλωμα του σώματος στα δύο"
         ],
         "modalitiesWorse": [
-          "Ελαφρύ άγγιγμα & ρεύμα αέρα",
-          "Απώλεια ζωτικών υγρών",
-          "Μετά τα γεύματα"
+          "Ελαφρύ άγγιγμα και ρεύματα αέρα",
+          "Απώλεια υγρών",
+          "Μετά το φαγητό"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 2 φορές την ημέρα 5 πέλλετ.",
-        "defaultTagesdosis": "2 φορές την ημέρα 5 πέλλετ",
+        "potenciesAndDosage": "D6, D12, C30. Μετά από απώλεια αίματος/διάρροια, 2 φορές την ημέρα 5 σφαιρίδια.",
+        "defaultTagesdosis": "2 φορές την ημέρα 5 σφαιρίδια",
         "sphereOfAction": [
-          "Αίμα & Κυκλοφορία",
-          "Γαστρεντερικό κανάλι",
-          "Σπλήνας & Ήπαρ",
-          "Νευρικό Σύστημα"
+          "Αίμα και κυκλοφορία",
+          "Πεπτικό σύστημα",
+          "Σπλήνα και ήπαρ",
+          "Νευρικό σύστημα"
         ],
         "differentialRemedies": [
           "Carbo vegetabilis",
@@ -7269,55 +6943,47 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "κίνα",
-          "cinchona pubescens / china",
-          "cinchona",
-          "απώλεια υγρών",
-          "αιμορραγία",
-          "φούσκωμα",
           "αδυναμία",
-          "περιοδικότητα",
-          "εμβοές",
-          "αίμα & κυκλοφορία",
-          "γαστρεντερικό κανάλι",
-          "σπλήνας & ήπαρ",
-          "νευρικό σύστημα"
+          "απώλεια υγρών",
+          "τυμπανισμός",
+          "εμβοές"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "China",
-        "origin": "Dried bark of Cinchona pubescens (Rubiaceae).",
-        "essence": "Hahnemann’s foundational proving remedy: debility and exhaustion following loss of vital fluids (blood, sweat, diarrhea, prolonged nursing); tympanitic bloating of entire abdomen and hypersensitivity of skin to light touch.",
+        "origin": "Corteccia essiccata dell'albero della china (Rubiaceae).",
+        "essence": "Il primo rimedio sperimentato da Hahnemann: debolezza ed esaurimento dopo perdita di liquidi organici (sangue, sudore, diarrea, allattamento prolungato); meteorismo di tutto l'addome ed estrema sensibilità della pelle al tocco leggero.",
         "mainIndications": [
-          "Exhaustion following hemorrhages, diarrhea & lactation",
-          "Tympanitic bloating of entire abdomen without relief from flatus",
-          "Periodic intermittent fevers with chills and profuse sweat",
-          "Tinnitus and vertigo from anemia and fluid loss"
+          "Esaurimento dopo perdita di sangue, diarrea o allattamento prolungato",
+          "Meteorismo e coliche gassose (tutto l'addome teso come un tamburo)",
+          "Febbri intermittenti periodiche con brividi e sudorazione",
+          "Acufeni e vertigini dopo anemia"
         ],
         "keynotes": [
-          "Ailments from loss of vital bodily fluids",
-          "Slightest touch is painful, yet hard firm pressure relieves",
-          "Entire abdomen bloated tight like a drum; no relief from passing gas",
-          "Strict periodicity of attacks (every alternate day)"
+          "Perdita di liquidi corporei come causa di tutti i disturbi",
+          "Il tocco leggero è insopportabile, ma una pressione forte migliora",
+          "Tutto l'addome è gonfio come un tamburo, l'emissione di gas non dà sollievo",
+          "Periodicità rigorosa dei sintomi (ogni 2 o 3 giorni)"
         ],
-        "mindEmotional": "Touchy, irritable, builds grand heroic castles in the air at night.",
+        "mindEmotional": "Irritabile, insoddisfatto, si perde in fantasie eroiche a letto.",
         "modalitiesBetter": [
-          "Hard firm pressure",
-          "Warmth",
-          "Bending double"
+          "Pressione forte",
+          "Calore",
+          "Piegarsi in due"
         ],
         "modalitiesWorse": [
-          "Slight touch & draft of air",
-          "Loss of vital fluids",
-          "After meals"
+          "Tocco leggero e correnti d'aria",
+          "Perdita di liquidi",
+          "Dopo i pasti"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 2 times daily 5 granuli.",
-        "defaultTagesdosis": "2 times daily 5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. Dopo perdita di sangue/diarrea, 2 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "2 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Blood & Circulation",
-          "Gastrointestinal Canal",
-          "Spleen & Liver",
-          "Nervous System"
+          "Sangue e circolazione",
+          "Apparato digerente",
+          "Milza e fegato",
+          "Sistema nervoso"
         ],
         "differentialRemedies": [
           "Carbo vegetabilis",
@@ -7326,55 +6992,47 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "china",
-          "cinchona pubescens / china",
-          "cinchona",
-          "fluid loss",
-          "hemorrhage",
-          "bloating",
-          "debility",
-          "periodicity",
-          "tinnitus",
-          "blood & circulation",
-          "gastrointestinal canal",
-          "spleen & liver",
-          "nervous system"
+          "debolezza",
+          "perdita di liquidi",
+          "gonfiore",
+          "acufeni"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Хинное дерево / Хина",
-        "origin": "Dried bark of Cinchona pubescens (Rubiaceae).",
-        "essence": "Hahnemann’s foundational proving remedy: debility and exhaustion following loss of vital fluids (blood, sweat, diarrhea, prolonged nursing); tympanitic bloating of entire abdomen and hypersensitivity of skin to light touch.",
+        "origin": "Высушенная кора хинного дерева (Rubiaceae).",
+        "essence": "Первое испытанное Ганеманом средство: слабость и истощение после потери жизненно важных жидкостей (кровь, пот, диарея, длительное кормление грудью); метеоризм всего живота и крайняя чувствительность кожи к легкому прикосновению.",
         "mainIndications": [
-          "Exhaustion following hemorrhages, diarrhea & lactation",
-          "Tympanitic bloating of entire abdomen without relief from flatus",
-          "Periodic intermittent fevers with chills and profuse sweat",
-          "Tinnitus and vertigo from anemia and fluid loss"
+          "Истощение после потери крови, диареи и длительного кормления грудью",
+          "Метеоризм и колики (весь живот натянут как барабан)",
+          "Периодическая перемежающаяся лихорадка с ознобом и потом",
+          "Тиннитус (шум в ушах) и головокружение после анемии"
         ],
         "keynotes": [
-          "Болезни, вызванные потерей жизненно важных жидкостей организма.",
-          "Slightest touch is painful, yet hard firm pressure relieves",
-          "Entire abdomen bloated tight like a drum; no relief from passing gas",
-          "Strict periodicity of attacks (every alternate day)"
+          "Потеря жидкостей организма как причина всех жалоб",
+          "Легкое прикосновение невыносимо, но сильное давление облегчает",
+          "Весь живот вздут как барабан, отхождение газов не приносит облегчения",
+          "Строгая периодичность приступов (каждый 2-й или 3-й день)"
         ],
-        "mindEmotional": "Touchy, irritable, builds grand heroic castles in the air at night.",
+        "mindEmotional": "Раздражительный, недовольный, предается героическим фантазиям в постели.",
         "modalitiesBetter": [
-          "Hard firm pressure",
-          "Warmth",
-          "Bending double"
+          "Сильное давление",
+          "Тепло",
+          "Сгибание вдвое"
         ],
         "modalitiesWorse": [
-          "Slight touch & draft of air",
-          "Loss of vital fluids",
-          "After meals"
+          "Легкое прикосновение и сквозняки",
+          "Потеря жидкостей",
+          "После еды"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 2 times daily 5 гранул.",
-        "defaultTagesdosis": "2 times daily 5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. После потери крови/диареи 2 раза в день по 5 гранул.",
+        "defaultTagesdosis": "2 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Blood & Circulation",
-          "Gastrointestinal Canal",
-          "Spleen & Liver",
-          "Nervous System"
+          "Кровь и кровообращение",
+          "Пищеварительный тракт",
+          "Селезенка и печень",
+          "Нервная система"
         ],
         "differentialRemedies": [
           "Carbo vegetabilis",
@@ -7382,20 +7040,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Ferrum metallicum"
         ],
         "searchKeywords": [
-          "хинное дерево / хина",
-          "cinchona pubescens / china",
-          "cinchona",
-          "china",
-          "fluid loss",
-          "hemorrhage",
-          "bloating",
-          "debility",
-          "periodicity",
-          "tinnitus",
-          "blood & circulation",
-          "gastrointestinal canal",
-          "spleen & liver",
-          "nervous system"
+          "хина",
+          "слабость",
+          "потеря жидкостей",
+          "вздутие живота",
+          "шум в ушах"
         ]
       }
     }
@@ -7901,34 +7550,34 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Actée à grappes",
-        "origin": "Fresh rootstock of Actaea racemosa (Ranunculaceae).",
-        "essence": "Uterine and pelvic pains directly proportional to the flow of menses, shooting muscular neck/back pains, and sensation of a heavy dark cloud hanging over the mind.",
+        "origin": "Rhizome frais de l'actée à grappes (Ranunculaceae).",
+        "essence": "Douleurs gynécologiques proportionnelles à l'intensité du flux, douleurs du cou et du dos ; sensation d'un lourd nuage noir au-dessus du mental.",
         "mainIndications": [
-          "SPM et dysménorrhée (la douleur augmente avec le flux menstruel)",
-          "Menopausal hot flushes & depressive moodiness",
-          "Cervical stiffness and shooting muscular spasms"
+          "Syndrome prémenstruel et dysménorrhée (plus il y a de saignement, plus il y a de douleur)",
+          "Troubles de la ménopause avec bouffées de chaleur et dépression",
+          "Raideur de la nuque et des épaules avec douleurs lancinantes"
         ],
         "keynotes": [
-          "Pain increases in direct ratio with menstrual flow",
-          "Sensation as if a heavy black cloud settled over the head",
-          "Electric shock-like shooting pains darting through thighs and hips"
+          "L'intensité de la douleur augmente exactement avec la force du flux menstruel",
+          "Sensation qu'un nuage noir et lourd est suspendu au-dessus de la tête",
+          "Douleurs lancinantes comme des décharges électriques dans les cuisses et le dos"
         ],
-        "mindEmotional": "Incessant loquacity changing rapidly from subject to subject; fear of impending insanity.",
+        "mindEmotional": "Loquace (saute d'un sujet à l'autre), mélancolique, peur de devenir fou.",
         "modalitiesBetter": [
-          "Warmth",
-          "Eating"
+          "Chaleur",
+          "Manger"
         ],
         "modalitiesWorse": [
           "Pendant les règles",
-          "Cold damp drafts",
-          "Night"
+          "Froid et humidité",
+          "Nuit"
         ],
-        "potenciesAndDosage": "D4 to C30 / 6C, 30C. 2 times daily 5 granules.",
-        "defaultTagesdosis": "2 times daily 5 granules",
+        "potenciesAndDosage": "D4 à C30. 2 fois par jour 5 granules.",
+        "defaultTagesdosis": "2 fois par jour 5 granules",
         "sphereOfAction": [
-          "Female Reproductive Axis",
-          "Colonne cervicale et muscles",
-          "Mind & Nervous System"
+          "Organes génitaux féminins",
+          "Nuque et colonne vertébrale",
+          "Système nerveux central"
         ],
         "differentialRemedies": [
           "Sepia",
@@ -7937,50 +7586,44 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Pulsatilla"
         ],
         "searchKeywords": [
-          "actée à grappes",
-          "cimicifuga racemosa / actaea racemosa",
-          "black cohosh",
-          "menopause",
-          "dysmenorrhea",
-          "neck pain",
-          "black cloud",
-          "loquacity",
-          "female reproductive axis",
-          "colonne cervicale et muscles",
-          "mind & nervous system"
+          "actée",
+          "cimicifuga",
+          "ménopause",
+          "règles",
+          "nuque"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Τσιμισιφούγκα",
-        "origin": "Φρέσκο ​​υποκείμενο Actaea racemosa (Ranunculaceae).",
-        "essence": "Πόνοι της μήτρας και της πυέλου ευθέως ανάλογοι με τη ροή της εμμήνου ρύσεως, έντονοι μυϊκοί πόνοι στον αυχένα/πλάτης και η αίσθηση ενός βαριού σκούρου σύννεφου που κρέμεται πάνω από το μυαλό.",
+        "origin": "Φρέσκο ​​υποκείμενο της Cimicifuga (Ranunculaceae).",
+        "essence": "Γυναικολογικοί πόνοι ανάλογοι με την ένταση της αιμορραγίας, πόνοι στον αυχένα και την πλάτη. Αίσθημα ενός βαριού μαύρου σύννεφου πάνω από το πνεύμα.",
         "mainIndications": [
-          "PMS και δυσμηνόρροια (ο πόνος αυξάνεται με την έμμηνο ρύση)",
-          "Εξάψεις εμμηνόπαυσης & καταθλιπτική διάθεση",
-          "Αυχενική δυσκαμψία και εκτοξευόμενοι μυϊκοί σπασμοί"
+          "Προεμμηνορροϊκό σύνδρομο & δυσμηνόρροια (όσο περισσότερη αιμορραγία, τόσο περισσότερος πόνος)",
+          "Κλιμακτήρια συμπτώματα με εξάψεις & κατάθλιψη",
+          "Δυσκαμψία αυχένα και ώμων με διαπεραστικούς πόνους"
         ],
         "keynotes": [
-          "Ο πόνος αυξάνεται σε άμεση αναλογία με την έμμηνο ρύση",
-          "Αίσθηση σαν ένα βαρύ μαύρο σύννεφο να εγκαταστάθηκε πάνω από το κεφάλι",
-          "Πόνοι πυροβολισμού σαν ηλεκτροπληξία που διαπερνούν τους μηρούς και τους γοφούς"
+          "Η ένταση του πόνου αυξάνεται ακριβώς με την ένταση της εμμήνου ρύσεως",
+          "Αίσθηση ότι ένα μαύρο βαρύ σύννεφο κρέμεται πάνω από το κεφάλι",
+          "Διαπεραστικοί πόνοι σαν ηλεκτροσόκ στους μηρούς και την πλάτη"
         ],
-        "mindEmotional": "Η αδιάκοπη ευφράδεια αλλάζει γρήγορα από θέμα σε θέμα. φόβος της επικείμενης παραφροσύνης.",
+        "mindEmotional": "Πολυλογού (πηδά από θέμα σε θέμα), μελαγχολική, φόβος τρέλας.",
         "modalitiesBetter": [
           "Ζεστασιά",
-          "Τρώγοντας"
+          "Φαγητό"
         ],
         "modalitiesWorse": [
           "Κατά τη διάρκεια της εμμήνου ρύσεως",
-          "Ψυχρά υγρά ρεύματα",
+          "Κρύο & υγρασία",
           "Νύχτα"
         ],
-        "potenciesAndDosage": "D4 έως C30 / 6C, 30C. 2 φορές την ημέρα 5 πέλλετ.",
-        "defaultTagesdosis": "2 φορές την ημέρα 5 πέλλετ",
+        "potenciesAndDosage": "D4 έως C30. 2 φορές την ημέρα 5 σφαιρίδια.",
+        "defaultTagesdosis": "2 φορές την ημέρα 5 σφαιρίδια",
         "sphereOfAction": [
-          "Γυναικείος Αναπαραγωγικός Άξονας",
-          "Αυχενική Σπονδυλική Στήλη & Μύες",
-          "Νους & Νευρικό Σύστημα"
+          "Γυναικεία γεννητικά όργανα",
+          "Αυχένας & σπονδυλική στήλη",
+          "Κεντρικό νευρικό σύστημα"
         ],
         "differentialRemedies": [
           "Sepia",
@@ -7990,49 +7633,43 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "τσιμισιφούγκα",
-          "cimicifuga racemosa / actaea racemosa",
-          "μαύρο cohosh",
           "εμμηνόπαυση",
-          "δυσμηνόρροια",
-          "πόνος στον αυχένα",
-          "μαύρο σύννεφο",
-          "ευφροσύνη",
-          "γυναικείος αναπαραγωγικός άξονας",
-          "αυχενική σπονδυλική στήλη & μύες",
-          "νους & νευρικό σύστημα"
+          "εμμηνόρροια",
+          "αυχένας",
+          "κατάθλιψη"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Cimicifuga",
-        "origin": "Portainnesto fresco di Actaea racemosa (Ranunculaceae).",
-        "essence": "Uterine and pelvic pains directly proportional to the flow of menses, shooting muscular neck/back pains, and sensation of a heavy dark cloud hanging over the mind.",
+        "origin": "Rizoma fresco della cimicifuga (Ranunculaceae).",
+        "essence": "Dolori ginecologici proporzionali all'intensità del flusso, dolori al collo e alla schiena; sensazione di una pesante nuvola nera sopra la mente.",
         "mainIndications": [
-          "PMS & dysmenorrhea (pain increases with menstrual flow)",
-          "Vampate di calore in menopausa e sbalzi d'umore depressivi",
-          "Cervical stiffness and shooting muscular spasms"
+          "Sindrome premestruale e dismenorrea (più c'è sanguinamento, più c'è dolore)",
+          "Disturbi del climaterio con vampate di calore e depressione",
+          "Rigidità del collo e delle spalle con dolori lancinanti"
         ],
         "keynotes": [
-          "Pain increases in direct ratio with menstrual flow",
-          "Sensation as if a heavy black cloud settled over the head",
-          "Electric shock-like shooting pains darting through thighs and hips"
+          "L'intensità del dolore aumenta esattamente con la forza del flusso mestruale",
+          "Sensazione che una nuvola nera pesante sia appesa sopra la testa",
+          "Dolori lancinanti come scosse elettriche nelle cosce e nella schiena"
         ],
-        "mindEmotional": "Incessant loquacity changing rapidly from subject to subject; fear of impending insanity.",
+        "mindEmotional": "Loquace (salta da un argomento all'altro), malinconico, paura di impazzire.",
         "modalitiesBetter": [
-          "Warmth",
-          "Eating"
+          "Calore",
+          "Mangiare"
         ],
         "modalitiesWorse": [
-          "During menses",
-          "Cold damp drafts",
-          "Night"
+          "Durante le mestruazioni",
+          "Freddo e umidità",
+          "Notte"
         ],
-        "potenciesAndDosage": "D4 to C30 / 6C, 30C. 2 times daily 5 granuli.",
-        "defaultTagesdosis": "2 times daily 5 granuli",
+        "potenciesAndDosage": "D4 a C30. 2 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "2 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Female Reproductive Axis",
-          "Cervical Spine & Muscles",
-          "Mind & Nervous System"
+          "Organi genitali femminili",
+          "Collo e colonna vertebrale",
+          "Sistema nervoso centrale"
         ],
         "differentialRemedies": [
           "Sepia",
@@ -8042,49 +7679,43 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "cimicifuga",
-          "cimicifuga racemosa / actaea racemosa",
-          "black cohosh",
           "menopausa",
-          "dysmenorrhea",
-          "neck pain",
-          "black cloud",
-          "loquacity",
-          "female reproductive axis",
-          "cervical spine & muscles",
-          "mind & nervous system"
+          "mestruazioni",
+          "collo",
+          "depressione"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Цимицифуга / Клопогон кистевидный",
-        "origin": "Fresh rootstock of Actaea racemosa (Ranunculaceae).",
-        "essence": "Uterine and pelvic pains directly proportional to the flow of menses, shooting muscular neck/back pains, and sensation of a heavy dark cloud hanging over the mind.",
+        "origin": "Свежее корневище цимицифуги (Ranunculaceae).",
+        "essence": "Гинекологические боли пропорциональны интенсивности кровотечения, боли в шее и спине; ощущение тяжелого черного облака над душой.",
         "mainIndications": [
-          "PMS & dysmenorrhea (pain increases with menstrual flow)",
-          "Menopausal hot flushes & depressive moodiness",
-          "Cervical stiffness and shooting muscular spasms"
+          "Предменструальный синдром и дисменорея (чем сильнее кровотечение, тем сильнее боль)",
+          "Климактерические расстройства с приливами и депрессией",
+          "Скованность шеи и плеч с простреливающими болями"
         ],
         "keynotes": [
-          "Pain increases in direct ratio with menstrual flow",
-          "Sensation as if a heavy black cloud settled over the head",
-          "Electric shock-like shooting pains darting through thighs and hips"
+          "Интенсивность боли возрастает точно вместе с силой менструального потока",
+          "Ощущение, будто над головой нависло темное тяжелое облако",
+          "Простреливающие боли, подобные ударам тока, в бедрах и спине"
         ],
-        "mindEmotional": "Incessant loquacity changing rapidly from subject to subject; fear of impending insanity.",
+        "mindEmotional": "Болтливость (перескакивает с темы на тему), меланхолия, страх сумасшествия.",
         "modalitiesBetter": [
-          "Warmth",
-          "Eating"
+          "Тепло",
+          "Еда"
         ],
         "modalitiesWorse": [
-          "During menses",
-          "Cold damp drafts",
-          "Night"
+          "Во время менструации",
+          "Холод и сырость",
+          "Ночь"
         ],
-        "potenciesAndDosage": "D4 to C30 / 6C, 30C. 2 times daily 5 гранул.",
-        "defaultTagesdosis": "2 times daily 5 гранул",
+        "potenciesAndDosage": "D4–C30. 2 раза в день по 5 гранул.",
+        "defaultTagesdosis": "2 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Female Reproductive Axis",
-          "Cervical Spine & Muscles",
-          "Mind & Nervous System"
+          "Женские половые органы",
+          "Шея и позвоночник",
+          "Центральная нервная система"
         ],
         "differentialRemedies": [
           "Sepia",
@@ -8093,17 +7724,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Pulsatilla"
         ],
         "searchKeywords": [
-          "цимицифуга / клопогон кистевидный",
-          "cimicifuga racemosa / actaea racemosa",
-          "black cohosh",
-          "menopause",
-          "дисменорея",
-          "neck pain",
-          "black cloud",
-          "loquacity",
-          "female reproductive axis",
-          "cervical spine & muscles",
-          "mind & nervous system"
+          "цимицифуга",
+          "климакс",
+          "менструация",
+          "шея",
+          "депрессия"
         ]
       }
     }
@@ -8262,205 +7887,183 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Semen-contra",
-        "origin": "Dried flower heads of Artemisia cina (Asteraceae).",
-        "essence": "Classic anthelmintic and worm symptom picture: persistent picking and rubbing of nose, extreme snappish irritability (refuses to be touched or carried), and canine hunger.",
+        "origin": "Capitules séchés de l'armoise (Asteraceae).",
+        "essence": "Remède classique contre les vers chez l'enfant : frottement et curage constant du nez, extrême irritabilité (ne veut pas être touché ou porté) et faim canine.",
         "mainIndications": [
-          "Helminthiasis (pinworms, roundworms) & enuresis",
-          "Nocturnal teeth grinding & restless startings in sleep",
-          "Ill-humored children with dark circles under eyes"
+          "Infestation par les vers (oxyures, ascaris) et vessie irritable",
+          "Grincement de dents pendant le sommeil et sommeil agité",
+          "Enfants irritables et insatisfaits avec des cernes sombres"
         ],
         "keynotes": [
-          "Constantly rubs, bores, and picks at the nose",
-          "Grinds teeth in sleep and wakes screaming in terror",
-          "Ravenous hunger shortly after a full meal"
+          "Se frotte et se cure constamment le nez",
+          "Grince des dents la nuit et s'éveille en criant",
+          "Faim canine peu après un repas complet"
         ],
-        "mindEmotional": "Extremely cross, snappish, refuses to be touched, looked at, or carried.",
+        "mindEmotional": "Extrêmement grincheux, cassant, ne veut être ni touché, ni regardé, ni porté.",
         "modalitiesBetter": [
           "Allongé sur le ventre"
         ],
         "modalitiesWorse": [
-          "Touch & being looked at",
-          "Nighttime",
-          "From worms"
+          "Toucher et regard",
+          "Nuit",
+          "Lors d'infestation vermineuse"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 2 times daily 5 granules.",
-        "defaultTagesdosis": "2 times daily 5 granules",
+        "potenciesAndDosage": "D6, D12, C30. 2 fois par jour 5 granules.",
+        "defaultTagesdosis": "2 fois par jour 5 granules",
         "sphereOfAction": [
-          "Tractus gastro-intestinal (parasites)",
-          "Nervous System",
-          "Nose"
+          "Tube digestif (parasites)",
+          "Système nerveux",
+          "Nez"
         ],
         "differentialRemedies": [
-          "Chamomilla (demands carrying)",
+          "Chamomilla",
           "Santoninum",
           "Spigelia",
           "Teucrium"
         ],
         "searchKeywords": [
-          "semen-contra",
-          "artemisia cina",
-          "wormseed",
+          "cina",
           "vers",
           "oxyures",
-          "grincement des dents",
-          "picking nose",
-          "enfant irritable",
-          "tractus gastro-intestinal (parasites)",
-          "nervous system",
-          "nose"
+          "grincement",
+          "nez"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Κίνα μαριτίμα",
-        "origin": "Αποξηραμένες κεφαλές λουλουδιών Artemisia cina (Asteraceae).",
-        "essence": "Κλασική εικόνα συμπτωμάτων ανθελμινθικού και σκουληκιού: επίμονο μάζεμα και τρίψιμο της μύτης, ακραίος εκνευριστικός εκνευρισμός (αρνείται να τον αγγίξουν ή να τον μεταφέρουν) και πείνα του σκύλου.",
+        "origin": "Αποξηραμένες ανθοκεφαλές της Artemisia cina (Asteraceae).",
+        "essence": "Τυπικό φάρμακο για σκουλήκια στα παιδιά: Συνεχές τρίψιμο της μύτης, εξαιρετική ευερεθιστότητα (δεν θέλει να το αγγίζουν ή να το κρατούν) και βουλιμία.",
         "mainIndications": [
-          "Ελμινθίαση (ακροσκώληκες, ασκαρίδες) & ενούρηση",
-          "Νυχτερινό τρίξιμο δοντιών & ανήσυχα ξεκινήματα στον ύπνο",
-          "Παιδιά με κακό χιούμορ με μαύρους κύκλους κάτω από τα μάτια"
+          "Παρασιτώσεις από σκουλήκια (οξύουροι, ασκαρίδες) & ευερέθιστη κύστη",
+          "Τρίξιμο δοντιών στον ύπνο & ανήσυχος νυχτερινός ύπνος",
+          "Ευερέθιστα, ανικανοποίητα παιδιά με μαύρους κύκλους κάτω από τα μάτια"
         ],
         "keynotes": [
-          "Τρίβει συνεχώς, τρυπάει και μαζεύει τη μύτη",
-          "Τρίζει τα δόντια στον ύπνο και ξυπνάει ουρλιάζοντας τρομαγμένος",
-          "Αιχμηρή πείνα λίγο μετά από ένα πλήρες γεύμα"
+          "Τρίβει και σκαλίζει συνεχώς τη μύτη",
+          "Τρίζει τα δόντια τη νύχτα και ξυπνά με κραυγές",
+          "Βουλιμία λίγο μετά από ένα πλήρες γεύμα"
         ],
-        "mindEmotional": "Εξαιρετικά σταυρωμένο, σπαστό, αρνείται να τον αγγίξουν, να τον κοιτάξουν ή να τον μεταφέρουν.",
+        "mindEmotional": "Εξαιρετικά δύστροπο, απότομο, δεν θέλει να το αγγίζουν, να το κοιτάζουν ή να το κρατούν.",
         "modalitiesBetter": [
-          "Ξαπλωμένη στην κοιλιά"
+          "Πρηνή θέση (μπρούμυτα)"
         ],
         "modalitiesWorse": [
-          "Αγγίξτε και σας κοιτάζετε",
+          "Άγγιγμα & βλέμμα",
           "Νύχτα",
-          "Από σκουλήκια"
+          "Κατά την παρασίτωση"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 2 φορές την ημέρα 5 πέλλετ.",
-        "defaultTagesdosis": "2 φορές την ημέρα 5 πέλλετ",
+        "potenciesAndDosage": "D6, D12, C30. 2 φορές την ημέρα 5 σφαιρίδια.",
+        "defaultTagesdosis": "2 φορές την ημέρα 5 σφαιρίδια",
         "sphereOfAction": [
-          "Γαστρεντερική οδός (παράσιτα)",
-          "Νευρικό Σύστημα",
+          "Πεπτικό σύστημα (παράσιτα)",
+          "Νευρικό σύστημα",
           "Μύτη"
         ],
         "differentialRemedies": [
-          "Chamomilla (demands carrying)",
+          "Chamomilla",
           "Santoninum",
           "Spigelia",
           "Teucrium"
         ],
         "searchKeywords": [
-          "κίνα μαριτίμα",
-          "artemisia cina",
-          "σκουληκόσπορος",
+          "σίνα",
           "σκουλήκια",
-          "pinworms",
-          "τρίξιμο των δοντιών",
-          "μύτη που μαζεύει",
-          "ευερέθιστο παιδί",
-          "γαστρεντερική οδός (παράσιτα)",
-          "νευρικό σύστημα",
-          "μύτη"
+          "παράσιτα",
+          "τρίξιμο δοντιών",
+          "μύτη",
+          "παιδιά"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Semencina",
-        "origin": "Capolini essiccati di Artemisia cina (Asteraceae).",
-        "essence": "Classic anthelmintic and worm symptom picture: persistent picking and rubbing of nose, extreme snappish irritability (refuses to be touched or carried), and canine hunger.",
+        "origin": "Capolini essiccati dell'assenzio marittimo (Asteraceae).",
+        "essence": "Classico rimedio per i vermi nei bambini: sfregamento e scavo continuo nel naso, estrema irritabilità (non vuole essere toccato o portato) e fame canina.",
         "mainIndications": [
-          "Helminthiasis (pinworms, roundworms) & enuresis",
-          "Nocturnal teeth grinding & restless startings in sleep",
-          "Ill-humored children with dark circles under eyes"
+          "Infestazione da vermi (ossiuroidi, ascaridi) e vescica irritabile",
+          "Digrignamento dei denti durante il sonno e sonno agitato",
+          "Bambini irritabili e insoddisfatti con occhiaie scure"
         ],
         "keynotes": [
-          "Constantly rubs, bores, and picks at the nose",
-          "Grinds teeth in sleep and wakes screaming in terror",
-          "Ravenous hunger shortly after a full meal"
+          "Si strofina e si scava costantemente nel naso",
+          "Digrigna i denti di notte e si sveglia urlando",
+          "Fame canina poco dopo un pasto completo"
         ],
-        "mindEmotional": "Extremely cross, snappish, refuses to be touched, looked at, or carried.",
+        "mindEmotional": "Estremamente scontroso, brusco, non vuole essere né toccato, né guardato, né portato.",
         "modalitiesBetter": [
-          "Lying on abdomen"
+          "Posizione prona (pancia in giù)"
         ],
         "modalitiesWorse": [
-          "Touch & being looked at",
-          "Nighttime",
-          "From worms"
+          "Tocco e sguardo",
+          "Di notte",
+          "Durante l'infestazione da vermi"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 2 times daily 5 granuli.",
-        "defaultTagesdosis": "2 times daily 5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. 2 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "2 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Gastrointestinal Tract (Parasites)",
-          "Nervous System",
-          "Nose"
+          "Apparato digerente (parassiti)",
+          "Sistema nervoso",
+          "Naso"
         ],
         "differentialRemedies": [
-          "Chamomilla (demands carrying)",
+          "Chamomilla",
           "Santoninum",
           "Spigelia",
           "Teucrium"
         ],
         "searchKeywords": [
-          "semencina",
-          "artemisia cina",
-          "wormseed",
-          "worms",
-          "pinworms",
-          "teeth grinding",
-          "picking nose",
-          "irritable child",
-          "gastrointestinal tract (parasites)",
-          "nervous system",
-          "nose"
+          "cina",
+          "vermi",
+          "ossiuroidi",
+          "digrignamento",
+          "naso"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Цина / Полынь цитварная",
-        "origin": "Dried flower heads of Artemisia cina (Asteraceae).",
-        "essence": "Classic anthelmintic and worm symptom picture: persistent picking and rubbing of nose, extreme snappish irritability (refuses to be touched or carried), and canine hunger.",
+        "origin": "Высушенные цветочные корзинки цитварной полыни (Asteraceae).",
+        "essence": "Типичное средство при глистных инвазиях у детей: постоянное потирание и ковыряние в носу, крайняя раздражительность (не хочет, чтобы его трогали или носили на руках) и «волчий» голод.",
         "mainIndications": [
-          "Helminthiasis (pinworms, roundworms) & enuresis",
-          "Nocturnal teeth grinding & restless startings in sleep",
-          "Ill-humored children with dark circles under eyes"
+          "Глистные инвазии (острицы, аскариды) и раздражительный мочевой пузырь",
+          "Скрежетание зубами во сне и беспокойный ночной сон",
+          "Раздражительные, недовольные дети с темными кругами под глазами"
         ],
         "keynotes": [
-          "Constantly rubs, bores, and picks at the nose",
-          "Grinds teeth in sleep and wakes screaming in terror",
-          "Ravenous hunger shortly after a full meal"
+          "Постоянно трет, ковыряет и лезет в нос",
+          "Скрежещет зубами ночью и просыпается с криком",
+          "Сильный голод вскоре после плотной еды"
         ],
-        "mindEmotional": "Чрезвычайно раздражителен, раздражителен, отказывается, чтобы к нему прикасались, смотрели или несли.",
+        "mindEmotional": "Крайне угрюмый, резкий, не хочет, чтобы его трогали, смотрели на него или носили на руках.",
         "modalitiesBetter": [
           "Лежа на животе"
         ],
         "modalitiesWorse": [
-          "Touch & being looked at",
-          "Nighttime",
-          "From worms"
+          "Прикосновение и взгляд",
+          "Ночью",
+          "При наличии глистов"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. 2 times daily 5 гранул.",
-        "defaultTagesdosis": "2 times daily 5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. 2 раза в день по 5 гранул.",
+        "defaultTagesdosis": "2 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Gastrointestinal Tract (Parasites)",
-          "Nervous System",
-          "Nose"
+          "Пищеварительный тракт (паразиты)",
+          "Нервная система",
+          "Нос"
         ],
         "differentialRemedies": [
-          "Chamomilla (demands carrying)",
+          "Chamomilla",
           "Santoninum",
           "Spigelia",
           "Teucrium"
         ],
         "searchKeywords": [
-          "цина / полынь цитварная",
-          "artemisia cina",
-          "wormseed",
-          "worms",
-          "pinworms",
-          "teeth grinding",
-          "picking nose",
-          "irritable child",
-          "gastrointestinal tract (parasites)",
-          "nervous system",
-          "nose"
+          "цина",
+          "глисты",
+          "черви",
+          "скрежет зубами",
+          "нос",
+          "дети"
         ]
       }
     }
@@ -8615,32 +8218,32 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Coque du Levant",
-        "origin": "Dried berries of Anamirta cocculus (Menispermaceae).",
-        "essence": "Motion sickness, vertigo, and profound prostration from loss of sleep, night watching, and nursing the sick; nausea from riding in cars, boats, or trains.",
+        "origin": "Baies séchées de l'anamirte (Menispermaceae).",
+        "essence": "Mal des transports, vertiges et prostration profonde suite à un manque de sommeil ou aux soins des malades ; nausées en voiture, en bateau ou en avion.",
         "mainIndications": [
-          "Mal des transports (kinétose) dans les voitures, les bateaux ou les avions",
-          "Épuisement et insomnie des proches malades qui soignent la nuit",
-          "Rotary vertigo with nausea upon rising in bed"
+          "Mal des transports (cinétose) en voiture, bateau ou avion",
+          "Épuisement et insomnie après des veilles nocturnes auprès de malades",
+          "Vertige rotatoire avec nausées en se levant du lit"
         ],
         "keynotes": [
-          "Nausea from the mere sight or smell of food",
-          "Sensation of hollow emptiness in head and abdomen",
-          "Violent aggravation from passive motion (riding, swinging)"
+          "Nausée à la simple vue ou odeur de nourriture",
+          "Sensation de vide creux dans la tête et l'abdomen",
+          "Aggravation violente par le mouvement passif (conduire, se balancer)"
         ],
-        "mindEmotional": "Slow in responding, deeply anxious regarding sick relatives, drained.",
+        "mindEmotional": "Lent à répondre, très inquiet pour ses proches malades, épuisé.",
         "modalitiesBetter": [
-          "Lying quiet in a warm room"
+          "Allongé au calme dans une chambre chaude"
         ],
         "modalitiesWorse": [
-          "Passive motion (cars, boats, planes)",
-          "Loss of sleep & night sitting",
-          "Smell of food"
+          "Mouvement passif (voiture, bateau, avion)",
+          "Manque de sommeil et veilles nocturnes",
+          "Odeur de nourriture"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. For motion sickness C30 before departure.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granules",
+        "potenciesAndDosage": "Aigu : D6, D12, C30. Pour le mal des transports, prendre C30 avant le départ.",
+        "defaultTagesdosis": "2–3 doses de 5 granules",
         "sphereOfAction": [
-          "Vestibular & Cerebrospinal System",
-          "Digestive Canal"
+          "Système nerveux central et équilibre",
+          "Tube digestif"
         ],
         "differentialRemedies": [
           "Tabacum",
@@ -8649,47 +8252,42 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Phosphoricum acidum"
         ],
         "searchKeywords": [
-          "coque du levant",
-          "anamirta cocculus",
           "cocculus",
-          "motion sickness",
-          "night watching",
-          "sleep loss",
-          "vertigo",
-          "car sick",
-          "vestibular & cerebrospinal system",
-          "digestive canal"
+          "cinétose",
+          "transports",
+          "sommeil",
+          "vertige"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Κόκκουλος",
-        "origin": "Αποξηραμένα μούρα Anamirta cocculus (Menispermaceae).",
-        "essence": "Ασθένεια κίνησης, ίλιγγος και βαθειά υπόκλιση από απώλεια ύπνου, νυχτερινή παρακολούθηση και θηλασμό των αρρώστων. ναυτία από την οδήγηση σε αυτοκίνητα, βάρκες ή τρένα.",
+        "origin": "Αποξηραμένοι καρποί του Anamirta cocculus (Menispermaceae).",
+        "essence": "Ναυτία ταξιδιού, ίλιγγος και βαθιά εξάντληση από έλλειψη ύπνου ή φροντίδα ασθενών. Ναυτία σε αυτοκίνητα, πλοία ή αεροπλάνα.",
         "mainIndications": [
-          "Ασθένεια κίνησης (κινέτωση) σε αυτοκίνητα, βάρκες ή αεροπλάνα",
-          "Εξάντληση & αϋπνία από άρρωστους συγγενείς που θηλάζουν τη νύχτα",
-          "Περιστροφικός ίλιγγος με ναυτία όταν σηκώνεστε στο κρεβάτι"
+          "Ναυτία ταξιδιού (κινέτωση) σε αυτοκίνητα, πλοία ή αεροπλάνα",
+          "Εξάντληση & αϋπνία από νυχτερινή φροντίδα ασθενών συγγενών",
+          "Περιστροφικός ίλιγγος με ναυτία κατά την έγερση από το κρεβάτι"
         ],
         "keynotes": [
-          "Ναυτία από την απλή θέα ή τη μυρωδιά του φαγητού",
-          "Αίσθηση κοίλου κενού στο κεφάλι και την κοιλιά",
-          "Βίαια επιδείνωση από παθητική κίνηση (ιππασία, αιώρηση)"
+          "Ναυτία με την απλή θέα ή μυρωδιά φαγητού",
+          "Αίσθηση κενού στο κεφάλι και την κοιλιά",
+          "Έντονη επιδείνωση από παθητική κίνηση (οδήγηση, κούνια)"
         ],
-        "mindEmotional": "Αργή στην ανταπόκριση, βαθιά ανήσυχη για άρρωστους συγγενείς, στραγγισμένος.",
+        "mindEmotional": "Αργή ανταπόκριση, μεγάλη ανησυχία για τους ασθενείς συγγενείς, εξαντλημένος.",
         "modalitiesBetter": [
-          "Ξάπλωσε ήσυχα σε ένα ζεστό δωμάτιο"
+          "Ανάπαυση σε ήσυχο, ζεστό δωμάτιο"
         ],
         "modalitiesWorse": [
-          "Παθητική κίνηση (αυτοκίνητα, βάρκες, αεροπλάνα)",
-          "Απώλεια ύπνου και νυχτερινή καθιστική ζωή",
+          "Παθητική κίνηση (αυτοκίνητο, πλοίο, αεροπλάνο)",
+          "Έλλειψη ύπνου & νυχτερινή αγρύπνια",
           "Μυρωδιά φαγητού"
         ],
-        "potenciesAndDosage": "Οξεία: D6, D12, C30 / 6C, 30C. Για την ασθένεια κίνησης C30 πριν από την αναχώρηση.",
-        "defaultTagesdosis": "2–3 δόσεις των 3–5 σφαιριδίων",
+        "potenciesAndDosage": "Οξεία φάση: D6, D12, C30. Για ναυτία ταξιδιού, λήψη C30 πριν την αναχώρηση.",
+        "defaultTagesdosis": "2–3 δόσεις των 5 σφαιριδίων",
         "sphereOfAction": [
-          "Αιθουσαίο & Εγκεφαλονωτιαίο Σύστημα",
-          "Πεπτικό κανάλι"
+          "Κεντρικό νευρικό σύστημα & ισορροπία",
+          "Πεπτικό σύστημα"
         ],
         "differentialRemedies": [
           "Tabacum",
@@ -8699,46 +8297,41 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "κόκκουλος",
-          "anamirta cocculus",
-          "κόκκους",
-          "ασθένεια κίνησης",
-          "νυχτερινή παρακολούθηση",
-          "απώλεια ύπνου",
+          "ναυτία",
+          "ταξίδι",
           "ίλιγγος",
-          "αυτοκίνητο άρρωστο",
-          "αιθουσαίο & εγκεφαλονωτιαίο σύστημα",
-          "πεπτικό κανάλι"
+          "αϋπνία"
         ]
       },
       "it": {
         "category": "Vegetale",
-        "commonName": "Cocculo",
-        "origin": "Dried berries of Anamirta cocculus (Menispermaceae).",
-        "essence": "Motion sickness, vertigo, and profound prostration from loss of sleep, night watching, and nursing the sick; nausea from riding in cars, boats, or trains.",
+        "commonName": "Coccolo",
+        "origin": "Bacche essiccate dell'anamirta (Menispermaceae).",
+        "essence": "Mal d'auto, vertigini e profonda prostrazione per mancanza di sonno o cura dei malati ; nausea in auto, barca o aereo.",
         "mainIndications": [
-          "Motion sickness (kinetosis) in cars, boats, or airplanes",
-          "Exhaustion & insomnia from night-nursing sick relatives",
-          "Rotary vertigo with nausea upon rising in bed"
+          "Mal d'auto (cinetosi) in auto, barca o aereo",
+          "Esaurimento e insonnia dopo veglie notturne presso malati",
+          "Vertigine rotatoria con nausea alzandosi dal letto"
         ],
         "keynotes": [
-          "Nausea from the mere sight or smell of food",
-          "Sensation of hollow emptiness in head and abdomen",
-          "Violent aggravation from passive motion (riding, swinging)"
+          "Nausea alla semplice vista o odore di cibo",
+          "Sensazione di vuoto nella testa e nell'addome",
+          "Violento peggioramento con il movimento passivo (guidare, dondolare)"
         ],
-        "mindEmotional": "Slow in responding, deeply anxious regarding sick relatives, drained.",
+        "mindEmotional": "Lento nel rispondere, molto preoccupato per i parenti malati, esausto.",
         "modalitiesBetter": [
-          "Lying quiet in a warm room"
+          "Riposo in una stanza tranquilla και calda"
         ],
         "modalitiesWorse": [
-          "Passive motion (cars, boats, planes)",
-          "Loss of sleep & night sitting",
-          "Smell of food"
+          "Movimento passivo (auto, barca, aereo)",
+          "Mancanza di sonno e veglie notturne",
+          "Odore di cibo"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. For motion sickness C30 before departure.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: D6, D12, C30. Per il mal d'auto, prendere C30 prima della partenza.",
+        "defaultTagesdosis": "2–3 dosi da 5 granuli",
         "sphereOfAction": [
-          "Vestibular & Cerebrospinal System",
-          "Digestive Canal"
+          "Sistema nervoso centrale e equilibrio",
+          "Apparato digerente"
         ],
         "differentialRemedies": [
           "Tabacum",
@@ -8747,47 +8340,42 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Phosphoricum acidum"
         ],
         "searchKeywords": [
-          "cocculo",
-          "anamirta cocculus",
-          "cocculus",
-          "motion sickness",
-          "night watching",
-          "sleep loss",
-          "vertigo",
-          "car sick",
-          "vestibular & cerebrospinal system",
-          "digestive canal"
+          "coccolo",
+          "cinetosi",
+          "mal d'auto",
+          "sonno",
+          "vertigini"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Кукольван / Коккулюс",
-        "origin": "Dried berries of Anamirta cocculus (Menispermaceae).",
-        "essence": "Motion sickness, vertigo, and profound prostration from loss of sleep, night watching, and nursing the sick; nausea from riding in cars, boats, or trains.",
+        "origin": "Высушенные ягоды кукольвана (Menispermaceae).",
+        "essence": "Морская болезнь, головокружение и глубокое изнеможение от недостатка сна или ухода за больными; тошнота при езде в автомобиле, на корабле или самолете.",
         "mainIndications": [
           "Укачивание (кинетоз) в автомобилях, лодках или самолетах",
-          "Exhaustion & insomnia from night-nursing sick relatives",
-          "Rotary vertigo with nausea upon rising in bed"
+          "Истощение и бессонница после ночных дежурств у постели больных",
+          "Вращательное головокружение с тошнотой при вставании с постели"
         ],
         "keynotes": [
-          "Nausea from the mere sight or smell of food",
-          "Sensation of hollow emptiness in head and abdomen",
-          "Violent aggravation from passive motion (riding, swinging)"
+          "Тошнота при одном виде или запахе пищи",
+          "Ощущение пустоты в голове и животе",
+          "Сильное ухудшение от пассивного движения (езда, качание)"
         ],
-        "mindEmotional": "Slow in responding, deeply anxious regarding sick relatives, drained.",
+        "mindEmotional": "Замедленные реакции, сильное беспокойство за больных родственников, измождение.",
         "modalitiesBetter": [
-          "Lying quiet in a warm room"
+          "Лежать спокойно в теплой комнате"
         ],
         "modalitiesWorse": [
           "Пассивное движение (автомобили, лодки, самолеты)",
-          "Loss of sleep & night sitting",
-          "Smell of food"
+          "Недостаток сна и ночные бдения",
+          "Запах пищи"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. For motion sickness C30 before departure.",
-        "defaultTagesdosis": "2–3 doses of 3–5 гранул",
+        "potenciesAndDosage": "Остро: D6, D12, C30. При укачивании принять C30 за 30 мин до выезда.",
+        "defaultTagesdosis": "2–3 приема по 5 гранул",
         "sphereOfAction": [
-          "Vestibular & Cerebrospinal System",
-          "Digestive Canal"
+          "Центральная нервная система и равновесие",
+          "Пищеварительный тракт"
         ],
         "differentialRemedies": [
           "Tabacum",
@@ -8796,16 +8384,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Phosphoricum acidum"
         ],
         "searchKeywords": [
-          "кукольван / коккулюс",
-          "anamirta cocculus",
-          "cocculus",
-          "motion sickness",
-          "night watching",
-          "sleep loss",
-          "vertigo",
-          "car sick",
-          "vestibular & cerebrospinal system",
-          "digestive canal"
+          "коккулюс",
+          "уκαчивание",
+          "головокружение",
+          "бессонница",
+          "кинетоз"
         ]
       }
     }
@@ -8972,34 +8555,34 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Café vert",
-        "origin": "Unroasted dried seeds of Coffea arabica (Rubiaceae).",
-        "essence": "Nervous insomnia from rush of thoughts, joyful excitement, or pleasant surprises; extraordinary sensory acuity and acute pain intolerance.",
+        "origin": "Graines non torréfiées du caféier (Rubiaceae).",
+        "essence": "Insomnie nerveuse par afflux de pensées, excitation joyeuse ou bonnes nouvelles soudaines ; acuité sensorielle extrême et intolérance à la douleur.",
         "mainIndications": [
-          "Insomnia from ideational hyperactivity & sudden joy",
+          "Insomnie par excitation et afflux d'idées",
           "Maux de dents soulagés strictement en gardant de l'eau glacée dans la bouche",
-          "Hyperesthesia of all special senses (hearing, smell, light)"
+          "Hyperesthésie de tous les sens (ouïe, odorat, lumière)"
         ],
         "keynotes": [
-          "Brain is excessively wide awake with endless stream of ideas",
-          "Toothache instantly relieved by ice water held in mouth (worse as it warms)",
-          "Aggravated by pleasant surprises and excessive coffee"
+          "Le cerveau est excessivement en éveil avec un flux incessant d'idées",
+          "Maux de dents instantanément soulagés par de l'eau glacée gardée en bouche",
+          "Aggravé par les surprises agréables et l'excès de café"
         ],
-        "mindEmotional": "Euphoric, hyper-responsive, full of animated schemes, weeps with joy.",
+        "mindEmotional": "Euphorique, hyper-réactif, plein de projets animés, pleure de joie.",
         "modalitiesBetter": [
-          "Holding ice water in mouth (dental pain)",
-          "Warmth of room",
+          "Garder de l'eau glacée en bouche (douleur dentaire)",
+          "Chaleur de la pièce",
           "Repos"
         ],
         "modalitiesWorse": [
-          "Joyful excitement & surprise",
-          "Sudden noises",
-          "Nighttime"
+          "Excitation joyeuse et surprise",
+          "Bruits soudains",
+          "Nuit"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. For insomnia C30 at bedtime.",
-        "defaultTagesdosis": "1–2 doses of 3–5 granules",
+        "potenciesAndDosage": "D6, D12, C30. Pour l'insomnie, C30 au coucher.",
+        "defaultTagesdosis": "1–2 doses de 5 granules",
         "sphereOfAction": [
           "Système nerveux central et cerveau",
-          "Sensory Organs",
+          "Organes des sens",
           "Nerfs dentaires"
         ],
         "differentialRemedies": [
@@ -9009,52 +8592,45 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Aconitum"
         ],
         "searchKeywords": [
-          "café vert",
-          "coffea arabica",
-          "coffee",
-          "insomnia",
-          "racing thoughts",
+          "café",
+          "insomnie",
+          "pensées",
           "joie",
-          "toothache",
-          "ice water better",
-          "sensory overload",
-          "système nerveux central et cerveau",
-          "sensory organs",
-          "nerfs dentaires"
+          "dents"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Καφές",
-        "origin": "Μη καβουρδισμένοι αποξηραμένοι σπόροι Coffea arabica (Rubiaceae).",
-        "essence": "Νευρική αϋπνία από ορμή των σκέψεων, χαρούμενος ενθουσιασμός ή ευχάριστες εκπλήξεις. εξαιρετική αισθητηριακή οξύτητα και οξεία δυσανεξία στον πόνο.",
+        "origin": "Μη καβουρδισμένοι αποξηραμένοι σπόροι του Coffea arabica (Rubiaceae).",
+        "essence": "Νευρική αϋπνία από καταιγισμό σκέψεων, χαρούμενη διέγερση ή ευχάριστες εκπλήξεις. Εξαιρετική οξύτητα των αισθήσεων και οξεία δυσανεξία στον πόνο.",
         "mainIndications": [
-          "Αϋπνία από ιδεοληπτική υπερκινητικότητα & ξαφνική χαρά",
-          "Ο πονόδοντος ανακουφίζεται αυστηρά κρατώντας παγωμένο νερό στο στόμα",
-          "Υπεραισθησία όλων των ειδικών αισθήσεων (ακοή, όσφρηση, φως)"
+          "Αϋπνία από υπερδιέγερση και πληθώρα ιδεών",
+          "Πονόδοντος που ανακουφίζεται μόνο με παγωμένο νερό στο στόμα",
+          "Υπεραισθησία όλων των αισθήσεων (ακοή, όσφρηση, φως)"
         ],
         "keynotes": [
-          "Ο εγκέφαλος είναι υπερβολικά ξύπνιος με ατελείωτη ροή ιδεών",
-          "Ο πονόδοντος ανακουφίζεται άμεσα από το παγωμένο νερό που κρατιέται στο στόμα (χειρότερο όσο ζεσταίνεται)",
-          "Επιδεινώνεται από ευχάριστες εκπλήξεις και υπερβολικό καφέ"
+          "Το μυαλό είναι σε πλήρη εγρήγορση με ασταμάτητη ροή ιδεών",
+          "Πονόδοντος που ανακουφίζεται ακαριαία με παγωμένο νερό στο στόμα",
+          "Επιδείνωση από ευχάριστες εκπλήξεις και υπερβολικό καφέ"
         ],
-        "mindEmotional": "Ευφορικός, υπερ-ανταποκρινόμενος, γεμάτος κινούμενα σχέδια, κλαίει από χαρά.",
+        "mindEmotional": "Ευφορικός, υπερ-ανταποκρινόμενος, γεμάτος σχέδια, κλαίει από χαρά.",
         "modalitiesBetter": [
-          "Κρατώντας παγωμένο νερό στο στόμα (οδοντικός πόνος)",
-          "Ζεστασιά του δωματίου",
+          "Παγωμένο νερό στο στόμα (πονόδοντος)",
+          "Ζεστασιά δωματίου",
           "Ξεκούραση"
         ],
         "modalitiesWorse": [
-          "Χαρούμενος ενθουσιασμός και έκπληξη",
+          "Χαρούμενη διέγερση και έκπληξη",
           "Ξαφνικοί θόρυβοι",
           "Νύχτα"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. Για την αϋπνία C30 πριν τον ύπνο.",
-        "defaultTagesdosis": "1–2 δόσεις των 3–5 σφαιριδίων",
+        "potenciesAndDosage": "D6, D12, C30. Για αϋπνία C30 πριν τον ύπνο.",
+        "defaultTagesdosis": "1–2 δόσεις των 5 σφαιριδίων",
         "sphereOfAction": [
-          "Κεντρικό Νευρικό Σύστημα & Εγκέφαλος",
-          "Αισθητήρια Όργανα",
-          "Οδοντιατρικά Νεύρα"
+          "Κεντρικό νευρικό σύστημα & εγκέφαλος",
+          "Αισθητήρια όργανα",
+          "Οδοντικά νεύρα"
         ],
         "differentialRemedies": [
           "Chamomilla",
@@ -9064,51 +8640,44 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "καφές",
-          "coffea arabica",
-          "καφέ",
           "αϋπνία",
-          "αγωνιστικές σκέψεις",
+          "σκέψεις",
           "χαρά",
-          "πονόδοντος",
-          "παγωμένο νερό καλύτερα",
-          "αισθητηριακή υπερφόρτωση",
-          "κεντρικό νευρικό σύστημα & εγκέφαλος",
-          "αισθητήρια όργανα",
-          "οδοντιατρικά νεύρα"
+          "δόντια"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Caffè crudo",
-        "origin": "Unroasted dried seeds of Coffea arabica (Rubiaceae).",
-        "essence": "Nervous insomnia from rush of thoughts, joyful excitement, or pleasant surprises; extraordinary sensory acuity and acute pain intolerance.",
+        "origin": "Semi di caffè non tostati (Rubiaceae).",
+        "essence": "Insonnia nervosa dovuta a un afflusso di pensieri, eccitazione gioiosa o piacevoli sorprese; straordinaria acuità sensoriale e intolleranza al dolore acuto.",
         "mainIndications": [
-          "Insomnia from ideational hyperactivity & sudden joy",
-          "Toothache relieved strictly by holding ice-water in the mouth",
-          "Hyperesthesia of all special senses (hearing, smell, light)"
+          "Insonnia da iperattività ideativa e gioia improvvisa",
+          "Mal di denti alleviato rigorosamente tenendo acqua ghiacciata in bocca",
+          "Iperestesia di tutti i sensi (udito, olfatto, luce)"
         ],
         "keynotes": [
-          "Brain is excessively wide awake with endless stream of ideas",
-          "Toothache instantly relieved by ice water held in mouth (worse as it warms)",
-          "Aggravated by pleasant surprises and excessive coffee"
+          "Il cervello è eccessivamente sveglio con un flusso infinito di idee",
+          "Mal di denti istantaneamente alleviato dall'acqua ghiacciata tenuta in bocca",
+          "Aggravato da sorprese piacevoli ed eccesso di caffè"
         ],
-        "mindEmotional": "Euphoric, hyper-responsive, full of animated schemes, weeps with joy.",
+        "mindEmotional": "Euforico, iper-reattivo, pieno di progetti animati, piange di gioia.",
         "modalitiesBetter": [
-          "Holding ice water in mouth (dental pain)",
-          "Warmth of room",
-          "Rest"
+          "Tenere acqua ghiacciata in bocca (dolore dentale)",
+          "Calore della stanza",
+          "Riposo"
         ],
         "modalitiesWorse": [
-          "Joyful excitement & surprise",
-          "Sudden noises",
-          "Nighttime"
+          "Eccitazione gioiosa e sorpresa",
+          "Rumori improvvisi",
+          "Notte"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. For insomnia C30 at bedtime.",
-        "defaultTagesdosis": "1–2 doses of 3–5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. Per l'insonnia C30 al momento di coricarsi.",
+        "defaultTagesdosis": "1–2 dosi da 5 granuli",
         "sphereOfAction": [
-          "Central Nervous System & Brain",
-          "Sensory Organs",
-          "Dental Nerves"
+          "Sistema nervoso centrale e cervello",
+          "Organi di senso",
+          "Nervi dentali"
         ],
         "differentialRemedies": [
           "Chamomilla",
@@ -9117,52 +8686,45 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Aconitum"
         ],
         "searchKeywords": [
-          "caffè crudo",
-          "coffea arabica",
-          "coffee",
-          "insomnia",
-          "racing thoughts",
-          "joy",
-          "toothache",
-          "ice water better",
-          "sensory overload",
-          "central nervous system & brain",
-          "sensory organs",
-          "dental nerves"
+          "caffè",
+          "insonnia",
+          "pensieri",
+          "gioia",
+          "denti"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Кофе сырой",
-        "origin": "Unroasted dried seeds of Coffea arabica (Rubiaceae).",
-        "essence": "Nervous insomnia from rush of thoughts, joyful excitement, or pleasant surprises; extraordinary sensory acuity and acute pain intolerance.",
+        "origin": "Необжаренные высушенные семена кофе арабика (Rubiaceae).",
+        "essence": "Нервная бессонница от наплыва мыслей, радостного возбуждения или приятных сюрпризов; необычайная острота чувств и непереносимость острой боли.",
         "mainIndications": [
-          "Insomnia from ideational hyperactivity & sudden joy",
-          "Toothache relieved strictly by holding ice-water in the mouth",
-          "Гиперестезия всех специальных чувств (слуха, обоняния, света)"
+          "Бессонница от мыслительной гиперактивности и внезапной радости",
+          "Зубная боль облегчается исключительно при удержании ледяной воды во рту",
+          "Гиперестезия всех органов чувств (слух, обоняние, свет)"
         ],
         "keynotes": [
-          "Brain is excessively wide awake with endless stream of ideas",
-          "Toothache instantly relieved by ice water held in mouth (worse as it warms)",
-          "Aggravated by pleasant surprises and excessive coffee"
+          "Мозг чрезмерно бодрствует с бесконечным потоком идей",
+          "Зубная боль мгновенно облегчается ледяной водой во рту",
+          "Ухудшение от приятных сюрпризов и избытка кофе"
         ],
-        "mindEmotional": "Euphoric, hyper-responsive, full of animated schemes, weeps with joy.",
+        "mindEmotional": "Эйфория, повышенная реактивность, полно оживленных планов, плачет от радости.",
         "modalitiesBetter": [
-          "Holding ice water in mouth (dental pain)",
-          "Warmth of room",
-          "Rest"
+          "Удержание ледяной воды во рту (зубная боль)",
+          "Тепло в комнате",
+          "Покой"
         ],
         "modalitiesWorse": [
-          "Joyful excitement & surprise",
+          "Радостное возбуждение и сюрприз",
           "Внезапные шумы",
-          "Nighttime"
+          "Ночное время"
         ],
-        "potenciesAndDosage": "Д6, Д12, С30/6С, 30С. При бессоннице С30 перед сном.",
-        "defaultTagesdosis": "1–2 doses of 3–5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. При бессоннице С30 перед сном.",
+        "defaultTagesdosis": "1–2 приема по 5 гранул",
         "sphereOfAction": [
-          "Central Nervous System & Brain",
-          "Sensory Organs",
-          "Dental Nerves"
+          "Центральная нервная система и головной мозг",
+          "Органы чувств",
+          "Зубные нервы"
         ],
         "differentialRemedies": [
           "Chamomilla",
@@ -9171,18 +8733,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Aconitum"
         ],
         "searchKeywords": [
-          "кофе сырой",
-          "coffea arabica",
-          "coffee",
-          "insomnia",
-          "racing thoughts",
-          "joy",
-          "toothache",
-          "ice water better",
-          "sensory overload",
-          "central nervous system & brain",
-          "sensory organs",
-          "dental nerves"
+          "кофе",
+          "бессонница",
+          "мысли",
+          "радость",
+          "зубы"
         ]
       }
     }
@@ -9347,35 +8902,35 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Colchique d’automne",
-        "origin": "Cormes frais de Colchicum Autumnale (Colchicaceae).",
-        "essence": "Acute gouty paroxysms (especially big toe podagra) and sickening nausea provoked by the mere sight or odor of cooking food.",
+        "origin": "Bulbes frais du colchique d'automne (Colchicaceae).",
+        "essence": "Crises de goutte aiguës (surtout le gros orteil) et nausées extrêmes au simple aspect ou à l'odeur de nourriture cuisinée.",
         "mainIndications": [
-          "Acute gout of big toe (podagra) & uric arthritis",
-          "Morning sickness triggered by cooking odors",
-          "Épanchement péricardique et états hydropiques"
+          "Goutte aiguë du gros orteil (podagre) et arthrite urique",
+          "Nausées de grossesse déclenchées par les odeurs de cuisine",
+          "Hydropisie et péricardite"
         ],
         "keynotes": [
-          "Nausea to fainting from odor of food cooking (especially fish/meat)",
-          "Big toe red, hot, shining, exquisitely sensitive to slightest touch",
-          "Jarring of the bed or floor causes screams of pain"
+          "Nausée jusqu'au malaise à l'odeur de cuisine (surtout poisson/viande)",
+          "Gros orteil rouge, brillant, gonflé et extrêmement sensible au toucher",
+          "La moindre secousse du lit provoque des cris de douleur"
         ],
-        "mindEmotional": "Peevish, hypersensitive to smells, bright lights, and noise.",
+        "mindEmotional": "Maussade, hypersensible aux odeurs, au bruit et à la lumière.",
         "modalitiesBetter": [
-          "Warmth",
-          "Bending forward",
-          "Sleep"
+          "Chaleur",
+          "Se pencher en avant",
+          "Sommeil"
         ],
         "modalitiesWorse": [
-          "Smell or sight of food",
-          "Slightest motion or jar",
-          "Autumn weather"
+          "Odeur de nourriture",
+          "Le moindre mouvement ou secousse",
+          "Automne"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. In acute gout D6 hourly.",
-        "defaultTagesdosis": "3 à 4 doses de 3 à 5 granulés",
+        "potenciesAndDosage": "D6, D12, C30. En crise de goutte, D6 toutes les heures.",
+        "defaultTagesdosis": "3–4 doses de 5 granules",
         "sphereOfAction": [
-          "Joints & Synovial Membranes (Great Toe)",
-          "Digestive System",
-          "Urinary Tract"
+          "Articulations et tendons (gros orteil)",
+          "Tube digestif",
+          "Voies urinaires"
         ],
         "differentialRemedies": [
           "Benzoicum acidum",
@@ -9384,51 +8939,45 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Arsenicum album"
         ],
         "searchKeywords": [
-          "colchique d’automne",
-          "colchicum autumnale",
-          "meadow saffron",
-          "gout",
-          "big toe",
-          "podagra",
-          "food odors",
-          "nausea",
-          "joints & synovial membranes (great toe)",
-          "digestive system",
-          "urinary tract"
+          "colchique",
+          "goutte",
+          "orteil",
+          "nausée",
+          "cuisine"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Κολχικό",
-        "origin": "Νωποί βολβοί Colchicum autumnale (Colchicaceae).",
-        "essence": "Οξεία ουρική αρθρίτιδα (ειδικά η ποδάγρα του μεγάλου δακτύλου) και η νοσηρή ναυτία που προκαλείται από την απλή θέα ή την οσμή του μαγειρέματος.",
+        "origin": "Φρέσκοι κόνδυλοι του Colchicum autumnale (Colchicaceae).",
+        "essence": "Οξείες κρίσεις ουρικής αρθρίτιδας (κυρίως στο μεγάλο δάχτυλο του ποδιού) και έντονη ναυτία με την απλή οσμή ή θέα μαγειρεμένου φαγητού.",
         "mainIndications": [
-          "Οξεία ουρική αρθρίτιδα μεγάλου δακτύλου (ποδάγρα) & ουρική αρθρίτιδα",
-          "Πρωινή ναυτία που προκαλείται από μυρωδιές μαγειρέματος",
-          "Περικαρδιακή συλλογή & σταγονικές καταστάσεις"
+          "Οξεία ουρική αρθρίτιδα μεγάλου δακτύλου (ποδάγρα) & ουρικό οξύ",
+          "Ναυτία εγκυμοσύνης από μυρωδιές φαγητού",
+          "Υδρωπικία & περικαρδίτιδα"
         ],
         "keynotes": [
-          "Ναυτία έως λιποθυμία από τη μυρωδιά του μαγειρέματος φαγητού (ειδικά ψαριού/κρέατος)",
-          "Μεγάλο δάχτυλο κόκκινο, ζεστό, γυαλιστερό, εξαιρετικά ευαίσθητο στο παραμικρό άγγιγμα",
-          "Το τράβηγμα του κρεβατιού ή του δαπέδου προκαλεί κραυγές πόνου"
+          "Ναυτία μέχρι λιποθυμίας από τη μυρωδιά μαγειρευόμενου φαγητού (ειδικά ψάρι/κρέας)",
+          "Μεγάλο δάχτυλο κόκκινο, γυαλιστερό, πρησμένο και αφόρητα ευαίσθητο στην αφή",
+          "Ο παραμικρός κραδασμός του κρεβατιού προκαλεί κραυγές πόνου"
         ],
-        "mindEmotional": "Δυνατό, υπερευαίσθητο στις μυρωδιές, τα έντονα φώτα και τον θόρυβο.",
+        "mindEmotional": "Δύστροπος, υπερευαίσθητος στις οσμές, τον θόρυβο και το φως.",
         "modalitiesBetter": [
           "Ζεστασιά",
-          "Κάμψη προς τα εμπρός",
-          "Κοιμήσου"
+          "Σκύψιμο εμπρός",
+          "Ύπνος"
         ],
         "modalitiesWorse": [
-          "Μυρωδιά ή θέαση φαγητού",
-          "Η παραμικρή κίνηση ή βάζο",
-          "Φθινοπωρινός καιρός"
+          "Οσμή φαγητού",
+          "Παραμικρή κίνηση ή κραδασμός",
+          "Φθινόπωρο"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. Στην οξεία ουρική αρθρίτιδα Δ6 ωριαία.",
-        "defaultTagesdosis": "3–4 δόσεις των 3–5 σφαιριδίων",
+        "potenciesAndDosage": "D6, D12, C30. Σε κρίση ουρικής αρθρίτιδας D6 κάθε ώρα.",
+        "defaultTagesdosis": "3–4 δόσεις των 5 σφαιριδίων",
         "sphereOfAction": [
-          "Αρθρώσεις και αρθρικές μεμβράνες (μεγάλο δάχτυλο)",
-          "Πεπτικό Σύστημα",
-          "Ουροποιητικό"
+          "Αρθρώσεις & τένοντες (μεγάλο δάχτυλο)",
+          "Πεπτικό σύστημα",
+          "Ουροφόρα οδός"
         ],
         "differentialRemedies": [
           "Benzoicum acidum",
@@ -9438,50 +8987,44 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "κολχικό",
-          "colchicum autumnale",
-          "λιβάδι σαφράν",
           "ουρική αρθρίτιδα",
-          "μεγάλο δάχτυλο του ποδιού",
-          "ποδάγκρα",
-          "μυρωδιές τροφίμων",
+          "ποδάγρα",
           "ναυτία",
-          "αρθρώσεις και αρθρικές μεμβράνες (μεγάλο δάχτυλο)",
-          "πεπτικό σύστημα",
-          "ουροποιητικό"
+          "φαγητό"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Colchico autunnale",
-        "origin": "Fresh corms of Colchicum autumnale (Colchicaceae).",
-        "essence": "Acute gouty paroxysms (especially big toe podagra) and sickening nausea provoked by the mere sight or odor of cooking food.",
+        "origin": "Tuberi freschi del colchico autunnale (Colchicaceae).",
+        "essence": "Attacchi acuti di gotta (specialmente l'alluce) ed estrema nausea al solo odore o vista di cibo cucinato.",
         "mainIndications": [
-          "Acute gout of big toe (podagra) & uric arthritis",
-          "Morning sickness triggered by cooking odors",
-          "Pericardial effusion & dropsical states"
+          "Gotta acuta dell'alluce (podagra) e artrite urica",
+          "Nausea gravidica scatenata dagli odori di cucina",
+          "Idropisia e pericardite"
         ],
         "keynotes": [
-          "Nausea o svenimento per l'odore della cottura dei cibi (soprattutto pesce/carne)",
-          "Big toe red, hot, shining, exquisitely sensitive to slightest touch",
-          "Jarring of the bed or floor causes screams of pain"
+          "Nausea fino allo svenimento all'odore di cucina (specialmente pesce/carne)",
+          "Alluce rosso, lucido, gonfio ed estremamente sensibile al tocco",
+          "La minima vibrazione del letto provoca grida di dolore"
         ],
-        "mindEmotional": "Peevish, hypersensitive to smells, bright lights, and noise.",
+        "mindEmotional": "Scontroso, ipersensibile agli odori, ai rumori e alla luce.",
         "modalitiesBetter": [
-          "Warmth",
-          "Bending forward",
-          "Sleep"
+          "Calore",
+          "Piegarsi in avanti",
+          "Sonno"
         ],
         "modalitiesWorse": [
-          "Smell or sight of food",
-          "Slightest motion or jar",
-          "Autumn weather"
+          "Odore di cibo",
+          "Minimo movimento o vibrazione",
+          "Autunno"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. In acute gout D6 hourly.",
-        "defaultTagesdosis": "3–4 doses of 3–5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. In attacco di gotta D6 ogni ora.",
+        "defaultTagesdosis": "3–4 dosi da 5 granuli",
         "sphereOfAction": [
-          "Joints & Synovial Membranes (Great Toe)",
-          "Digestive System",
-          "Urinary Tract"
+          "Articolazioni e tendini (alluce)",
+          "Apparato digerente",
+          "Vie urinarie"
         ],
         "differentialRemedies": [
           "Benzoicum acidum",
@@ -9490,51 +9033,45 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Arsenicum album"
         ],
         "searchKeywords": [
-          "colchico autunnale",
-          "colchicum autumnale",
-          "meadow saffron",
-          "gout",
-          "big toe",
-          "podagra",
-          "food odors",
+          "colchico",
+          "gotta",
+          "alluce",
           "nausea",
-          "joints & synovial membranes (great toe)",
-          "digestive system",
-          "urinary tract"
+          "cucina"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Безвременник осенний",
-        "origin": "Fresh corms of Colchicum autumnale (Colchicaceae).",
-        "essence": "Acute gouty paroxysms (especially big toe podagra) and sickening nausea provoked by the mere sight or odor of cooking food.",
+        "origin": "Свежие клубнелуковицы безвременника осеннего (Colchicaceae).",
+        "essence": "Острые приступы подагры (особенно сустава большого пальца ноги) и крайнее отвращение-тошнота при одном только запахе или виде готовящейся пищи.",
         "mainIndications": [
-          "Acute gout of big toe (podagra) & uric arthritis",
-          "Утреннее недомогание, вызванное запахами готовящейся еды",
-          "Pericardial effusion & dropsical states"
+          "Острая подагра большого пальца (подагра) и уратный артрит",
+          "Тошнота беременных, вызванная запахами пищи",
+          "Водянка и перикардит"
         ],
         "keynotes": [
-          "Nausea to fainting from odor of food cooking (especially fish/meat)",
-          "Big toe red, hot, shining, exquisitely sensitive to slightest touch",
-          "Jarring of the bed or floor causes screams of pain"
+          "Тошнота до обморока при запахе готовящейся еды (особенно рыбы/мяса)",
+          "Большой палец красный, блестящий, опухший и невыносимо чувствительный к прикосновению",
+          "Малейшее сотрясение кровати вызывает крики от боли"
         ],
-        "mindEmotional": "Peevish, hypersensitive to smells, bright lights, and noise.",
+        "mindEmotional": "Угрюмый, сверхчувствительный к запахам, шуму и свету.",
         "modalitiesBetter": [
-          "Warmth",
-          "Bending forward",
-          "Sleep"
+          "Тепло",
+          "Наклон вперед",
+          "Сон"
         ],
         "modalitiesWorse": [
-          "Smell or sight of food",
-          "Slightest motion or jar",
-          "Autumn weather"
+          "Запах пищи",
+          "Малейшее движение или сотрясение",
+          "Осень"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. In acute gout D6 hourly.",
-        "defaultTagesdosis": "3–4 doses of 3–5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. При приступе подагры D6 каждый час.",
+        "defaultTagesdosis": "3–4 приема по 5 гранул",
         "sphereOfAction": [
-          "Joints & Synovial Membranes (Great Toe)",
-          "Digestive System",
-          "Urinary Tract"
+          "Суставы и сухожилия (большой палец)",
+          "Пищеварительный тракт",
+          "Мочевыводящие пути"
         ],
         "differentialRemedies": [
           "Benzoicum acidum",
@@ -9543,17 +9080,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Arsenicum album"
         ],
         "searchKeywords": [
-          "безвременник осенний",
-          "colchicum autumnale",
-          "meadow saffron",
+          "безвременник",
           "подагра",
-          "big toe",
-          "podagra",
-          "food odors",
-          "nausea",
-          "joints & synovial membranes (great toe)",
-          "digestive system",
-          "urinary tract"
+          "палец",
+          "тошнота",
+          "запах пищи"
         ]
       }
     }
@@ -9717,213 +9248,185 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Coloquinte",
-        "origin": "Dried fruit pulp of Citrullus colocynthis (Cucurbitaceae).",
-        "essence": "Violentes crampes abdominales coupantes et sciatique déclenchées par la colère ou l'indignation ; Le patient se plie fermement en deux et enfonce des objets durs dans le ventre pour le soulager.",
+        "origin": "Pulpe séchée de la coloquinte (Cucurbitaceae).",
+        "essence": "Violentes crampes abdominales et sciatique suite à une colère ou une indignation ; le patient se plie en deux et presse des objets durs contre son ventre.",
         "mainIndications": [
-          "Acute abdominal colic & umbilical cramps in infants",
-          "Right-sided sciatica relieved by hard firm pressure",
-          "Severe spasmodic dysmenorrhea doubling up in agony"
+          "Coliques abdominales aiguës et coliques ombilicales chez l'enfant",
+          "Sciatique (surtout à droite) améliorée par une forte pression",
+          "Dysménorrhée spasmodique (se plie en deux)"
         ],
         "keynotes": [
-          "Agonizing abdominal cramps compel doubling up",
-          "Hard, firm pressure on abdomen brings marked relief",
-          "Ailments triggered by anger with indignation or humiliation"
+          "La douleur abdominale oblige à se plier en deux",
+          "Une pression forte et dure sur le ventre apporte un soulagement marqué",
+          "Douleurs déclenchées par la colère, le dépit ou l'humiliation"
         ],
-        "mindEmotional": "Extremely irritable, indignant, snappish from pain.",
+        "mindEmotional": "Extrêmement irritable, impatient, jette des objets en colère.",
         "modalitiesBetter": [
-          "Doubling up tightly",
-          "Hard pressure & firm wrapping",
+          "Se plier en deux",
+          "Pression forte et dure",
           "Chaleur"
         ],
         "modalitiesWorse": [
-          "Anger & indignation",
-          "Debout",
-          "Immediately after eating"
+          "Colère, dépit et humiliation",
+          "Position debout",
+          "Après manger"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In acute colic D6 every 15–30 min.",
-        "defaultTagesdosis": "3 à 4 doses de 3 à 5 granulés",
+        "potenciesAndDosage": "Aigu : D6, D12, C30. En cas de coliques, D6 toutes les 15–30 min.",
+        "defaultTagesdosis": "3–4 doses de 5 granules",
         "sphereOfAction": [
-          "Abdominal Viscera & Colon",
-          "Sciatic Nerve",
-          "Pelvic Organs"
+          "Tube digestif et organes abdominaux",
+          "Nerf sciatique",
+          "Organes pelviens"
         ],
         "differentialRemedies": [
-          "Magnesia phosphorica (heat and light pressure)",
+          "Magnesia phosphorica (chaleur et pression légère)",
           "Chamomilla",
-          "Dioscorea (bending backward better)"
+          "Dioscorea (mieux en se penchant en arrière)"
         ],
         "searchKeywords": [
           "coloquinte",
-          "citrullus colocynthis",
-          "bitter apple",
-          "coliques",
-          "cramps",
-          "doubler",
-          "pressure relief",
-          "anger",
-          "sciatique",
-          "abdominal viscera & colon",
-          "sciatic nerve",
-          "pelvic organs"
+          "colique",
+          "crampes",
+          "plié en deux",
+          "sciatique"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Κολοκυνθίδα",
-        "origin": "Πολτός αποξηραμένων φρούτων Citrullus colocynthis (Cucurbitaceae).",
-        "essence": "Βίαιες κοιλιακές κράμπες και ισχιαλγία που προκαλούνται από θυμό ή αγανάκτηση. ο ασθενής διπλασιάζεται σφιχτά και πιέζει σκληρά αντικείμενα στην κοιλιά για ανακούφιση.",
+        "origin": "Αποξηραμένη σάρκα του καρπού της κολοκυνθίδας (Cucurbitaceae).",
+        "essence": "Σφοδροί κοπτικοί πόνοι στην κοιλιά και ισχιαλγία μετά από θυμό ή ταπείνωση. Ο ασθενής διπλώνεται στα δύο και πιέζει σκληρά αντικείμενα στην κοιλιά.",
         "mainIndications": [
-          "Οξύς κοιλιακός κολικός & ομφαλικές κράμπες σε βρέφη",
-          "Δεξιά ισχιαλγία που ανακουφίζεται από σκληρή σταθερή πίεση",
-          "Σοβαρή σπασμωδική δυσμηνόρροια που διπλασιάζεται σε αγωνία"
+          "Οξείες κοιλιακές κολικοί & κολικοί ομφαλού στα παιδιά",
+          "Ισχιαλγία (κυρίως δεξιά) με βελτίωση με τη δυνατή πίεση",
+          "Σπασμωδική δυσμηνόρροια (διπλώνεται στα δύο)"
         ],
         "keynotes": [
-          "Οι αγωνιώδεις κράμπες στην κοιλιά αναγκάζουν τον διπλασιασμό",
-          "Η σκληρή, σταθερή πίεση στην κοιλιά φέρνει αξιοσημείωτη ανακούφιση",
-          "Ασθένειες που προκαλούνται από θυμό με αγανάκτηση ή ταπείνωση"
+          "Ο κοιλιακός πόνος αναγκάζει το διπλασιασμό του σώματος",
+          "Η σταθερή, σκληρή πίεση στην κοιλιά φέρνει σαφή ανακούφιση",
+          "Πόνοι που προκαλούνται από θυμό, οργή ή προσβολή"
         ],
-        "mindEmotional": "Εξαιρετικά οξύθυμος, αγανακτισμένος, σπασμένος από τον πόνο.",
+        "mindEmotional": "Εξαιρετικά οξύθυμος, ανυπόμονος, πετάει αντικείμενα από θυμό.",
         "modalitiesBetter": [
-          "Διπλασιάζοντας σφιχτά",
-          "Σκληρή πίεση & σταθερό τύλιγμα",
-          "Θερμότητα"
+          "Δίπλωμα στα δύο",
+          "Σταθερή σκληρή πίεση",
+          "Ζεστασιά"
         ],
         "modalitiesWorse": [
-          "Θυμός & αγανάκτηση",
-          "Όρθιος",
-          "Αμέσως μετά το φαγητό"
+          "Θυμός, οργή & ταπείνωση",
+          "Όρθια στάση",
+          "Μετά το φαγητό"
         ],
-        "potenciesAndDosage": "Οξεία: D6, D12, C30 / 6C, 30C. Σε οξύ κολικό D6 κάθε 15–30 λεπτά.",
-        "defaultTagesdosis": "3–4 δόσεις των 3–5 σφαιριδίων",
+        "potenciesAndDosage": "Οξεία φάση: D6, D12, C30. Σε κολικούς D6 κάθε 15–30 λεπτά.",
+        "defaultTagesdosis": "3–4 δόσεις των 5 σφαιριδίων",
         "sphereOfAction": [
-          "Σπλάχνα κοιλίας & παχέος εντέρου",
+          "Γαστρεντερικό σύστημα & κοιλιακά όργανα",
           "Ισχιακό νεύρο",
           "Πυελικά όργανα"
         ],
         "differentialRemedies": [
-          "Magnesia phosphorica (heat and light pressure)",
+          "Magnesia phosphorica (ζέστη και ελαφριά πίεση)",
           "Chamomilla",
-          "Dioscorea (bending backward better)"
+          "Dioscorea (καλύτερα με σκύψιμο πίσω)"
         ],
         "searchKeywords": [
           "κολοκυνθίδα",
-          "citrullus colocynthis",
-          "πικρό μήλο",
-          "κολικούς",
+          "κολικός",
           "κράμπες",
-          "διπλασιάζοντας",
-          "ανακούφιση πίεσης",
-          "θυμό",
-          "ισχιαλγία",
-          "σπλάχνα κοιλίας & παχέος εντέρου",
-          "ισχιακό νεύρο",
-          "πυελικά όργανα"
+          "δίπλωμα στα δύο",
+          "ισχιαλγία"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Colocintide",
-        "origin": "Dried fruit pulp of Citrullus colocynthis (Cucurbitaceae).",
-        "essence": "Violent cutting abdominal cramps and sciatica triggered by anger or indignation; patient doubles up tightly and presses hard objects into the belly for relief.",
+        "origin": "Polpa secca della colocintide (Cucurbitaceae).",
+        "essence": "Violenti crampi addominali taglienti e sciatica dopo rabbia o umiliazione; il paziente si piega in due e preme oggetti duri contro la pancia.",
         "mainIndications": [
-          "Acute abdominal colic & umbilical cramps in infants",
-          "Right-sided sciatica relieved by hard firm pressure",
-          "Severe spasmodic dysmenorrhea doubling up in agony"
+          "Coliche addominali acute e coliche ombelicali nei bambini",
+          "Sciatalgia (specialmente a destra) migliorata dalla pressione forte",
+          "Dismenorrea spasmodica (si piega in due)"
         ],
         "keynotes": [
-          "Agonizing abdominal cramps compel doubling up",
-          "Hard, firm pressure on abdomen brings marked relief",
-          "Ailments triggered by anger with indignation or humiliation"
+          "Il dolore addominale costringe a piegarsi in due",
+          "Una pressione costante e dura sull'addome porta un chiaro sollievo",
+          "Dolori scatenati da rabbia, collera o offesa"
         ],
-        "mindEmotional": "Extremely irritable, indignant, snappish from pain.",
+        "mindEmotional": "Estremamente irritabile, impaziente, getta via gli oggetti quando è arrabbiato.",
         "modalitiesBetter": [
-          "Doubling up tightly",
-          "Hard pressure & firm wrapping",
-          "Heat"
+          "Piegarsi in due",
+          "Pressione forte e dura",
+          "Calore"
         ],
         "modalitiesWorse": [
-          "Anger & indignation",
-          "Standing upright",
-          "Immediately after eating"
+          "Rabbia, collera e umiliazione",
+          "Stare in piedi",
+          "Dopo mangiato"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In acute colic D6 every 15–30 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 granuli",
+        "potenciesAndDosage": "Acuto: D6, D12, C30. In caso di coliche, D6 ogni 15–30 min.",
+        "defaultTagesdosis": "3–4 dosi da 5 granuli",
         "sphereOfAction": [
-          "Abdominal Viscera & Colon",
-          "Sciatic Nerve",
-          "Pelvic Organs"
+          "Apparato digerente e organi addominali",
+          "Nervo sciatico",
+          "Organi pelvici"
         ],
         "differentialRemedies": [
-          "Magnesia phosphorica (heat and light pressure)",
+          "Magnesia phosphorica (calore e pressione leggera)",
           "Chamomilla",
-          "Dioscorea (bending backward better)"
+          "Dioscorea (meglio piegandosi all'indietro)"
         ],
         "searchKeywords": [
           "colocintide",
-          "citrullus colocynthis",
-          "bitter apple",
-          "colic",
-          "cramps",
-          "doubling up",
-          "pressure relief",
-          "anger",
-          "sciatica",
-          "abdominal viscera & colon",
-          "sciatic nerve",
-          "pelvic organs"
+          "colica",
+          "crampi",
+          "piegarsi in due",
+          "sciatica"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Колоцинт / Горькое яблоко",
-        "origin": "Dried fruit pulp of Citrullus colocynthis (Cucurbitaceae).",
-        "essence": "Violent cutting abdominal cramps and sciatica triggered by anger or indignation; patient doubles up tightly and presses hard objects into the belly for relief.",
+        "origin": "Высушенная мякоть плодов колоцинта (Cucurbitaceae).",
+        "essence": "Сильнейшие режущие боли в животе и ишиас после гнева или унижения; пациент вдвое сгибается от боли и сильно прижимает твердые предметы к животу.",
         "mainIndications": [
-          "Acute abdominal colic & umbilical cramps in infants",
-          "Right-sided sciatica relieved by hard firm pressure",
-          "Severe spasmodic dysmenorrhea doubling up in agony"
+          "Острые кишечные колики и пупочные колики у детей",
+          "Ишиалгия (особенно правосторонняя) с улучшением от сильного давления",
+          "Спастическая дисменорея (пациентка сгибается пополам)"
         ],
         "keynotes": [
-          "Agonizing abdominal cramps compel doubling up",
-          "Hard, firm pressure on abdomen brings marked relief",
-          "Ailments triggered by anger with indignation or humiliation"
+          "Боль в животе заставляет сгибаться пополам",
+          "Постоянное сильное давление на живот приносит заметное облегчение",
+          "Боли, вызванные досадой, гневом или обидой"
         ],
-        "mindEmotional": "Extremely irritable, indignant, snappish from pain.",
+        "mindEmotional": "Крайне раздражителен, нетерпелив, в гневе бросает предметы.",
         "modalitiesBetter": [
-          "Doubling up tightly",
-          "Hard pressure & firm wrapping",
-          "Heat"
+          "Сгибание пополам",
+          "Сильное твердое давление",
+          "Тепло"
         ],
         "modalitiesWorse": [
-          "Anger & indignation",
-          "Standing upright",
-          "Immediately after eating"
+          "Гнев, ярость и унижение",
+          "Положение стоя",
+          "После еды"
         ],
-        "potenciesAndDosage": "Acute: D6, D12, C30 / 6C, 30C. In acute colic D6 every 15–30 min.",
-        "defaultTagesdosis": "3–4 doses of 3–5 гранул",
+        "potenciesAndDosage": "Остро: D6, D12, C30. При коликах D6 каждые 15–30 мин.",
+        "defaultTagesdosis": "3–4 приема по 5 гранул",
         "sphereOfAction": [
-          "Abdominal Viscera & Colon",
-          "Sciatic Nerve",
-          "Pelvic Organs"
+          "Пищеварительный тракт и органы брюшной полости",
+          "Седалищный нерв",
+          "Органы малого таза"
         ],
         "differentialRemedies": [
-          "Magnesia phosphorica (heat and light pressure)",
+          "Magnesia phosphorica (тепло и легкое давление)",
           "Chamomilla",
-          "Dioscorea (bending backward better)"
+          "Dioscorea (улучшение при прогибе назад)"
         ],
         "searchKeywords": [
-          "колоцинт / горькое яблоко",
-          "citrullus colocynthis",
-          "bitter apple",
-          "колики",
-          "cramps",
-          "doubling up",
-          "pressure relief",
-          "anger",
-          "sciatica",
-          "abdominal viscera & colon",
-          "sciatic nerve",
-          "pelvic organs"
+          "колоцинт",
+          "колика",
+          "спазмы",
+          "сгибаться пополам",
+          "ишиас"
         ]
       }
     }
@@ -10094,37 +9597,37 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Végétal",
         "commonName": "Grande ciguë",
-        "origin": "Fresh flowering herb of Conium maculatum (Apiaceae).",
-        "essence": "Socrates’ poison: stony-hard glandular indurations following trauma (especially breasts); rotary vertigo when turning the head or rolling over in bed; ascending paralysis and ailments from celibacy.",
+        "origin": "Plante fraîche fleurie de la grande ciguë (Apiaceae).",
+        "essence": "Le poison de Socrate : indurations glandulaires dures comme de la pierre après une contusion (surtout les seins) ; vertige rotatoire en tournant la tête ou dans le lit ; paralysies ascendantes et troubles liés à l'abstinence sexuelle.",
         "mainIndications": [
-          "Masses mammaires dures et pierreuses après une blessure/un coup",
-          "Benign prostatic hypertrophy & indurated lymph nodes",
-          "Positional vertigo when turning head or rolling in bed",
-          "Ill effects of suppressed sexual desire / celibacy"
+          "Masses mammaires dures et pierreuses après un traumatisme ou un coup",
+          "Hyperplasie de la prostate et ganglions lymphatiques durcis",
+          "Vertige de position en tournant la tête ou en se retournant dans le lit",
+          "Troubles chez les personnes vivant dans l'abstinence"
         ],
         "keynotes": [
-          "Stony-hard induration of mammary glands, testicles, and nodes",
-          "Vertigo provoked by turning the head sideways or rolling over in bed",
-          "Intermittent flow of urine (stops and starts repeatedly)",
-          "Ascending muscular weakness from legs upward"
+          "Indurations dures comme de la pierre (seins, testicules, ganglions)",
+          "Vertige déclenché en tournant la tête ou en se retournant dans le lit",
+          "Le jet d'urine s'interrompt de façon répétée",
+          "Faiblesse musculaire ascendante des jambes vers le tronc"
         ],
-        "mindEmotional": "Mental sluggishness, impaired memory, indifferent, averse to company.",
+        "mindEmotional": "Lent intellectuellement, indifférent, évite la compagnie.",
         "modalitiesBetter": [
-          "Darkness",
-          "Letting limbs hang down",
-          "Warmth"
+          "Obscurité",
+          "Laisser pendre les membres",
+          "Chaleur"
         ],
         "modalitiesWorse": [
-          "Turning head or rolling in bed",
-          "Celibacy",
-          "Cold air"
+          "Tourner la tête et se retourner dans le lit",
+          "Abstinence sexuelle",
+          "Froid"
         ],
-        "potenciesAndDosage": "D6 to C30 / 6C, 30C. 1-2 times daily 5 granules.",
-        "defaultTagesdosis": "1-2 times daily 5 granules",
+        "potenciesAndDosage": "D6 à C30. 1-2 fois par jour 5 granules.",
+        "defaultTagesdosis": "1-2 fois par jour 5 granules",
         "sphereOfAction": [
           "Système glandulaire (seins, prostate)",
-          "Vestibular System",
-          "Spinal Motor Nerves"
+          "Cerveau et équilibre",
+          "Nerfs moteurs"
         ],
         "differentialRemedies": [
           "Baryta carbonica",
@@ -10133,53 +9636,47 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Gelsemium"
         ],
         "searchKeywords": [
-          "grande ciguë",
-          "conium maculatum",
-          "poison hemlock",
-          "vertigo",
-          "breast lump",
-          "stony hard",
+          "ciguë",
+          "vertige",
+          "sein",
           "prostate",
-          "celibacy",
-          "système glandulaire (seins, prostate)",
-          "vestibular system",
-          "spinal motor nerves"
+          "abstinence"
         ]
       },
       "el": {
         "category": "Φυτικό",
         "commonName": "Κώνειο",
-        "origin": "Φρέσκο ανθισμένο βότανο Conium maculatum (Apiaceae).",
-        "essence": "Το δηλητήριο του Σωκράτη: πετρώδεις-σκληρές αδενικές σκληρύνσεις μετά από τραύμα (ειδικά τους μαστούς). περιστροφικός ίλιγγος κατά την περιστροφή του κεφαλιού ή την ανατροπή στο κρεβάτι. ανιούσα παράλυση και παθήσεις από την αγαμία.",
+        "origin": "Φρέσκο ανθισμένο φυτό του Κώνειου (Apiaceae).",
+        "essence": "Το δηλητήριο του Σωκράτη: Σκληρές σαν πέτρα αδενικές διογκώσεις μετά από τραυματισμό (ειδικά στους μαστούς). Περιστροφικός ίλιγγος κατά την κίνηση του κεφαλιού ή στο κρεβάτι. Ανιούσα παράλυση και ενοχλήσεις από καταπιεσμένη σεξουαλικότητα.",
         "mainIndications": [
-          "Πετρώδεις-σκληροί εξογκώματα στήθους μετά από τραυματισμό/χτύπημα",
-          "Καλοήθης υπερτροφία του προστάτη & σκληρυμένοι λεμφαδένες",
-          "Θέση ίλιγγος όταν γυρίζει το κεφάλι ή κυλιέται στο κρεβάτι",
-          "Παρενέργειες της καταπιεσμένης σεξουαλικής επιθυμίας / αγαμίας"
+          "Σκληρά σαν πέτρα ογκίδια στο στήθος μετά από τραύμα/χτύπημα",
+          "Υπερπλασία προστάτη & σκληρυμένοι λεμφαδένες",
+          "Ίλιγγος θέσης όταν γυρίζει το κεφάλι ή το σώμα στο κρεβάτι",
+          "Ενοχλήσεις σε άτομα που ζουν σε εγκράτεια"
         ],
         "keynotes": [
-          "Πετρώδης-σκληρή σκλήρυνση των μαστικών αδένων, των όρχεων και των κόμβων",
-          "Ο ίλιγγος προκλήθηκε γυρίζοντας το κεφάλι στο πλάι ή γυρίζοντας στο κρεβάτι",
-          "Διακοπτόμενη ροή ούρων (σταματά και ξεκινά επανειλημμένα)",
-          "Ανοδική μυϊκή αδυναμία από τα πόδια προς τα πάνω"
+          "Σκληρές σαν πέτρα σκληρύνσεις μαστών, όρχεων ή λεμφαδένων",
+          "Ίλιγγος που προκαλείται με την κίνηση του κεφαλιού ή την αλλαγή πλευρού στο κρεβάτι",
+          "Η ροή των ούρων διακόπτεται επανειλημμένα κατά την ούρηση",
+          "Ανοδική μυϊκή αδυναμία από τα πόδια προς τον κορμό"
         ],
-        "mindEmotional": "Διανοητική νωθρότητα, εξασθενημένη μνήμη, αδιάφορη, απέχθεια για παρέα.",
+        "mindEmotional": "Πνευματικά νωθρός, αδιάφορος, αποφεύγει την παρέα.",
         "modalitiesBetter": [
           "Σκοτάδι",
           "Αφήνοντας τα άκρα να κρέμονται",
           "Ζεστασιά"
         ],
         "modalitiesWorse": [
-          "Γυρίζοντας το κεφάλι ή κυλώντας στο κρεβάτι",
-          "Αγαμία",
-          "Κρύος αέρας"
+          "Στροφή κεφαλιού & αλλαγή πλευρού στο κρεβάτι",
+          "Σεξουαλική εγκράτεια",
+          "Κρύο"
         ],
-        "potenciesAndDosage": "D6 έως C30 / 6C, 30C. 1-2 φορές την ημέρα 5 σφαιρίδια.",
+        "potenciesAndDosage": "D6 έως C30. 1-2 φορές την ημέρα 5 σφαιρίδια.",
         "defaultTagesdosis": "1-2 φορές την ημέρα 5 σφαιρίδια",
         "sphereOfAction": [
-          "Αδενικό σύστημα (Μαστές, Προστάτης)",
-          "Αιθουσαίο σύστημα",
-          "Νωτιαία Κινητικά Νεύρα"
+          "Αδενικό σύστημα (μαστοί, προστάτης)",
+          "Εγκέφαλος & ισορροπία",
+          "Κινητικά νεύρα"
         ],
         "differentialRemedies": [
           "Baryta carbonica",
@@ -10189,52 +9686,46 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
         ],
         "searchKeywords": [
           "κώνειο",
-          "conium maculatum",
-          "δηλητήριο κώνειο",
           "ίλιγγος",
-          "ογκίδιο του μαστού",
-          "πετρώδης σκληρός",
+          "στήθος",
           "προστάτης",
-          "αγαμία",
-          "αδενικό σύστημα (μαστές, προστάτης)",
-          "αιθουσαίο σύστημα",
-          "νωτιαία κινητικά νεύρα"
+          "εγκράτεια"
         ]
       },
       "it": {
         "category": "Vegetale",
         "commonName": "Cicuta maggiore",
-        "origin": "Fresh flowering herb of Conium maculatum (Apiaceae).",
-        "essence": "Socrates’ poison: stony-hard glandular indurations following trauma (especially breasts); rotary vertigo when turning the head or rolling over in bed; ascending paralysis and ailments from celibacy.",
+        "origin": "Pianta fresca fiorita della cicuta maggiore (Apiaceae).",
+        "essence": "Il veleno di Socrate: indurazioni ghiandolari dure come pietra dopo una contusione (specialmente le mammelle); vertigine rotatoria girando la testa o nel letto; paralisi ascendenti e disturbi legati all'astinenza sessuale.",
         "mainIndications": [
-          "Stony-hard breast lumps after injury/blow",
-          "Benign prostatic hypertrophy & indurated lymph nodes",
-          "Positional vertigo when turning head or rolling in bed",
-          "Ill effects of suppressed sexual desire / celibacy"
+          "Noduli mammari duri come pietra dopo un trauma o colpo",
+          "Iperplasia prostatica e linfonodi induriti",
+          "Vertigine posizionale girando la testa o voltandosi nel letto",
+          "Disturbi in persone che vivono in astinenza sessuale"
         ],
         "keynotes": [
-          "Stony-hard induration of mammary glands, testicles, and nodes",
-          "Vertigo provoked by turning the head sideways or rolling over in bed",
-          "Intermittent flow of urine (stops and starts repeatedly)",
-          "Ascending muscular weakness from legs upward"
+          "Indurazioni dure come pietra di mammelle, testicoli o linfonodi",
+          "Vertigine scatenata girando la testa o voltandosi nel letto",
+          "Il getto urinario si interrompe ripetutamente durante la minzione",
+          "Debolezza muscolare ascendente dalle gambe al tronco"
         ],
-        "mindEmotional": "Mental sluggishness, impaired memory, indifferent, averse to company.",
+        "mindEmotional": "Mentalmente pigro, indifferente, evita la compagnia.",
         "modalitiesBetter": [
-          "Darkness",
-          "Letting limbs hang down",
-          "Warmth"
+          "Oscurità",
+          "Lasciare penzolare gli arti",
+          "Calore"
         ],
         "modalitiesWorse": [
-          "Turning head or rolling in bed",
-          "Celibacy",
-          "Cold air"
+          "Girare la testa e voltarsi nel letto",
+          "Astinenza sessuale",
+          "Freddo"
         ],
-        "potenciesAndDosage": "D6 to C30 / 6C, 30C. 1-2 times daily 5 granuli.",
-        "defaultTagesdosis": "1-2 times daily 5 granuli",
+        "potenciesAndDosage": "Da D6 a C30. 1-2 volte al giorno 5 granuli.",
+        "defaultTagesdosis": "1-2 volte al giorno 5 granuli",
         "sphereOfAction": [
-          "Glandular System (Breasts, Prostate)",
-          "Vestibular System",
-          "Spinal Motor Nerves"
+          "Sistema ghiandolare (mammelle, prostata)",
+          "Cervello e equilibrio",
+          "Nervi motori"
         ],
         "differentialRemedies": [
           "Baryta carbonica",
@@ -10243,53 +9734,47 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Gelsemium"
         ],
         "searchKeywords": [
-          "cicuta maggiore",
-          "conium maculatum",
-          "poison hemlock",
-          "vertigo",
-          "breast lump",
-          "stony hard",
-          "prostate",
-          "celibacy",
-          "glandular system (breasts, prostate)",
-          "vestibular system",
-          "spinal motor nerves"
+          "cicuta",
+          "vertigine",
+          "seno",
+          "prostata",
+          "astinenza"
         ]
       },
       "ru": {
         "category": "Растительный",
         "commonName": "Болиголов пятнистый",
-        "origin": "Fresh flowering herb of Conium maculatum (Apiaceae).",
-        "essence": "Socrates’ poison: stony-hard glandular indurations following trauma (especially breasts); rotary vertigo when turning the head or rolling over in bed; ascending paralysis and ailments from celibacy.",
+        "origin": "Свежее цветущее растение болиголова пятнистого (Apiaceae).",
+        "essence": "Яд Сократа: каменистая твердость желез после ушиба (особенно молочных желез); системное головокружение при повороте головы или в постели; восходящие параличи и жалобы из-за подавленной сексуальности.",
         "mainIndications": [
-          "Stony-hard breast lumps after injury/blow",
-          "Benign prostatic hypertrophy & indurated lymph nodes",
-          "Positional vertigo when turning head or rolling in bed",
-          "Ill effects of suppressed sexual desire / celibacy"
+          "Каменисто-твердые узлы в груди после травмы или удара",
+          "Гиперплазия предстательной железы и затвердевшие лимфоузлы",
+          "Позиционное головокружение при повороте головы или в постели",
+          "Жалобы у людей, живущих в воздержании"
         ],
         "keynotes": [
-          "Stony-hard induration of mammary glands, testicles, and nodes",
-          "Vertigo provoked by turning the head sideways or rolling over in bed",
-          "Intermittent flow of urine (stops and starts repeatedly)",
-          "Ascending muscular weakness from legs upward"
+          "Каменисто-твердые уплотнения молочных желез, яичек или лимфоузлов",
+          "Головокружение при повороте головы или в постели",
+          "Струя мочи многократно прерывается во время мочеиспускания",
+          "Восходящая слабость от ног к туловищу"
         ],
-        "mindEmotional": "Mental sluggishness, impaired memory, indifferent, averse to company.",
+        "mindEmotional": "Умственно вялый, замедленный, безразличный, избегает общества.",
         "modalitiesBetter": [
-          "Darkness",
-          "Letting limbs hang down",
-          "Warmth"
+          "Темнота",
+          "Свисание конечностей",
+          "Тепло"
         ],
         "modalitiesWorse": [
-          "Turning head or rolling in bed",
-          "Celibacy",
-          "Cold air"
+          "Поворот головы и движения в постели",
+          "Половое воздержание",
+          "Холод"
         ],
-        "potenciesAndDosage": "D6 to C30 / 6C, 30C. 1-2 times daily 5 гранул.",
-        "defaultTagesdosis": "1-2 times daily 5 гранул",
+        "potenciesAndDosage": "D6 - C30. 1-2 раза в день по 5 гранул.",
+        "defaultTagesdosis": "1-2 раза в день по 5 гранул",
         "sphereOfAction": [
-          "Glandular System (Breasts, Prostate)",
-          "Vestibular System",
-          "Spinal Motor Nerves"
+          "Железистая система (грудь, простата)",
+          "Мозг и равновесие",
+          "Двигательные нервы"
         ],
         "differentialRemedies": [
           "Baryta carbonica",
@@ -10298,17 +9783,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Gelsemium"
         ],
         "searchKeywords": [
-          "болиголов пятнистый",
-          "conium maculatum",
-          "poison hemlock",
-          "vertigo",
-          "breast lump",
-          "stony hard",
-          "prostate",
-          "celibacy",
-          "glandular system (breasts, prostate)",
-          "vestibular system",
-          "spinal motor nerves"
+          "болиголов",
+          "головокружение",
+          "уплотнение груди",
+          "простата",
+          "воздержание"
         ]
       }
     }
@@ -10473,35 +9952,35 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "fr": {
         "category": "Minéral",
         "commonName": "Cuivre métallique",
-        "origin": "Pure elemental copper.",
-        "essence": "The supreme spasmodic cramp remedy: severe nocturnal calf cramps, whooping cough with suffocation, and thumbs clenched tightly into fists; relief from sipping cold water.",
+        "origin": "Cuivre élémentaire pur (Cu).",
+        "essence": "Le remède suprême pour les spasmes spasmodiques : crampes des mollets, coqueluche avec dyspnée et pouces serrés dans le poing avant les crampes ; amélioration par une gorgée d'eau froide.",
         "mainIndications": [
-          "Crampes nocturnes aux jambes et aux mollets",
-          "Coqueluche avec cyanose et paroxysmes essoufflés",
-          "Epileptoid spasms with thumbs clenched into palms",
-          "Spasmodic choleraic abdominal cramps"
+          "Crampes aux mollets et crampes musculaires nocturnes",
+          "Coqueluche avec crises d'étouffement et cyanose",
+          "Épilepsie avec les pouces serrés dans les paumes",
+          "Crampes abdominales et colériques"
         ],
         "keynotes": [
-          "Thumbs clenched tightly into palms before and during spasm",
-          "Une gorgée d'eau froide arrête considérablement la toux ou les spasmes",
-          "Sudden abrupt onset and violent termination of spasms"
+          "Les pouces sont fermement serrés dans le poing avant et pendant le spasme",
+          "Une gorgée d'eau froide apporte un soulagement immédiat de la toux ou du spasme",
+          "Début et fin brusques des spasmes"
         ],
-        "mindEmotional": "Délire anxieux, malicieux, cris avant convulsions.",
+        "mindEmotional": "Anxieux, nerveux, craint tout contact avant les crises.",
         "modalitiesBetter": [
-          "Drinking a sip of cold water",
-          "Sweating"
+          "Boire de l'eau froide",
+          "Transpiration"
         ],
         "modalitiesWorse": [
-          "Touch & cold air",
-          "Before menses",
-          "Nighttime"
+          "Toucher et froid",
+          "Avant les règles",
+          "La nuit"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. In acute cramps D6 every 15–30 min.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granules",
+        "potenciesAndDosage": "D6, D12, C30. En cas de crampes aiguës, D6 toutes les 15–30 min.",
+        "defaultTagesdosis": "2–3 doses de 5 granules",
         "sphereOfAction": [
-          "Système Nerveux Moteur",
-          "Muscle strié et lisse",
-          "Respiratory Tract"
+          "Système nerveux central et motricité",
+          "Musculature et spasmes",
+          "Voies respiratoires"
         ],
         "differentialRemedies": [
           "Magnesia phosphorica",
@@ -10510,17 +9989,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Zincum"
         ],
         "searchKeywords": [
-          "cuivre métallique",
-          "cuprum metallicum",
-          "copper",
-          "cramps",
-          "calf cramps",
-          "whooping cough",
-          "clenched thumbs",
-          "cold water sip",
-          "système nerveux moteur",
-          "muscle strié et lisse",
-          "respiratory tract"
+          "cuivre",
+          "crampes",
+          "mollet",
+          "coqueluche",
+          "pouces"
         ]
       },
       "el": {
@@ -10578,35 +10051,35 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
       "it": {
         "category": "Minerale",
         "commonName": "Rame metallico",
-        "origin": "Pure elemental copper.",
-        "essence": "The supreme spasmodic cramp remedy: severe nocturnal calf cramps, whooping cough with suffocation, and thumbs clenched tightly into fists; relief from sipping cold water.",
+        "origin": "Rame elementare puro (Cu).",
+        "essence": "Il rimedio supremo per gli spasmi spasmodici: crampi ai polpacci, pertosse con dispnea e pollici stretti nel pugno prima dei crampi; miglioramento bevendo acqua fredda.",
         "mainIndications": [
-          "Nocturnal leg & calf cramps",
-          "Whooping cough with cyanosis and breathless paroxysms",
-          "Epileptoid spasms with thumbs clenched into palms",
-          "Spasmodic choleraic abdominal cramps"
+          "Crampi ai polpacci e crampi muscolari notturni",
+          "Pertosse con attacchi di soffocamento e cianosi",
+          "Epilessia con i pollici serrati nei palmi",
+          "Crampi addominali e colerici"
         ],
         "keynotes": [
-          "Thumbs clenched tightly into palms before and during spasm",
-          "A sip of cold water dramatically stops the cough or spasm",
-          "Sudden abrupt onset and violent termination of spasms"
+          "I pollici sono fermamente serrati nel pugno prima e durante lo spasmo",
+          "Un sorso d'acqua fredda porta un sollievo immediato dalla tosse o dallo spasmo",
+          "Inizio e fine improvvisa degli spasmi"
         ],
-        "mindEmotional": "Anxious, malicious delirium, screams before convulsions.",
+        "mindEmotional": "Ansioso, nervoso, teme ogni contatto prima delle crisi.",
         "modalitiesBetter": [
-          "Drinking a sip of cold water",
-          "Sweating"
+          "Bere acqua fredda",
+          "Sudorazione"
         ],
         "modalitiesWorse": [
-          "Touch & cold air",
+          "Tocco e freddo",
           "Prima delle mestruazioni",
-          "Nighttime"
+          "Di notte"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. In acute cramps D6 every 15–30 min.",
-        "defaultTagesdosis": "2–3 doses of 3–5 granuli",
+        "potenciesAndDosage": "D6, D12, C30. In caso di crampi acuti, D6 ogni 15–30 min.",
+        "defaultTagesdosis": "2–3 dosi da 5 granuli",
         "sphereOfAction": [
-          "Motor Nervous System",
-          "Muscolo striato e liscio",
-          "Respiratory Tract"
+          "Sistema nervoso centrale e motorio",
+          "Muscolatura e spasmi",
+          "Vie respiratorie"
         ],
         "differentialRemedies": [
           "Magnesia phosphorica",
@@ -10615,51 +10088,45 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Zincum"
         ],
         "searchKeywords": [
-          "rame metallico",
-          "cuprum metallicum",
-          "copper",
-          "cramps",
-          "calf cramps",
-          "whooping cough",
-          "clenched thumbs",
-          "cold water sip",
-          "motor nervous system",
-          "muscolo striato e liscio",
-          "respiratory tract"
+          "rame",
+          "crampi",
+          "polpaccio",
+          "pertosse",
+          "pollici"
         ]
       },
       "ru": {
         "category": "Минеральный",
         "commonName": "Медь металлическая",
-        "origin": "Pure elemental copper.",
-        "essence": "The supreme spasmodic cramp remedy: severe nocturnal calf cramps, whooping cough with suffocation, and thumbs clenched tightly into fists; relief from sipping cold water.",
+        "origin": "Чистая элементарная медь (Cu).",
+        "essence": "Главное средство при судорожных спазмах: судороги икроножных мышц, коклюш с удушьем и сжимание больших пальцев в кулак перед судорогами; улучшение от глотка холодной воды.",
         "mainIndications": [
-          "Nocturnal leg & calf cramps",
-          "Whooping cough with cyanosis and breathless paroxysms",
-          "Эпилептоидные спазмы, когда большие пальцы сжаты в ладонях.",
-          "Spasmodic choleraic abdominal cramps"
+          "Судороги икроножных мышц и ночные мышечные спазмы",
+          "Коклюш с приступами удушья и цианозом",
+          "Эпилепсия со сжиманием больших пальцев в ладонях",
+          "Спазмы в животе и холерные судороги"
         ],
         "keynotes": [
-          "Thumbs clenched tightly into palms before and during spasm",
-          "A sip of cold water dramatically stops the cough or spasm",
-          "Sudden abrupt onset and violent termination of spasms"
+          "Большие пальцы плотно прижимаются к ладоням до и во время спазма",
+          "Глоток холодной воды приносит мгновенное облегчение при кашле или спазме",
+          "Внезапное начало и окончание судорог"
         ],
-        "mindEmotional": "Anxious, malicious delirium, screams before convulsions.",
+        "mindEmotional": "Тревожный, нервный, боится любого контакта перед приступами.",
         "modalitiesBetter": [
-          "Drinking a sip of cold water",
-          "Sweating"
+          "Питье холодной воды",
+          "Потоотделение"
         ],
         "modalitiesWorse": [
-          "Touch & cold air",
-          "Before menses",
-          "Nighttime"
+          "Прикосновение и холод",
+          "Перед началом менструации",
+          "Ночью"
         ],
-        "potenciesAndDosage": "D6, D12, C30 / 6C, 30C. In acute cramps D6 every 15–30 min.",
-        "defaultTagesdosis": "2–3 doses of 3–5 гранул",
+        "potenciesAndDosage": "D6, D12, C30. При острых судорогах D6 каждые 15–30 мин.",
+        "defaultTagesdosis": "2–3 приема по 5 гранул",
         "sphereOfAction": [
-          "Motor Nervous System",
-          "Striated & Smooth Muscle",
-          "Respiratory Tract"
+          "Центральная нервная система и моторика",
+          "Мускулатура и спазмы",
+          "Органы дыхания"
         ],
         "differentialRemedies": [
           "Magnesia phosphorica",
@@ -10668,17 +10135,11 @@ export const MATERIA_MEDICA_PART2: MateriaMedicaEntry[] = [
           "Zincum"
         ],
         "searchKeywords": [
-          "медь металлическая",
-          "cuprum metallicum",
-          "copper",
-          "cramps",
-          "calf cramps",
-          "whooping cough",
-          "clenched thumbs",
-          "cold water sip",
-          "motor nervous system",
-          "striated & smooth muscle",
-          "respiratory tract"
+          "медь",
+          "судороги",
+          "икроножные мышцы",
+          "коклюш",
+          "пальцы"
         ]
       }
     }

@@ -8524,6 +8524,7 @@ export const MATERIA_MEDICA_PART18: MateriaMedicaEntry[] = [
   {
     "id": "plumbum-metallicum",
     "latinName": "Plumbum metallicum",
+    "aliases": ["Plumbum", "Plumb-m", "Blei"],
     "categoryKey": "mineral",
     "isPolychrest": false,
     "importanceTier": 2,
@@ -8730,39 +8731,51 @@ export const MATERIA_MEDICA_PART18: MateriaMedicaEntry[] = [
       },
       "el": {
         "category": "Ορυκτό",
-        "commonName": "Plumbum metallicum",
+        "commonName": "Plumbum metallicum (Μόλυβδος)",
         "origin": "Κλασικό ομοιοπαθητικό φάρμακο κατά Hahnemann, Kent, Hering.",
-        "essence": "Κλασικό φάρμακο (Hahnemann, Kent, Hering): Obstinate constipation, blue gum line.",
+        "essence": "Κλασικό φάρμακο (Hahnemann, Kent, Hering): Επίμονη δυσκοιλιότητα, μπλε γραμμή στα ούλα, αίσθηση ότι ο αφαλός έλκεται προς τη σπονδυλική στήλη.",
         "mainIndications": [
-          "Obstinate constipation, blue gum line",
-          "Ενδείξεις σύμφωνα με την κλασική Materia Medica"
+          "Επίμονη δυσκοιλιότητα με αίσθηση έλξης του αφαλού",
+          "Κολικοί της κοιλίας με σύσπαση",
+          "Νευρολογικές παθήσεις & παράλυση",
+          "Αρτηριοσκλήρυνση & νεφρικές παθήσεις"
         ],
         "keynotes": [
-          "Obstinate constipation, blue gum line",
-          "Βασικά χαρακτηριστικά κατά Hahnemann, Kent, Hering"
+          "Επίμονη δυσκοιλιότητα με σπασμό του πρωκτού",
+          "Μπλε γραμμή στα ούλα (γραμμή Burton)",
+          "Πόνοι που ακτινοβολούν από την κοιλιά σε όλα τα μέρη του σώματος",
+          "Αίσθηση ότι ο αφαλός τραβιέται προς τα πίσω με σκοινί"
         ],
-        "mindEmotional": "Ψυχοδιανοητικά συμπτώματα κατά Hahnemann, Kent, Hering.",
+        "mindEmotional": "Απώλεια μνήμης, κατάθλιψη, πνευματική επιβράδυνση.",
         "modalitiesBetter": [
           "Ανάπαυση",
-          "Ήπια θερμότητα"
+          "Ήπια θερμότητα",
+          "Σκληρή πίεση"
         ],
         "modalitiesWorse": [
           "Κρύο και υγρασία",
-          "Κόπωση"
+          "Κόπωση",
+          "Νύχτα"
         ],
-        "potenciesAndDosage": "6X έως 30C. 3 φορές την ημέρα 5 σφαιρίδια.",
+        "potenciesAndDosage": "D6 έως C30. 3 φορές την ημέρα 5 σφαιρίδια.",
         "defaultTagesdosis": "5 σφαιρίδια 3 φορές την ημέρα",
         "sphereOfAction": [
-          "Νευρικό σύστημα",
-          "Βλεννογόνοι"
+          "Νευρικό σύστημα (κινητικοί νεύρες)",
+          "Πεπτικό σύστημα (έντερο)",
+          "Βλεννογόνοι & Αίμα"
         ],
         "differentialRemedies": [
           "Arsenicum album",
-          "Nux vomica"
+          "Nux vomica",
+          "Alumina",
+          "Opium"
         ],
         "searchKeywords": [
           "plumbum metallicum",
-          "ομοιοπαθητική"
+          "μόλυβδος",
+          "δυσκοιλιότητα",
+          "αφαλός",
+          "παράλυση"
         ]
       },
       "ru": {
