@@ -84,6 +84,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
   
   const [drillOptions, setDrillOptions] = useState<string[]>([]);
   const [drillTranslatedOptions, setDrillTranslatedOptions] = useState<Record<string, string>>({});
+  const [drillPathTranslations, setDrillPathTranslations] = useState<Record<string, string>>({});
   const [drillLevelType, setDrillLevelType] = useState<string>('chapter');
   const [drillLevelIndex, setDrillLevelIndex] = useState<number>(-1);
   const [drillRubrics, setDrillRubrics] = useState<KentRubric[]>([]);
@@ -183,7 +184,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
         }
       } catch (err) {
         console.error("Error searching rubrics:", err);
-        setKeywordSearchError("Fehler bei der Symptomsuche.");
+        setKeywordSearchError(t('kentSearchFailed'));
       } finally {
         setIsKeywordSearching(false);
       }
@@ -193,6 +194,12 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
       executeKeywordSearch();
     }
   }, [debouncedKeyword, keywordChapterFilter, searchMode, language]);
+
+  // When language changes, reset cached translation maps so breadcrumbs cleanly switch language
+  useEffect(() => {
+    setDrillTranslatedOptions({});
+    setDrillPathTranslations({});
+  }, [language]);
 
   // ==========================================================================
   // DRILL-DOWN LOGIC: Fetch children level based on current path
@@ -235,7 +242,17 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
           setDrillLevelType(data.nextLevelType);
           setDrillLevelIndex(data.nextLevelIndex);
           setDrillOptions(data.nextOptions || []);
-          setDrillTranslatedOptions(data.translatedOptions || {});
+          // Use functional update to merge translations so previous level labels remain available for breadcrumbs
+          setDrillTranslatedOptions(prev => ({
+            ...prev,
+            ...(data.translatedOptions || {})
+          }));
+          if (data.pathTranslations) {
+            setDrillPathTranslations(prev => ({
+              ...prev,
+              ...data.pathTranslations
+            }));
+          }
           setDrillRubrics(data.rubrics || []);
           setDrillError(null);
           setIsDrillLoading(false);
@@ -257,7 +274,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
             setDrillOptions(FALLBACK_CHAPTERS);
             setDrillError(null);
           } else {
-            setDrillError("Die Rubriken konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
+            setDrillError(t('kentLoadRubricsError'));
           }
         }
       }
@@ -294,6 +311,33 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
     };
     refreshSelectedRubrics();
   }, [language]);
+
+  // Load persisted case rubrics if present and cart is currently empty
+  useEffect(() => {
+    if (currentCase?.repertoryRubricIds && currentCase.repertoryRubricIds.length > 0 && selectedRubrics.length === 0) {
+      const loadCaseRubrics = async () => {
+        try {
+          const rubrics = await Promise.all(
+            currentCase.repertoryRubricIds!.map(async (id) => {
+              try {
+                const res = await fetch(`/api/kent/rubric/${encodeURIComponent(id)}?lang=${encodeURIComponent(language)}`);
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data.rubric) return data.rubric;
+                }
+              } catch {}
+              return null;
+            })
+          );
+          const valid = rubrics.filter(Boolean) as KentRubric[];
+          if (valid.length > 0) {
+            setSelectedRubrics(valid);
+          }
+        } catch {}
+      };
+      loadCaseRubrics();
+    }
+  }, [currentCase?.id]);
 
   // Back navigation for Drill-down
   const handleDrillBack = () => {
@@ -422,6 +466,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
     
     const updatedCase: PatientCase = {
       ...currentCase as PatientCase,
+      repertoryRubricIds: selectedRubrics.map(r => r.id),
       anamneseSymptome: currentCase.anamneseSymptome 
         ? `${currentCase.anamneseSymptome}\n\n[Kent-Repertorisation]\n${symptomTexts}`
         : `[Kent-Repertorisation]\n${symptomTexts}`,
@@ -433,7 +478,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
 
     onSaveCase(updatedCase);
     
-    setSaveMessage(`Repertorisation mit ${selectedRubrics.length} Rubriken wurde erfolgreich im Fall von ${currentCase.patientName || 'Patient'} gespeichert!`);
+    setSaveMessage(t('kentSaveSuccess', { count: selectedRubrics.length, patient: currentCase.patientName || t('kentActivePatient') }));
     setShowSaveSuccess(true);
     setTimeout(() => setShowSaveSuccess(false), 5000);
   };
@@ -732,7 +777,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                     onClick={() => handleJumpToLevel('chapters')}
                     className="hover:text-teal-600 transition-all cursor-pointer text-slate-500 hover:underline"
                   >
-                    Repertorium
+                    {t('tabRepertory')}
                   </button>
 
                   {drillChapter && (
@@ -742,7 +787,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         onClick={() => handleJumpToLevel('chapters')}
                         className="hover:text-teal-600 transition-all cursor-pointer text-slate-800 hover:underline bg-slate-200/60 px-2 py-0.5 rounded"
                       >
-                        {chapterTranslations[drillChapter] || drillTranslatedOptions[drillChapter] || drillChapter}
+                        {drillPathTranslations[drillChapter] || chapterTranslations[drillChapter] || drillTranslatedOptions[drillChapter] || drillChapter}
                       </button>
                     </>
                   )}
@@ -754,7 +799,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         onClick={() => handleJumpToLevel('symptom')}
                         className="hover:text-teal-600 transition-all cursor-pointer text-slate-800 hover:underline bg-teal-50 px-2 py-0.5 rounded border border-teal-100"
                       >
-                        {drillTranslatedOptions[drillSymptom] || drillSymptom}
+                        {drillPathTranslations[drillSymptom] || drillTranslatedOptions[drillSymptom] || drillSymptom}
                       </button>
                     </>
                   )}
@@ -766,7 +811,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         onClick={() => handleJumpToLevel(idx)}
                         className="hover:text-teal-600 transition-all cursor-pointer text-slate-700 hover:underline bg-blue-50 px-2 py-0.5 rounded border border-blue-100 text-[11px]"
                       >
-                        {drillTranslatedOptions[zus] || zus}
+                        {drillPathTranslations[zus] || drillTranslatedOptions[zus] || zus}
                       </button>
                     </React.Fragment>
                   ))}
@@ -835,7 +880,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
-                      Erneut versuchen
+                      {t('kentRetryBtn')}
                     </button>
                   </div>
                 ) : drillLevelType === 'none' ? (
@@ -843,17 +888,17 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                   <div className="flex-1 flex flex-col items-center justify-center py-16 text-center text-slate-400">
                     <CheckCircle className="w-12 h-12 text-teal-500/80 mb-3" />
                     <h4 className="text-sm font-bold text-slate-700 mb-1">
-                      Detailtiefe erreicht
+                      {t('kentDepthReached')}
                     </h4>
                     <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-                      Für die ausgewählte Kombination existieren keine weiteren Zusatzangaben. Sie können passende Symptome in der rechten Spalte auswählen.
+                      {t('kentDepthReachedDesc')}
                     </p>
                   </div>
                 ) : filteredDrillOptions.length === 0 ? (
                   /* Empty options under filter */
                   <div className="flex-1 flex flex-col items-center justify-center py-16 text-center text-slate-400">
                     <Info className="w-10 h-10 text-slate-300 mb-2" />
-                    <p className="text-xs">Keine Optionen entsprechen Ihrem Filter.</p>
+                    <p className="text-xs">{t('kentNoFilterMatches')}</p>
                   </div>
                 ) : (
                   /* List of options with click triggers */
@@ -967,14 +1012,14 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full group-hover:bg-teal-100 group-hover:text-teal-800 transition-all">
-                            {rubric.remedyCount} Mittel
+                            {t('kentRemediesCount', { count: rubric.remedyCount })}
                           </span>
                           {!isAlreadySelected ? (
                             <button className="p-1 rounded-md bg-teal-100 text-teal-800 opacity-0 group-hover:opacity-100 transition-all">
                               <Plus className="w-3.5 h-3.5" />
                             </button>
                           ) : (
-                            <span className="text-xs text-slate-400 font-semibold px-1">Ausgewählt</span>
+                            <span className="text-xs text-slate-400 font-semibold px-1">{t('kentSelectedBadge')}</span>
                           )}
                         </div>
                       </div>
@@ -994,7 +1039,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
               </h4>
               
               {drillRubrics.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-6">Keine Rubriken entsprechen dem Pfad.</p>
+                <p className="text-xs text-slate-400 text-center py-6">{t('kentNoRubricsForPath')}</p>
               ) : (
                 <div className="border border-slate-100 rounded-xl bg-slate-50 max-h-[280px] overflow-y-auto divide-y divide-slate-150 pr-1">
                   {drillRubrics.map((rubric) => {
@@ -1021,14 +1066,14 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
 
                         <div className="flex items-center gap-2 shrink-0 self-center">
                           <span className="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full group-hover:bg-teal-100 group-hover:text-teal-800 transition-all">
-                            {rubric.remedyCount} Mittel
+                            {t('kentRemediesCount', { count: rubric.remedyCount })}
                           </span>
                           {!isAlreadySelected ? (
                             <button className="p-1 rounded-md bg-teal-150 text-teal-900 opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
                               <Plus className="w-3.5 h-3.5" />
                             </button>
                           ) : (
-                            <span className="text-[10px] text-slate-400 font-semibold px-1">Ausgewählt</span>
+                            <span className="text-[10px] text-slate-400 font-semibold px-1">{t('kentSelectedBadge')}</span>
                           )}
                         </div>
                       </div>
@@ -1048,7 +1093,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                   {t('kentSelectedSymptoms')}
                 </h3>
                 <p className="text-[11px] text-slate-400 font-medium">
-                  {selectedRubrics.length} Symptome in die Gewichtung einbezogen
+                  {t('kentIncludedSymptomsCount', { count: selectedRubrics.length })}
                 </p>
               </div>
 
@@ -1078,10 +1123,10 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
               <div className="py-12 px-6 border-2 border-dashed border-slate-200 rounded-xl text-center">
                 <HelpCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <h4 className="text-sm font-bold text-slate-700 font-serif mb-1">
-                  Keine Symptome ausgewählt
+                  {t('kentNoSymptomsSelectedTitle')}
                 </h4>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                  Navigieren Sie oben durch die Kapitel oder nutzen Sie die Freisuche, um Symptome durch Anklicken zur Repertorisation hinzuzufügen.
+                  {t('kentNoSymptomsSelectedDesc')}
                 </p>
               </div>
             ) : (
@@ -1094,7 +1139,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold tracking-wider bg-teal-100 text-teal-800 uppercase">
-                          Symptom {idx + 1}
+                          {t('kentSymptomIndex', { index: idx + 1 })}
                         </span>
                         <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold tracking-wider bg-slate-200 text-slate-600 uppercase">
                           {rubric.chapterTranslated || chapterTranslations[rubric.chapter] || rubric.chapter}
@@ -1120,7 +1165,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
 
           {/* GRAD LEGENDS */}
           <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 flex flex-wrap gap-4 text-xs font-semibold text-slate-600">
-            <span className="text-[10px] uppercase text-slate-400 w-full mb-1">Graduierung nach Kent:</span>
+            <span className="text-[10px] uppercase text-slate-400 w-full mb-1">{t('kentGradingLegendTitle')}</span>
             <div className="flex items-center gap-1.5">
               <span className="w-5 h-5 rounded bg-slate-200 text-slate-800 flex items-center justify-center font-bold text-[10px]">1</span>
               <span>{t('kentGrade1Legend')}</span>
@@ -1178,14 +1223,14 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
               <div className="flex-1 flex flex-col items-center justify-center py-16 text-center text-slate-400">
                 <FileSpreadsheet className="w-12 h-12 text-slate-200 mb-2" />
                 <p className="text-xs max-w-[240px] leading-relaxed">
-                  Wählen Sie mindestens ein Symptom aus, um die Repertorisation zu berechnen.
+                  {t('kentSelectSymptomToCalculate')}
                 </p>
               </div>
             ) : filteredRemedies.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center py-16 text-center text-slate-400">
                 <HelpCircle className="w-10 h-10 text-slate-200 mb-2" />
                 <p className="text-xs">
-                  Keine Arzneimittel entsprechen dem Suchfilter.
+                  {t('kentNoRemedyMatchesFilter')}
                 </p>
               </div>
             ) : (
@@ -1201,7 +1246,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                         <span 
                           onClick={() => handleRemedyClick(result.remedyKey, result.fullName)}
                           className="text-sm font-extrabold text-teal-800 bg-teal-50/60 px-2.5 py-0.5 rounded-full border border-teal-100/80 group-hover:bg-teal-100 transition-all cursor-pointer hover:underline"
-                          title="Klicken für Materia Medica Monographie"
+                          title={t('kentClickForMonograph')}
                         >
                           {result.remedyKey}
                         </span>
@@ -1218,7 +1263,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                     {/* Right: Scores & Matrix */}
                     <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
                       {/* Matrix representation of grades for each selected rubric */}
-                      <div className="flex items-center gap-1.5" title="Symptomdeckung Matrix (Reihenfolge der ausgewählten Symptome)">
+                      <div className="flex items-center gap-1.5" title={t('kentCoverageMatrixTitle')}>
                         {selectedRubrics.map((rubric) => {
                           const grade = result.gradesPerRubric[rubric.id] || 0;
                           return (
@@ -1233,7 +1278,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
                                       ? 'bg-slate-200 text-slate-700' 
                                       : 'bg-slate-100 text-slate-300 border border-dashed border-slate-200'
                               }`}
-                              title={`${rubric.pathTranslated || rubric.path}\nGrad: ${grade === 0 ? 'Nicht vorhanden' : grade}`}
+                              title={`${rubric.pathTranslated || rubric.path}\nGrad: ${grade === 0 ? t('kentGradeNotPresent') : grade}`}
                             >
                               {grade > 0 ? grade : '•'}
                             </span>
@@ -1288,7 +1333,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center animate-fadeIn">
           <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 flex flex-col items-center space-y-3">
             <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-extrabold text-slate-700 tracking-wide">Materia Medica Steckbrief wird geladen...</span>
+            <span className="text-xs font-extrabold text-slate-700 tracking-wide">{t('kentLoadingMonograph')}</span>
           </div>
         </div>
       )}

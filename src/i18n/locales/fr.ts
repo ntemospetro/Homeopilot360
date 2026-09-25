@@ -3686,6 +3686,8 @@ export const fr = {
   kentLoadingMonograph: "Chargement de la monographie Materia Medica...",
   kentSaveSuccess: "La répertorisation avec {{count}} rubriques a été enregistrée avec succès dans le dossier de {{patient}} !",
   kentSearchFailed: "Erreur lors de la recherche des symptômes.",
+  kentLoadRubricsError: "Impossible de charger les rubriques. Veuillez réessayer.",
+  kentRetryBtn: "Réessayer",
   adminNavTranslations: "Traductions",
   transStudioTitle: "Studio de Traduction (Translation Hub)",
   transStudioSubtitle: "Gérez, traduisez et synchronisez les textes des modules et du répertoire dans toutes les langues du cabinet.",

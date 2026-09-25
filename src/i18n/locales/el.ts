@@ -3686,6 +3686,8 @@ export const el = {
   kentLoadingMonograph: "Φόρτωση μονογραφίας Materia Medica...",
   kentSaveSuccess: "Η ρεπερτοριοποίηση με {{count}} ρουμπρίκες αποθηκεύτηκε επιτυχώς στην υπόθεση του/της {{patient}}!",
   kentSearchFailed: "Σφάλμα κατά την αναζήτηση συμπτωμάτων.",
+  kentLoadRubricsError: "Δεν ήταν δυνατή η φόρτωση των ρουμπρικών. Παρακαλώ δοκιμάστε ξανά.",
+  kentRetryBtn: "Δοκιμάστε ξανά",
   adminNavTranslations: "Μεταφράσεις",
   transStudioTitle: "Εργαστήριο Μεταφράσεων (Translation Hub)",
   transStudioSubtitle: "Διαχείριση, μετάφραση και συγχρονισμός κειμένων ενοτήτων και ρεπερτορίου σε όλες τις γλώσσες του ιατρείου.",

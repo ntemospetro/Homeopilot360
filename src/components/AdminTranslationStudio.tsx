@@ -3,7 +3,7 @@ import { useTranslation } from '../i18n/LanguageContext';
 import { Languages, Search, CheckCircle, Globe } from 'lucide-react';
 
 export const AdminTranslationStudio: React.FC = () => {
-  const { t, currentLanguage } = useTranslation();
+  const { t, language } = useTranslation();
   const [search, setSearch] = useState('');
 
   return (
@@ -21,7 +21,7 @@ export const AdminTranslationStudio: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-teal-300">
           <CheckCircle className="w-4 h-4 text-teal-400" />
-          <span>Alle 7 Sprachen aktiv ({currentLanguage.toUpperCase()})</span>
+          <span>Alle 7 Sprachen aktiv ({language.toUpperCase()})</span>
         </div>
       </div>
 

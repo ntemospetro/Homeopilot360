@@ -275,6 +275,7 @@ export interface PatientCase {
 
   // Repertorisation & Anamnese-Ergebnisse
   repertorisationErgebnis?: string;
+  repertoryRubricIds?: string[];
   verordnungPotenz?: string;
   anamneseSymptome?: string;
   organonAnalysis?: any;

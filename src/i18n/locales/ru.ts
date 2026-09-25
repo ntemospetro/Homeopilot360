@@ -3686,6 +3686,8 @@ export const ru = {
   kentLoadingMonograph: "Загрузка монографии Materia Medica...",
   kentSaveSuccess: "Реперторизация с {{count}} рубриками успешно сохранена в истории болезни {{patient}}!",
   kentSearchFailed: "Ошибка при поиске симптомов.",
+  kentLoadRubricsError: "Не удалось загрузить рубрики. Пожалуйста, попробуйте снова.",
+  kentRetryBtn: "Попробовать снова",
   adminNavTranslations: "Переводы",
   transStudioTitle: "Студия переводов (Translation Hub)",
   transStudioSubtitle: "Управление, перевод и синхронизация текстов модулей и репертория на все языки практики.",

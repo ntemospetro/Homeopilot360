@@ -3693,6 +3693,8 @@ export const de = {
   kentLoadingMonograph: "Materia Medica Steckbrief wird geladen...",
   kentSaveSuccess: "Repertorisation mit {{count}} Rubriken wurde erfolgreich im Fall von {{patient}} gespeichert!",
   kentSearchFailed: "Fehler bei der Symptomsuche.",
+  kentLoadRubricsError: "Die Rubriken konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+  kentRetryBtn: "Erneut versuchen",
   adminNavTranslations: "Übersetzungen",
   transStudioTitle: "Übersetzungs-Studio (Translation Hub)",
   transStudioSubtitle: "Verwalten, Übersetzen und Synchronisieren von Modul- und Repertorium-Texten in alle Praxissprachen.",

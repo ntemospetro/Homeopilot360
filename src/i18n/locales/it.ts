@@ -3686,6 +3686,8 @@ export const it = {
   kentLoadingMonograph: "Caricamento monografia Materia Medica...",
   kentSaveSuccess: "La repertorizzazione con {{count}} rubriche è stata salvata con successo nella cartella di {{patient}}!",
   kentSearchFailed: "Errore durante la ricerca dei sintomi.",
+  kentLoadRubricsError: "Impossibile caricare le rubriche. Riprova.",
+  kentRetryBtn: "Riprova",
   adminNavTranslations: "Traduzioni",
   transStudioTitle: "Studio di Traduzione (Translation Hub)",
   transStudioSubtitle: "Gestisci, traduci e sincronizza i testi dei moduli e del repertorio in tutte le lingue dello studio.",

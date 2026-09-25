@@ -475,6 +475,10 @@ ${JSON.stringify(chunk)}`;
           }
         }
         persistTranslations();
+        // Invalidate in-memory translation caches so new translations take effect immediately
+        for (const k of Object.keys(langTransCache)) {
+          delete langTransCache[k];
+        }
 
         // Trigger token usage callback for therapist billing
         if (onTokenUsage) {
@@ -503,7 +507,7 @@ ${JSON.stringify(chunk)}`;
 interface LangTransData {
   transMap: Record<string, string>;
   lowerMap: Map<string, string>;
-  reverseMap: Map<string, string>;
+  reverseMap: Map<string, string[]>;
 }
 
 const langTransCache: Record<string, LangTransData> = {};
@@ -517,7 +521,7 @@ export function getKentTranslationsForLang(lang?: string): Record<string, string
 
   const transMap: Record<string, string> = {};
   const lowerMap = new Map<string, string>();
-  const reverseMap = new Map<string, string>();
+  const reverseMap = new Map<string, string[]>();
 
   // 1. Canonical Kent Chapters (Level 1)
   for (const [ch, trans] of Object.entries(CANONICAL_KENT_CHAPTERS)) {
@@ -540,33 +544,68 @@ export function getKentTranslationsForLang(lang?: string): Record<string, string
   }
 
   for (const [orig, tr] of Object.entries(transMap)) {
-    lowerMap.set(orig.toLowerCase(), tr);
-    reverseMap.set(tr.toLowerCase(), orig);
+    const origClean = orig.trim();
+    const trClean = typeof tr === "string" ? tr.trim() : "";
+    if (!origClean || !trClean) continue;
+
+    lowerMap.set(origClean.toLowerCase(), trClean);
+    const trLower = trClean.toLowerCase();
+    const existing = reverseMap.get(trLower) || [];
+    if (!existing.includes(origClean)) {
+      existing.push(origClean);
+    }
+    reverseMap.set(trLower, existing);
   }
 
   langTransCache[lang] = { transMap, lowerMap, reverseMap };
   return transMap;
 }
 
+function capitalizeFirstLetter(val: string): string {
+  if (!val) return "";
+  return val.charAt(0).toUpperCase() + val.slice(1);
+}
+
 function lookupTrans(term: string, transMap: Record<string, string>, lang?: string): string {
   if (!term) return "";
-  if (transMap[term]) return transMap[term];
-  const trimmed = term.trim();
-  if (transMap[trimmed]) return transMap[trimmed];
-
-  const cache = lang ? langTransCache[lang] : undefined;
-  const lower = trimmed.toLowerCase();
-  if (cache) {
-    const directLower = cache.lowerMap.get(lower);
-    if (directLower) return directLower;
+  
+  let result = term;
+  if (transMap[term]) {
+    result = transMap[term];
   } else {
-    for (const [k, v] of Object.entries(transMap)) {
-      if (k.toLowerCase() === lower) {
-        return v;
+    const trimmed = term.trim();
+    if (transMap[trimmed]) {
+      result = transMap[trimmed];
+    } else {
+      const cache = lang ? langTransCache[lang] : undefined;
+      const lower = trimmed.toLowerCase();
+      if (cache) {
+        const directLower = cache.lowerMap.get(lower);
+        if (directLower) {
+          result = directLower;
+        } else {
+          result = lookupFallback(trimmed, transMap, cache);
+        }
+      } else {
+        let found = false;
+        for (const [k, v] of Object.entries(transMap)) {
+          if (k.toLowerCase() === lower) {
+            result = v;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          result = lookupFallback(trimmed, transMap);
+        }
       }
     }
   }
 
+  return capitalizeFirstLetter(result);
+}
+
+function lookupFallback(trimmed: string, transMap: Record<string, string>, cache?: LangTransData): string {
   // Word-by-word tokenized fallback for compound expressions
   if (trimmed.includes(" ") || trimmed.includes("-") || trimmed.includes(",")) {
     const tokens = trimmed.split(/(\b[A-Za-zÄÖÜäöüß0-9\-\'\.]+\b)/);
@@ -586,13 +625,24 @@ function lookupTrans(term: string, transMap: Record<string, string>, lang?: stri
       return translatedTokens.join("");
     }
   }
-
-  return term;
+  return trimmed;
 }
 
-function toGermanTerm(term: string, transMap: Record<string, string>, lang?: string): string {
+interface DisambiguateContext {
+  candidateRubrics?: KentRubric[];
+  levelType?: 'chapter' | 'symptom' | 'zusatz';
+  levelIndex?: number;
+}
+
+function toGermanTerm(
+  term: string,
+  transMap: Record<string, string>,
+  lang?: string,
+  context?: DisambiguateContext
+): string {
   if (!term) return "";
-  const termLower = term.trim().toLowerCase();
+  const termClean = term.trim();
+  const termLower = termClean.toLowerCase();
 
   // Check canonical chapters
   for (const [deChapter, translations] of Object.entries(CANONICAL_KENT_CHAPTERS)) {
@@ -602,18 +652,57 @@ function toGermanTerm(term: string, transMap: Record<string, string>, lang?: str
     }
   }
 
+  // If already an exact key in transMap
+  if (transMap[termClean]) return termClean;
+
   const cache = lang ? langTransCache[lang] : undefined;
+  let candidates: string[] = [];
+
   if (cache) {
-    const fromRev = cache.reverseMap.get(termLower);
-    if (fromRev) return fromRev;
+    candidates = cache.reverseMap.get(termLower) || [];
   } else {
     for (const [orig, trans] of Object.entries(transMap)) {
       if (orig.toLowerCase() === termLower) return orig;
-      if (trans.toLowerCase() === termLower) return orig;
+      if (typeof trans === "string" && trans.toLowerCase() === termLower) {
+        if (!candidates.includes(orig)) candidates.push(orig);
+      }
     }
   }
 
-  return term;
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  if (candidates.length > 1) {
+    // Disambiguate using context
+    if (context?.candidateRubrics && context.candidateRubrics.length > 0) {
+      if (context.levelType === 'symptom') {
+        const match = candidates.find(cand =>
+          context.candidateRubrics!.some(r => r.symptom && r.symptom.toLowerCase() === cand.toLowerCase())
+        );
+        if (match) return match;
+      } else if (context.levelType === 'zusatz' && typeof context.levelIndex === 'number') {
+        const idx = context.levelIndex;
+        const match = candidates.find(cand =>
+          context.candidateRubrics!.some(r => r.zusatz && r.zusatz[idx] && r.zusatz[idx].toLowerCase() === cand.toLowerCase())
+        );
+        if (match) return match;
+      } else {
+        const match = candidates.find(cand => {
+          const cLower = cand.toLowerCase();
+          return context.candidateRubrics!.some(r =>
+            r.chapter.toLowerCase() === cLower ||
+            r.symptom.toLowerCase() === cLower ||
+            (r.zusatz && r.zusatz.some(z => z.toLowerCase() === cLower))
+          );
+        });
+        if (match) return match;
+      }
+    }
+    return candidates[0];
+  }
+
+  return termClean;
 }
 
 function translateRubric(r: KentRubric, transMap: Record<string, string>, lang?: string): any {
@@ -646,8 +735,7 @@ export async function searchKentRubrics(
   onTokenUsage?: KentTokenUsageCallback
 ): Promise<any[]> {
   if (!isLoaded) {
-    ensureKentDatabaseLoaded();
-    return [];
+    await ensureKentDatabaseLoaded();
   }
 
   const queryClean = query.toLowerCase().trim();
@@ -659,15 +747,20 @@ export async function searchKentRubrics(
   const cache = langTransCache[lang];
   const tokenEquivalents: string[][] = tokens.map((t) => {
     const list = [t];
-    if (lang !== "de") {
-      if (cache?.reverseMap.has(t)) {
-        list.push(cache.reverseMap.get(t)!.toLowerCase());
+    if (lang !== "de" && cache) {
+      const cands = cache.reverseMap.get(t);
+      if (cands) {
+        for (const c of cands) list.push(c.toLowerCase());
       }
-      if (cache) {
-        for (const [trLower, orig] of cache.reverseMap.entries()) {
-          if (trLower === t || trLower.startsWith(t + " ") || trLower.endsWith(" " + t) || trLower.includes(" " + t + " ")) {
-            list.push(orig.toLowerCase());
-          }
+      for (const [trLower, origList] of cache.reverseMap.entries()) {
+        if (
+          trLower === t ||
+          trLower.startsWith(t + " ") ||
+          trLower.endsWith(" " + t) ||
+          trLower.includes(" " + t + " ") ||
+          (t.length >= 4 && trLower.includes(t))
+        ) {
+          for (const orig of origList) list.push(orig.toLowerCase());
         }
       }
     }
@@ -776,9 +869,16 @@ export function getKentRemedies(): RemedyInfo[] {
  * Get distinct chapters in Kent database
  */
 export function getKentChapters(): string[] {
-  if (!isLoaded) {
-    ensureKentDatabaseLoaded();
-    return [];
+  if (!isLoaded && fs.existsSync(CACHE_PATH)) {
+    try {
+      const rawData = fs.readFileSync(CACHE_PATH, "utf-8");
+      const cache: KentCache = JSON.parse(rawData);
+      cachedRubrics = cache.rubrics || [];
+      cachedRemedies = cache.remedies || [];
+      isLoaded = true;
+    } catch {
+      // ignore
+    }
   }
   const chapters = new Set<string>();
   for (const r of cachedRubrics) {
@@ -793,9 +893,16 @@ export function getKentChapters(): string[] {
  * Get a single rubric by ID
  */
 export function getKentRubricById(id: string, lang = "de"): any | undefined {
-  if (!isLoaded) {
-    ensureKentDatabaseLoaded();
-    return undefined;
+  if (!isLoaded && fs.existsSync(CACHE_PATH)) {
+    try {
+      const rawData = fs.readFileSync(CACHE_PATH, "utf-8");
+      const cache: KentCache = JSON.parse(rawData);
+      cachedRubrics = cache.rubrics || [];
+      cachedRemedies = cache.remedies || [];
+      isLoaded = true;
+    } catch {
+      // ignore
+    }
   }
   const found = cachedRubrics.find((r) => r.id === id);
   if (!found) return undefined;
@@ -818,30 +925,37 @@ export async function getKentDrilldown(
   nextLevelIndex: number;
   nextOptions: string[];
   translatedOptions?: Record<string, string>;
+  pathTranslations?: Record<string, string>;
   rubrics: any[];
 }> {
   if (!isLoaded) {
-    ensureKentDatabaseLoaded();
-    return { nextLevelType: "chapter", nextLevelIndex: -1, nextOptions: [], rubrics: [] };
+    await ensureKentDatabaseLoaded();
   }
 
   let transMap = getKentTranslationsForLang(lang);
-  const normalizedChapter = chapter ? toGermanTerm(chapter.trim(), transMap, lang) : "";
-  const normalizedSymptom = symptom ? toGermanTerm(symptom.trim(), transMap, lang) : "";
-  const normalizedZusatz = (zusatz || []).map((z) => toGermanTerm(z.trim(), transMap, lang));
+  const normalizedChapter = chapter ? toGermanTerm(chapter.trim(), transMap, lang, { levelType: 'chapter' }) : "";
 
   // 1. No chapter selected: return all chapters
   if (!normalizedChapter) {
-    const chapters = getKentChapters();
+    const chaptersList = getKentChapters();
     const translatedOptions: Record<string, string> = {};
-    for (const ch of chapters) {
+    for (const ch of chaptersList) {
       translatedOptions[ch] = lookupTrans(ch, transMap, lang) || ch;
     }
+
+    // Sort options by their translated names
+    chaptersList.sort((a, b) => {
+      const transA = translatedOptions[a] || a;
+      const transB = translatedOptions[b] || b;
+      return transA.localeCompare(transB, lang === 'de' ? 'de' : lang);
+    });
+
     return {
       nextLevelType: "chapter",
       nextLevelIndex: -1,
-      nextOptions: chapters,
+      nextOptions: chaptersList,
       translatedOptions,
+      pathTranslations: {},
       rubrics: [],
     };
   }
@@ -851,6 +965,15 @@ export async function getKentDrilldown(
     (r) => r.chapter.toLowerCase() === normalizedChapter.toLowerCase()
   );
 
+  const normalizedSymptom = symptom ? toGermanTerm(symptom.trim(), transMap, lang, { candidateRubrics: matching, levelType: 'symptom' }) : "";
+
+  // Build pathTranslations for breadcrumbs
+  const pathTranslations: Record<string, string> = {};
+  if (normalizedChapter) {
+    pathTranslations[normalizedChapter] = lookupTrans(normalizedChapter, transMap, lang);
+    if (chapter) pathTranslations[chapter] = pathTranslations[normalizedChapter];
+  }
+
   // 2. Chapter selected, but no symptom selected: return unique symptoms under this chapter
   if (!normalizedSymptom) {
     const symptoms = new Set<string>();
@@ -859,7 +982,7 @@ export async function getKentDrilldown(
         symptoms.add(r.symptom);
       }
     }
-    const symptomsList = Array.from(symptoms).sort();
+    const symptomsList = Array.from(symptoms);
 
     // Check for missing translations in symptoms
     if (lang !== "de") {
@@ -888,11 +1011,19 @@ export async function getKentDrilldown(
       translatedOptions[s] = lookupTrans(s, transMap, lang) || s;
     }
 
+    // Sort options by their translated names
+    symptomsList.sort((a, b) => {
+      const transA = translatedOptions[a] || a;
+      const transB = translatedOptions[b] || b;
+      return transA.localeCompare(transB, lang === 'de' ? 'de' : lang);
+    });
+
     return {
       nextLevelType: "symptom",
       nextLevelIndex: 0,
       nextOptions: symptomsList,
       translatedOptions,
+      pathTranslations,
       rubrics: matching.slice(0, 100).map((r) => translateRubric(r, transMap, lang)),
     };
   }
@@ -902,14 +1033,26 @@ export async function getKentDrilldown(
     (r) => r.symptom.toLowerCase() === normalizedSymptom.toLowerCase()
   );
 
-  // 3. Process zusatz layers
-  const depth = normalizedZusatz.length;
+  if (normalizedSymptom) {
+    pathTranslations[normalizedSymptom] = lookupTrans(normalizedSymptom, transMap, lang);
+    if (symptom) pathTranslations[symptom] = pathTranslations[normalizedSymptom];
+  }
+
+  // 3. Process zusatz layers with context-aware disambiguation
+  const depth = (zusatz || []).length;
+  const normalizedZusatz: string[] = [];
   
   for (let i = 0; i < depth; i++) {
-    const valSelected = normalizedZusatz[i].toLowerCase();
+    const rawVal = zusatz[i];
+    const normVal = toGermanTerm(rawVal.trim(), transMap, lang, { candidateRubrics: matching, levelType: 'zusatz', levelIndex: i });
+    normalizedZusatz.push(normVal);
+    const valSelected = normVal.toLowerCase();
     matching = matching.filter(
       (r) => r.zusatz[i] && r.zusatz[i].toLowerCase() === valSelected
     );
+    const tr = lookupTrans(normVal, transMap, lang);
+    pathTranslations[normVal] = tr;
+    if (rawVal) pathTranslations[rawVal] = tr;
   }
 
   const nextOptionsSet = new Set<string>();
@@ -919,7 +1062,7 @@ export async function getKentDrilldown(
     }
   }
 
-  const nextOptions = Array.from(nextOptionsSet).sort();
+  const nextOptions = Array.from(nextOptionsSet);
 
   // If language is not German, ensure missing zusatz options and rubric items are translated
   if (lang !== "de") {
@@ -958,11 +1101,19 @@ export async function getKentDrilldown(
     translatedOptions[opt] = lookupTrans(opt, transMap, lang) || opt;
   }
 
+  // Sort options by their translated names
+  nextOptions.sort((a, b) => {
+    const transA = translatedOptions[a] || a;
+    const transB = translatedOptions[b] || b;
+    return transA.localeCompare(transB, lang === 'de' ? 'de' : lang);
+  });
+
   return {
     nextLevelType: nextOptions.length > 0 ? "zusatz" : "none",
     nextLevelIndex: depth,
     nextOptions,
     translatedOptions,
+    pathTranslations,
     rubrics: matching.slice(0, 150).map((r) => translateRubric(r, transMap, lang)),
   };
 }
@@ -982,9 +1133,16 @@ export interface KentRepertorizationResult {
 export function performKentRepertorisation(
   selectedRubricIds: string[]
 ): KentRepertorizationResult[] {
-  if (!isLoaded) {
-    ensureKentDatabaseLoaded();
-    return [];
+  if (!isLoaded && fs.existsSync(CACHE_PATH)) {
+    try {
+      const rawData = fs.readFileSync(CACHE_PATH, "utf-8");
+      const cache: KentCache = JSON.parse(rawData);
+      cachedRubrics = cache.rubrics || [];
+      cachedRemedies = cache.remedies || [];
+      isLoaded = true;
+    } catch {
+      // ignore
+    }
   }
 
   const validRubricIds = selectedRubricIds.filter(Boolean);

@@ -3692,6 +3692,8 @@ export const en = {
   kentLoadingMonograph: "Loading Materia Medica monograph...",
   kentSaveSuccess: "Repertorisation with {{count}} rubrics was successfully saved in the case of {{patient}}!",
   kentSearchFailed: "Error searching symptoms.",
+  kentLoadRubricsError: "The rubrics could not be loaded. Please try again.",
+  kentRetryBtn: "Try again",
   adminNavTranslations: "Translations",
   transStudioTitle: "Translation Studio (Translation Hub)",
   transStudioSubtitle: "Manage, translate and synchronize module and repertory texts into all practice languages.",
