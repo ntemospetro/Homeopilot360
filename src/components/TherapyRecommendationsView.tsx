@@ -16,9 +16,9 @@ import {
   localizeTherapyRecommendations,
 } from '../utils/remedyLocalization';
 import {
-  getLocalizedRemedies,
   LocalizedRemedy
 } from '../data/materiaMedicaData';
+import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import {
   RemedyMonographModal,
   resolveDifferentialRemedy
@@ -219,7 +219,7 @@ export const TherapyRecommendationsView: React.FC<TherapyRecommendationsViewProp
   const [selectedRemedyForModal, setSelectedRemedyForModal] = useState<LocalizedRemedy | null>(null);
   const [isMonographModalOpen, setIsMonographModalOpen] = useState(false);
 
-  const localizedRemedies = useMemo(() => getLocalizedRemedies(language), [language]);
+  const { allRemedies: localizedRemedies } = useMateriaMedica();
 
   const handleOpenMonograph = (remedyName: string) => {
     const matched = resolveDifferentialRemedy(remedyName, localizedRemedies);

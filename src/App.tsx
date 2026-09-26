@@ -26,6 +26,7 @@ import {
 } from './services/navigation';
 import { LanguageProvider, useTranslation } from './i18n/LanguageContext';
 import { TerminologyProvider } from './i18n/TerminologyContext';
+import { MateriaMedicaProvider } from './contexts/MateriaMedicaContext';
 import { Header } from './components/Header';
 import { RegistrationView } from './components/RegistrationView';
 import { TherapistPanel } from './components/TherapistPanel';
@@ -288,7 +289,9 @@ export default function App() {
     <ErrorBoundary>
       <LanguageProvider>
         <TerminologyProvider>
-          <AppContent />
+          <MateriaMedicaProvider>
+            <AppContent />
+          </MateriaMedicaProvider>
         </TerminologyProvider>
       </LanguageProvider>
     </ErrorBoundary>

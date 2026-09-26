@@ -22,7 +22,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Therapist, PatientCase } from '../types';
-import { getLocalizedRemedies, LocalizedRemedy } from '../data/materiaMedicaData';
+import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import { RemedyMonographModal } from './RemedyMonographModal';
 
 interface RepertoryViewProps {
@@ -59,6 +60,7 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
   onSaveCase
 }) => {
   const { t, language } = useTranslation();
+  const { allRemedies: localizedList } = useMateriaMedica();
 
   // Active Search Mode: 'drilldown' or 'keyword'
   const [searchMode, setSearchMode] = useState<'drilldown' | 'keyword'>('drilldown');
@@ -492,7 +494,6 @@ export const RepertoryView: React.FC<RepertoryViewProps> = ({
     
     // 1. Check in local classical polychrests and Materia Medica database
     const cleanKey = remedyKey.toLowerCase().replace(/\./g, '').trim();
-    const localizedList = getLocalizedRemedies(language);
     
     // Comprehensive mapping of homeopathic abbreviations and common synonyms to database IDs
     const ALIAS_ID_MAP: Record<string, string> = {

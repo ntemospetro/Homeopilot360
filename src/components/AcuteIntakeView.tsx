@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
-  LocalizedRemedy, 
-  getLocalizedRemedies 
+  LocalizedRemedy 
 } from '../data/materiaMedicaData';
+import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import { 
   matchSymptomsToRemedies, 
   SymptomMatchResult,
@@ -180,9 +180,7 @@ export const AcuteIntakeView: React.FC<AcuteIntakeViewProps> = ({
   }, []);
 
   // Fetch localized remedies based on active language
-  const localizedRemedies = useMemo(() => {
-    return getLocalizedRemedies(language);
-  }, [language]);
+  const { allRemedies: localizedRemedies } = useMateriaMedica();
 
   const currentLang = (language as LanguageCode) || 'de';
 
@@ -461,9 +459,9 @@ export const AcuteIntakeView: React.FC<AcuteIntakeViewProps> = ({
   useEffect(() => {
     const query = comprehensiveCaseText || symptomText;
     if (query.trim().length >= 3) {
-      const results = matchSymptomsToRemedies(query, language, acuteAnswers);
+      const results = matchSymptomsToRemedies(query, language, acuteAnswers, localizedRemedies);
       setRecommendations(results);
-      const diff = performDifferentialDiagnosis(query, language, acuteAnswers);
+      const diff = performDifferentialDiagnosis(query, language, acuteAnswers, localizedRemedies);
       setDiffResult(diff);
     } else {
       setRecommendations([]);

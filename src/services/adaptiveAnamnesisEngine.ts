@@ -1186,10 +1186,11 @@ export function getMateriaMedicaPolychrestOptions(
   pillar: 'location' | 'sensation' | 'modalities' | 'concomitants' | 'causa' | 'mind',
   chiefComplaint: string,
   lang: LanguageCode,
-  modalitySubTab?: 'better' | 'worse'
+  modalitySubTab?: 'better' | 'worse',
+  remediesPool?: LocalizedRemedy[]
 ): StructuredOptionItem[] {
   const trimmed = (chiefComplaint || '').trim();
-  const allRemedies = getLocalizedRemedies(lang);
+  const allRemedies = remediesPool || getLocalizedRemedies(lang);
   const polychrests = allRemedies.filter(r => Boolean(r.isPolychrest || r.ist_polychrest));
 
   // Find Polychrests whose spheres, indications or keynotes correlate with the complaint
@@ -1295,7 +1296,8 @@ export function getStructuredAnswerOptions(
   _question: string,
   chiefComplaint: string,
   lang: LanguageCode,
-  modalitySubTab?: 'better' | 'worse'
+  modalitySubTab?: 'better' | 'worse',
+  remediesPool?: LocalizedRemedy[]
 ): { options: StructuredOptionItem[]; standardOptions: StructuredOptionItem[] } {
   const chief = (chiefComplaint || '').toLowerCase();
   const isHead = chief.includes('kopf') || chief.includes('head') || chief.includes('tête') || chief.includes('cabeza') || chief.includes('testa') || chief.includes('κεφάλ') || chief.includes('голов') || chief.includes('migräne') || chief.includes('migraine');
@@ -1463,7 +1465,8 @@ export function getStructuredAnswerOptions(
     pillar,
     chiefComplaint,
     lang,
-    modalitySubTab
+    modalitySubTab,
+    remediesPool
   );
 
   const mergedOptions: StructuredOptionItem[] = [];

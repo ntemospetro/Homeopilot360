@@ -554,6 +554,7 @@ export const es = {
   "filterPlant": "Vegetal",
   "filterMineral": "Mineral",
   "filterAnimal": "Animal",
+  "filterNosode": "Nosodes",
   "indexAlphabet": "Índice alfabético",
   "filterToggle": "Filtros y categorías",
   "filterToggleShow": "Mostrar filtros",

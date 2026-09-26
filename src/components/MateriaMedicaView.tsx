@@ -25,7 +25,6 @@ import {
   EyeOff
 } from 'lucide-react';
 import { 
-  getLocalizedRemedies, 
   LocalizedRemedy 
 } from '../data/materiaMedicaData';
 import { 
@@ -41,13 +40,12 @@ import {
   getAllenKeynoteEntry,
   getUnifiedAllenKeynoteEntry 
 } from '../data/allenKeynotesData';
-import { 
-  matchSymptomsToRemedies, 
+import type { 
   SymptomMatchResult,
-  performDifferentialDiagnosis,
   DifferentialDiagnosisResult
 } from '../services/quickSymptomMatcher';
 import { useTranslation } from '../i18n/LanguageContext';
+import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import { getActiveTherapist, isFeatureLimitReached, incrementTherapistUsage } from '../services/storage';
 import { 
   isSpeechRecognitionSupported, 
@@ -182,6 +180,7 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
   onGoToAcuteIntake,
 }) => {
   const { t, language } = useTranslation();
+  const { allRemedies: localizedRemedies, isLoading: isDataLoading } = useMateriaMedica();
   
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState<'lexicon' | 'quickIntake'>(() => {
@@ -245,6 +244,8 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
   const [diffResult, setDiffResult] = useState<DifferentialDiagnosisResult | null>(null);
   const [showExcludedInView, setShowExcludedInView] = useState<boolean>(false);
 
+  const [isMatchingLoading, setIsMatchingLoading] = useState(false);
+
   // Pagination for Lexicon to ensure sub-millisecond tab switching & instant rendering
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 24;
@@ -256,22 +257,36 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
   const isFinalizingRef = useRef<boolean>(false);
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
 
-  // Fetch localized remedies based on active language
-  const localizedRemedies = useMemo(() => {
-    return getLocalizedRemedies(language);
-  }, [language]);
-
   // Update recommendations & differential diagnosis whenever symptom text, acute clarification answers, or language changes
   useEffect(() => {
+    let isMounted = true;
     if (symptomText.trim().length >= 3) {
-      const results = matchSymptomsToRemedies(symptomText, language, acuteAnswers);
-      setRecommendations(results);
-      const diff = performDifferentialDiagnosis(symptomText, language, acuteAnswers);
-      setDiffResult(diff);
+      const fetchMatch = async () => {
+        setIsMatchingLoading(true);
+        try {
+          const response = await fetch('/api/materia-medica/match', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symptomText, language, acuteAnswers })
+          });
+          if (!response.ok) throw new Error('Match failed');
+          const { recommendations, diffResult } = await response.json();
+          if (isMounted) {
+            setRecommendations(recommendations);
+            setDiffResult(diffResult);
+          }
+        } catch (err) {
+          console.error('Error matching symptoms:', err);
+        } finally {
+          if (isMounted) setIsMatchingLoading(false);
+        }
+      };
+      fetchMatch();
     } else {
       setRecommendations([]);
       setDiffResult(null);
     }
+    return () => { isMounted = false; };
   }, [symptomText, acuteAnswers, language]);
 
   // Keep open modal in sync with language change
@@ -509,7 +524,8 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
     { key: 'all', label: t('filterAll') },
     { key: 'plant', label: t('filterPlant') },
     { key: 'mineral', label: t('filterMineral') },
-    { key: 'animal', label: t('filterAnimal') }
+    { key: 'animal', label: t('filterAnimal') },
+    { key: 'nosode', label: t('filterNosode') }
   ];
 
   return (

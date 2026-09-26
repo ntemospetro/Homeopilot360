@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../i18n/LanguageContext';
+import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import { LanguageCode } from '../types';
 import { RepertoriumSymptomInput } from '../services/boerickeRepertoryService';
 import { analyzeChiefComplaint } from '../services/chiefComplaintAnalysisService';
@@ -41,6 +42,7 @@ export const AdaptiveAnamnesisWizardModal: React.FC<AdaptiveAnamnesisWizardModal
   initialStep = 0
 }) => {
   const { t } = useTranslation();
+  const { allRemedies } = useMateriaMedica();
 
   // Local draft of symptom so edits can be saved on finish or cancelled
   const [draft, setDraft] = useState<RepertoriumSymptomInput>(symptom);
@@ -334,7 +336,8 @@ export const AdaptiveAnamnesisWizardModal: React.FC<AdaptiveAnamnesisWizardModal
     activeQuestionText,
     draft.chiefComplaint || '',
     language,
-    stepModalityDirection || (currentPillar === 'modalities' ? modalitySubTab : undefined)
+    stepModalityDirection || (currentPillar === 'modalities' ? modalitySubTab : undefined),
+    allRemedies
   );
 
   // Target field for AI analysis

@@ -2144,9 +2144,10 @@ export function performBoerickeRepertorisation(
   language: LanguageCode,
   strictIntersectionOnly: boolean = false,
   authorFilter: ClassicalAuthorFilterKey | ClassicalAuthorFilterKey[] = 'all',
-  praxisBonusActive: boolean = true
+  praxisBonusActive: boolean = true,
+  remediesPool?: LocalizedRemedy[]
 ): BoerickeRepertorisationResult[] {
-  const allRemedies = getLocalizedRemedies(language);
+  const allRemedies = remediesPool || getLocalizedRemedies(language);
   const activeSymptoms = symptoms.filter(s => 
     (s.text && s.text.trim().length > 0) ||
     (s.chiefComplaint && s.chiefComplaint.trim().length > 0)
@@ -2446,10 +2447,11 @@ export function performBoerickeRepertorisation(
 export function performSubtractiveFunnelCascade(
   symptom: RepertoriumSymptomInput,
   language: LanguageCode,
-  authorFilter: ClassicalAuthorFilterKey | ClassicalAuthorFilterKey[] = 'all'
+  authorFilter: ClassicalAuthorFilterKey | ClassicalAuthorFilterKey[] = 'all',
+  remediesPool?: LocalizedRemedy[]
 ): SubtractiveCascadeReport {
   const authorFilters = Array.isArray(authorFilter) ? authorFilter : [authorFilter];
-  const allRemedies = getLocalizedRemedies(language).filter(r => 
+  const allRemedies = (remediesPool || getLocalizedRemedies(language)).filter(r => 
     matchesAuthorFilters(r.id, authorFilters)
   );
 

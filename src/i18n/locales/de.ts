@@ -554,6 +554,7 @@ export const de = {
   "filterPlant": "Pflanzlich",
   "filterMineral": "Mineralisch",
   "filterAnimal": "Tierisch",
+  "filterNosode": "Nosoden",
   "indexAlphabet": "Alphabetischer Index",
   "filterToggle": "Filter & Kategorien",
   "filterToggleShow": "Filter anzeigen",

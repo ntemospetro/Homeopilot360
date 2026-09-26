@@ -676,7 +676,8 @@ function matchesTextWords(targetTextClean: string, tokenClean: string): boolean 
 export function matchSymptomsToRemedies(
   inputText: string,
   lang: LanguageCode = 'de',
-  answers?: AcuteAnswers
+  answers?: AcuteAnswers,
+  remediesPool?: LocalizedRemedy[]
 ): SymptomMatchResult[] {
   if (!inputText || inputText.trim().length < 3) {
     return [];
@@ -704,7 +705,7 @@ export function matchSymptomsToRemedies(
     return [];
   }
 
-  const remedies = getLocalizedRemedies(lang);
+  const remedies = remediesPool || getLocalizedRemedies(lang);
   const candidates: {
     remedy: LocalizedRemedy;
     rawScore: number;
@@ -1068,7 +1069,8 @@ export function matchSymptomsToRemedies(
 export function performDifferentialDiagnosis(
   inputText: string,
   lang: LanguageCode = 'de',
-  answers?: AcuteAnswers
+  answers?: AcuteAnswers,
+  remediesPool?: LocalizedRemedy[]
 ): DifferentialDiagnosisResult {
   const domain = detectComplaintDomain(inputText);
   const domainName =
@@ -1077,7 +1079,7 @@ export function performDifferentialDiagnosis(
     DOMAIN_TITLES.general[lang] ||
     DOMAIN_TITLES.general.en;
 
-  const remedies = getLocalizedRemedies(lang);
+  const remedies = remediesPool || getLocalizedRemedies(lang);
   const coreIds = DOMAIN_CORE_REMEDIES[domain] || DOMAIN_CORE_REMEDIES.general;
   const candidatePool = coreIds
     .map((id) => remedies.find((r) => r.id === id))

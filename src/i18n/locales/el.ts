@@ -554,6 +554,7 @@ export const el = {
   "filterPlant": "Φυτικό",
   "filterMineral": "Ορυκτό",
   "filterAnimal": "Ζωικό",
+  "filterNosode": "Νοσώδη",
   "indexAlphabet": "Αλφαβητικό Ευρετήριο",
   "filterToggle": "Φίλτρα & Κατηγορίες",
   "filterToggleShow": "Εμφάνιση φίλτρων",

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation, useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
-import { LocalizedRemedy, getLocalizedRemedies } from '../data/materiaMedicaData';
+import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import { RemedyMonographModal } from './RemedyMonographModal';
 import { FunnelStageRemediesModal } from './FunnelStageRemediesModal';
 import { GeniusDifferentialModal } from './GeniusDifferentialModal';
@@ -224,7 +225,7 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
   };
 
   // All remedies for monograph navigation
-  const allRemedies = useMemo(() => getLocalizedRemedies(language), [language]);
+  const { allRemedies } = useMateriaMedica();
 
   // Authors filter definition
   const authors = [
@@ -239,8 +240,8 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
 
   // Compute live repertorisation using Classical Repertory Engine (Hahnemann, Kent, Hering, Boericke)
   const results = useMemo(() => {
-    return performBoerickeRepertorisation(debouncedSymptoms, language, strictOnly, selectedAuthors, praxisBonusActive);
-  }, [debouncedSymptoms, language, strictOnly, selectedAuthors, praxisBonusActive]);
+    return performBoerickeRepertorisation(debouncedSymptoms, language, strictOnly, selectedAuthors, praxisBonusActive, allRemedies);
+  }, [debouncedSymptoms, language, strictOnly, selectedAuthors, praxisBonusActive, allRemedies]);
 
   // Compute subtractive funnel cascade for primary structured symptom
   const funnelReport: SubtractiveCascadeReport = useMemo(() => {
@@ -256,8 +257,8 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
         survivingRemedies: []
       };
     }
-    return performSubtractiveFunnelCascade(primarySymptom, language, selectedAuthors);
-  }, [debouncedSymptoms, language, selectedAuthors]);
+    return performSubtractiveFunnelCascade(primarySymptom, language, selectedAuthors, allRemedies);
+  }, [debouncedSymptoms, language, selectedAuthors, allRemedies]);
 
   const handleAddSymptom = () => {
     const nextId = `sym-${Date.now()}`;

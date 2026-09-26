@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { LocalizedRemedy, getLocalizedRemedies } from '../data/materiaMedicaData';
+import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import { getRemedyClassicalAuthors } from '../data/classicalAuthorsMap';
 import { getBogerSynopticEntry, getUnifiedBogerSynopticEntry } from '../data/bogerSynopticData';
 import { getAllenKeynoteEntry, getUnifiedAllenKeynoteEntry } from '../data/allenKeynotesData';
@@ -151,6 +152,7 @@ export const RemedyMonographModal: React.FC<RemedyMonographModalProps> = ({
   onSelectRemedyForCase,
 }) => {
   const { t, language } = useTranslation();
+  const { allRemedies: globalRemedies } = useMateriaMedica();
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -161,7 +163,7 @@ export const RemedyMonographModal: React.FC<RemedyMonographModalProps> = ({
 
   if (isOpen === false || !passedRemedy) return null;
 
-  const remediesList = allRemedies || getLocalizedRemedies(language);
+  const remediesList = allRemedies || globalRemedies;
   const remedy = remediesList.find(r => r.id === passedRemedy.id) || passedRemedy;
 
   const authorsInfo = getRemedyClassicalAuthors(remedy.id);

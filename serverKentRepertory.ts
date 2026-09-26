@@ -1,4 +1,3 @@
-import ExcelJS from "exceljs";
 import fs from "fs";
 import path from "path";
 import { GoogleGenAI } from "@google/genai";
@@ -29,8 +28,84 @@ let remedyMap: Record<string, string> = {}; // abbreviation -> fullName
 let isLoaded = false;
 let isLoading = false;
 
-const EXCEL_PATH = path.resolve("./data/Kent_Repertorium_lesbar3.xlsx");
 const CACHE_PATH = path.resolve("./data/kent_repertory_cache.json");
+const SQLITE_DB_PATH = fs.existsSync(path.resolve("./data/kent_repertory.db"))
+  ? path.resolve("./data/kent_repertory.db")
+  : path.resolve("./data/kent_repertory_sql.db");
+
+/**
+ * Normalizes remedies from various cache / DB representations:
+ * { id, abbrev, name } or { abbreviation, fullName }
+ */
+function parseAndNormalizeRemedies(rawList: any[]): RemedyInfo[] {
+  if (!Array.isArray(rawList)) return [];
+  const normalized: RemedyInfo[] = [];
+  const seen = new Set<string>();
+
+  for (const rem of rawList) {
+    if (!rem) continue;
+    const abbrev = String(rem.abbreviation || rem.abbrev || rem.abbr || "").trim();
+    if (!abbrev) continue;
+    const fullName = String(rem.fullName || rem.name || rem.longname || abbrev).trim();
+    const lower = abbrev.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      normalized.push({ abbreviation: abbrev, fullName });
+    }
+  }
+
+  // Supplement from kent_remedies.json if available
+  const REMEDIES_JSON_PATH = path.resolve("./data/kent_remedies.json");
+  if (fs.existsSync(REMEDIES_JSON_PATH)) {
+    try {
+      const extra = JSON.parse(fs.readFileSync(REMEDIES_JSON_PATH, "utf-8"));
+      if (Array.isArray(extra)) {
+        for (const rem of extra) {
+          if (!rem) continue;
+          const abbrev = String(rem.abbreviation || rem.abbrev || "").trim();
+          if (!abbrev) continue;
+          const fullName = String(rem.fullName || rem.name || abbrev).trim();
+          const lower = abbrev.toLowerCase();
+          if (!seen.has(lower)) {
+            seen.add(lower);
+            normalized.push({ abbreviation: abbrev, fullName });
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return normalized;
+}
+
+/**
+ * Synchronous disk cache loader ensuring rubrics, remedies, and remedyMap are populated.
+ */
+function loadCacheFromDisk(): boolean {
+  if (isLoaded) return true;
+  if (!fs.existsSync(CACHE_PATH)) return false;
+
+  console.log(`[KENT_BACKEND] Loading Kent database from cache: ${CACHE_PATH}`);
+  const rawData = fs.readFileSync(CACHE_PATH, "utf-8");
+  const cache: KentCache = JSON.parse(rawData);
+  cachedRubrics = cache.rubrics || [];
+  cachedRemedies = parseAndNormalizeRemedies(cache.remedies || []);
+
+  // Build remedyMap
+  remedyMap = {};
+  for (const rem of cachedRemedies) {
+    if (rem.abbreviation) {
+      remedyMap[rem.abbreviation.toLowerCase()] = rem.fullName;
+      remedyMap[rem.abbreviation] = rem.fullName;
+    }
+  }
+
+  isLoaded = true;
+  console.log(`[KENT_BACKEND] Loaded ${cachedRubrics.length} rubrics and ${cachedRemedies.length} remedies from cache!`);
+  return true;
+}
 
 export async function ensureKentDatabaseLoaded(): Promise<void> {
   if (isLoaded) return;
@@ -47,140 +122,73 @@ export async function ensureKentDatabaseLoaded(): Promise<void> {
 
   try {
     // 1. Check if JSON Cache exists
-    if (fs.existsSync(CACHE_PATH)) {
-      console.log(`[KENT_BACKEND] Loading Kent database from cache: ${CACHE_PATH}`);
-      const rawData = fs.readFileSync(CACHE_PATH, "utf-8");
-      const cache: KentCache = JSON.parse(rawData);
-      cachedRubrics = cache.rubrics || [];
-      cachedRemedies = cache.remedies || [];
-      
-      // Build remedyMap
-      remedyMap = {};
-      for (const rem of cachedRemedies) {
-        remedyMap[rem.abbreviation.toLowerCase()] = rem.fullName;
-        // Also map exact casing
-        remedyMap[rem.abbreviation] = rem.fullName;
-      }
-      
-      isLoaded = true;
-      isLoading = false;
-      console.log(`[KENT_BACKEND] Loaded ${cachedRubrics.length} rubrics and ${cachedRemedies.length} remedies from cache!`);
+    if (loadCacheFromDisk()) {
       return;
     }
 
-    // 2. Otherwise parse XLSX using exceljs (which handles ZIP64 and is more robust)
-    console.log(`[KENT_BACKEND] Cache not found. Parsing Excel file using exceljs: ${EXCEL_PATH}`);
-    if (!fs.existsSync(EXCEL_PATH)) {
-      throw new Error(`Excel file not found at ${EXCEL_PATH}`);
+    // 2. Otherwise load from SQLite database
+    console.log(`[KENT_BACKEND] Cache not found. Loading from SQLite database: ${SQLITE_DB_PATH}`);
+    if (!fs.existsSync(SQLITE_DB_PATH)) {
+      throw new Error(`SQLite database not found at ${SQLITE_DB_PATH}`);
     }
 
-    const start = Date.now();
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(EXCEL_PATH);
-    console.log(`[KENT_BACKEND] Read Excel file with exceljs in ${Date.now() - start}ms`);
+    // @ts-ignore
+    const Database = (await import("better-sqlite3")).default;
+    const db = new Database(SQLITE_DB_PATH, { readonly: true });
 
-    // Parse Sheet 2 (Mittelverzeichnis)
-    console.log("[KENT_BACKEND] Parsing Sheet 2 (Mittelverzeichnis)...");
-    const sheet2 = workbook.worksheets.find(
-      (w) => w.name.toLowerCase().includes("mittel") || w.name.toLowerCase().includes("sheet2")
-    ) || workbook.worksheets[1];
-
-    if (!sheet2) {
-      throw new Error("Mittelverzeichnis sheet not found in Excel workbook.");
-    }
-
+    // 1. Load remedies
+    const remRows = db.prepare("SELECT id, abbrev, longname FROM remedies ORDER BY id").all() as Array<{ id: number; abbrev: string; longname: string }>;
+    const remMapById: Record<number, { abbrev: string; longname: string }> = {};
     cachedRemedies = [];
-    sheet2.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return; // skip headers
-      const abbreviation = String(row.getCell(1).value || "").trim();
-      const fullName = String(row.getCell(2).value || "").trim();
-      if (abbreviation) {
-        cachedRemedies.push({ abbreviation, fullName });
-      }
-    });
-
-    // Build remedyMap
     remedyMap = {};
-    for (const rem of cachedRemedies) {
-      remedyMap[rem.abbreviation.toLowerCase()] = rem.fullName;
-      remedyMap[rem.abbreviation] = rem.fullName;
+
+    for (const rem of remRows) {
+      if (!rem || !rem.abbrev) continue;
+      remMapById[rem.id] = { abbrev: rem.abbrev, longname: rem.longname || rem.abbrev };
+      cachedRemedies.push({ abbreviation: rem.abbrev, fullName: rem.longname || rem.abbrev });
+      remedyMap[rem.abbrev.toLowerCase()] = rem.longname || rem.abbrev;
+      remedyMap[rem.abbrev] = rem.longname || rem.abbrev;
     }
 
-    // Parse Sheet 1 (Kent komplett)
-    console.log("[KENT_BACKEND] Parsing Sheet 1 (Kent komplett)... This might take a few seconds.");
-    const sheet1 = workbook.worksheets.find(
-      (w) => w.name.toLowerCase().includes("kent") || w.name.toLowerCase().includes("sheet1")
-    ) || workbook.worksheets[0];
-
-    if (!sheet1) {
-      throw new Error("Kent komplett sheet not found in Excel workbook.");
-    }
-
-    cachedRubrics = [];
-    sheet1.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return; // skip headers
-      
-      const id = String(row.getCell(1).value || rowNumber - 1).trim();
-      const chapter = String(row.getCell(2).value || "").trim();
-      const symptom = String(row.getCell(3).value || "").trim();
-
-      // Extract zusatz 1-9 (Columns 4 to 12)
-      const zusatz: string[] = [];
-      for (let c = 4; c <= 12; c++) {
-        const val = String(row.getCell(c).value || "").trim();
-        if (val) {
-          zusatz.push(val);
-        }
+    // 2. Load rubric_remedies
+    const rrRows = db.prepare("SELECT rubric_id, remedy_id, grade FROM rubric_remedies").all() as Array<{ rubric_id: number; remedy_id: number; grade: number }>;
+    const rubricRemMap: Record<number, Record<string, number>> = {};
+    for (const rr of rrRows) {
+      if (!rubricRemMap[rr.rubric_id]) rubricRemMap[rr.rubric_id] = {};
+      const rInfo = remMapById[rr.remedy_id];
+      if (rInfo && rInfo.abbrev) {
+        rubricRemMap[rr.rubric_id][rInfo.abbrev] = rr.grade;
       }
+    }
 
-      const rawPath = String(row.getCell(13).value || "").trim();
-
-      // Remedies are in columns 14, 15, 16
-      const rem1 = String(row.getCell(14).value || "").trim();
-      const rem2 = String(row.getCell(15).value || "").trim();
-      const rem3 = String(row.getCell(16).value || "").trim();
-
-      const remedies: { [key: string]: number } = {};
-
-      const addRemediesWithGrade = (listStr: string, grade: number) => {
-        if (!listStr) return;
-        const tokens = listStr.split(",").map((t) => t.trim()).filter(Boolean);
-        for (const token of tokens) {
-          remedies[token] = grade;
-        }
-      };
-
-      addRemediesWithGrade(rem1, 1);
-      addRemediesWithGrade(rem2, 2);
-      addRemediesWithGrade(rem3, 3);
-
-      const remedyCount = Number(row.getCell(17).value || Object.keys(remedies).length);
-
+    // 3. Load rubrics
+    const rubRows = db.prepare("SELECT id, chapter, symptom, zusatz_json, path, remedy_count FROM rubrics ORDER BY id").all() as Array<{ id: number; chapter: string; symptom: string; zusatz_json: string; path: string; remedy_count: number }>;
+    cachedRubrics = [];
+    for (const rub of rubRows) {
+      const zusatz = JSON.parse(rub.zusatz_json || "[]");
+      const remedies = rubricRemMap[rub.id] || {};
       cachedRubrics.push({
-        id,
-        chapter,
-        symptom,
+        id: String(rub.id),
+        chapter: rub.chapter || "",
+        symptom: rub.symptom || "",
         zusatz,
-        path: rawPath || [chapter, symptom, ...zusatz].filter(Boolean).join(", "),
+        path: rub.path || "",
         remedies,
-        remedyCount,
+        remedyCount: Object.keys(remedies).length
       });
-    });
+    }
+    db.close();
 
-    // Save Cache
+    // Save JSON Cache
     const cacheData: KentCache = {
       rubrics: cachedRubrics,
       remedies: cachedRemedies,
     };
-
-    console.log(`[KENT_BACKEND] Saving parsed database to cache at: ${CACHE_PATH}`);
-    // Create data dir if not exists
     const dataDir = path.dirname(CACHE_PATH);
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     fs.writeFileSync(CACHE_PATH, JSON.stringify(cacheData), "utf-8");
-
     isLoaded = true;
     console.log(`[KENT_BACKEND] Finished parsing and caching Kent database! Total: ${cachedRubrics.length} rubrics.`);
   } catch (err) {
@@ -648,7 +656,7 @@ function toGermanTerm(
   for (const [deChapter, translations] of Object.entries(CANONICAL_KENT_CHAPTERS)) {
     if (deChapter.toLowerCase() === termLower) return deChapter;
     for (const val of Object.values(translations)) {
-      if (val.toLowerCase() === termLower) return deChapter;
+      if (typeof val === "string" && val.toLowerCase() === termLower) return deChapter;
     }
   }
 
@@ -691,9 +699,9 @@ function toGermanTerm(
         const match = candidates.find(cand => {
           const cLower = cand.toLowerCase();
           return context.candidateRubrics!.some(r =>
-            r.chapter.toLowerCase() === cLower ||
-            r.symptom.toLowerCase() === cLower ||
-            (r.zusatz && r.zusatz.some(z => z.toLowerCase() === cLower))
+            (r.chapter && r.chapter.toLowerCase() === cLower) ||
+            (r.symptom && r.symptom.toLowerCase() === cLower) ||
+            (Array.isArray(r.zusatz) && r.zusatz.some(z => z && z.toLowerCase() === cLower))
           );
         });
         if (match) return match;
@@ -705,22 +713,108 @@ function toGermanTerm(
   return termClean;
 }
 
-function translateRubric(r: KentRubric, transMap: Record<string, string>, lang?: string): any {
-  if (!transMap || Object.keys(transMap).length === 0) return r;
-  const chapterTranslated = lookupTrans(r.chapter, transMap, lang);
-  const symptomTranslated = lookupTrans(r.symptom, transMap, lang);
-  const zusatzTranslated = (r.zusatz || []).map((z) => lookupTrans(z, transMap, lang));
-  
-  // Format translated path cleanly
+export function isModalityPrep(z?: string): boolean {
+  if (!z) return false;
+  const s = z.trim().toLowerCase();
+  return (
+    s.startsWith("nach ") || s.startsWith("nach dem") || s.startsWith("nach der") || s.startsWith("nach den") ||
+    s.startsWith("beim ") || s.startsWith("bei ") ||
+    s.startsWith("vor ") || s.startsWith("vor dem") || s.startsWith("vor der") || s.startsWith("vor den") ||
+    s.startsWith("während ") || s.startsWith("während des") || s.startsWith("während der") ||
+    s.startsWith("durch ") || s.includes("erscheinen der") || s.startsWith("mit ") || s.endsWith(", mit") ||
+    s === "nach dem" || s === "vor dem" || s === "beim" || s === "nach den" || s === "vor den" || s === "mit" ||
+    s.endsWith(", nach") || s.endsWith(", nach dem") || s.endsWith(", beim")
+  );
+}
+
+export function formatNaturalRubricPath(
+  chapter: string,
+  symptom: string,
+  zusatz: string[] = [],
+  originalZusatz: string[] = []
+): string {
+  if (!symptom) return chapter || "";
+
+  // Use the original German zusatz (if available) to determine the structural formatting logic
+  // but use the passed strings (which might be translated) for the final output.
+  const structuralZusatz = (originalZusatz && originalZusatz.length > 0) ? originalZusatz : zusatz;
+
+  // Case 1: Inverted modality in zusatz[0] (e.g. "Husten", "Hämorrhoiden", ["nach Erscheinen der"])
+  if (structuralZusatz.length > 0 && isModalityPrep(structuralZusatz[0])) {
+    const mod = zusatz[0].trim();
+    const remaining = zusatz.slice(1);
+    const remStr = remaining.length > 0 ? ` (${remaining.join(", ")})` : "";
+
+    if (structuralZusatz[0].toLowerCase().includes("nach erscheinen")) {
+      return `${chapter} ➔ ${symptom} ${mod}${remStr}`;
+    }
+
+    if (
+      structuralZusatz[0].startsWith("nach ") || structuralZusatz[0].startsWith("vor ") || structuralZusatz[0].startsWith("beim ") || 
+      structuralZusatz[0].startsWith("während ") || structuralZusatz[0].startsWith("durch ") || structuralZusatz[0].startsWith("bei ")
+    ) {
+      return `${chapter} ➔ ${symptom} ${mod}${remStr}`;
+    }
+
+    if (structuralZusatz[0] === "nach dem" || structuralZusatz[0] === "vor dem" || structuralZusatz[0] === "beim" || structuralZusatz[0] === "nach den") {
+      return `${chapter} ➔ ${symptom} ${mod}${remStr}`;
+    }
+
+    return `${chapter} ➔ ${symptom}: ${mod}${remStr}`;
+  }
+
+  // Case 2: zusatz has multiple items and one is a modality trigger (e.g. ["Essen", "nach dem"])
+  if (structuralZusatz.length >= 2) {
+    const triggers = ["nach dem", "beim", "vor dem", "nach den", "während", "bei", "durch", "nach", "vor", "mit"];
+    const modIdx = structuralZusatz.findIndex(z => triggers.includes(z.toLowerCase().trim()));
+    if (modIdx !== -1 && modIdx > 0) {
+      const mod = zusatz[modIdx];
+      const trigger = zusatz[modIdx - 1];
+      const before = zusatz.slice(0, modIdx - 1);
+      const after = zusatz.slice(modIdx + 1);
+      const rem = [...before, ...after];
+      const remStr = rem.length > 0 ? ` (${rem.join(", ")})` : "";
+      return `${chapter} ➔ ${symptom} ${mod} ${trigger}${remStr}`;
+    }
+  }
+
+  const allParts = [chapter, symptom, ...zusatz].filter(Boolean);
+  return allParts.join(" ➔ ");
+}
+
+function translateRubric(
+  r: KentRubric,
+  transMap: Record<string, string>,
+  lang?: string,
+  orderMode: "classic" | "natural" = "classic"
+): any {
+  if (!transMap || Object.keys(transMap).length === 0) {
+    const pathClassic = r.path;
+    const pathNatural = formatNaturalRubricPath(r.chapter, r.symptom, r.zusatz || []);
+    return {
+      ...r,
+      pathClassic,
+      pathNatural,
+      pathTranslated: orderMode === "natural" ? pathNatural : pathClassic
+    };
+  }
+
+  const chapterTranslated = lookupTrans(r.chapter, transMap, lang) || r.chapter;
+  const symptomTranslated = lookupTrans(r.symptom, transMap, lang) || r.symptom;
+  const zusatzTranslated = (r.zusatz || []).map((z) => lookupTrans(z, transMap, lang) || z);
+
   const pathParts = [chapterTranslated, symptomTranslated, ...zusatzTranslated].filter(Boolean);
-  const pathTranslated = pathParts.length > 0 ? pathParts.join(" ➔ ") : r.path;
+  const pathClassic = pathParts.length > 0 ? pathParts.join(" ➔ ") : r.path;
+  const pathNatural = formatNaturalRubricPath(chapterTranslated, symptomTranslated, zusatzTranslated, r.zusatz);
 
   return {
     ...r,
     chapterTranslated,
     symptomTranslated,
     zusatzTranslated,
-    pathTranslated
+    pathClassic,
+    pathNatural,
+    pathTranslated: orderMode === "natural" ? pathNatural : pathClassic
   };
 }
 
@@ -732,7 +826,8 @@ export async function searchKentRubrics(
   chapterFilter?: string,
   limit = 100,
   lang = "de",
-  onTokenUsage?: KentTokenUsageCallback
+  onTokenUsage?: KentTokenUsageCallback,
+  orderMode: "classic" | "natural" = "classic"
 ): Promise<any[]> {
   if (!isLoaded) {
     await ensureKentDatabaseLoaded();
@@ -767,16 +862,19 @@ export async function searchKentRubrics(
     return Array.from(new Set(list));
   });
 
-  // If query tokens don't match any German words in our dictionary, query Gemini for medical equivalents
-  if (lang !== "de" && tokens.length > 0 && process.env.GEMINI_API_KEY) {
-    const hasAnyEquivalent = tokenEquivalents.some((eq) => eq.length > 1);
-    if (!hasAnyEquivalent) {
+  // If query tokens don't match any German words in our dictionary, or if it's a natural language query,
+  // query Gemini for medical equivalents to enable natural language search for all users.
+  if (tokens.length > 0 && process.env.GEMINI_API_KEY) {
+    const hasAnyEquivalent = lang !== "de" ? tokenEquivalents.some((eq) => eq.length > 1) : false;
+    const isNaturalQuery = queryClean.includes(" ") || queryClean.length > 10;
+
+    if (!hasAnyEquivalent || isNaturalQuery) {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const qRes = await generateWithMultiModelFallback(
           ai,
           {
-            contents: `Translate this homeopathic search query from "${lang}" into 1 to 4 German keywords for Kent Repertory matching: "${queryClean}". Return JSON array of lowercase German keywords, e.g. ["kopfschmerz", "stirn"].`,
+            contents: `Identify the core homeopathic components (Chapter, Symptom, Modality) from this query in "${lang}": "${queryClean}". Return ONLY a JSON array of the 1 to 4 most important German keywords (as used in Kent's Repertory) that MUST all be present. Example for "stabbing headache in the morning": ["kopf", "schmerz", "stechend", "morgens"].`,
             config: { responseMimeType: "application/json" }
           },
           4000
@@ -784,7 +882,13 @@ export async function searchKentRubrics(
         if (qRes && qRes.text) {
           const germanKeywords = JSON.parse(qRes.text || "[]");
           if (Array.isArray(germanKeywords) && germanKeywords.length > 0) {
-            tokenEquivalents.push(germanKeywords.map((k) => String(k).toLowerCase().trim()));
+            // Treat AI keywords as separate requirements (AND) to ensure precision
+            for (const kw of germanKeywords) {
+              const cleanKw = String(kw).toLowerCase().trim();
+              if (cleanKw.length > 1) {
+                tokenEquivalents.push([cleanKw]);
+              }
+            }
           }
           if (onTokenUsage) {
             const qUsage = qRes.usage || {};
@@ -807,12 +911,12 @@ export async function searchKentRubrics(
 
   for (const rubric of cachedRubrics) {
     // 1. Chapter filter check
-    if (chapterFilterNorm && rubric.chapter.toLowerCase() !== chapterFilterNorm) {
+    if (chapterFilterNorm && (!rubric.chapter || rubric.chapter.toLowerCase() !== chapterFilterNorm)) {
       continue;
     }
 
     // 2. Token match check
-    const pathLower = rubric.path.toLowerCase();
+    const pathLower = (rubric.path || "").toLowerCase();
     let isMatch = true;
 
     if (tokens.length > 0) {
@@ -851,7 +955,7 @@ export async function searchKentRubrics(
     }
   }
 
-  return rawMatches.map((rubric) => translateRubric(rubric, transMap, lang));
+  return rawMatches.map((rubric) => translateRubric(rubric, transMap, lang, orderMode));
 }
 
 /**
@@ -859,8 +963,7 @@ export async function searchKentRubrics(
  */
 export function getKentRemedies(): RemedyInfo[] {
   if (!isLoaded) {
-    ensureKentDatabaseLoaded();
-    return [];
+    loadCacheFromDisk();
   }
   return cachedRemedies;
 }
@@ -869,16 +972,8 @@ export function getKentRemedies(): RemedyInfo[] {
  * Get distinct chapters in Kent database
  */
 export function getKentChapters(): string[] {
-  if (!isLoaded && fs.existsSync(CACHE_PATH)) {
-    try {
-      const rawData = fs.readFileSync(CACHE_PATH, "utf-8");
-      const cache: KentCache = JSON.parse(rawData);
-      cachedRubrics = cache.rubrics || [];
-      cachedRemedies = cache.remedies || [];
-      isLoaded = true;
-    } catch {
-      // ignore
-    }
+  if (!isLoaded) {
+    loadCacheFromDisk();
   }
   const chapters = new Set<string>();
   for (const r of cachedRubrics) {
@@ -893,16 +988,8 @@ export function getKentChapters(): string[] {
  * Get a single rubric by ID
  */
 export function getKentRubricById(id: string, lang = "de"): any | undefined {
-  if (!isLoaded && fs.existsSync(CACHE_PATH)) {
-    try {
-      const rawData = fs.readFileSync(CACHE_PATH, "utf-8");
-      const cache: KentCache = JSON.parse(rawData);
-      cachedRubrics = cache.rubrics || [];
-      cachedRemedies = cache.remedies || [];
-      isLoaded = true;
-    } catch {
-      // ignore
-    }
+  if (!isLoaded) {
+    loadCacheFromDisk();
   }
   const found = cachedRubrics.find((r) => r.id === id);
   if (!found) return undefined;
@@ -919,7 +1006,8 @@ export async function getKentDrilldown(
   symptom?: string,
   zusatz: string[] = [],
   lang = "de",
-  onTokenUsage?: KentTokenUsageCallback
+  onTokenUsage?: KentTokenUsageCallback,
+  orderMode: "classic" | "natural" = "classic"
 ): Promise<{
   nextLevelType: string;
   nextLevelIndex: number;
@@ -962,10 +1050,8 @@ export async function getKentDrilldown(
 
   // Filter to matching chapter
   let matching = cachedRubrics.filter(
-    (r) => r.chapter.toLowerCase() === normalizedChapter.toLowerCase()
+    (r) => (r.chapter || "").toLowerCase() === normalizedChapter.toLowerCase()
   );
-
-  const normalizedSymptom = symptom ? toGermanTerm(symptom.trim(), transMap, lang, { candidateRubrics: matching, levelType: 'symptom' }) : "";
 
   // Build pathTranslations for breadcrumbs
   const pathTranslations: Record<string, string> = {};
@@ -974,45 +1060,46 @@ export async function getKentDrilldown(
     if (chapter) pathTranslations[chapter] = pathTranslations[normalizedChapter];
   }
 
-  // 2. Chapter selected, but no symptom selected: return unique symptoms under this chapter
-  if (!normalizedSymptom) {
-    const symptoms = new Set<string>();
-    for (const r of matching) {
-      if (r.symptom) {
-        symptoms.add(r.symptom);
-      }
-    }
-    const symptomsList = Array.from(symptoms);
+  // 2. Chapter selected, but no symptom selected
+  if (!symptom) {
+    const optionsSet = new Set<string>();
 
-    // Check for missing translations in symptoms
-    if (lang !== "de") {
-      const missingSymptoms = symptomsList.filter((s) => !transMap[s]);
-      if (missingSymptoms.length > 0) {
-        // Synchronously translate ALL missing symptoms of this chapter so user sees 100% translated options
-        await translateKentTerms(missingSymptoms, lang, onTokenUsage);
-        transMap = getKentTranslationsForLang(lang);
-      }
-
-      // PRE-TRANSLATE NEXT STEP: Asynchronously pre-translate Level 1 Zusatzangaben for this chapter
-      const nextLevelZusatz = new Set<string>();
+    if (orderMode === "natural") {
+      // Natural mode: Inverted modalities in zusatz[0] appear directly at level 1
       for (const r of matching) {
-        if (r.zusatz && r.zusatz[0] && !transMap[r.zusatz[0]]) {
-          nextLevelZusatz.add(r.zusatz[0]);
+        if (r.zusatz && r.zusatz[0] && isModalityPrep(r.zusatz[0])) {
+          optionsSet.add(r.zusatz[0]);
+        } else if (r.symptom) {
+          optionsSet.add(r.symptom);
         }
       }
-      const prefetchList = Array.from(nextLevelZusatz).slice(0, 90);
-      if (prefetchList.length > 0) {
-        translateKentTerms(prefetchList, lang, onTokenUsage).catch(() => {});
+    } else {
+      // Classic mode: Always r.symptom
+      for (const r of matching) {
+        if (r.symptom) {
+          optionsSet.add(r.symptom);
+        }
+      }
+    }
+
+    const optionsList = Array.from(optionsSet);
+
+    // Check for missing translations
+    if (lang !== "de") {
+      const missingOpts = optionsList.filter((s) => !transMap[s]);
+      if (missingOpts.length > 0) {
+        await translateKentTerms(missingOpts, lang, onTokenUsage);
+        transMap = getKentTranslationsForLang(lang);
       }
     }
 
     const translatedOptions: Record<string, string> = {};
-    for (const s of symptomsList) {
-      translatedOptions[s] = lookupTrans(s, transMap, lang) || s;
+    for (const opt of optionsList) {
+      translatedOptions[opt] = lookupTrans(opt, transMap, lang) || opt;
     }
 
     // Sort options by their translated names
-    symptomsList.sort((a, b) => {
+    optionsList.sort((a, b) => {
       const transA = translatedOptions[a] || a;
       const transB = translatedOptions[b] || b;
       return transA.localeCompare(transB, lang === 'de' ? 'de' : lang);
@@ -1021,16 +1108,132 @@ export async function getKentDrilldown(
     return {
       nextLevelType: "symptom",
       nextLevelIndex: 0,
-      nextOptions: symptomsList,
+      nextOptions: optionsList,
       translatedOptions,
       pathTranslations,
-      rubrics: matching.slice(0, 100).map((r) => translateRubric(r, transMap, lang)),
+      rubrics: matching.slice(0, 100).map((r) => translateRubric(r, transMap, lang, orderMode)),
     };
   }
 
-  // Filter to matching symptom
+  const normalizedSymptom = toGermanTerm(symptom.trim(), transMap, lang, { candidateRubrics: matching, levelType: 'symptom' });
+  const isInvModal =
+    orderMode === "natural" &&
+    (isModalityPrep(normalizedSymptom) ||
+      matching.some(
+        (r) =>
+          r.zusatz &&
+          r.zusatz[0] &&
+          r.zusatz[0].toLowerCase() === normalizedSymptom.toLowerCase()
+      ));
+
+  if (isInvModal) {
+    // Filter to rubrics that have this inverted modality in zusatz[0]
+    matching = matching.filter(
+      (r) =>
+        r.zusatz &&
+        r.zusatz[0] &&
+        r.zusatz[0].toLowerCase() === normalizedSymptom.toLowerCase()
+    );
+
+    pathTranslations[normalizedSymptom] = lookupTrans(normalizedSymptom, transMap, lang);
+    if (symptom) pathTranslations[symptom] = pathTranslations[normalizedSymptom];
+
+    if (!zusatz || zusatz.length === 0) {
+      // Step 2 in natural mode: show triggering symptoms/organs under this modality
+      const nextSymptoms = Array.from(new Set(matching.map((r) => r.symptom).filter(Boolean)));
+
+      if (lang !== "de") {
+        const missing = nextSymptoms.filter((s) => !transMap[s]);
+        if (missing.length > 0) {
+          await translateKentTerms(missing, lang, onTokenUsage);
+          transMap = getKentTranslationsForLang(lang);
+        }
+      }
+
+      const translatedOptions: Record<string, string> = {};
+      for (const s of nextSymptoms) {
+        translatedOptions[s] = lookupTrans(s, transMap, lang) || s;
+      }
+
+      nextSymptoms.sort((a, b) => {
+        const transA = translatedOptions[a] || a;
+        const transB = translatedOptions[b] || b;
+        return transA.localeCompare(transB, lang === 'de' ? 'de' : lang);
+      });
+
+      return {
+        nextLevelType: "zusatz",
+        nextLevelIndex: 0,
+        nextOptions: nextSymptoms,
+        translatedOptions,
+        pathTranslations,
+        rubrics: matching.slice(0, 100).map((r) => translateRubric(r, transMap, lang, orderMode)),
+      };
+    }
+
+    // Step 3 in natural mode: filter by selected symptom (in zusatz[0])
+    const rawSymptomVal = zusatz[0];
+    const normSymptomVal = toGermanTerm(rawSymptomVal.trim(), transMap, lang, { candidateRubrics: matching, levelType: 'symptom' });
+    pathTranslations[normSymptomVal] = lookupTrans(normSymptomVal, transMap, lang);
+    if (rawSymptomVal) pathTranslations[rawSymptomVal] = pathTranslations[normSymptomVal];
+
+    matching = matching.filter(
+      (r) => r.symptom && r.symptom.toLowerCase() === normSymptomVal.toLowerCase()
+    );
+
+    // Remaining deeper zusatz levels beyond the symptom
+    const remainingZusatz = zusatz.slice(1);
+    for (let i = 0; i < remainingZusatz.length; i++) {
+      const rawVal = remainingZusatz[i];
+      const normVal = toGermanTerm(rawVal.trim(), transMap, lang, { candidateRubrics: matching, levelType: 'zusatz', levelIndex: i + 1 });
+      pathTranslations[normVal] = lookupTrans(normVal, transMap, lang);
+      if (rawVal) pathTranslations[rawVal] = pathTranslations[normVal];
+      matching = matching.filter(
+        (r) => r.zusatz && r.zusatz[i + 1] && r.zusatz[i + 1].toLowerCase() === normVal.toLowerCase()
+      );
+    }
+
+    const nextDepth = remainingZusatz.length + 1; // index in r.zusatz
+    const nextOptionsSet = new Set<string>();
+    for (const r of matching) {
+      if (r.zusatz && r.zusatz[nextDepth]) {
+        nextOptionsSet.add(r.zusatz[nextDepth]);
+      }
+    }
+    const nextOptions = Array.from(nextOptionsSet);
+
+    if (lang !== "de" && nextOptions.length > 0) {
+      const missing = nextOptions.filter((z) => !transMap[z]);
+      if (missing.length > 0) {
+        await translateKentTerms(missing, lang, onTokenUsage);
+        transMap = getKentTranslationsForLang(lang);
+      }
+    }
+
+    const translatedOptions: Record<string, string> = {};
+    for (const opt of nextOptions) {
+      translatedOptions[opt] = lookupTrans(opt, transMap, lang) || opt;
+    }
+
+    nextOptions.sort((a, b) => {
+      const transA = translatedOptions[a] || a;
+      const transB = translatedOptions[b] || b;
+      return transA.localeCompare(transB, lang === 'de' ? 'de' : lang);
+    });
+
+    return {
+      nextLevelType: nextOptions.length > 0 ? "zusatz" : "none",
+      nextLevelIndex: zusatz.length,
+      nextOptions,
+      translatedOptions,
+      pathTranslations,
+      rubrics: matching.slice(0, 150).map((r) => translateRubric(r, transMap, lang, orderMode)),
+    };
+  }
+
+  // Standard classic symptom path (or non-inverted symptom in natural mode)
   matching = matching.filter(
-    (r) => r.symptom.toLowerCase() === normalizedSymptom.toLowerCase()
+    (r) => (r.symptom || "").toLowerCase() === normalizedSymptom.toLowerCase()
   );
 
   if (normalizedSymptom) {
@@ -1038,7 +1241,7 @@ export async function getKentDrilldown(
     if (symptom) pathTranslations[symptom] = pathTranslations[normalizedSymptom];
   }
 
-  // 3. Process zusatz layers with context-aware disambiguation
+  // Process zusatz layers with context-aware disambiguation
   const depth = (zusatz || []).length;
   const normalizedZusatz: string[] = [];
   
@@ -1067,7 +1270,6 @@ export async function getKentDrilldown(
   // If language is not German, ensure missing zusatz options and rubric items are translated
   if (lang !== "de") {
     const missingZusatz = nextOptions.filter((z) => !transMap[z]);
-    // Also check returned rubrics (symptom + zusatz) so all displayed rubrics are 100% translated
     const missingInRubrics: string[] = [];
     for (const r of matching.slice(0, 60)) {
       if (r.symptom && !transMap[r.symptom]) missingInRubrics.push(r.symptom);
@@ -1081,18 +1283,6 @@ export async function getKentDrilldown(
     if (immediateMissing.length > 0) {
       await translateKentTerms(immediateMissing, lang, onTokenUsage);
       transMap = getKentTranslationsForLang(lang);
-    }
-
-    // PRE-TRANSLATE NEXT STEP: Asynchronously pre-translate the deeper level (depth + 1) for matching rubrics
-    const deeperTerms = new Set<string>();
-    for (const r of matching) {
-      if (r.zusatz && r.zusatz[depth + 1] && !transMap[r.zusatz[depth + 1]]) {
-        deeperTerms.add(r.zusatz[depth + 1]);
-      }
-    }
-    const prefetchDeeper = Array.from(deeperTerms).slice(0, 90);
-    if (prefetchDeeper.length > 0) {
-      translateKentTerms(prefetchDeeper, lang, onTokenUsage).catch(() => {});
     }
   }
 
@@ -1114,7 +1304,7 @@ export async function getKentDrilldown(
     nextOptions,
     translatedOptions,
     pathTranslations,
-    rubrics: matching.slice(0, 150).map((r) => translateRubric(r, transMap, lang)),
+    rubrics: matching.slice(0, 150).map((r) => translateRubric(r, transMap, lang, orderMode)),
   };
 }
 
@@ -1133,16 +1323,8 @@ export interface KentRepertorizationResult {
 export function performKentRepertorisation(
   selectedRubricIds: string[]
 ): KentRepertorizationResult[] {
-  if (!isLoaded && fs.existsSync(CACHE_PATH)) {
-    try {
-      const rawData = fs.readFileSync(CACHE_PATH, "utf-8");
-      const cache: KentCache = JSON.parse(rawData);
-      cachedRubrics = cache.rubrics || [];
-      cachedRemedies = cache.remedies || [];
-      isLoaded = true;
-    } catch {
-      // ignore
-    }
+  if (!isLoaded) {
+    loadCacheFromDisk();
   }
 
   const validRubricIds = selectedRubricIds.filter(Boolean);
@@ -1173,7 +1355,8 @@ export function performKentRepertorisation(
   > = {};
 
   for (const rubric of matchedRubrics) {
-    for (const [remedyAbbrev, grade] of Object.entries(rubric.remedies)) {
+    for (const [remedyAbbrev, grade] of Object.entries(rubric.remedies || {})) {
+      if (!remedyAbbrev) continue;
       const keyLower = remedyAbbrev.toLowerCase();
       
       // Initialize if not present

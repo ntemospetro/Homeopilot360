@@ -172,7 +172,7 @@ async function startServer() {
     currency: '€',
     modelTiers: [
       {
-        modelId: 'gemini-3.8-flash',
+        modelId: 'gemini-1.5-flash',
         modelName: 'Gemini 3.8 Flash (Klinische Fallanalysen & Repertorisation)',
         purpose: 'Hauptmodell: Vollständige Repertorisation, Miasmen & Toxikologie',
         costInputPerMillionEur: 0.69,
@@ -186,7 +186,7 @@ async function startServer() {
         customerCachedPerMillionEur: 0.20,
       },
       {
-        modelId: 'gemini-3.6-flash',
+        modelId: 'gemini-1.5-flash',
         modelName: 'Gemini 3.6 Flash (Mehrsprachige Lokalisierung & Recherche)',
         purpose: 'Standard-Recherche, Monographien & Übersetzungen in 7 Sprachen',
         costInputPerMillionEur: 0.14,
@@ -200,7 +200,7 @@ async function startServer() {
         customerCachedPerMillionEur: 0.10,
       },
       {
-        modelId: 'gemini-3.1-flash-lite',
+        modelId: 'gemini-1.5-flash',
         modelName: 'Gemini 3.1 Flash-Lite (Sofort-Klassifizierung)',
         purpose: 'Relevanz-Vorprüfung, Symptom-Extraktion & Schnell-Validierung',
         costInputPerMillionEur: 0.09,
@@ -214,7 +214,7 @@ async function startServer() {
         customerCachedPerMillionEur: 0.05,
       },
       {
-        modelId: 'gemini-3.1-pro',
+        modelId: 'gemini-1.5-pro',
         modelName: 'Gemini 3.1 Pro (Flagship Reasoning)',
         purpose: 'Tiefen-Differentialdiagnostik & toxikologische Kreuzanalysen',
         costInputPerMillionEur: 1.84,
@@ -266,7 +266,7 @@ async function startServer() {
         therapistEmail: 'sophie.brunner@homoeopathie-zuerich.ch',
         endpoint: '/api/analyze',
         actionName: 'Große klinische Fallanalyse & Repertorisation',
-        model: 'gemini-3.8-flash',
+        model: 'gemini-1.5-flash',
         promptTokens: 2540,
         candidatesTokens: 1890,
         cachedTokens: 1200,
@@ -281,7 +281,7 @@ async function startServer() {
         therapistEmail: 'sophie.brunner@homoeopathie-zuerich.ch',
         endpoint: '/api/acute-repertorise',
         actionName: '5-Schritte-Akut-Repertorisation',
-        model: 'gemini-3.8-flash',
+        model: 'gemini-1.5-flash',
         promptTokens: 1210,
         candidatesTokens: 840,
         cachedTokens: 650,
@@ -296,7 +296,7 @@ async function startServer() {
         therapistEmail: 'sophie.brunner@homoeopathie-zuerich.ch',
         endpoint: '/api/check-medical-relevance',
         actionName: 'Medizinischer Relevanz-Check',
-        model: 'gemini-3.1-flash-lite',
+        model: 'gemini-1.5-flash',
         promptTokens: 215,
         candidatesTokens: 32,
         cachedTokens: 0,
@@ -311,7 +311,7 @@ async function startServer() {
         therapistEmail: 'praxis@dr-vogel-muenchen.de',
         endpoint: '/api/analyze',
         actionName: 'Große klinische Fallanalyse',
-        model: 'gemini-3.8-flash',
+        model: 'gemini-1.5-flash',
         promptTokens: 2610,
         candidatesTokens: 1950,
         cachedTokens: 1400,
@@ -326,7 +326,7 @@ async function startServer() {
         therapistEmail: 'praxis@dr-vogel-muenchen.de',
         endpoint: '/api/acute-repertorise',
         actionName: '5-Schritte-Akut-Repertorisation',
-        model: 'gemini-3.8-flash',
+        model: 'gemini-1.5-flash',
         promptTokens: 1180,
         candidatesTokens: 810,
         cachedTokens: 500,
@@ -341,7 +341,7 @@ async function startServer() {
         therapistEmail: 'k.lindemann@naturheilpraxis-berlin.de',
         endpoint: '/api/analyze',
         actionName: 'Große klinische Fallanalyse',
-        model: 'gemini-3.8-flash',
+        model: 'gemini-1.5-flash',
         promptTokens: 2430,
         candidatesTokens: 1810,
         cachedTokens: 1100,
@@ -356,7 +356,7 @@ async function startServer() {
         therapistEmail: 'k.lindemann@naturheilpraxis-berlin.de',
         endpoint: '/api/check-medical-relevance',
         actionName: 'Medizinischer Relevanz-Check',
-        model: 'gemini-3.1-flash-lite',
+        model: 'gemini-1.5-flash',
         promptTokens: 195,
         candidatesTokens: 28,
         cachedTokens: 0,
@@ -636,7 +636,7 @@ Beachte alle Details aus den Fall-Daten. Keine Daten erfinden, fehlende Daten al
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
           temperature: 0.2,
@@ -651,7 +651,7 @@ Beachte alle Details aus den Fall-Daten. Keine Daten erfinden, fehlende Daten al
         therapistEmail: req.body?.therapistEmail,
         endpoint: "/api/analyze",
         actionName: "Große klinische Fallanalyse",
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         promptTokens: usage.promptTokenCount || Math.ceil(prompt.length / 4),
         candidatesTokens: usage.candidatesTokenCount || Math.ceil((response.text || "").length / 4),
       });
@@ -799,7 +799,7 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
           temperature: 0.1,
@@ -814,7 +814,7 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
         therapistEmail: req.body?.therapistEmail,
         endpoint: "/api/acute-repertorise",
         actionName: "5-Schritte-Akut-Repertorisation",
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         promptTokens: usage.promptTokenCount || Math.ceil(prompt.length / 4),
         candidatesTokens: usage.candidatesTokenCount || Math.ceil((response.text || "").length / 4),
       });
@@ -1305,6 +1305,33 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (ohne
 
   let isOpenAiKeyInvalid = false;
 
+  app.get("/api/materia-medica", async (req, res) => {
+    try {
+      const { lang = "de" } = req.query;
+      const { getLocalizedRemedies } = await import("./src/data/materiaMedicaDatabase");
+      const remedies = getLocalizedRemedies(lang as any);
+      res.json(remedies);
+    } catch (error: any) {
+      console.error("Materia Medica API error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/materia-medica/match", async (req, res) => {
+    try {
+      const { symptomText, language = "de", acuteAnswers } = req.body;
+      const { matchSymptomsToRemedies, performDifferentialDiagnosis } = await import("./src/services/quickSymptomMatcher");
+      
+      const recommendations = matchSymptomsToRemedies(symptomText, language, acuteAnswers);
+      const diffResult = performDifferentialDiagnosis(symptomText, language, acuteAnswers);
+      
+      res.json({ recommendations, diffResult });
+    } catch (error: any) {
+      console.error("Symptom Matcher API error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/organon/analyze", async (req, res) => {
     try {
       if (req.body?.action === "endpruefer" || req.body?.endpruefer === true) {
@@ -1441,13 +1468,13 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
         let response;
         try {
           response = await ai.models.generateContent({
-            model: "gemini-3.8-flash",
+            model: "gemini-1.5-flash",
             contents: prompt,
             config: { temperature: 0.1, maxOutputTokens: 8192, responseMimeType: "application/json" },
           });
         } catch (e) {
           response = await ai.models.generateContent({
-            model: "gemini-3.1-flash-lite",
+            model: "gemini-1.5-flash",
             contents: prompt,
             config: { temperature: 0.1, maxOutputTokens: 8192, responseMimeType: "application/json" },
           });
@@ -1543,13 +1570,13 @@ Answer EXCLUSIVELY as a compact, valid JSON object in the following format (with
         let response;
         try {
           response = await ai.models.generateContent({
-            model: "gemini-3.8-flash",
+            model: "gemini-1.5-flash",
             contents: secondPrompt,
             config: { temperature: 0.6, responseMimeType: "application/json" },
           });
         } catch (e) {
           response = await ai.models.generateContent({
-            model: "gemini-3.1-flash-lite",
+            model: "gemini-1.5-flash",
             contents: secondPrompt,
             config: { temperature: 0.6, responseMimeType: "application/json" },
           });
@@ -1652,7 +1679,7 @@ Genius: ${JSON.stringify(parsedGemini || {})}
 Optimus: ${JSON.stringify(parsedOpenAI || {})}
 Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
             const arbRes = await ai.models.generateContent({
-              model: "gemini-3.8-flash",
+              model: "gemini-1.5-flash",
               contents: arbPrompt,
               config: { temperature: 0.1, responseMimeType: "application/json" }
             });
@@ -1694,7 +1721,7 @@ Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
       }
 
       let responseText = "{}";
-      let actualModelUsed = engine === 'openai' ? 'gpt-4o' : 'gemini-3.8-flash';
+      let actualModelUsed = engine === 'openai' ? 'gpt-4o' : 'gemini-1.5-flash';
       let usedEngine = engine;
       if (engine === "openai") {
         try {
@@ -1705,7 +1732,7 @@ Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
           console.log("[Organon] Secondary profile fallback to Gemini.");
           responseText = await runGemini();
           usedEngine = "gemini-fallback";
-          actualModelUsed = "gemini-3.8-flash (fallback)";
+          actualModelUsed = "gemini-1.5-flash (fallback)";
         }
       } else {
         responseText = await runGemini();
@@ -1991,7 +2018,7 @@ Originaltext: "${rawText.replace(/"/g, '\\\\"')}"
 Analyse: ${JSON.stringify(parsed || {})}
 Antworte AUSSCHLIESSLICH als valides JSON ohne Markdown.`;
           const arbRes = await ai.models.generateContent({
-            model: "gemini-3.8-flash",
+            model: "gemini-1.5-flash",
             contents: arbPrompt,
             config: { temperature: 0.1, responseMimeType: "application/json" }
           });
@@ -2213,13 +2240,13 @@ Gib als Antwort AUSSCHLIESSLICH ein gültiges JSON-Objekt (ohne Markdown Code-Bl
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-1.5-flash",
           contents: prompt,
           config: { temperature: 0.1, responseMimeType: "application/json" },
         });
       } catch (e) {
         response = await ai.models.generateContent({
-          model: "gemini-3.1-flash-lite",
+          model: "gemini-1.5-flash",
           contents: prompt,
           config: { temperature: 0.1, responseMimeType: "application/json" },
         });
@@ -2443,13 +2470,13 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (ohne Markdown Code-Blöc
     let response;
     try {
       response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: { temperature: 0.05, responseMimeType: "application/json" },
       });
     } catch (e) {
       response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-lite",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: { temperature: 0.05, responseMimeType: "application/json" },
       });
@@ -2600,13 +2627,13 @@ Text:
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-1.5-flash",
           contents: prompt,
           config: { temperature: 0.1 },
         });
       } catch (e) {
         response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-1.5-flash",
           contents: prompt,
           config: { temperature: 0.1 },
         });
@@ -2680,7 +2707,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-1.5-flash",
           contents: prompt,
           config: {
             temperature: 0.2,
@@ -2691,7 +2718,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt ohne Markdown Code-Blöcke:
       } catch (primaryErr: any) {
         console.warn("Primary model failed, trying fallback model:", primaryErr);
         response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-1.5-flash",
           contents: prompt,
           config: {
             temperature: 0.2,
@@ -4386,11 +4413,11 @@ ANTWORTE AUSSCHLIESSLICH IM FOLGENDEN JSON-FORMAT (ohne Markdown, nur valides JS
 }`;
 
       let responseText = "{}";
-      // Priority 1: Use gemini-3.1-flash-lite for ultra-fast, low-latency conversational questioning (<1s)
-      // Priority 2: Fallback to gemini-3.8-flash if needed
+      // Priority 1: Use gemini-1.5-flash for ultra-fast, low-latency conversational questioning (<1s)
+      // Priority 2: Fallback to gemini-1.5-flash if needed
       try {
         const resp = await ai.models.generateContent({
-          model: "gemini-3.1-flash-lite",
+          model: "gemini-1.5-flash",
           contents: prompt,
           config: {
             temperature: 0.1,
@@ -4400,9 +4427,9 @@ ANTWORTE AUSSCHLIESSLICH IM FOLGENDEN JSON-FORMAT (ohne Markdown, nur valides JS
         });
         responseText = resp.text || "{}";
       } catch (errFast) {
-        console.warn("[/api/organon/category-deepen] gemini-3.1-flash-lite failed, falling back to gemini-3.8-flash:", errFast);
+        console.warn("[/api/organon/category-deepen] gemini-1.5-flash failed, falling back to gemini-1.5-flash:", errFast);
         const resp = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-1.5-flash",
           contents: prompt,
           config: {
             temperature: 0.1,
@@ -4631,7 +4658,7 @@ SPRACHE: Alle Fragen, Optionen und Zusammenfassungen in ${targetLanguageName} fo
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
           temperature: 0.1,
@@ -4646,7 +4673,7 @@ SPRACHE: Alle Fragen, Optionen und Zusammenfassungen in ${targetLanguageName} fo
         therapistEmail: req.body?.therapistEmail,
         endpoint: "/api/hahnemann-analysis",
         actionName: `Hahnemann Organon §§ 83-104 Anamnese (${caseType})`,
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         promptTokens: usage.promptTokenCount || Math.ceil(prompt.length / 4),
         candidatesTokens: usage.candidatesTokenCount || Math.ceil((response.text || "").length / 4),
       });
@@ -4739,7 +4766,7 @@ oder
 }`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
           temperature: 0.1,
@@ -4754,7 +4781,7 @@ oder
         therapistEmail: req.body?.therapistEmail,
         endpoint: "/api/check-medical-relevance",
         actionName: "Medizinischer Relevanz-Check",
-        model: "gemini-3.8-flash",
+        model: "gemini-1.5-flash",
         promptTokens: usage.promptTokenCount || Math.ceil(prompt.length / 4),
         candidatesTokens: usage.candidatesTokenCount || Math.ceil((response.text || "").length / 4),
       });
@@ -5364,7 +5391,7 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
 `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-1.5-flash',
         contents: prompt,
       });
 
@@ -5404,7 +5431,7 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
       recordTokenUsage({
         endpoint: '/api/medications/clinical-comparison',
         actionName: `AMTS Clinical Analysis Engine v5.0 (${targetLang.toUpperCase()})`,
-        model: 'gemini-3.8-flash',
+        model: 'gemini-1.5-flash',
         promptTokens: response.usageMetadata?.promptTokenCount || 750,
         candidatesTokens: response.usageMetadata?.candidatesTokenCount || 1200
       });

@@ -14,6 +14,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext';
+import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import { 
   AcuteClarificationQuestion, 
   AcuteAnswers, 
@@ -41,6 +42,7 @@ export const AcuteClarificationModal: React.FC<AcuteClarificationModalProps> = (
   onApplyAnswers
 }) => {
   const { language, t } = useTranslation();
+  const { allRemedies } = useMateriaMedica();
   const [answers, setAnswers] = useState<AcuteAnswers>(initialAnswers);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [showExcluded, setShowExcluded] = useState<boolean>(false);
@@ -62,8 +64,8 @@ export const AcuteClarificationModal: React.FC<AcuteClarificationModalProps> = (
 
   // Live differential diagnosis outcome at current answers state
   const diffResult: DifferentialDiagnosisResult = useMemo(() => {
-    return performDifferentialDiagnosis(symptomText, language, answers);
-  }, [symptomText, language, answers]);
+    return performDifferentialDiagnosis(symptomText, language, answers, allRemedies);
+  }, [symptomText, language, answers, allRemedies]);
 
   // Crucial single derived clarifying question if 2 leading remedies are competing
   const derivedQuestion: AcuteClarificationQuestion | null = useMemo(() => {

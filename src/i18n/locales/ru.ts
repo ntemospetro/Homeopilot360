@@ -554,6 +554,7 @@ export const ru = {
   "filterPlant": "Растительные",
   "filterMineral": "Минеральные",
   "filterAnimal": "Животные",
+  "filterNosode": "Нозоды",
   "indexAlphabet": "Алфавитный Указатель",
   "filterToggle": "Фильтры и категории",
   "filterToggleShow": "Показать фильтры",
