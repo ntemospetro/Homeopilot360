@@ -23,13 +23,9 @@ import {
   SubtractiveCascadeReport,
   SubtractiveCascadeStep 
 } from '../services/boerickeRepertoryService';
-import { 
-  matchesAuthorFilter, 
-  ClassicalAuthorFilterKey 
-} from '../data/classicalAuthorsMap';
 import { BoerickeRepertoryWizardView } from './BoerickeRepertoryWizardView';
 import { Therapist, PatientCase } from '../types';
-import { Users, User, ChevronDown } from 'lucide-react';
+import { User, ChevronDown } from 'lucide-react';
 
 interface RepertoriumViewProps {
   therapist?: Therapist;
@@ -162,33 +158,6 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
   // Selected stage for full-screen paginated modal
   const [selectedFunnelStep, setSelectedFunnelStep] = useState<SubtractiveCascadeStep | null>(null);
 
-  // Filter by classical authors (All, Hahnemann, Kent, Hering, Boericke) supporting multi-select
-  const [selectedAuthors, setSelectedAuthors] = useState<ClassicalAuthorFilterKey[]>(['all']);
-
-  const handleAuthorClick = (key: ClassicalAuthorFilterKey) => {
-    if (key === 'all') {
-      setSelectedAuthors(['all']);
-    } else {
-      let next: ClassicalAuthorFilterKey[];
-      if (selectedAuthors.includes('all')) {
-        next = [key];
-      } else if (selectedAuthors.includes(key)) {
-        next = selectedAuthors.filter(k => k !== key);
-        if (next.length === 0) {
-          next = ['all'];
-        }
-      } else {
-        next = [...selectedAuthors, key];
-      }
-      setSelectedAuthors(next);
-    }
-  };
-
-  const isAuthorActive = (key: ClassicalAuthorFilterKey) => {
-    if (key === 'all') return selectedAuthors.includes('all') || selectedAuthors.length === 0;
-    return selectedAuthors.includes(key);
-  };
-
   // Selected remedy for Materia Medica monograph modal
   const [selectedRemedy, setSelectedRemedy] = useState<LocalizedRemedy | null>(null);
 
@@ -232,21 +201,10 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
   // All remedies for monograph navigation
   const { allRemedies } = useMateriaMedica();
 
-  // Authors filter definition
-  const authors = [
-    { key: 'all' as ClassicalAuthorFilterKey, label: t('filterAuthorAll') },
-    { key: 'hahnemann' as ClassicalAuthorFilterKey, label: t('filterAuthorHahnemann') },
-    { key: 'kent' as ClassicalAuthorFilterKey, label: t('filterAuthorKent') },
-    { key: 'hering' as ClassicalAuthorFilterKey, label: t('filterAuthorHering') },
-    { key: 'boericke' as ClassicalAuthorFilterKey, label: t('filterAuthorBoericke') },
-    { key: 'boger' as ClassicalAuthorFilterKey, label: t('filterAuthorBoger') },
-    { key: 'allen' as ClassicalAuthorFilterKey, label: t('filterAuthorAllen') }
-  ];
-
-  // Compute live repertorisation using Classical Repertory Engine (Hahnemann, Kent, Hering, Boericke)
+  // Compute live repertorisation using Classical Repertory Engine across all authors
   const results = useMemo(() => {
-    return performBoerickeRepertorisation(debouncedSymptoms, language, strictOnly, selectedAuthors, praxisBonusActive, allRemedies);
-  }, [debouncedSymptoms, language, strictOnly, selectedAuthors, praxisBonusActive, allRemedies]);
+    return performBoerickeRepertorisation(debouncedSymptoms, language, strictOnly, ['all'], praxisBonusActive, allRemedies);
+  }, [debouncedSymptoms, language, strictOnly, praxisBonusActive, allRemedies]);
 
   // Compute subtractive funnel cascade for primary structured symptom
   const funnelReport: SubtractiveCascadeReport = useMemo(() => {
@@ -262,8 +220,8 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
         survivingRemedies: []
       };
     }
-    return performSubtractiveFunnelCascade(primarySymptom, language, selectedAuthors, allRemedies);
-  }, [debouncedSymptoms, language, selectedAuthors, allRemedies]);
+    return performSubtractiveFunnelCascade(primarySymptom, language, ['all'], allRemedies);
+  }, [debouncedSymptoms, language, allRemedies]);
 
   const handleAddSymptom = () => {
     const nextId = `sym-${Date.now()}`;
@@ -756,41 +714,6 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
                         </div>
                       </div>
                     )}
-                  </div>
-
-                  {/* Klassische Autoren Filter (Multi-select) */}
-                  <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-teal-700" />
-                        {t('filterAuthorLabel')}:
-                      </span>
-                      {!selectedAuthors.includes('all') && (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAuthors(['all'])}
-                          className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold cursor-pointer"
-                        >
-                          {t('resetFilters')}
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {authors.map((auth) => (
-                        <button
-                          key={auth.key}
-                          type="button"
-                          onClick={() => handleAuthorClick(auth.key)}
-                          className={`py-1.5 px-3 rounded-xl text-[10px] font-bold transition-all cursor-pointer shadow-2xs border ${
-                            isAuthorActive(auth.key)
-                              ? 'bg-teal-700 text-white border-teal-800 shadow-xs'
-                              : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
-                          }`}
-                        >
-                          {auth.label}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Decent Praxis-Bonus Toggle Card matching the image */}

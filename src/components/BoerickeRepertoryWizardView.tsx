@@ -25,14 +25,8 @@ import {
   FolderOpen,
   FileText,
   BookmarkPlus,
-  Filter,
-  Users
+  Filter
 } from 'lucide-react';
-import { 
-  matchesAuthorFilter, 
-  matchesAuthorFilters, 
-  ClassicalAuthorFilterKey 
-} from '../data/classicalAuthorsMap';
 import { 
   BOERICKE_TREE_DATA, 
   SYMPTOM_PALETTE, 
@@ -320,52 +314,14 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   const [resultSubTab, setResultSubTab] = useState<'ergebnis' | 'matrix' | 'vergleich' | 'analyse'>('analyse');
   const [selectedTopRemedyKey, setSelectedTopRemedyKey] = useState<string>('ledum-palustre');
 
-  // Filter by classical authors (Multi-select) - default to 'kent' as shown in reference image
-  const [selectedAuthors, setSelectedAuthors] = useState<ClassicalAuthorFilterKey[]>(['kent']);
-  const [authorGroupTab, setAuthorGroupTab] = useState<'classical' | 'additional' | 'advanced'>('classical');
   const [isAnalysisSettingsOpen, setIsAnalysisSettingsOpen] = useState<boolean>(false);
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState<boolean>(false);
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState<boolean>(false);
   const [praxisBonusActive, setPraxisBonusActive] = useState<boolean>(true);
 
-  const handleAuthorClick = (key: ClassicalAuthorFilterKey) => {
-    if (key === 'all') {
-      setSelectedAuthors(['all']);
-    } else {
-      let next: ClassicalAuthorFilterKey[];
-      if (selectedAuthors.includes('all')) {
-        next = [key];
-      } else if (selectedAuthors.includes(key)) {
-        next = selectedAuthors.filter(k => k !== key);
-        if (next.length === 0) {
-          next = ['all'];
-        }
-      } else {
-        next = [...selectedAuthors, key];
-      }
-      setSelectedAuthors(next);
-    }
-  };
-
-  const isAuthorActive = (key: ClassicalAuthorFilterKey) => {
-    if (key === 'all') return selectedAuthors.includes('all') || selectedAuthors.length === 0;
-    return selectedAuthors.includes(key);
-  };
-
-  const authors = [
-    { key: 'all' as ClassicalAuthorFilterKey, label: t('filterAuthorAll') },
-    { key: 'hahnemann' as ClassicalAuthorFilterKey, label: t('filterAuthorHahnemann') },
-    { key: 'kent' as ClassicalAuthorFilterKey, label: t('filterAuthorKent') },
-    { key: 'hering' as ClassicalAuthorFilterKey, label: t('filterAuthorHering') },
-    { key: 'boericke' as ClassicalAuthorFilterKey, label: t('filterAuthorBoericke') },
-    { key: 'boger' as ClassicalAuthorFilterKey, label: t('filterAuthorBoger') },
-    { key: 'allen' as ClassicalAuthorFilterKey, label: t('filterAuthorAllen') }
-  ];
-
-  // Calculation of Repertorisation
+  // Calculation of Repertorisation across all remedies
   const calculationResults = useMemo(() => {
-    return calculateBoerickeRepertorisation(selectedSymptoms, allRemedies, selectedAuthors);
-  }, [selectedSymptoms, allRemedies, selectedAuthors]);
+    return calculateBoerickeRepertorisation(selectedSymptoms, allRemedies, 'all');
+  }, [selectedSymptoms, allRemedies]);
 
   // Fetch chapters list on mount / language switch
   useEffect(() => {
@@ -1933,112 +1889,6 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
             </div>
           </div>
 
-          {/* 2. Author Tabs */}
-          <div className="flex items-center gap-6 border-b border-slate-200/80 text-xs">
-            <button
-              type="button"
-              onClick={() => setAuthorGroupTab('classical')}
-              className={`pb-2.5 font-bold transition-colors cursor-pointer ${
-                authorGroupTab === 'classical'
-                  ? 'text-teal-900 border-b-2 border-teal-800 -mb-px'
-                  : 'text-slate-500 hover:text-slate-800 font-medium'
-              }`}
-            >
-              {t('repertoryClassicalAuthorsTab')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthorGroupTab('additional')}
-              className={`pb-2.5 font-bold transition-colors cursor-pointer ${
-                authorGroupTab === 'additional'
-                  ? 'text-teal-900 border-b-2 border-teal-800 -mb-px'
-                  : 'text-slate-500 hover:text-slate-800 font-medium'
-              }`}
-            >
-              {t('repertoryOtherAuthorsTab')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthorGroupTab('advanced')}
-              className={`pb-2.5 font-bold transition-colors cursor-pointer ${
-                authorGroupTab === 'advanced'
-                  ? 'text-teal-900 border-b-2 border-teal-800 -mb-px'
-                  : 'text-slate-500 hover:text-slate-800 font-medium'
-              }`}
-            >
-              {t('repertoryAdvancedAnalysisTab')}
-            </button>
-          </div>
-
-          {/* 3. Author Filter Pills */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {authors.map((auth) => {
-                const isActive = isAuthorActive(auth.key);
-                return (
-                  <button
-                    key={auth.key}
-                    type="button"
-                    onClick={() => handleAuthorClick(auth.key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-teal-800 text-white font-semibold shadow-2xs'
-                        : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-normal'
-                    }`}
-                  >
-                    {auth.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-              >
-                <Filter className="w-3.5 h-3.5 text-slate-500" />
-                <span>{t('repertoryFilterDropdown')}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-
-              {isFilterDropdownOpen && (
-                <div className="absolute right-0 top-9 z-30 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedAuthors(['all']);
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
-                  >
-                    {t('filterAuthorAll')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedAuthors(['kent']);
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
-                  >
-                    {t('repertoryFilterOnlyKent')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedAuthors(['boericke']);
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
-                  >
-                    {t('repertoryFilterOnlyBoericke')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* 4. Table Header Section */}
           <div className="flex items-center justify-between pt-1">
@@ -2306,40 +2156,6 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
             </div>
           </div>
 
-          {/* Author Filter in Wizard Step 3 */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-xs flex items-center justify-between gap-3">
-             <div className="flex items-center gap-2 flex-wrap">
-               <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5 px-1">
-                 <Users className="w-3.5 h-3.5 text-teal-700" />
-                 {t('filterAuthorLabel')}:
-               </span>
-               <div className="flex flex-wrap gap-1.5">
-                  {authors.map((auth) => (
-                    <button
-                      key={auth.key}
-                      type="button"
-                      onClick={() => handleAuthorClick(auth.key)}
-                      className={`py-1.5 px-3 rounded-xl text-[10px] font-bold transition-all cursor-pointer shadow-2xs border ${
-                        isAuthorActive(auth.key)
-                          ? 'bg-teal-700 text-white border-teal-800 shadow-xs'
-                          : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
-                      }`}
-                    >
-                      {auth.label}
-                    </button>
-                  ))}
-               </div>
-             </div>
-             {!selectedAuthors.includes('all') && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedAuthors(['all'])}
-                  className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold cursor-pointer px-2"
-                >
-                  {t('resetFilters')}
-                </button>
-             )}
-          </div>
 
           {/* 4. REPERTORISATION TABELLEN-RANGLISTE */}
           {resultSubTab === 'ergebnis' && (
