@@ -28,10 +28,24 @@ let remedyMap: Record<string, string> = {}; // abbreviation -> fullName
 let isLoaded = false;
 let isLoading = false;
 
-const CACHE_PATH = path.resolve("./data/kent_repertory_cache.json");
-const SQLITE_DB_PATH = fs.existsSync(path.resolve("./data/kent_repertory.db"))
-  ? path.resolve("./data/kent_repertory.db")
-  : path.resolve("./data/kent_repertory_sql.db");
+function resolveKentDataFile(filename: string): string {
+  const candidates = [
+    path.resolve("./data", filename),
+    path.resolve("./dist/data", filename),
+    path.resolve("./public/data", filename),
+    path.resolve(__dirname, "./data", filename),
+    path.resolve(__dirname, "../data", filename),
+    path.resolve(__dirname, "./dist/data", filename),
+    path.resolve(__dirname, "./public/data", filename)
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return path.resolve("./data", filename);
+}
+
+const CACHE_PATH = resolveKentDataFile("kent_repertory_cache.json");
+const SQLITE_DB_PATH = resolveKentDataFile("kent_repertory.db");
 
 /**
  * Normalizes remedies from various cache / DB representations:
@@ -337,7 +351,7 @@ let saveDebounceTimer: NodeJS.Timeout | null = null;
 
 function getTranslations(): Record<string, Record<string, string>> {
   if (translationsCache) return translationsCache;
-  const transPath = path.resolve("./data/kent_translations.json");
+  const transPath = resolveKentDataFile("kent_translations.json");
   if (fs.existsSync(transPath)) {
     try {
       translationsCache = JSON.parse(fs.readFileSync(transPath, "utf-8"));
@@ -356,7 +370,7 @@ function persistTranslations(): void {
   if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
   saveDebounceTimer = setTimeout(() => {
     try {
-      const transPath = path.resolve("./data/kent_translations.json");
+      const transPath = resolveKentDataFile("kent_translations.json");
       fs.writeFileSync(transPath, JSON.stringify(translationsCache, null, 2), "utf-8");
     } catch (err) {
       console.error("[KENT_TRANS] Failed to save translations:", err);

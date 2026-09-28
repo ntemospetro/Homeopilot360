@@ -41,6 +41,7 @@ import { LocalizedRemedy } from '../data/materiaMedicaData';
 import { getLocalizedRemedies } from '../data/materiaMedicaDatabase';
 import { getCanonicalKentChapterTranslations } from '../data/canonicalKentChapters';
 import { getCanonicalKentTermTranslation } from '../data/canonicalKentTerms';
+import { performClientKentDrilldown, searchClientKentRubrics } from '../services/repertory/clientKentRepertoryService';
 
 interface KentRubricItem {
   id: string;
@@ -344,12 +345,26 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lang: language })
         });
-        const data = await res.json();
-        if (!isCancelled && data.success && Array.isArray(data.nextOptions)) {
-          setChapters(data.nextOptions);
-          if (data.translatedOptions) {
-            setChapterTranslations(prev => ({ ...prev, ...data.translatedOptions }));
+        if (res.ok) {
+          const data = await res.json();
+          if (!isCancelled && data.success && Array.isArray(data.nextOptions)) {
+            setChapters(data.nextOptions);
+            if (data.translatedOptions) {
+              setChapterTranslations(prev => ({ ...prev, ...data.translatedOptions }));
+            }
+            return;
           }
+        }
+      } catch (e) {
+        // Fallback to static client data
+      }
+
+      // Static fallback for Hostinger / offline environments
+      try {
+        const fallback = await performClientKentDrilldown({ lang: language });
+        if (!isCancelled && fallback.success) {
+          setChapters(fallback.nextOptions);
+          setChapterTranslations(prev => ({ ...prev, ...fallback.translatedOptions }));
         }
       } catch {
         if (!isCancelled) {
@@ -372,6 +387,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
       setDrillLevelIndex(-1);
     }
 
+    let backendSuccess = false;
     try {
       const res = await fetch('/api/kent/drilldown', {
         method: 'POST',
@@ -383,24 +399,52 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
           lang: language
         })
       });
-      const data = await res.json();
-      if (data.success) {
-        setDrillLevelType(data.nextLevelType || 'none');
-        setDrillLevelIndex(typeof data.nextLevelIndex === 'number' ? data.nextLevelIndex : -1);
-        setDrillOptions(data.nextOptions || []);
-        if (data.translatedOptions) {
-          setDrillTranslatedOptions(prev => ({ ...prev, ...data.translatedOptions }));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setDrillLevelType(data.nextLevelType || 'none');
+          setDrillLevelIndex(typeof data.nextLevelIndex === 'number' ? data.nextLevelIndex : -1);
+          setDrillOptions(data.nextOptions || []);
+          if (data.translatedOptions) {
+            setDrillTranslatedOptions(prev => ({ ...prev, ...data.translatedOptions }));
+          }
+          if (data.pathTranslations) {
+            setDrillPathTranslations(prev => ({ ...prev, ...data.pathTranslations }));
+          }
+          setDrillRubrics(data.rubrics || []);
+          backendSuccess = true;
         }
-        if (data.pathTranslations) {
-          setDrillPathTranslations(prev => ({ ...prev, ...data.pathTranslations }));
-        }
-        setDrillRubrics(data.rubrics || []);
       }
-    } catch (err) {
-      console.error('Error loading drilldown:', err);
-    } finally {
-      setIsDrillLoading(false);
+    } catch {
+      // Backend not accessible (e.g. on Hostinger static hosting)
     }
+
+    if (!backendSuccess) {
+      try {
+        const fallbackData = await performClientKentDrilldown({
+          chapter: chap || undefined,
+          symptom: sym || undefined,
+          zusatz: zus.length > 0 ? zus : undefined,
+          lang: language
+        });
+        if (fallbackData.success) {
+          setDrillLevelType(fallbackData.nextLevelType || 'none');
+          setDrillLevelIndex(fallbackData.nextLevelIndex);
+          setDrillOptions(fallbackData.nextOptions || []);
+          if (fallbackData.translatedOptions) {
+            setDrillTranslatedOptions(prev => ({ ...prev, ...fallbackData.translatedOptions }));
+          }
+          if (fallbackData.pathTranslations) {
+            setDrillPathTranslations(prev => ({ ...prev, ...fallbackData.pathTranslations }));
+          }
+          setDrillRubrics(fallbackData.rubrics as any || []);
+        }
+      } catch (fallbackErr) {
+        console.error('Static fallback drilldown error:', fallbackErr);
+      }
+    }
+
+    setIsDrillLoading(false);
   };
 
   // Trigger drilldown data load on path or language changes
@@ -416,20 +460,38 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
     }
     const timer = setTimeout(async () => {
       setIsKeywordSearching(true);
+      let backendSearchDone = false;
       try {
         const res = await fetch(`/api/kent/search?q=${encodeURIComponent(treeSearchQuery.trim())}&limit=80&lang=${encodeURIComponent(language)}`);
-        const data = await res.json();
-        if (data.success && Array.isArray(data.rubrics)) {
-          setKeywordResults(data.rubrics);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.rubrics)) {
+            setKeywordResults(data.rubrics);
+            backendSearchDone = true;
+          }
         }
-      } catch (err) {
-        console.error('Search error:', err);
-      } finally {
-        setIsKeywordSearching(false);
+      } catch {
+        // Backend search endpoint unavailable
       }
+
+      if (!backendSearchDone) {
+        try {
+          const clientResults = await searchClientKentRubrics({
+            query: treeSearchQuery.trim(),
+            chapter: drillChapter || undefined,
+            lang: language,
+            limit: 80
+          });
+          setKeywordResults(clientResults as any);
+        } catch (searchErr) {
+          console.error('Client static search error:', searchErr);
+        }
+      }
+
+      setIsKeywordSearching(false);
     }, 280);
     return () => clearTimeout(timer);
-  }, [treeSearchQuery, language]);
+  }, [treeSearchQuery, drillChapter, language]);
 
   // Stage selection handlers for Stufenansicht
   const handleSelectDrillOption = (option: string) => {
