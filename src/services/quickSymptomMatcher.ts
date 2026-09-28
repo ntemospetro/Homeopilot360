@@ -1,4 +1,5 @@
-import { getLocalizedRemedies, LocalizedRemedy } from '../data/materiaMedicaData';
+import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { getLocalizedRemedies } from '../data/materiaMedicaDatabase';
 import { LanguageCode } from '../types';
 import {
   detectComplaintDomain,

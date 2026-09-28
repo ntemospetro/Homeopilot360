@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { LocalizedRemedy, getLocalizedRemedies } from '../data/materiaMedicaData';
+import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { getLocalizedRemedies } from '../data/materiaMedicaDatabase';
 import { useTranslation } from '../i18n/LanguageContext';
 
 interface MateriaMedicaContextType {
@@ -24,17 +25,23 @@ export const MateriaMedicaProvider: React.FC<{ children: ReactNode }> = ({ child
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/materia-medica?lang=${language}`);
+      const response = await fetch(`/api/materia-medica?lang=${encodeURIComponent(language)}`);
       if (!response.ok) throw new Error('Failed to fetch Materia Medica data');
       const data = await response.json();
       if (Array.isArray(data) && data.length > 0) {
         setAllRemedies(data);
       } else {
-        setAllRemedies(getLocalizedRemedies(language));
+        const local = getLocalizedRemedies(language);
+        if (local && local.length > 0) {
+          setAllRemedies(local);
+        }
       }
-    } catch (err: any) {
+    } catch {
       // Graceful fallback to bundled dataset (vital for Hostinger or static deployments)
-      setAllRemedies(getLocalizedRemedies(language));
+      const local = getLocalizedRemedies(language);
+      if (local && local.length > 0) {
+        setAllRemedies(local);
+      }
       setError(null);
     } finally {
       setIsLoading(false);
@@ -42,7 +49,10 @@ export const MateriaMedicaProvider: React.FC<{ children: ReactNode }> = ({ child
   };
 
   useEffect(() => {
-    setAllRemedies(getLocalizedRemedies(language));
+    const local = getLocalizedRemedies(language);
+    if (local && local.length > 0) {
+      setAllRemedies(local);
+    }
     fetchRemedies();
   }, [language]);
 

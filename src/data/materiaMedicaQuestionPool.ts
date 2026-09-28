@@ -1,5 +1,6 @@
 import { LanguageCode } from '../types';
-import { MATERIA_MEDICA_ENTRIES, LocalizedRemedy, getLocalizedRemedy } from './materiaMedicaData';
+import { LocalizedRemedy, getLocalizedRemedy } from './materiaMedicaData';
+import { MATERIA_MEDICA_ENTRIES } from './materiaMedicaDatabase';
 import { ALLEN_KEYNOTES_DATA } from './allenKeynotesData';
 import { BOGER_SYNOPTIC_KEY_DATA } from './bogerSynopticData';
 

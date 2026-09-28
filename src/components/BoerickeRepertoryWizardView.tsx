@@ -37,8 +37,10 @@ import {
 } from '../services/repertory/boerickeInteractiveRepertoryData';
 import { SymptomWeightGrade } from '../services/boerickeRepertoryService';
 import { RemedyMonographModal } from './RemedyMonographModal';
-import { LocalizedRemedy, getLocalizedRemedies } from '../data/materiaMedicaData';
+import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { getLocalizedRemedies } from '../data/materiaMedicaDatabase';
 import { getCanonicalKentChapterTranslations } from '../data/canonicalKentChapters';
+import { getCanonicalKentTermTranslation } from '../data/canonicalKentTerms';
 
 interface KentRubricItem {
   id: string;
@@ -496,10 +498,10 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
     if (!drillFilterQuery.trim()) return drillOptions;
     const q = drillFilterQuery.toLowerCase();
     return drillOptions.filter(opt => {
-      const trans = (drillTranslatedOptions[opt] || chapterTranslations[opt] || opt).toLowerCase();
+      const trans = (drillTranslatedOptions[opt] || chapterTranslations[opt] || getCanonicalKentTermTranslation(opt, language as any) || opt).toLowerCase();
       return trans.includes(q) || opt.toLowerCase().includes(q);
     });
-  }, [drillOptions, drillFilterQuery, drillTranslatedOptions, chapterTranslations]);
+  }, [drillOptions, drillFilterQuery, drillTranslatedOptions, chapterTranslations, language]);
 
   // Handpicked clinical favorites from Kent rubrics
   const favoriteRubrics = useMemo<KentRubricItem[]>(() => {
@@ -1356,7 +1358,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                                 : 'text-slate-600 hover:text-teal-800 hover:bg-slate-200/60'
                             }`}
                           >
-                            {drillPathTranslations[drillSymptom] || drillTranslatedOptions[drillSymptom] || drillSymptom}
+                            {drillPathTranslations[drillSymptom] || drillTranslatedOptions[drillSymptom] || getCanonicalKentTermTranslation(drillSymptom, language as any) || drillSymptom}
                           </button>
                         </>
                       )}
@@ -1375,7 +1377,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                                   : 'text-slate-600 hover:text-teal-800 hover:bg-slate-200/60'
                               }`}
                             >
-                              {drillPathTranslations[zus] || drillTranslatedOptions[zus] || zus}
+                              {drillPathTranslations[zus] || drillTranslatedOptions[zus] || getCanonicalKentTermTranslation(zus, language as any) || zus}
                             </button>
                           </React.Fragment>
                         );
@@ -1449,7 +1451,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                         </div>
                       ) : (
                         filteredDrillOptions.map((opt) => {
-                          const transName = drillTranslatedOptions[opt] || chapterTranslations[opt] || opt;
+                          const transName = drillTranslatedOptions[opt] || chapterTranslations[opt] || getCanonicalKentTermTranslation(opt, language as any) || opt;
                           return (
                             <button
                               key={opt}
@@ -1491,8 +1493,8 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                           const isSelected = selectedSymptoms.some(s => s.rubricId === String(rubric.id));
                           const rubricPath = rubric.pathTranslated || rubric.path;
                           const rubricTitle = (rubric.zusatz && rubric.zusatz.length > 0)
-                            ? (rubric.zusatzTranslated ? rubric.zusatzTranslated.join(', ') : rubric.zusatz.join(', '))
-                            : (rubric.symptomTranslated || rubric.symptom || rubricPath);
+                            ? (rubric.zusatzTranslated ? rubric.zusatzTranslated.join(', ') : rubric.zusatz.map((z: string) => getCanonicalKentTermTranslation(z, language as any) || z).join(', '))
+                            : (rubric.symptomTranslated || getCanonicalKentTermTranslation(rubric.symptom, language as any) || rubric.symptom || rubricPath);
 
                           return (
                             <div
@@ -1570,7 +1572,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                         keywordResults.map((rubric) => {
                           const isSelected = selectedSymptoms.some(s => s.rubricId === String(rubric.id));
                           const rubricPath = rubric.pathTranslated || rubric.path;
-                          const rubricTitle = rubric.symptomTranslated || rubric.symptom || rubricPath;
+                          const rubricTitle = rubric.symptomTranslated || getCanonicalKentTermTranslation(rubric.symptom, language as any) || rubric.symptom || rubricPath;
 
                           return (
                             <div

@@ -1,5 +1,5 @@
 import { materiaMedicaImportManager } from './materiaMedicaImportManager';
-import { MATERIA_MEDICA_ENTRIES } from '../../data/materiaMedicaData';
+import { MATERIA_MEDICA_ENTRIES } from '../../data/materiaMedicaDatabase';
 
 export function runMateriaMedicaImportTests(): { testName: string; passed: boolean; message: string }[] {
   const results = [];

@@ -1,4 +1,5 @@
-import { getLocalizedRemedies, LocalizedRemedy, getCanonicalRemedyKey } from '../data/materiaMedicaData';
+import { LocalizedRemedy, getCanonicalRemedyKey } from '../data/materiaMedicaData';
+import { getLocalizedRemedies } from '../data/materiaMedicaDatabase';
 import { LanguageCode } from '../types';
 import { matchesAuthorFilter, matchesAuthorFilters, ClassicalAuthorFilterKey } from '../data/classicalAuthorsMap';
 import { getBogerSynopticEntry, BogerSynopticEntry } from '../data/bogerSynopticData';

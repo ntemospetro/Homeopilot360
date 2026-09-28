@@ -382,9 +382,9 @@ export type KentTokenUsageCallback = (usage: {
 async function generateWithMultiModelFallback(
   ai: GoogleGenAI,
   params: { contents: string; config?: any },
-  timeoutMs = 9000
+  timeoutMs = 20000
 ): Promise<{ text: string; usage: any; modelUsed: string } | null> {
-  const candidateModels = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
+  const candidateModels = ["gemini-3.8-flash", "gemini-flash-latest"];
 
   for (const model of candidateModels) {
     let timer: NodeJS.Timeout | undefined;

@@ -1,6 +1,7 @@
 import { LanguageCode } from '../types';
 import { RepertoriumSymptomInput, normalizeQuery } from './boerickeRepertoryService';
-import { getLocalizedRemedies, LocalizedRemedy } from '../data/materiaMedicaData';
+import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { getLocalizedRemedies } from '../data/materiaMedicaDatabase';
 
 export interface AnamnesisDialogueStep {
   id: string;

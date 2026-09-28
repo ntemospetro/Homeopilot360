@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { materiaMedicaImportManager, MateriaMedicaImportRecord, MateriaMedicaPreflightReport } from '../services/materiaMedica/materiaMedicaImportManager';
-import { MATERIA_MEDICA_ENTRIES, MateriaMedicaEntry, LocalizedRemedyContent } from '../data/materiaMedicaData';
+import { MateriaMedicaEntry, LocalizedRemedyContent } from '../data/materiaMedicaData';
+import { MATERIA_MEDICA_ENTRIES } from '../data/materiaMedicaDatabase';
 import { CLASSICAL_AUTHORS_MAP } from '../data/classicalAuthorsMap';
 import { LanguageCode } from '../types';
 import { 

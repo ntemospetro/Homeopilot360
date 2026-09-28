@@ -1,4 +1,5 @@
-import { MATERIA_MEDICA_ENTRIES, MateriaMedicaEntry, LocalizedRemedyContent } from '../../data/materiaMedicaData';
+import { MateriaMedicaEntry, LocalizedRemedyContent } from '../../data/materiaMedicaData';
+import { MATERIA_MEDICA_ENTRIES } from '../../data/materiaMedicaDatabase';
 import { LanguageCode } from '../../types';
 
 export interface MateriaMedicaImportRecord {
