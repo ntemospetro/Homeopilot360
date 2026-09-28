@@ -6,6 +6,8 @@ import {
   deleteDoc,
   onSnapshot,
   writeBatch,
+  query,
+  where,
   Unsubscribe
 } from 'firebase/firestore';
 import { getDb } from './firebaseConfig';
@@ -146,7 +148,10 @@ export async function initCloudSync(
           const batch = writeBatch(db);
           for (const c of localCases) {
             const ref = doc(db, 'cases', c.id);
-            batch.set(ref, sanitizeForFirestore(c));
+            batch.set(ref, sanitizeForFirestore({
+              ...c,
+              ownerUid: c.ownerUid || c.therapistId || 'legacy-owner'
+            }));
           }
           await batch.commit();
         }
@@ -267,8 +272,12 @@ export async function cloudSaveCase(patientCase: PatientCase): Promise<void> {
   const db = getDb();
   if (!db || !patientCase?.id) return;
   try {
+    const payload = {
+      ...patientCase,
+      ownerUid: patientCase.ownerUid || patientCase.therapistId || 'legacy-owner'
+    };
     const ref = doc(db, 'cases', patientCase.id);
-    await setDoc(ref, sanitizeForFirestore(patientCase), { merge: true });
+    await setDoc(ref, sanitizeForFirestore(payload), { merge: true });
   } catch (err) {
     console.warn(`[CloudSync] Failed to save case ${patientCase.id} to Firestore:`, err);
   }

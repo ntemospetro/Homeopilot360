@@ -13,6 +13,7 @@ import { Therapist } from '../types';
 import { 
   authenticateTherapist 
 } from '../services/storage';
+import { FirebaseAuthService } from '../services/firebaseAuthService';
 import { useTranslation } from '../i18n/LanguageContext';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 
@@ -33,7 +34,7 @@ export const TherapistLogin: React.FC<TherapistLoginProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -47,10 +48,12 @@ export const TherapistLogin: React.FC<TherapistLoginProps> = ({
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
       const result = authenticateTherapist(cleanEmail, cleanPassword);
 
       if (result.success && result.therapist) {
+        // Authenticate / Provision in Firebase Auth asynchronously
+        await FirebaseAuthService.authenticateTherapist(result.therapist, cleanPassword);
         setIsLoading(false);
         onLoginSuccess(result.therapist);
       } else {
@@ -61,7 +64,10 @@ export const TherapistLogin: React.FC<TherapistLoginProps> = ({
           setError(t('therapistLoginErrInvalid'));
         }
       }
-    }, 300);
+    } catch {
+      setIsLoading(false);
+      setError(t('therapistLoginErrInvalid'));
+    }
   };
 
   const handleSelectDemoTherapist = (th: Therapist) => {

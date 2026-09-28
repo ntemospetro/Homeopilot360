@@ -311,6 +311,13 @@ export interface OrganonAiAnalysisResult {
   scoring_adequacy: OrganonScoringAdequacy;
   complaint_matrices: OrganonComplaintMatrix[];
   complaint_relations: OrganonComplaintRelation[];
+  timing?: {
+    geminiDurationMs?: number;
+    openaiDurationMs?: number;
+    fasterEngine?: string;
+    selectedEngine?: string;
+    durationMs?: number;
+  };
 }
 
 export function createLocalFallbackAnalysis(rawText: string): OrganonAiAnalysisResult {
@@ -728,6 +735,13 @@ export interface OrganonCompareResult {
   engine: string;
   gemini: OrganonAiAnalysisResult;
   openai: OrganonAiAnalysisResult;
+  timing?: {
+    geminiDurationMs?: number;
+    openaiDurationMs?: number;
+    fasterEngine?: string;
+    selectedEngine?: string;
+    durationMs?: number;
+  };
   errors?: { gemini?: string; openai?: string };
 }
 
@@ -825,7 +839,8 @@ export async function analyzeOrganonText(
               engine: 'compare',
               gemini: normalizeOrganonAnalysisResult(resultData.gemini, rawText),
               openai: normalizeOrganonAnalysisResult(resultData.openai, rawText),
-              errors: resultData.errors
+              errors: resultData.errors,
+              timing: resultData.timing
             };
             if (resultData.arbitrator_result) {
               cmpRes.arbitrator_result = resultData.arbitrator_result;
@@ -834,6 +849,9 @@ export async function analyzeOrganonText(
           }
           const resultObj = resultData.result || resultData;
           const normalized = normalizeOrganonAnalysisResult(resultObj, rawText);
+          if (resultData.timing || resultObj.timing) {
+            normalized.timing = resultData.timing || resultObj.timing;
+          }
           if (resultData.arbitrator_result) {
             (normalized as any).arbitrator_result = resultData.arbitrator_result;
           }
@@ -850,7 +868,8 @@ export async function analyzeOrganonText(
           engine: 'compare',
           gemini: normalizeOrganonAnalysisResult(data.gemini, rawText),
           openai: normalizeOrganonAnalysisResult(data.openai, rawText),
-          errors: data.errors
+          errors: data.errors,
+          timing: data.timing
         };
         if (data.arbitrator_result) {
           cmpRes.arbitrator_result = data.arbitrator_result;
@@ -859,6 +878,9 @@ export async function analyzeOrganonText(
       }
       const resultObj = data.result || data;
       const normalized = normalizeOrganonAnalysisResult(resultObj, rawText);
+      if (data.timing || resultObj.timing) {
+        normalized.timing = data.timing || resultObj.timing;
+      }
       if (data.arbitrator_result) {
         (normalized as any).arbitrator_result = data.arbitrator_result;
       }

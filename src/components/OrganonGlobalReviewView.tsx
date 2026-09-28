@@ -28,6 +28,7 @@ import {
   OrganonOpenIssueType
 } from '../types/organonGlobalReview';
 import { runOrganonGlobalReview, processClarificationResponse } from '../services/organonGlobalReviewService';
+import { VoiceInputButton } from './VoiceInputButton';
 
 export interface OrganonGlobalReviewViewProps {
   rawText: string;
@@ -375,14 +376,24 @@ export const OrganonGlobalReviewView: React.FC<OrganonGlobalReviewViewProps> = (
 
           {/* Input & Action Area */}
           <div className="space-y-3">
-            <textarea
-              id="organon-clarification-input"
-              rows={3}
-              value={clarificationInput}
-              onChange={(e) => setClarificationInput(e.target.value)}
-              placeholder={t('stage2ClarificationInputPlaceholder')}
-              className="w-full p-3.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 resize-none leading-relaxed"
-            />
+            <div className="relative">
+              <textarea
+                id="organon-clarification-input"
+                rows={3}
+                value={clarificationInput}
+                onChange={(e) => setClarificationInput(e.target.value)}
+                placeholder={t('stage2ClarificationInputPlaceholder')}
+                className="w-full p-3.5 pr-12 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 resize-none leading-relaxed"
+              />
+              <div className="absolute top-2 right-2">
+                <VoiceInputButton
+                  value={clarificationInput}
+                  onChange={(newVal) => setClarificationInput(newVal)}
+                  context="question_answer"
+                  size="xs"
+                />
+              </div>
+            </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
               <div className="flex items-center gap-2">

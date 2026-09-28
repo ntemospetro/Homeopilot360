@@ -1,6 +1,6 @@
 import { LanguageCode } from '../types';
 import { RepertoriumSymptomInput, normalizeQuery } from './boerickeRepertoryService';
-import { getLocalizedRemedies } from '../data/materiaMedicaData';
+import { getLocalizedRemedies, LocalizedRemedy } from '../data/materiaMedicaData';
 
 export interface AnamnesisDialogueStep {
   id: string;
@@ -29,7 +29,7 @@ export type AdaptiveInvestigationQuestion = AdaptiveQuestionRecommendation;
 /**
  * Parses an initial spontaneous patient statement and extracts initial cues
  */
-export function extractCuesFromInitialComplaint(complaint: string): {
+export function extractCuesFromInitialComplaint(complaint: string, lang: LanguageCode = 'de'): {
   chiefComplaint: string;
   location?: string;
   sensation?: string;
@@ -48,57 +48,64 @@ export function extractCuesFromInitialComplaint(complaint: string): {
   let causaTemporal = '';
 
   // Extract location cues strictly as stated
-  if (lower.includes('linker oberbauch') || (lower.includes('links') && lower.includes('oberbauch'))) {
-    location = 'Linker Oberbauch';
-  } else if (lower.includes('rechter oberbauch') || (lower.includes('rechts') && lower.includes('oberbauch'))) {
-    location = 'Rechter Oberbauch';
-  } else if (lower.includes('oberbauch')) {
-    location = 'Oberbauch';
-  } else if (lower.includes('magen') && !lower.includes('darm')) {
-    location = 'Magen';
+  const isLeft = lower.includes('links') || lower.includes('left') || lower.includes('gauche') || lower.includes('izquierd') || lower.includes('sinistra') || lower.includes('αριστερ') || lower.includes('лев');
+  const isRight = lower.includes('rechts') || lower.includes('right') || lower.includes('droit') || lower.includes('derech') || lower.includes('destra') || lower.includes('δεξιά') || lower.includes('прав');
+  const isUpper = lower.includes('ober') || lower.includes('upper') || lower.includes('supérieur') || lower.includes('superior') || lower.includes('superiore') || lower.includes('άνω') || lower.includes('верх');
+  const isAbdomen = lower.includes('bauch') || lower.includes('abdomen') || lower.includes('ventre') || lower.includes('addome') || lower.includes('κοιλ') || lower.includes('живот');
+
+  if (isLeft && isUpper && isAbdomen) {
+    location = lang === 'de' ? 'Linker Oberbauch' : lang === 'en' ? 'Left upper abdomen' : lang === 'el' ? 'Αριστερό άνω μέρος της κοιλιάς' : 'Left upper abdomen';
+  } else if (isRight && isUpper && isAbdomen) {
+    location = lang === 'de' ? 'Rechter Oberbauch' : lang === 'en' ? 'Right upper abdomen' : lang === 'el' ? 'Δεξιό άνω μέρος της κοιλιάς' : 'Right upper abdomen';
+  } else if (isUpper && isAbdomen) {
+    location = lang === 'de' ? 'Oberbauch' : lang === 'en' ? 'Upper abdomen' : lang === 'el' ? 'Άνω κοιλία' : 'Upper abdomen';
+  } else if (lower.includes('magen') || lower.includes('stomach') || lower.includes('estomac') || lower.includes('stomaco') || lower.includes('στομάχ') || lower.includes('желуд')) {
+    if (!lower.includes('darm') && !lower.includes('bowel') && !lower.includes('intestin')) {
+      location = lang === 'de' ? 'Magen' : lang === 'en' ? 'Stomach' : lang === 'el' ? 'Στομάχι' : 'Stomach';
+    }
   } else {
-    if (lower.includes('rechts')) location += 'rechts ';
-    if (lower.includes('links')) location += 'links ';
-    if (lower.includes('schläfe')) location += 'Schläfe ';
-    if (lower.includes('stirn')) location += 'Stirn ';
-    if (lower.includes('hinterkopf') || lower.includes('nacken')) location += 'Hinterkopf / Nacken ';
-    if (lower.includes('scheitel')) location += 'Scheitel ';
-    if (lower.includes('auge') || lower.includes('augen')) location += 'Augen ';
+    if (isRight) location += (lang === 'de' ? 'rechts ' : 'right ');
+    if (isLeft) location += (lang === 'de' ? 'links ' : 'left ');
+    if (lower.includes('schläfe') || lower.includes('temple') || lower.includes('κρόταφ') || lower.includes('висок')) location += 'Schläfe ';
+    if (lower.includes('stirn') || lower.includes('forehead') || lower.includes('μέτωπ') || lower.includes('лоб')) location += 'Stirn ';
+    if (lower.includes('hinterkopf') || lower.includes('nacken') || lower.includes('αυχέν') || lower.includes('шея')) location += 'Hinterkopf / Nacken ';
+    if (lower.includes('scheitel') || lower.includes('vertex') || lower.includes('κορυφή')) location += 'Scheitel ';
+    if (lower.includes('auge') || lower.includes('eye') || lower.includes('μάτι')) location += 'Augen ';
     if (lower.includes('unterbauch')) location += 'Unterbauch ';
-    if (lower.includes('kreuz') || lower.includes('lende')) location += 'Lendenwirbelsäule / Kreuz ';
+    if (lower.includes('kreuz') || lower.includes('lende') || lower.includes('back')) location += 'Lendenwirbelsäule / Kreuz ';
   }
 
   // Extract sensation cues
-  if (lower.includes('berst') || lower.includes('platz') || lower.includes('zerspreng')) sensation += 'Berstend / wie platzend ';
-  if (lower.includes('poch') || lower.includes('pulsier')) sensation += 'pochend / pulsierend ';
-  if (lower.includes('stech')) sensation += 'stechend ';
-  if (lower.includes('drück') || lower.includes('druck')) sensation += 'drückend ';
-  if (lower.includes('brenn')) sensation += 'brennend ';
-  if (lower.includes('krampf')) sensation += 'krampfartig ';
-  if (lower.includes('dumpf')) sensation += 'dumpf ';
-  if (lower.includes('reiß')) sensation += 'reißend ';
-  if (lower.includes('zerschlag')) sensation += 'zerschlagen ';
+  if (lower.includes('berst') || lower.includes('platz') || lower.includes('zerspreng') || lower.includes('burst') || lower.includes('éclat') || lower.includes('estall') || lower.includes('scoppi') || lower.includes('διαρρηκ') || lower.includes('разрыв')) sensation += 'Berstend / wie platzend ';
+  if (lower.includes('poch') || lower.includes('pulsier') || lower.includes('throb') || lower.includes('pulsat') || lower.includes('bat') || lower.includes('palpit') || lower.includes('παλμ') || lower.includes('пульс')) sensation += 'pochend / pulsierend ';
+  if (lower.includes('stech') || lower.includes('stitch') || lower.includes('piqu') || lower.includes('punz') || lower.includes('pung') || lower.includes('οξύ') || lower.includes('кол')) sensation += 'stechend ';
+  if (lower.includes('drück') || lower.includes('druck') || lower.includes('press') || lower.includes('oppres') || lower.includes('πιεσ') || lower.includes('дав')) sensation += 'drückend ';
+  if (lower.includes('brenn') || lower.includes('burn') || lower.includes('brûl') || lower.includes('ard') || lower.includes('bruc') || lower.includes('καυσ') || lower.includes('жж')) sensation += 'brennend ';
+  if (lower.includes('krampf') || lower.includes('cramp') || lower.includes('spasm') || lower.includes('contrac') || lower.includes('σπασμ') || lower.includes('судорог')) sensation += 'krampfartig ';
+  if (lower.includes('dumpf') || lower.includes('dull') || lower.includes('sourd') || lower.includes('sordo') || lower.includes('βαθύ') || lower.includes('туп')) sensation += 'dumpf ';
+  if (lower.includes('reiß') || lower.includes('tear') || lower.includes('déchir') || lower.includes('desgarr') || lower.includes('strapp') || lower.includes('διαξιφισ') || lower.includes('рв')) sensation += 'reißend ';
+  if (lower.includes('zerschlag') || lower.includes('bruis') || lower.includes('courbat') || lower.includes('magull') || lower.includes('indolenz') || lower.includes('μώλωπ') || lower.includes('разбит')) sensation += 'zerschlagen ';
 
   // Extract modality cues
-  if (lower.includes('bewegung')) modalities += 'bei Bewegung ';
-  if (lower.includes('ruhe')) modalities += 'in Ruhe ';
-  if (lower.includes('frische luft') || lower.includes('lüften') || lower.includes('open air')) modalities += 'Frische Luft / Lüften ';
-  if (lower.includes('kälte') || lower.includes('zugluft')) modalities += 'bei Kälte / Zugluft ';
-  if (lower.includes('wärme')) modalities += 'bei Wärme ';
-  if (lower.includes('bücken')) modalities += 'beim Bücken ';
-  if (lower.includes('nacht') || lower.includes('abends')) modalities += 'nachts / abends ';
-  if (lower.includes('morgen')) modalities += 'morgens ';
+  if (lower.includes('bewegung') || lower.includes('motion') || lower.includes('mouvement') || lower.includes('movim') || lower.includes('κίνηση') || lower.includes('движ')) modalities += 'bei Bewegung ';
+  if (lower.includes('ruhe') || lower.includes('rest') || lower.includes('repos') || lower.includes('reposo') || lower.includes('riposo') || lower.includes('ηρεμία') || lower.includes('покой')) modalities += 'in Ruhe ';
+  if (lower.includes('frische luft') || lower.includes('fresh air') || lower.includes('air frais') || lower.includes('aire libre') || lower.includes('aria fresca') || lower.includes('καθαρός αέρας') || lower.includes('свежий воздух')) modalities += 'Frische Luft / Lüften ';
+  if (lower.includes('kälte') || lower.includes('cold') || lower.includes('froid') || lower.includes('frío') || lower.includes('freddo') || lower.includes('κρύο') || lower.includes('холод')) modalities += 'bei Kälte / Zugluft ';
+  if (lower.includes('wärme') || lower.includes('warm') || lower.includes('chaleur') || lower.includes('calor') || lower.includes('calore') || lower.includes('ζέστη') || lower.includes('тепло')) modalities += 'bei Wärme ';
+  if (lower.includes('bücken') || lower.includes('stoop') || lower.includes('se baisser') || lower.includes('agach') || lower.includes('chin') || lower.includes('σκύψ') || lower.includes('накλον')) modalities += 'beim Bücken ';
+  if (lower.includes('nacht') || lower.includes('night') || lower.includes('nuit') || lower.includes('noche') || lower.includes('notte') || lower.includes('νύχτα') || lower.includes('ночь')) modalities += 'nachts ';
+  if (lower.includes('morgen') || lower.includes('morning') || lower.includes('matin') || lower.includes('mañana') || lower.includes('mattina') || lower.includes('πρωί') || lower.includes('утро')) modalities += 'morgens ';
 
   // Extract temporal & causa cues
-  if (lower.includes('seit gestern')) causaTemporal = 'seit gestern';
-  if (lower.includes('heute früh') || lower.includes('heute morgen')) causaTemporal = 'heute früh';
-  if (lower.includes('nach feier') || lower.includes('alkohol') || lower.includes('bier') || lower.includes('wein') || lower.includes('tabak') || lower.includes('rauch')) {
+  if (lower.includes('seit gestern') || lower.includes('since yesterday')) causaTemporal = 'seit gestern';
+  if (lower.includes('heute früh') || lower.includes('this morning')) causaTemporal = 'heute früh';
+  if (lower.includes('alkohol') || lower.includes('alcohol') || lower.includes('beer') || lower.includes('wine') || lower.includes('tabak') || lower.includes('smoke')) {
     causaEvent = 'Alkohol / Feier / Tabak';
-  } else if (lower.includes('zugluft') || lower.includes('durchnässt') || lower.includes('kaltes wetter')) {
+  } else if (lower.includes('zugluft') || lower.includes('draft') || lower.includes('courant d\'air') || lower.includes('corriente')) {
     causaEvent = 'Kälteeinwirkung / Zugluft';
-  } else if (lower.includes('ärger') || lower.includes('streit') || lower.includes('aufregung')) {
+  } else if (lower.includes('ärger') || lower.includes('anger') || lower.includes('colère') || lower.includes('ira') || lower.includes('rabbia') || lower.includes('θυμός') || lower.includes('гнев')) {
     causaEvent = 'Ärger / Emotionale Erregung';
-  } else if (lower.includes('schlafmangel') || lower.includes('übermüdung') || lower.includes('stress')) {
+  } else if (lower.includes('schlafmangel') || lower.includes('sleep depriv') || lower.includes('stress')) {
     causaEvent = 'Schlafmangel / Geistige Überarbeitung';
   }
 

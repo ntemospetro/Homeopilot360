@@ -19,6 +19,7 @@ import {
   LocalizedRemedy
 } from '../data/materiaMedicaData';
 import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
+import { VoiceInputButton } from './VoiceInputButton';
 import {
   RemedyMonographModal,
   resolveDifferentialRemedy
@@ -473,9 +474,17 @@ export const TherapyRecommendationsView: React.FC<TherapyRecommendationsViewProp
 
         {/* Doctor Notes / Individual Advice */}
         <div className="space-y-1.5 pt-1">
-          <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-            {t('doctorNotesLabel')}
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+              {t('doctorNotesLabel')}
+            </label>
+            <VoiceInputButton
+              value={recommendations.doctorConsultationNotes}
+              onChange={(newVal) => setRecommendations(prev => ({ ...prev, doctorConsultationNotes: newVal }))}
+              size="xs"
+              context="general"
+            />
+          </div>
           <textarea
             rows={2}
             value={recommendations.doctorConsultationNotes}
@@ -847,11 +856,19 @@ export const TherapyRecommendationsView: React.FC<TherapyRecommendationsViewProp
 
       {/* SECTION 4: ALLGEMEINE HINWEISE & VERORDNUNGSNOTIZEN */}
       <section className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 space-y-3">
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-teal-700" />
-          <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-            {t('generalTherapyNotesLabel')}
-          </h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-teal-700" />
+            <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+              {t('generalTherapyNotesLabel')}
+            </h3>
+          </div>
+          <VoiceInputButton
+            value={recommendations.generalTherapyNotes || ''}
+            onChange={(newVal) => setRecommendations(prev => ({ ...prev, generalTherapyNotes: newVal }))}
+            size="xs"
+            context="general"
+          />
         </div>
         <textarea
           rows={3}

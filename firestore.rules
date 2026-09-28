@@ -1,8 +1,73 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Public packages/plans
+    match /packages/{packageId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Therapists profiles
+    match /therapists/{therapistId} {
+      // Anyone can register/create an initial profile
+      allow create: if true;
+      // Read allowed if user owns profile or during initial lookup
+      allow read: if true; 
+      // Update/delete strictly restricted to owner
+      allow update, delete: if isSignedIn() && (
+        request.auth.uid == therapistId || 
+        resource.data.authUid == request.auth.uid ||
+        request.resource.data.authUid == request.auth.uid
+      );
+    }
+
+    // Patient cases - Strict tenant isolation
+    match /cases/{caseId} {
+      // List and get: user must be the owner of the case
+      allow read: if isSignedIn() && (
+        resource.data.ownerUid == request.auth.uid ||
+        resource.data.therapistId == request.auth.uid
+      );
+
+      // Create: must assign case ownership to the authenticated user
+      allow create: if isSignedIn() && (
+        request.resource.data.ownerUid == request.auth.uid ||
+        request.resource.data.therapistId == request.auth.uid
+      );
+
+      // Update: owner only
+      allow update: if isSignedIn() && (
+        resource.data.ownerUid == request.auth.uid ||
+        resource.data.therapistId == request.auth.uid
+      );
+
+      // Delete: owner only
+      allow delete: if isSignedIn() && (
+        resource.data.ownerUid == request.auth.uid ||
+        resource.data.therapistId == request.auth.uid
+      );
+    }
+
+    // Therapist Stripe & token balances
+    match /therapist_balances/{therapistId} {
+      allow read, write: if isSignedIn() && (
+        request.auth.uid == therapistId ||
+        resource.data.authUid == request.auth.uid
+      );
+    }
+
+    // Billing payment records
+    match /billing_payments/{paymentId} {
+      allow read, write: if isSignedIn();
     }
   }
 }

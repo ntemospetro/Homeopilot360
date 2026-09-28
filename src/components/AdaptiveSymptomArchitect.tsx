@@ -115,7 +115,7 @@ export const AdaptiveSymptomArchitect: React.FC<AdaptiveSymptomArchitectProps> =
     }
 
     const chosenPrimary = selectedPrimaryComplaint || text;
-    const cues = extractCuesFromInitialComplaint(chosenPrimary);
+    const cues = extractCuesFromInitialComplaint(chosenPrimary, language);
 
     let initialConcomitants = cues.concomitants || symptom.concomitants || '';
     if (selectedPrimaryComplaint && chiefAnalysis.hasMultipleComplaints) {

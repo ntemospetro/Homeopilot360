@@ -343,22 +343,7 @@ aconitum-napellus,Aconitum napellus,Eisenhut (Updated),Updated essence from impo
                 />
               </div>
 
-              {/* Author filter */}
-              <div>
-                <select
-                  value={authorFilter}
-                  onChange={e => setAuthorFilter(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="all">Alle Autoren / Quellen</option>
-                  <option value="hahnemann">Hahnemann</option>
-                  <option value="kent">Kent</option>
-                  <option value="hering">Hering</option>
-                  <option value="boericke">Boericke</option>
-                  <option value="boger">Boger</option>
-                  <option value="allen">Allen</option>
-                </select>
-              </div>
+
 
               {/* Category filter */}
               <div>
@@ -442,7 +427,7 @@ aconitum-napellus,Aconitum napellus,Eisenhut (Updated),Updated essence from impo
                   <th className="p-3">Remedy ID / Latein</th>
                   <th className="p-3">Deutscher Name</th>
                   <th className="p-3">Kategorie / Tier</th>
-                  <th className="p-3">Klassische Autoren</th>
+
                   <th className="p-3">Sprachen-Status</th>
                   <th className="p-3">Aktion</th>
                 </tr>
@@ -470,19 +455,7 @@ aconitum-napellus,Aconitum napellus,Eisenhut (Updated),Updated essence from impo
                           </span>
                         </div>
                       </td>
-                      <td className="p-3">
-                        <div className="flex flex-wrap gap-1">
-                          {activeAuthorsList.length > 0 ? (
-                            activeAuthorsList.map(aut => (
-                              <span key={aut} className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-50 text-indigo-700 font-semibold">
-                                {aut}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-slate-400 italic">Standard</span>
-                          )}
-                        </div>
-                      </td>
+
                       <td className="p-3">
                         <div className="flex items-center gap-1">
                           {(['de', 'en', 'es', 'fr', 'el', 'it', 'ru'] as LanguageCode[]).map(lang => {

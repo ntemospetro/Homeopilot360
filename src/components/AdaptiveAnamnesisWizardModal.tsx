@@ -371,7 +371,7 @@ export const AdaptiveAnamnesisWizardModal: React.FC<AdaptiveAnamnesisWizardModal
     }
 
     const chosenPrimary = selectedPrimaryComplaint || step0Input.trim();
-    const cues = extractCuesFromInitialComplaint(chosenPrimary);
+    const cues = extractCuesFromInitialComplaint(chosenPrimary, language);
 
     let initialConcomitants = draft.concomitants || cues.concomitants || '';
     if (selectedPrimaryComplaint && step0Analysis.hasMultipleComplaints) {

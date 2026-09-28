@@ -9,6 +9,7 @@ import {
   cloudSavePackagePlan,
   cloudDeletePackagePlan
 } from './cloudSyncService';
+import { saveCasesToIndexedDB, loadCasesFromIndexedDB, saveItemToIndexedDB } from './indexedDbStorage';
 
 export const DEFAULT_ADMIN_CREDENTIALS: AdminCredentials = {
   email: 'p.stogian@yahoo.com',
@@ -57,36 +58,206 @@ export const STORAGE_KEYS = {
 };
 
 /**
+ * Emergency storage cleanup to recover quota in localStorage.
+ * Frees non-essential caches, PDF archives, and temporary items.
+ */
+function emergencyEvictNonEssentialStorage(): void {
+  try {
+    // 1. Evict or minimize TERMS_PDF_ARCHIVE (preserve in IndexedDB if possible)
+    try {
+      const rawArchive = localStorage.getItem(STORAGE_KEYS.TERMS_PDF_ARCHIVE);
+      if (rawArchive) {
+        try {
+          const parsed = JSON.parse(rawArchive);
+          saveItemToIndexedDB(STORAGE_KEYS.TERMS_PDF_ARCHIVE, parsed);
+        } catch {}
+        localStorage.removeItem(STORAGE_KEYS.TERMS_PDF_ARCHIVE);
+      }
+    } catch {}
+
+    // 2. Remove translation cache (reconstructed on demand)
+    try {
+      localStorage.removeItem('homoeo_translation_client_cache');
+    } catch {}
+
+    // 3. Prune recent edited patients to latest 3
+    try {
+      const recent = localStorage.getItem(STORAGE_KEYS.RECENT_EDITED_PATIENTS);
+      if (recent) {
+        const parsed = JSON.parse(recent);
+        if (Array.isArray(parsed) && parsed.length > 3) {
+          try {
+            localStorage.setItem(STORAGE_KEYS.RECENT_EDITED_PATIENTS, JSON.stringify(parsed.slice(0, 3)));
+          } catch {
+            localStorage.removeItem(STORAGE_KEYS.RECENT_EDITED_PATIENTS);
+          }
+        }
+      }
+    } catch {}
+
+    // 4. Prune repertory datasets raw_items if any
+    try {
+      const rawRepertory = localStorage.getItem('homoeo_repertory_datasets');
+      if (rawRepertory) {
+        const rep = JSON.parse(rawRepertory);
+        if (rep && Array.isArray(rep.datasets)) {
+          let modified = false;
+          rep.datasets.forEach((ds: any) => {
+            if (ds.raw_items && ds.raw_items.length > 0) {
+              ds.raw_items = [];
+              modified = true;
+            }
+          });
+          if (modified) {
+            try {
+              localStorage.setItem('homoeo_repertory_datasets', JSON.stringify(rep));
+            } catch {
+              localStorage.removeItem('homoeo_repertory_datasets');
+            }
+          }
+        }
+      }
+    } catch {}
+  } catch (e) {
+    console.warn('[Storage] Emergency cleanup notice:', e);
+  }
+}
+
+/**
+ * Proactively verifies storage availability on app startup.
+ * Automatically clears bloated caches if the browser is nearing or past quota.
+ */
+export function initStorageHealthCheck(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const probeKey = '__homoeo_quota_probe__';
+    localStorage.setItem(probeKey, '1');
+    localStorage.removeItem(probeKey);
+  } catch {
+    console.warn('[Storage] Startup probe: localStorage quota exhausted. Evicting non-critical caches.');
+    emergencyEvictNonEssentialStorage();
+  }
+
+  // Pre-emptively migrate any large TERMS_PDF_ARCHIVE to IndexedDB
+  try {
+    const rawArchive = localStorage.getItem(STORAGE_KEYS.TERMS_PDF_ARCHIVE);
+    if (rawArchive && rawArchive.length > 40000) {
+      try {
+        const parsed = JSON.parse(rawArchive);
+        saveItemToIndexedDB(STORAGE_KEYS.TERMS_PDF_ARCHIVE, parsed);
+      } catch {}
+      localStorage.removeItem(STORAGE_KEYS.TERMS_PDF_ARCHIVE);
+    }
+  } catch {}
+}
+
+/**
+ * Creates a compacted representation of PatientCases for localStorage quota constraints.
+ * Retains complete data for the top 15 recent cases, and core metadata for older cases.
+ * Full data is safely preserved in memory and in IndexedDB.
+ */
+export function compactCasesForLocalStorage(cases: PatientCase[]): PatientCase[] {
+  if (!Array.isArray(cases)) return cases;
+  
+  const sorted = [...cases].sort((a, b) => {
+    const timeA = new Date(a.updatedAt || a.anamneseDatum || 0).getTime();
+    const timeB = new Date(b.updatedAt || b.anamneseDatum || 0).getTime();
+    return timeB - timeA;
+  });
+
+  return sorted.slice(0, 30).map((c, index) => {
+    if (index < 12) {
+      return {
+        ...c,
+        medikamenteList: c.medikamenteList?.map(m => ({
+          name: m.name,
+          dosierung: m.dosierung,
+          einnahmeart: m.einnahmeart,
+          grund: m.grund,
+          wirkstoff: m.wirkstoff,
+          kategorie: m.kategorie,
+        }))
+      };
+    }
+    const {
+      clinicalAnalysis,
+      anamnesisQuestions,
+      extendedAnamnesis,
+      ...core
+    } = c;
+
+    return {
+      ...core,
+      clinicalAnalysis: clinicalAnalysis ? {
+        arztfallEntscheidung: clinicalAnalysis.arztfallEntscheidung,
+        gesamtAuswertung: clinicalAnalysis.gesamtAuswertung,
+        redFlags: {
+          dringlichkeit: clinicalAnalysis.redFlags?.dringlichkeit || 'Unauffällig',
+          gesamtbewertung: clinicalAnalysis.redFlags?.gesamtbewertung || '',
+        }
+      } as any : undefined,
+    };
+  });
+}
+
+/**
  * Safe wrapper for localStorage.setItem to guard against QuotaExceededError.
- * In case of storage quota exhaustion, prunes older PDF archives to recover space
- * and dispatches a warning event if storage remains critical.
+ * In case of storage quota exhaustion, performs multi-stage eviction of non-essential caches
+ * and applies compaction for patient cases without losing data in memory or IndexedDB.
  */
 export function safeLocalStorageSetItem(key: string, value: string): boolean {
   try {
     localStorage.setItem(key, value);
     return true;
   } catch (err: any) {
-    console.warn(`[Storage] Storage quota or write issue for key "${key}":`, err);
-    if (err && (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014)) {
+    const isQuotaError = err && (
+      err.name === 'QuotaExceededError' ||
+      err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      err.code === 22 ||
+      err.code === 1014 ||
+      String(err?.message || '').toLowerCase().includes('quota') ||
+      String(err?.message || '').toLowerCase().includes('exceeded')
+    );
+
+    if (isQuotaError) {
+      // Stage 1: Clean non-critical caches
+      emergencyEvictNonEssentialStorage();
+
+      // Stage 2: Retry saving
       try {
-        // Attempt emergency cleanup of heavy non-critical PDF archives
-        const rawArchive = localStorage.getItem(STORAGE_KEYS.TERMS_PDF_ARCHIVE);
-        if (rawArchive) {
-          const parsed = JSON.parse(rawArchive);
-          if (Array.isArray(parsed) && parsed.length > 2) {
-            localStorage.setItem(STORAGE_KEYS.TERMS_PDF_ARCHIVE, JSON.stringify(parsed.slice(0, 2)));
-          }
-        }
         localStorage.setItem(key, value);
         return true;
-      } catch (retryErr) {
-        console.error(`[Storage] Fatal quota error while saving "${key}":`, retryErr);
+      } catch (retryErr: any) {
+        // Stage 3: If it's CASES that failed, save compacted snapshot with progressive limits
+        if (key === STORAGE_KEYS.CASES) {
+          try {
+            const parsedCases = JSON.parse(value);
+            if (Array.isArray(parsedCases)) {
+              for (const limit of [20, 10, 5, 2, 1]) {
+                try {
+                  const compacted = compactCasesForLocalStorage(parsedCases).slice(0, limit);
+                  localStorage.setItem(key, JSON.stringify(compacted));
+                  console.info(`[Storage] Saved ${limit} cases snapshot to localStorage. Complete data (${parsedCases.length} cases) preserved in RAM and IndexedDB.`);
+                  return true;
+                } catch {
+                  // Retry with smaller slice
+                }
+              }
+            }
+          } catch (compactErr) {
+            console.warn('[Storage] Compaction failed for cases key:', compactErr);
+          }
+        }
+
+        console.warn(`[Storage] Storage quota limit reached while writing "${key}". Non-critical caches were purged.`);
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('homoeo_storage_quota_exceeded', { detail: { key } }));
         }
         return false;
       }
     }
+
+    console.warn(`[Storage] Storage write error for key "${key}":`, err);
     return false;
   }
 }
@@ -1663,28 +1834,86 @@ export function recordPatientEdited(patientName: string): void {
   }
 }
 
+// In-memory cases cache & IndexedDB hydration state
+let memoryCasesCache: PatientCase[] | null = null;
+let isIndexedDbHydrated = false;
+
+/**
+ * Hydrates full patient cases from IndexedDB into memory if available.
+ */
+export function hydrateCasesFromIndexedDB(): void {
+  if (isIndexedDbHydrated || typeof window === 'undefined') return;
+  loadCasesFromIndexedDB().then((idbCases) => {
+    isIndexedDbHydrated = true;
+    if (idbCases && idbCases.length > 0) {
+      if (!memoryCasesCache || idbCases.length >= memoryCasesCache.length) {
+        memoryCasesCache = idbCases;
+        window.dispatchEvent(new Event('homoeo_cases_updated'));
+      }
+    }
+  }).catch(() => {
+    isIndexedDbHydrated = true;
+  });
+}
+
+/**
+ * Safely saves all patient cases:
+ * 1. Immediately updates the in-memory cache for zero UI lag.
+ * 2. Asynchronously persists full fidelity records to IndexedDB (no 5MB quota limit).
+ * 3. Persists to localStorage (with automatic eviction & compaction fallback if quota reached).
+ */
+export function saveAllPatientCases(allCases: PatientCase[]): boolean {
+  memoryCasesCache = allCases;
+  saveCasesToIndexedDB(allCases).catch(err => {
+    console.warn('[Storage] IndexedDB cases save notice:', err);
+  });
+  return safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(allCases));
+}
+
 export function getPatientCases(therapistId?: string): PatientCase[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.CASES);
-    let list: PatientCase[] = raw ? JSON.parse(raw) : INITIAL_CASES;
-    if (!raw) {
-      safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(INITIAL_CASES));
+  let list: PatientCase[];
+  if (memoryCasesCache && memoryCasesCache.length > 0) {
+    list = memoryCasesCache;
+  } else {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.CASES);
+      list = raw ? JSON.parse(raw) : INITIAL_CASES;
+      if (!raw) {
+        saveAllPatientCases(INITIAL_CASES);
+      }
+    } catch {
+      list = INITIAL_CASES;
     }
-    if (therapistId) {
-      list = list.filter(c => c.therapistId === therapistId);
-    }
-    return list;
-  } catch {
-    return INITIAL_CASES;
+    memoryCasesCache = list;
+    hydrateCasesFromIndexedDB();
   }
+
+  if (therapistId) {
+    return list.filter(c => c.therapistId === therapistId);
+  }
+  return list;
 }
 
 export function savePatientCase(caseData: Omit<PatientCase, 'id'> & { id?: string }): PatientCase {
   const all = getPatientCases();
   const id = caseData.id || 'case-' + Date.now();
+  
+  // Resolve ownerUid: preserve existing or derive from active therapist / therapistId
+  let resolvedOwnerUid = caseData.ownerUid;
+  if (!resolvedOwnerUid) {
+    const active = getActiveTherapist();
+    if (active && (!caseData.therapistId || caseData.therapistId === active.id)) {
+      resolvedOwnerUid = active.authUid || active.id;
+    } else if (caseData.therapistId) {
+      const match = getTherapists().find(t => t.id === caseData.therapistId);
+      resolvedOwnerUid = match?.authUid || match?.id || caseData.therapistId;
+    }
+  }
+
   const newOrUpdated: PatientCase = {
     ...caseData,
     id,
+    ownerUid: resolvedOwnerUid,
     updatedAt: caseData.updatedAt || new Date().toISOString(),
   };
   
@@ -1695,7 +1924,7 @@ export function savePatientCase(caseData: Omit<PatientCase, 'id'> & { id?: strin
     all.unshift(newOrUpdated);
   }
   
-  safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(all));
+  saveAllPatientCases(all);
   if (newOrUpdated.patientName) {
     recordPatientEdited(newOrUpdated.patientName);
   }
@@ -1706,7 +1935,7 @@ export function savePatientCase(caseData: Omit<PatientCase, 'id'> & { id?: strin
 
 export function deletePatientCase(caseId: string): void {
   const all = getPatientCases().filter(c => c.id !== caseId);
-  safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(all));
+  saveAllPatientCases(all);
   cloudDeleteCase(caseId);
   window.dispatchEvent(new Event('homoeo_cases_updated'));
 }
@@ -1724,7 +1953,7 @@ export function deletePatientAndAllCases(patientName: string, therapistId?: stri
     if (!isSameTherapist) return true;
     return (c.patientName || '').trim().toLowerCase() !== cleanName;
   });
-  safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(remaining));
+  saveAllPatientCases(remaining);
 
   if (toDeleteIds.length > 0) {
     cloudDeleteCases(toDeleteIds);
@@ -1761,7 +1990,7 @@ export function addFollowUpToCase(caseId: string, followUpData: Omit<FollowUpEnt
     followUps: [newEntry, ...existingFollowUps],
   };
 
-  safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(all));
+  saveAllPatientCases(all);
   if (all[caseIdx].patientName) {
     recordPatientEdited(all[caseIdx].patientName);
   }
@@ -1792,7 +2021,7 @@ export function updateFollowUpInCase(caseId: string, followUpId: string, updates
     followUps: updatedFollowUps,
   };
 
-  safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(all));
+  saveAllPatientCases(all);
   if (currentCase.patientName) {
     recordPatientEdited(currentCase.patientName);
   }
@@ -1814,7 +2043,7 @@ export function deleteFollowUpFromCase(caseId: string, followUpId: string): bool
     followUps: filtered,
   };
 
-  safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(all));
+  saveAllPatientCases(all);
   window.dispatchEvent(new Event('homoeo_cases_updated'));
   return true;
 }
@@ -1832,7 +2061,7 @@ export function updateInitialPrescriptionInCase(caseId: string, prescription: In
     },
   };
 
-  safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(all));
+  saveAllPatientCases(all);
   if (all[caseIdx].patientName) {
     recordPatientEdited(all[caseIdx].patientName);
   }
@@ -1856,7 +2085,7 @@ export function updatePatientStammdatenAcrossCases(therapistId: string, patientN
   });
 
   if (modified) {
-    safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(updatedAll));
+    saveAllPatientCases(updatedAll);
     recordPatientEdited(patientName);
     window.dispatchEvent(new Event('homoeo_cases_updated'));
   }
@@ -1879,7 +2108,7 @@ export function setAdminLoggedIn(loggedIn: boolean): void {
 export function resetAllToSampleData(): void {
   safeLocalStorageSetItem(STORAGE_KEYS.PACKAGES, JSON.stringify(INITIAL_PACKAGE_PLANS));
   safeLocalStorageSetItem(STORAGE_KEYS.THERAPISTS, JSON.stringify(INITIAL_THERAPISTS));
-  safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(INITIAL_CASES));
+  saveAllPatientCases(INITIAL_CASES);
   safeLocalStorageSetItem(STORAGE_KEYS.TERMS, JSON.stringify(DEFAULT_TERMS));
   safeLocalStorageSetItem(STORAGE_KEYS.ACTIVE_THERAPIST, INITIAL_THERAPISTS[0].id);
   safeLocalStorageSetItem(STORAGE_KEYS.ADMIN_CREDENTIALS, JSON.stringify(DEFAULT_ADMIN_CREDENTIALS));

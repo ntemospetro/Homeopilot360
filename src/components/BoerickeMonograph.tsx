@@ -88,7 +88,7 @@ if (loading) {
   return (
     <div className="flex flex-col items-center justify-center py-12 space-y-4">
       <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
-      <p className="text-sm text-slate-500 font-medium">{t('boerickeLoading') || 'Boericke-Daten werden geladen...'}</p>
+      <p className="text-sm text-slate-500 font-medium">{t('boerickeLoading')}</p>
     </div>
   );
 }
@@ -129,7 +129,7 @@ if (error || !monograph) {
           onClick={() => setRetryCount(prev => prev + 1)}
           className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
         >
-          Erneut versuchen
+          {t('kentRetryBtn')}
         </button>
       </div>
     );
@@ -154,7 +154,7 @@ if (error || !monograph) {
         </div>
         <div>
           <h3 className="text-lg font-bold text-slate-900 font-serif">{monograph.title}</h3>
-          <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">William Boericke Pocket Manual</p>
+          <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">{t('boerickeHistoricalManualLabel')}</p>
         </div>
       </div>
 
@@ -189,7 +189,7 @@ if (error || !monograph) {
       </div>
 
       <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-[11px] text-amber-800 leading-relaxed italic">
-        <strong>Hinweis:</strong> William Boericke's Pocket Manual ist ein historisches Werk der klinischen Homöopathie. Die Angaben dienen der Information für qualifizierte Therapeuten.
+        <strong>{t('boerickeNoticeLabel')}:</strong> {t('boerickeHistoricalNotice')}
       </div>
     </div>
   );

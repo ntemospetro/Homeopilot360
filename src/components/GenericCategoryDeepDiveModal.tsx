@@ -41,6 +41,8 @@ interface GenericCategoryDeepDiveModalProps {
   dimensions: Array<{ code: string; title: string; desc: string }>;
   endprueferResult?: any | null;
   hahnemannCrossCheck?: boolean;
+  engine?: 'gemini' | 'openai' | 'both';
+  onEngineChange?: (engine: 'gemini' | 'openai' | 'both') => void;
   onAdopt: (summaryText: string, details?: any) => void;
   onPartialChange?: (currentText: string, details?: any) => void;
   initialDetails?: any;
@@ -53,6 +55,8 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
   dimensions,
   endprueferResult = null,
   hahnemannCrossCheck = false,
+  engine = 'gemini',
+  onEngineChange,
   onAdopt,
   onPartialChange,
   initialDetails
@@ -82,7 +86,7 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
 
   useEffect(() => {
     const detailsStr = JSON.stringify(initialDetails || {});
-    const initKey = `${category}|${rawText}|${stage1Text}|${hahnemannCrossCheck}|${detailsStr}`;
+    const initKey = `${category}|${rawText}|${stage1Text}|${hahnemannCrossCheck}|${engine}|${detailsStr}`;
     if (prevInitKeyRef.current === initKey) return;
     prevInitKeyRef.current = initKey;
     setAnswerInput('');
@@ -90,7 +94,7 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
     setEditingIndex(null);
     setState(null);
     loadInitialState();
-  }, [category, rawText, stage1Text, hahnemannCrossCheck, initialDetails]);
+  }, [category, rawText, stage1Text, hahnemannCrossCheck, engine, initialDetails]);
 
   const loadInitialState = async () => {
     const thisId = ++initRequestIdRef.current;
@@ -108,7 +112,8 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
         dimensions,
         questionHistory: initialHistory,
         knownFacts: initialFacts,
-        language
+        language,
+        engine
       });
       if (thisId !== initRequestIdRef.current) return;
       setState(res);
@@ -159,7 +164,8 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
         questionHistory: nextHistory,
         knownFacts: state.knownFacts,
         latestAnswer: '', // Passing empty latestAnswer ensures the backend respects our nextHistory exactly as constructed
-        language
+        language,
+        engine
       });
       setState(res);
       const currentText = res.summaryText || (res.knownFacts || []).map(f => f.text).join('; ') || stage1Text;
@@ -205,7 +211,8 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
         dimensions,
         questionHistory: state.questionHistory,
         knownFacts: state.knownFacts,
-        language
+        language,
+        engine
       });
       setState(res);
       const currentText = res.summaryText || (res.knownFacts || []).map(f => f.text).join('; ') || stage1Text;
@@ -328,18 +335,64 @@ export const GenericCategoryDeepDiveModal: React.FC<GenericCategoryDeepDiveModal
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {hahnemannCrossCheck ? (
-            <span className="px-3 py-1.5 rounded-xl bg-indigo-950/60 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1.5">
-              <Brain className="w-3.5 h-3.5" />
-              <span>3-Tier Hahnemann</span>
-            </span>
-          ) : (
-            <span className="px-3 py-1.5 rounded-xl bg-teal-950/60 text-teal-300 border border-teal-500/30 text-xs font-semibold flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Gemini-only</span>
-            </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Timing & Benchmark badge */}
+          {state?.timing && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-700/60 text-xs font-mono">
+              {state.timing.selectedEngine === 'both' && state.timing.geminiDurationMs !== undefined && state.timing.openaiDurationMs !== undefined ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-teal-300 font-semibold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Gemini: {(state.timing.geminiDurationMs / 1000).toFixed(2)}s
+                  </span>
+                  <span className="text-slate-500">|</span>
+                  <span className="text-indigo-300 font-semibold flex items-center gap-1">
+                    <Brain className="w-3 h-3" />
+                    GPT-4: {(state.timing.openaiDurationMs / 1000).toFixed(2)}s
+                  </span>
+                  <span className="text-[10px] text-teal-400 font-bold ml-1 bg-teal-500/10 px-1.5 py-0.5 rounded">
+                    🚀 {state.timing.fasterEngine}
+                  </span>
+                </div>
+              ) : state.timing.selectedEngine === 'openai' ? (
+                <span className="text-indigo-300 font-semibold flex items-center gap-1">
+                  <Brain className="w-3.5 h-3.5" />
+                  GPT-4: {((state.timing.openaiDurationMs || state.timing.durationMs || 0) / 1000).toFixed(2)}s
+                </span>
+              ) : (
+                <span className="text-teal-300 font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Gemini Flash: {((state.timing.geminiDurationMs || state.timing.durationMs || 0) / 1000).toFixed(2)}s
+                </span>
+              )}
+            </div>
           )}
+
+          {/* Engine indicator */}
+          <span className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 ${
+            engine === 'both'
+              ? 'bg-gradient-to-r from-teal-950/80 to-indigo-950/80 text-teal-200 border-teal-500/30'
+              : engine === 'openai'
+              ? 'bg-indigo-950/60 text-indigo-300 border border-indigo-500/30'
+              : 'bg-teal-950/60 text-teal-300 border border-teal-500/30'
+          }`}>
+            {engine === 'both' ? (
+              <>
+                <Layers className="w-3.5 h-3.5" />
+                <span>{t('organonStage2EngineBothBadge')}</span>
+              </>
+            ) : engine === 'openai' ? (
+              <>
+                <Brain className="w-3.5 h-3.5" />
+                <span>{t('organonEngineGpt')}</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{t('organonEngineGemini')}</span>
+              </>
+            )}
+          </span>
         </div>
       </div>
 

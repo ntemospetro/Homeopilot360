@@ -22,6 +22,14 @@ export interface CategoryHistoryItem {
   targetDimension?: string;
 }
 
+export interface CategoryDeepenTiming {
+  geminiDurationMs?: number;
+  openaiDurationMs?: number;
+  fasterEngine?: string;
+  selectedEngine?: string;
+  durationMs?: number;
+}
+
 export interface CategoryDeepenState {
   category: string;
   dimensionStatus: Record<string, 'BELEGT' | 'OFFEN' | 'NICHT_ERINNERLICH' | 'VERNEINT'>;
@@ -30,6 +38,56 @@ export interface CategoryDeepenState {
   isFinished: boolean;
   summaryText: string;
   questionHistory: CategoryHistoryItem[];
+  timing?: CategoryDeepenTiming;
+}
+
+// In-memory prefetch and cache store for category deepening
+const initPromises = new Map<string, Promise<CategoryDeepenState>>();
+const initCache = new Map<string, CategoryDeepenState>();
+
+export function getCategoryDeepenCacheKey(params: {
+  category: string;
+  rawText: string;
+  stage1Text?: string;
+  language?: string;
+  engine?: string;
+}): string {
+  const { category, rawText, stage1Text = '', language = 'de', engine = 'gemini' } = params;
+  return `${category}|${engine}|${language}|${rawText.trim()}|${stage1Text.trim()}`;
+}
+
+export function isCategoryDeepenPrefetched(params: {
+  category: string;
+  rawText: string;
+  stage1Text?: string;
+  language?: string;
+  engine?: string;
+}): boolean {
+  const key = getCategoryDeepenCacheKey(params);
+  return initCache.has(key);
+}
+
+export function prefetchCategoryDeepen(
+  params: Parameters<typeof requestCategoryDeepen>[0]
+): Promise<CategoryDeepenState> {
+  const key = getCategoryDeepenCacheKey(params);
+  if (initCache.has(key)) {
+    return Promise.resolve(initCache.get(key)!);
+  }
+  if (!initPromises.has(key)) {
+    const promise = requestCategoryDeepen({ ...params, action: 'init' })
+      .then((res) => {
+        initCache.set(key, res);
+        return res;
+      })
+      .catch((err) => {
+        initPromises.delete(key);
+        initCache.delete(key);
+        throw err;
+      });
+    initPromises.set(key, promise);
+  }
+  return initPromises.get(key)!;
 }
 
 export async function requestCategoryDeepen(params: {
@@ -44,6 +102,7 @@ export async function requestCategoryDeepen(params: {
   latestAnswer?: string;
   language?: string;
   currentQuestion?: CategoryQuestion | null;
+  engine?: 'gemini' | 'openai' | 'both';
 }): Promise<CategoryDeepenState> {
   const {
     action,
@@ -56,8 +115,22 @@ export async function requestCategoryDeepen(params: {
     knownFacts = [],
     latestAnswer = '',
     language = 'de',
-    currentQuestion = null
+    currentQuestion = null,
+    engine = 'gemini'
   } = params;
+
+  const cacheKey = getCategoryDeepenCacheKey({ category, rawText, stage1Text, language, engine });
+
+  if (action === 'init') {
+    if (initCache.has(cacheKey)) {
+      return initCache.get(cacheKey)!;
+    }
+    if (initPromises.has(cacheKey)) {
+      const res = await initPromises.get(cacheKey)!;
+      initCache.set(cacheKey, res);
+      return res;
+    }
+  }
 
   try {
     const res = await fetch('/api/organon/category-deepen', {
@@ -74,21 +147,27 @@ export async function requestCategoryDeepen(params: {
         knownFacts,
         latestAnswer,
         language,
-        currentQuestion
+        currentQuestion,
+        engine
       })
     });
 
     if (res.ok) {
       const data = await res.json();
-      return {
+      const stateResult: CategoryDeepenState = {
         category,
         dimensionStatus: data.dimensionStatus || {},
         knownFacts: data.knownFacts || [],
         nextQuestion: data.nextQuestion || null,
         isFinished: Boolean(data.isFinished),
         summaryText: data.summaryText || stage1Text || '',
-        questionHistory: data.questionHistory || questionHistory
+        questionHistory: data.questionHistory || questionHistory,
+        timing: data.timing
       };
+      if (action === 'init') {
+        initCache.set(cacheKey, stateResult);
+      }
+      return stateResult;
     }
     console.warn(`[/api/organon/category-deepen] Server responded with status ${res.status}`);
   } catch (err) {
@@ -104,7 +183,7 @@ export async function requestCategoryDeepen(params: {
 
   const nextDim = dimensions.find(d => fallbackStatus[d.code] === 'OFFEN') || dimensions[0];
 
-  return {
+  const fallbackResult: CategoryDeepenState = {
     category,
     dimensionStatus: fallbackStatus,
     knownFacts: stage1Text ? [{ text: stage1Text, dimension: dimCodes[0], status: 'BELEGT' }] : [],
@@ -118,4 +197,9 @@ export async function requestCategoryDeepen(params: {
     summaryText: stage1Text,
     questionHistory: questionHistory
   };
+
+  if (action === 'init') {
+    initCache.set(cacheKey, fallbackResult);
+  }
+  return fallbackResult;
 }

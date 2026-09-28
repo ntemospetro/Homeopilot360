@@ -22,7 +22,8 @@ import {
   ShieldAlert,
   Ban,
   Eye,
-  EyeOff
+  EyeOff,
+  Users
 } from 'lucide-react';
 import { 
   LocalizedRemedy 
@@ -516,8 +517,8 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
     { key: 'kent' as ClassicalAuthorFilterKey, label: t('filterAuthorKent') },
     { key: 'hering' as ClassicalAuthorFilterKey, label: t('filterAuthorHering') },
     { key: 'boericke' as ClassicalAuthorFilterKey, label: t('filterAuthorBoericke') },
-    { key: 'boger' as ClassicalAuthorFilterKey, label: t('filterAuthorBoger' as any) || 'Boger' },
-    { key: 'allen' as ClassicalAuthorFilterKey, label: t('filterAuthorAllen' as any) || 'H. C. Allen' }
+    { key: 'boger' as ClassicalAuthorFilterKey, label: t('filterAuthorBoger') },
+    { key: 'allen' as ClassicalAuthorFilterKey, label: t('filterAuthorAllen') }
   ];
 
   const categories = [
@@ -598,45 +599,9 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
               </div>
 
               {/* Filter Grid for Authors and Remedies (Categories) */}
-              <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 pt-1">
-                {/* Autoren Grid (5 items) */}
-                <div className="xl:col-span-7 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] md:text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-teal-700" />
-                      {t('filterAuthorLabel')}:
-                    </span>
-                    {selectedAuthor !== 'all' && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAuthor('all')}
-                        className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold cursor-pointer"
-                      >
-                        {t('resetFilters')}
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                    {authors.map((auth) => (
-                      <button
-                        key={auth.key}
-                        type="button"
-                        onClick={() => setSelectedAuthor(auth.key)}
-                        className={`w-full py-2 px-2 md:py-2.5 md:px-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all cursor-pointer text-center truncate shadow-2xs ${
-                          selectedAuthor === auth.key
-                            ? 'bg-teal-700 text-white shadow-xs font-bold'
-                            : 'bg-slate-100/90 text-slate-700 hover:bg-slate-200/90 border border-slate-200/70'
-                        }`}
-                        title={auth.label}
-                      >
-                        <span className="truncate">{auth.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 gap-3.5 pt-1">
                 {/* Mittel / Herkunft Grid (4 items) */}
-                <div className="xl:col-span-5 space-y-1.5">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] md:text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                       <Pill className="w-3.5 h-3.5 text-teal-700" />
@@ -652,7 +617,7 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
                       </button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {categories.map((cat) => (
                       <button
                         key={cat.key}
@@ -666,6 +631,41 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
                         title={cat.label}
                       >
                         <span className="truncate">{cat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Klassische Autoren Filter (Multi-select or Single? MM uses single selectedAuthor state) */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] md:text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-teal-700" />
+                      {t('filterAuthorLabel')}:
+                    </span>
+                    {selectedAuthor !== 'all' && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAuthor('all')}
+                        className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold cursor-pointer"
+                      >
+                        {t('resetFilters')}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {authors.map((auth) => (
+                      <button
+                        key={auth.key}
+                        type="button"
+                        onClick={() => setSelectedAuthor(auth.key)}
+                        className={`py-1.5 px-3 rounded-xl text-[11px] md:text-xs font-semibold transition-all cursor-pointer shadow-2xs ${
+                          selectedAuthor === auth.key
+                            ? 'bg-teal-700 text-white shadow-xs font-bold'
+                            : 'bg-slate-100/90 text-slate-700 hover:bg-slate-200/90 border border-slate-200/70'
+                        }`}
+                      >
+                        {auth.label}
                       </button>
                     ))}
                   </div>
@@ -718,45 +718,7 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
                       <div className="text-xs font-medium text-teal-800 mt-0.5">
                         {remedy.commonName}
                       </div>
-                      {(() => {
-                        const authorsInfo = getRemedyClassicalAuthors(remedy.id);
-                        const hasAny = authorsInfo.hahnemann || authorsInfo.kent || authorsInfo.hering || authorsInfo.boericke || authorsInfo.boger || authorsInfo.allen;
-                        if (!hasAny) return null;
-                        return (
-                          <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                            {authorsInfo.hahnemann && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200/60" title="Samuel Hahnemann">
-                                S. Hahnemann
-                              </span>
-                            )}
-                            {authorsInfo.kent && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-800 border border-indigo-200/60" title="James Tyler Kent">
-                                J. T. Kent
-                              </span>
-                            )}
-                            {authorsInfo.hering && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-teal-50 text-teal-800 border border-teal-200/60" title="Constantine Hering">
-                                C. Hering
-                              </span>
-                            )}
-                            {authorsInfo.boericke && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200/60" title="William Boericke">
-                                W. Boericke
-                              </span>
-                            )}
-                            {authorsInfo.boger && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-purple-50 text-purple-800 border border-purple-200/60" title="Cyrus Maxwell Boger">
-                                C. M. Boger
-                              </span>
-                            )}
-                            {authorsInfo.allen && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-300/80" title="Henry C. Allen">
-                                H. C. Allen
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
+
                     </div>
                     <span
                       className={`text-[11px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${
@@ -1308,46 +1270,7 @@ export const MateriaMedicaView: React.FC<MateriaMedicaViewProps> = ({
                 <p className="text-sm font-medium text-teal-300 truncate">
                   {selectedRemedyForModal.commonName}
                 </p>
-                {(() => {
-                  const authorsInfo = getRemedyClassicalAuthors(selectedRemedyForModal.id);
-                  const hasAny = authorsInfo.hahnemann || authorsInfo.kent || authorsInfo.hering || authorsInfo.boericke || authorsInfo.boger || authorsInfo.allen;
-                  if (!hasAny) return null;
-                  return (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      <span className="text-xs text-slate-400 mr-0.5">{t('filterAuthorLabel')}:</span>
-                      {authorsInfo.hahnemann && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                          Samuel Hahnemann
-                        </span>
-                      )}
-                      {authorsInfo.kent && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                          James Tyler Kent
-                        </span>
-                      )}
-                      {authorsInfo.hering && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                          Constantine Hering
-                        </span>
-                      )}
-                      {authorsInfo.boericke && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                          William Boericke
-                        </span>
-                      )}
-                      {authorsInfo.boger && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                          Cyrus Maxwell Boger
-                        </span>
-                      )}
-                      {authorsInfo.allen && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/40">
-                          Henry C. Allen
-                        </span>
-                      )}
-                    </div>
-                  );
-                })()}
+
               </div>
 
               <button

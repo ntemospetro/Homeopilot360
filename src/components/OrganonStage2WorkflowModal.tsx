@@ -25,7 +25,8 @@ import { useTranslation } from '../i18n/LanguageContext';
 import {
   Stage2Category,
   STAGE2_CATEGORY_SEQUENCE,
-  STAGE2_CATEGORIES_METADATA
+  STAGE2_CATEGORIES_METADATA,
+  STAGE2_FROZEN_DIMENSIONS_MAP
 } from '../types/organonStage2Workflow';
 import { CausaVertiefungModal } from './CausaVertiefungModal';
 import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
@@ -43,65 +44,8 @@ import {
   deduplicateRepeatedPhrases
 } from '../services/speechService';
 
-// Dimension lists for the 8 frozen Stage 2 categories
-const FROZEN_DIMENSIONS_MAP: Record<string, { code: string; title: string; desc: string }[]> = {
-  SENSATIO: [
-    { code: 'S1', title: 'Basale Schmerz- & Empfindungsqualität', desc: 'Brennend, stechend, dumpf, krampfend, pochend, reißend' },
-    { code: 'S2', title: 'Metaphorische Vergleiche', desc: '„Wie ein enges Band“, „wie glühende Kohlen“, „wie zersplittertes Glas“' },
-    { code: 'S3', title: 'Sensorische Begleitwahrnehmungen', desc: 'Kribbeln, Taubheit, Kälte-/Hitzegefühl im Areal' },
-    { code: 'S4', title: 'Intensität & zeitlicher Verlauf', desc: 'Plötzlich einschießend vs. allmählich ansteigend, wellenförmig' },
-    { code: 'S5', title: 'Subjektive Eigenartigkeit', desc: 'Ungewöhnliche, paradoxe oder seltene Empfindungsausprägungen (§ 153)' }
-  ],
-  SYMPTOMA: [
-    { code: 'Y1', title: 'Phänomenologische Kernstruktur', desc: 'Primäre pathologische Manifestation im Wortlaut des Patienten' },
-    { code: 'Y2', title: 'Funktionsbeeinträchtigung', desc: 'Einschränkung von Bewegung, Sprache, Schlaf, Organfunktionen' },
-    { code: 'Y3', title: 'Sichtbare / messbare Zeichen', desc: 'Schwellung, Rötung, Absonderungen, Vitalzeichen' },
-    { code: 'Y4', title: 'Rhythmik & Periodizität', desc: 'Auftretensmuster, tägliche/monatliche Wiederkehr, Anfallscharakter' },
-    { code: 'Y5', title: 'Systemische Reaktionen', desc: 'Fieber, Schüttelfrost, allgemeine Erschöpfung, Schwäche' }
-  ],
-  MODALITATES_BESSERUNG: [
-    { code: 'MB1', title: 'Thermisch & Klimatisch', desc: 'Wärme, Kälte, frische Luft, Zimmerwärme, Einhüllen' },
-    { code: 'MB2', title: 'Haltung & Bewegung', desc: 'Ruhe, Gehen, Liegen auf schmerzhafter Seite, Zusammenkrümmen' },
-    { code: 'MB3', title: 'Zeitlich & Zirkadian', desc: 'Morgens, abends, nach dem Schlaf, bestimmte Uhrzeiten' },
-    { code: 'MB4', title: 'Physiologisch & Ernährung', desc: 'Essen, Trinken warm/kalt, Fasten, Entleerung' },
-    { code: 'MB5', title: 'Umgebung & Sensorisch', desc: 'Dunkelheit, Stille, Druck/Massage, Alleinsein' },
-    { code: 'MB6', title: 'Psychisch & Emotional', desc: 'Ablenkung, Trost, Zuspruch, Beschäftigung' }
-  ],
-  MODALITATES_VERSCHLECHTERUNG: [
-    { code: 'MV1', title: 'Thermisch & Klimatisch', desc: 'Kälte, Zugluft, Nässe, Wetterwechsel, Sommerhitze' },
-    { code: 'MV2', title: 'Haltung & Bewegung', desc: 'Erste Bewegung, fortgesetzte Bewegung, Bücken, Erschütterung' },
-    { code: 'MV3', title: 'Zeitlich & Zirkadian', desc: 'Nachts (z.B. 2–4 Uhr), nachmittags, beim Erwachen' },
-    { code: 'MV4', title: 'Physiologisch & Ernährung', desc: 'Nach dem Essen, bestimmte Nahrungsmittel, Berührung' },
-    { code: 'MV5', title: 'Umgebung & Sensorisch', desc: 'Lärm, Licht, Gerüche, Gesellschaft, Gewitterstimmung' },
-    { code: 'MV6', title: 'Psychisch & Emotional', desc: 'Ärger, Kummer, Widerspruch, Trost, Schreck' }
-  ],
-  SYMPTOMATA_CONCOMITANTIA: [
-    { code: 'SC1', title: 'Körperliche Begleiterscheinungen', desc: 'Gleichzeitig auftretende körperliche Phänomene an anderen Orten' },
-    { code: 'SC2', title: 'Mentale Begleitreaktionen', desc: 'Geistige Trägheit, Reizbarkeit oder Ängstlichkeit während der Attacke' },
-    { code: 'SC3', title: 'Zeitliches Kopplungsmuster', desc: 'Synchrones vs. alternierendes Auftreten zum Leitsymptom' },
-    { code: 'SC4', title: 'Physiologische Begleitachsen', desc: 'Schwitzen, Durstveränderung, Übelkeit, Harndrang' },
-    { code: 'SC5', title: 'Polarität & Diskrepanz', desc: 'Auffällige, scheinbar paradoxe Symptomenkombinationen (§ 153)' }
-  ],
-  COMORBIDITAS: [
-    { code: 'CO1', title: 'Chronische Vorerkrankungen', desc: 'Bestehende Diagnosen, Grundleiden, Organdysfunktionen' },
-    { code: 'CO2', title: 'Frühere Akuterkrankungen', desc: 'Frühere schwere Infektionen, Operationen, Traumata' },
-    { code: 'CO3', title: 'Miasmatischer & familiärer Hintergrund', desc: 'Hautleiden, hereditäre Belastungen, konstitutionelle Neigung' },
-    { code: 'CO4', title: 'Medikamentöse Vorbehandlung', desc: 'Dauermedikation, Unterdrückungen, vorangegangene Therapien' }
-  ],
-  MENS: [
-    { code: 'ME1', title: 'Kognitive Klarheit & Konzentration', desc: 'Benommenheit, Verwirrtheit, Konzentrationsschwäche, geistige Frische' },
-    { code: 'ME2', title: 'Gedankengeschwindigkeit & Ideenfluss', desc: 'Flüchtige Gedanken, Gedankenverlangsamung, Zwangsgedanken' },
-    { code: 'ME3', title: 'Gedächtnis & Orientierung', desc: 'Vergesslichkeit für Namen/Worte, zeitliche Desorientierung' },
-    { code: 'ME4', title: 'Entscheidungsfähigkeit & Willensregung', desc: 'Unentschlossenheit, Willensschwäche, Impulsivität' }
-  ],
-  ANIMUS: [
-    { code: 'AN1', title: 'Grundstimmung & Affektlage', desc: 'Traurigkeit, Weinen, Gleichgültigkeit, Heiterkeit, Niedergeschlagenheit' },
-    { code: 'AN2', title: 'Reaktionsmuster & Reizbarkeit', desc: 'Jähzorn, Empfindlichkeit gegen Widerspruch, Ungeduld' },
-    { code: 'AN3', title: 'Ängste & Befürchtungen', desc: 'Todesangst, Angst vor Alleinsein, Dunkelheit, Krankheitsangst' },
-    { code: 'AN4', title: 'Soziales Kontaktverhalten', desc: 'Verlangen nach Gesellschaft vs. Abneigung gegen Menschen' },
-    { code: 'AN5', title: 'Eigenwahrnehmung des Gemüts', desc: 'Selbsteinschätzung der seelischen Veränderung seit Krankheitsbeginn' }
-  ]
-};
+// Dimension lists for Stage 2 categories
+const FROZEN_DIMENSIONS_MAP = STAGE2_FROZEN_DIMENSIONS_MAP;
 
 interface CategoryResultRecord {
   category: Stage2Category;
@@ -119,6 +63,9 @@ export interface OrganonStage2WorkflowModalProps {
   initialHahnemannCrossCheck?: boolean;
   hahnemannCrossCheck?: boolean;
   onHahnemannCrossCheckChange?: (enabled: boolean) => void;
+  initialEngine?: 'gemini' | 'openai' | 'both';
+  onEngineChange?: (engine: 'gemini' | 'openai' | 'both') => void;
+  hideEngineSelector?: boolean;
   stage1Values?: Record<string, string>;
   initialRecords?: Record<string, any>;
   onRecordsChange?: (records: Record<Stage2Category, CategoryResultRecord>) => void;
@@ -134,6 +81,9 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   initialHahnemannCrossCheck = false,
   hahnemannCrossCheck,
   onHahnemannCrossCheckChange,
+  initialEngine = 'gemini',
+  onEngineChange,
+  hideEngineSelector = false,
   stage1Values = {},
   initialRecords = {},
   onRecordsChange,
@@ -141,6 +91,16 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
   onWorkflowCompleted
 }) => {
   const { t, language } = useTranslation();
+
+  const [workflowEngine, setWorkflowEngine] = useState<'gemini' | 'openai' | 'both'>(
+    initialEngine || 'gemini'
+  );
+
+  useEffect(() => {
+    if (initialEngine) {
+      setWorkflowEngine(initialEngine);
+    }
+  }, [initialEngine]);
 
   // Active step index: 0..9 (Stage 2 categories) or 10 (Global Review)
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -529,24 +489,82 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
             </div>
           </div>
 
-          {/* Right: Persistent Hahnemann Cross-Check Switch & Close Button */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Global Hahnemann-Gegenprüfung persistent status (Zentral gesteuert) */}
-            <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs">
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <Brain className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="hidden md:inline font-medium">{t('organonHahnemannCrossCheckLabel')}:</span>
+          {/* Right: Engine Selector, Persistent Hahnemann Cross-Check Switch & Close Button */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* 3-Way Engine Selector: Nur Gemini | Nur GPT-4 | Beide */}
+            {!hideEngineSelector && (
+              <div className="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-xl p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWorkflowEngine('gemini');
+                    onEngineChange?.('gemini');
+                  }}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
+                    workflowEngine === 'gemini'
+                      ? 'bg-teal-600 text-white font-semibold shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title={t('organonEngineGeminiDesc')}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>{t('organonEngineGemini')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWorkflowEngine('openai');
+                    onEngineChange?.('openai');
+                  }}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
+                    workflowEngine === 'openai'
+                      ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title={t('organonEngineGptDesc')}
+                >
+                  <Brain className="w-3 h-3" />
+                  <span>{t('organonEngineGpt')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWorkflowEngine('both');
+                    onEngineChange?.('both');
+                  }}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
+                    workflowEngine === 'both'
+                      ? 'bg-gradient-to-r from-teal-600 to-indigo-600 text-white font-semibold shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title={t('organonEngineBothDesc')}
+                >
+                  <Layers className="w-3 h-3" />
+                  <span>{t('organonEngineBoth')}</span>
+                </button>
               </div>
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                  globalHahnemannCrossCheck
-                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                    : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                }`}
-              >
-                {globalHahnemannCrossCheck ? t('causaHahnemannActiveBadge') : t('causaHahnemannInactiveBadge')}
-              </span>
-            </div>
+            )}
+
+            {/* Global Hahnemann-Gegenprüfung persistent status (Zentral gesteuert) */}
+            {!hideEngineSelector && (
+              <div className="hidden lg:flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs">
+                <div className="flex items-center gap-1.5 text-slate-300">
+                  <Brain className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="font-medium">{t('organonHahnemannCrossCheckLabel')}:</span>
+                </div>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                    globalHahnemannCrossCheck
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                      : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                  }`}
+                >
+                  {globalHahnemannCrossCheck ? t('causaHahnemannActiveBadge') : t('causaHahnemannInactiveBadge')}
+                </span>
+              </div>
+            )}
 
             {/* Close Button */}
             <button
@@ -629,8 +647,8 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
 
         {/* ================= WORKFLOW BODY ================= */}
         <div className="flex-1 overflow-hidden flex flex-col bg-slate-900">
-          {/* STEP 1: CAUSA VERTIEFUNG */}
-          {activeCategory === 'CAUSA' && (
+          {/* STEP 1: CAUSA VERTIEFUNG (In Gemini/Both Mode using dedicated Causa modal) */}
+          {activeCategory === 'CAUSA' && workflowEngine !== 'openai' && (
             <CausaVertiefungModal
               isOpen={true}
               onClose={() => {}}
@@ -638,6 +656,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
               existingCausaText={records.CAUSA?.text || stage1Values.causa || ''}
               endprueferResult={endprueferResult}
               hahnemannCrossCheck={globalHahnemannCrossCheck}
+              mode={workflowEngine === 'both' ? 'ab-compare' : 'gemini-only'}
               isEmbedded={true}
               onAdoptCausa={(causaSummary) => {
                 handleCompleteCategory('CAUSA', causaSummary);
@@ -648,8 +667,8 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
             />
           )}
 
-          {/* STEP 2: LOCALISATIO VERTIEFUNG */}
-          {activeCategory === 'LOCALISATIO' && (
+          {/* STEP 2: LOCALISATIO VERTIEFUNG (In Gemini/Both Mode using dedicated Localisatio modal) */}
+          {activeCategory === 'LOCALISATIO' && workflowEngine !== 'openai' && (
             <LocalisatioVertiefungModal
               isOpen={true}
               onClose={() => {}}
@@ -657,6 +676,7 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
               existingLocalisatioText={records.LOCALISATIO?.text || stage1Values.localisatio || ''}
               endprueferResult={endprueferResult}
               hahnemannCrossCheck={globalHahnemannCrossCheck}
+              mode={workflowEngine === 'both' ? 'ab-compare' : 'gemini-only'}
               isEmbedded={true}
               onAdoptLocalisatio={(locSummary) => {
                 handleCompleteCategory('LOCALISATIO', locSummary);
@@ -667,8 +687,8 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
             />
           )}
 
-          {/* STEPS 3..10: FROZEN CATEGORIES (Sensatio ... Animus) using GenericCategoryDeepDiveModal */}
-          {activeCategory && activeCategory !== 'CAUSA' && activeCategory !== 'LOCALISATIO' && (
+          {/* ALL 10 CATEGORIES in pure OpenAI mode, or Steps 3..10 in Gemini/Both mode */}
+          {activeCategory && (workflowEngine === 'openai' || (activeCategory !== 'CAUSA' && activeCategory !== 'LOCALISATIO')) && (
             <GenericCategoryDeepDiveModal
               category={activeCategory}
               rawText={rawText}
@@ -676,6 +696,11 @@ export const OrganonStage2WorkflowModal: React.FC<OrganonStage2WorkflowModalProp
               dimensions={FROZEN_DIMENSIONS_MAP[activeCategory] || []}
               endprueferResult={endprueferResult}
               hahnemannCrossCheck={globalHahnemannCrossCheck}
+              engine={workflowEngine}
+              onEngineChange={(eng) => {
+                setWorkflowEngine(eng);
+                onEngineChange?.(eng);
+              }}
               initialDetails={records[activeCategory]?.details}
               onAdopt={(summary, details) => {
                 handleCompleteCategory(activeCategory, summary, false, details);

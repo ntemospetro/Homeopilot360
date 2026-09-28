@@ -52,6 +52,7 @@ interface CausaVertiefungModalProps {
   endprueferResult?: any | null;
   onAdoptCausa?: (finalCausaText: string) => void;
   hahnemannCrossCheck?: boolean;
+  mode?: 'gemini-only' | '3-tier' | 'ab-compare';
   isEmbedded?: boolean;
   onWorkflowComplete?: (finalCausaText: string) => void;
   onPartialChange?: (causaText: string) => void;
@@ -65,6 +66,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   endprueferResult = null,
   onAdoptCausa,
   hahnemannCrossCheck = false,
+  mode: propMode,
   isEmbedded = false,
   onWorkflowComplete,
   onPartialChange
@@ -74,7 +76,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
   const [stateA, setStateA] = useState<CausaVertiefungState | null>(null);
   const [stateB, setStateB] = useState<CausaVertiefungState | null>(null);
   const [activeMode, setActiveMode] = useState<'gemini-only' | '3-tier' | 'ab-compare'>(
-    hahnemannCrossCheck ? '3-tier' : 'gemini-only'
+    propMode || (hahnemannCrossCheck ? '3-tier' : 'gemini-only')
   );
   const [loading, setLoading] = useState<boolean>(false);
   const [answerInput, setAnswerInput] = useState<string>('');
@@ -112,7 +114,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const mode = hahnemannCrossCheck ? '3-tier' : 'gemini-only';
+      const mode = propMode || (hahnemannCrossCheck ? '3-tier' : 'gemini-only');
       const initKey = `${mode}|${rawText}|${existingCausaText}|${Boolean(endprueferResult)}|${isOpen}`;
       if (prevInitKeyRef.current === initKey) {
         return;
@@ -128,7 +130,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
     } else {
       prevInitKeyRef.current = '';
     }
-  }, [isOpen, rawText, existingCausaText, Boolean(endprueferResult), hahnemannCrossCheck]);
+  }, [isOpen, rawText, existingCausaText, Boolean(endprueferResult), hahnemannCrossCheck, propMode]);
 
   const loadInitialState = async (modeToUse: 'gemini-only' | '3-tier' | 'ab-compare' = activeMode) => {
     const thisRequestId = ++initRequestIdRef.current;
@@ -989,7 +991,7 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
               </div>
             )}
 
-            {state.currentQuestion.arbitrationNote && (
+            {state.currentQuestion.arbitrationNote && !state.currentQuestion.arbitrationNote.toLowerCase().includes('undefined') && (
               <div className="text-xs text-indigo-300/80 flex items-center gap-1.5 pt-1">
                 <Brain className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                 <span>{state.currentQuestion.arbitrationNote}</span>
@@ -997,39 +999,46 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
             )}
 
             {showAgentProposals && state.currentQuestion.agentOpinions && activeMode === '3-tier' && (
+              Boolean(state.currentQuestion.agentOpinions.geminiQuestion?.trim()) ||
+              Boolean(state.currentQuestion.agentOpinions.gptQuestion?.trim())
+            ) && (
               <div className="mt-2.5 pt-2.5 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
-                <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 shadow-md">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-teal-300 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-                      {t('causaGeminiProposal')}
-                    </span>
-                    {state.turnDurations?.geminiMs != null && (
-                      <span className="text-[10px] font-mono text-slate-400">
-                        {((state.turnDurations.geminiMs || 0) / 1000).toFixed(1)}s
+                {Boolean(state.currentQuestion.agentOpinions.geminiQuestion?.trim()) && (
+                  <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 shadow-md">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-teal-300 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                        {t('causaGeminiProposal')}
                       </span>
-                    )}
+                      {state.turnDurations?.geminiMs != null && (
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {((state.turnDurations.geminiMs || 0) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                    </div>
+                    <p className="italic text-slate-200 font-medium leading-relaxed">
+                      „{state.currentQuestion.agentOpinions.geminiQuestion}“
+                    </p>
                   </div>
-                  <p className="italic text-slate-200 font-medium leading-relaxed">
-                    „{state.currentQuestion.agentOpinions.geminiQuestion}“
-                  </p>
-                </div>
-                <div className="bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 shadow-md">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-indigo-300 flex items-center gap-1">
-                      <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                      {t('causaGptProposal')}
-                    </span>
-                    {state.turnDurations?.gptMs != null && (
-                      <span className="text-[10px] font-mono text-slate-400">
-                        {((state.turnDurations.gptMs || 0) / 1000).toFixed(1)}s
+                )}
+                {Boolean(state.currentQuestion.agentOpinions.gptQuestion?.trim()) && (
+                  <div className="bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 shadow-md">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-indigo-300 flex items-center gap-1">
+                        <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                        {t('causaGptProposal')}
                       </span>
-                    )}
+                      {state.turnDurations?.gptMs != null && (
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {((state.turnDurations.gptMs || 0) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                    </div>
+                    <p className="italic text-slate-200 font-medium leading-relaxed">
+                      „{state.currentQuestion.agentOpinions.gptQuestion}“
+                    </p>
                   </div>
-                  <p className="italic text-slate-200 font-medium leading-relaxed">
-                    „{state.currentQuestion.agentOpinions.gptQuestion}“
-                  </p>
-                </div>
+                )}
               </div>
             )}
           </div>

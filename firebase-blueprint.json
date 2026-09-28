@@ -6,6 +6,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
+        "authUid": { "type": "string" },
         "name": { "type": "string" },
         "email": { "type": "string" },
         "phone": { "type": "string" },
@@ -20,6 +21,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
+        "ownerUid": { "type": "string" },
         "therapistId": { "type": "string" },
         "patientName": { "type": "string" },
         "status": { "type": "string" },

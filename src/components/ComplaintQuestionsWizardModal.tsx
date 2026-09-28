@@ -1179,7 +1179,7 @@ export const ComplaintQuestionsWizardModal: React.FC<ComplaintQuestionsWizardMod
 
                         return (
                           <div
-                            key={q.id}
+                            key={q.id ? `${q.id}-${qIndex}` : `cq-${qIndex}`}
                             className={`p-3.5 rounded-xl border transition-all ${
                               isAnswered
                                 ? 'bg-white/95 border-emerald-400 shadow-xs ring-1 ring-emerald-500/20'

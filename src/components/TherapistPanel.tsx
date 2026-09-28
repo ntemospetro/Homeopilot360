@@ -46,6 +46,8 @@ import { ComprehensiveAnalysisView } from './ComprehensiveAnalysisView';
 import { TherapyRecommendationsView } from './TherapyRecommendationsView';
 import { PatientDirectoryView } from './PatientDirectoryView';
 import { OrganonView } from './OrganonView';
+import { OrganonV2View } from './OrganonV2View';
+import { OrganonV3View } from './OrganonV3View';
 import { MateriaMedicaView } from './MateriaMedicaView';
 import { RepertoriumView } from './RepertoriumView';
 import { RepertoryView } from './RepertoryView';
@@ -180,7 +182,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { t, language } = useTranslation();
   const { termPatientenkartei, termPatient, termPatients } = useTerminology();
-  const [panelTab, setPanelTab] = useState<'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'repertory' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff'>(() => getStoredTherapistTab() as any);
+  const [panelTab, setPanelTab] = useState<'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'repertory' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'organon_v2' | 'organon_v3' | 'profile' | 'tariff'>(() => getStoredTherapistTab() as any);
   const [patientDirectoryAction, setPatientDirectoryAction] = useState<'new_patient' | 'select_patient' | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [lockedPageAttempt, setLockedPageAttempt] = useState<{ key: string; name: string } | null>(null);
@@ -209,6 +211,8 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
       case 'documentation':
         return 'documentation';
       case 'organon':
+      case 'organon_v2':
+      case 'organon_v3':
         return 'cases';
       default:
         return null;
@@ -235,6 +239,10 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
         return t('tabDocumentation');
       case 'organon':
         return t('tabOrganonAnalysis') || 'Organon-Analyse';
+      case 'organon_v2':
+        return t('tabOrganonV2') || 'Organon V2 (Highspeed)';
+      case 'organon_v3':
+        return t('tabOrganonV3') || 'Organon V3';
       default:
         return tab;
     }
@@ -252,7 +260,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
     return tariffAccess.isPageHidden(pageKey);
   };
 
-  const handleSelectTab = (tab: 'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'repertory' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff') => {
+  const handleSelectTab = (tab: 'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'repertory' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'organon_v2' | 'organon_v3' | 'profile' | 'tariff') => {
     if (!isTabAllowed(tab)) {
       setLockedPageAttempt({ key: tab, name: getPageDisplayName(tab) });
       return;
@@ -1176,7 +1184,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
     setSelectedCaseId(patientCase.id);
     let questions = patientCase.anamnesisQuestions;
     if ((!questions || questions.length === 0) && patientCase.hauptbeschwerde) {
-      questions = generateQuestionsForComplaint(patientCase.hauptbeschwerde);
+      questions = generateQuestionsForComplaint(patientCase.hauptbeschwerde, [], language);
     }
     setCurrentCase({
       ...patientCase,
@@ -1464,7 +1472,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
   };
 
   const handleUpdateHauptbeschwerde = (newComplaint: string) => {
-    const updatedQuestions = generateQuestionsForComplaint(newComplaint, currentCase.anamnesisQuestions);
+    const updatedQuestions = generateQuestionsForComplaint(newComplaint, currentCase.anamnesisQuestions, language);
     setCurrentCase(prev => ({
       ...prev,
       hauptbeschwerde: newComplaint,
@@ -1504,7 +1512,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
 
   const handleRegenerateQuestions = () => {
     if (!currentCase.hauptbeschwerde?.trim()) return;
-    const freshQuestions = generateQuestionsForComplaint(currentCase.hauptbeschwerde);
+    const freshQuestions = generateQuestionsForComplaint(currentCase.hauptbeschwerde, [], language);
     setCurrentCase(prev => ({
       ...prev,
       anamnesisQuestions: freshQuestions,
@@ -1514,7 +1522,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
 
   const handleTransferAnswersToAnamnese = () => {
     if (!currentCase.anamnesisQuestions || currentCase.anamnesisQuestions.length === 0) return;
-    const summary = summarizeQuestionsToAnamnese(currentCase.anamnesisQuestions);
+    const summary = summarizeQuestionsToAnamnese(currentCase.anamnesisQuestions, language);
 
     setCurrentCase(prev => {
       const newSpontan = [prev.spontanbericht?.trim(), summary.summaryReport?.trim()]
@@ -2131,6 +2139,46 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
                 )}
               </button>
             )}
+
+            {/* Organon V2 (Highspeed) */}
+            <button
+              type="button"
+              id="sidebar-nav-tab-organon-v2"
+              onClick={() => handleSelectTab('organon_v2')}
+              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors cursor-pointer ${
+                panelTab === 'organon_v2'
+                  ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-900 font-bold border border-teal-200'
+                  : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Zap className={`w-4 h-4 ${panelTab === 'organon_v2' ? 'text-emerald-600' : 'text-teal-600'}`} />
+                <span>{t('tabOrganonV2')}</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                {t('badgeNew')}
+              </span>
+            </button>
+
+            {/* Organon V3 (GPT) */}
+            <button
+              type="button"
+              id="sidebar-nav-tab-organon-v3"
+              onClick={() => handleSelectTab('organon_v3')}
+              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors cursor-pointer ${
+                panelTab === 'organon_v3'
+                  ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-900 font-bold border border-teal-200'
+                  : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <BookOpen className={`w-4 h-4 ${panelTab === 'organon_v3' ? 'text-teal-600' : 'text-slate-500'}`} />
+                <span>{t('tabOrganonV3')}</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-100 text-teal-800 font-bold">
+                {t('badgeGpt')}
+              </span>
+            </button>
           </div>
         </div>
         
@@ -2304,6 +2352,37 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
             refreshCases();
           }}
           onBack={() => handleSelectTab('patients')}
+          onSwitchToV2={() => handleSelectTab('organon_v2')}
+        />
+      )}
+
+      {/* TAB CONTENT: ORGANON V2 (HIGHSPEED) */}
+      {panelTab === 'organon_v2' && (
+        <OrganonV2View
+          patientCase={currentCase as PatientCase}
+          onSavePatientCase={(updated) => {
+            setCurrentCase(updated);
+            savePatientCase(updated);
+            refreshCases();
+          }}
+          onBack={() => handleSelectTab('patients')}
+          onSwitchToV1={() => handleSelectTab('organon')}
+          onSwitchToV3={() => handleSelectTab('organon_v3')}
+        />
+      )}
+
+      {/* TAB CONTENT: ORGANON V3 (PURE GPT) */}
+      {panelTab === 'organon_v3' && (
+        <OrganonV3View
+          patientCase={currentCase as PatientCase}
+          onSavePatientCase={(updated) => {
+            setCurrentCase(updated);
+            savePatientCase(updated);
+            refreshCases();
+          }}
+          onBack={() => handleSelectTab('patients')}
+          onSwitchToV1={() => handleSelectTab('organon')}
+          onSwitchToV2={() => handleSelectTab('organon_v2')}
         />
       )}
 

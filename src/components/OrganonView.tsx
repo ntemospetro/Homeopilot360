@@ -12,6 +12,7 @@ import { OrganonDynamicQuestionModal } from './OrganonDynamicQuestionModal';
 import { CausaVertiefungModal } from './CausaVertiefungModal';
 import { LocalisatioVertiefungModal } from './LocalisatioVertiefungModal';
 import { OrganonStage2WorkflowModal } from './OrganonStage2WorkflowModal';
+import { OrganonFastQuestionnaireModal } from './OrganonFastQuestionnaireModal';
 import { Stage2Category, STAGE2_CATEGORY_SEQUENCE } from '../types/organonStage2Workflow';
 import { OrganonLiveProgress, LiveProcessStep } from './OrganonLiveProgress';
 import { motion } from 'motion/react';
@@ -45,7 +46,9 @@ import {
   FileCheck,
   Check,
   AlertCircle,
-  MapPin
+  MapPin,
+  Zap,
+  ChevronRight
 } from 'lucide-react';
 
 // OrganonView component - Updated with intelligent clinical spelling correction (2026)
@@ -103,6 +106,9 @@ export interface OrganonViewProps {
   patientCase?: PatientCase;
   onSavePatientCase?: (patientCase: PatientCase) => void;
   onBack?: () => void;
+  onSwitchToV1?: () => void;
+  onSwitchToV2?: () => void;
+  onSwitchToV3?: () => void;
 }
 
 export const OrganonView: React.FC<OrganonViewProps> = ({
@@ -255,6 +261,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
   const [isLocalisatioTriggered, setIsLocalisatioTriggered] = useState<boolean>(false);
   const [isStage2WorkflowModalOpen, setIsStage2WorkflowModalOpen] = useState<boolean>(false);
   const [isStage2WorkflowTriggered, setIsStage2WorkflowTriggered] = useState<boolean>(false);
+  const [isFastQuestionnaireModalOpen, setIsFastQuestionnaireModalOpen] = useState<boolean>(false);
   const [isArbitrating, setIsArbitrating] = useState<boolean>(false);
   const [isEndpruefend, setIsEndpruefend] = useState<boolean>(false);
   const [isCorrectingSpelling, setIsCorrectingSpelling] = useState<boolean>(false);
@@ -467,15 +474,15 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
     gRes?: any,
     oRes?: any,
     ratioEnabled: boolean = enableRatio
-  ) => {
+  ): Promise<EndprueferResult | null> => {
     const target: 'ratio' | 'genius' | 'genius_optimus' = ratioEnabled
       ? 'ratio'
       : (oRes || compareResult?.openai)
         ? 'genius_optimus'
         : 'genius';
 
-    if (target === 'ratio' && !arbRes) return;
-    if (target === 'genius' && !gRes && !analysisResult) return;
+    if (target === 'ratio' && !arbRes) return null;
+    if (target === 'genius' && !gRes && !analysisResult) return null;
 
     setIsEndpruefend(true);
     try {
@@ -483,17 +490,19 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
       const effectiveO = oRes || compareResult?.openai;
       const result = await runEndprueferAnalysis(rawTextStr, arbRes, language, target, effectiveG, effectiveO);
       setEndprueferResult(result);
+      return result;
     } catch (e) {
       console.warn("Endprüfer execution notice:", e);
+      return null;
     } finally {
       setIsEndpruefend(false);
     }
   };
 
   const fetchArbitration = async (gemini: any, openai: any, force: boolean = false) => {
-    if (!enableRatio) return;
-    if (isArbitrating) return;
-    if (arbitratorResult && !force && (arbitratorResult as any).__isServerResult) return;
+    if (!enableRatio) return null;
+    if (isArbitrating) return null;
+    if (arbitratorResult && !force && (arbitratorResult as any).__isServerResult) return arbitratorResult;
     setIsArbitrating(true);
     setEndprueferResult(null);
     try {
@@ -514,9 +523,8 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
           complete.__isServerResult = true;
           setArbitratorResult(complete);
           setIsArbitrating(false);
-          // Auto-trigger 4th stage (Endprüfer)
-          fetchEndpruefer(narrationInput, complete, gemini, openai, true);
-          return;
+          // Auto-trigger 4th stage (Endprüfer / Decisor)
+          return await fetchEndpruefer(narrationInput, complete, gemini, openai, true);
         }
       }
       throw new Error("Server arbitration not available");
@@ -524,7 +532,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
       console.warn("API arbitrate notice, using complete client-side arbitration synthesis:", e);
       const fallbackArbitration = buildCompleteArbitratorResult(narrationInput, gemini, openai, null, language);
       setArbitratorResult(fallbackArbitration);
-      fetchEndpruefer(narrationInput, fallbackArbitration, gemini, openai, true);
+      return await fetchEndpruefer(narrationInput, fallbackArbitration, gemini, openai, true);
     } finally {
       setIsArbitrating(false);
     }
@@ -542,6 +550,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
       setNarrationInput(textOverride);
     }
     setArbitratorResult(null);
+    setEndprueferResult(null);
     setIsProcessing(true);
     setIsCausaTriggered(openCausaPopup);
     setIsLocalisatioTriggered(openLocalisatioPopup);
@@ -573,48 +582,107 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
 
     try {
       const result = await analyzeOrganonText(textToAnalyze, language, 'gemini', shouldCrossCheck, onStepUpdate, enableRatio);
-      setLiveSteps(prev => prev.map(s => ({ ...s, status: 'done' })));
+      
       let gRes: any = null;
       let oRes: any = null;
+      let cmpRes: any = null;
       if (shouldCrossCheck && result && typeof result === 'object' && 'gemini' in result && 'openai' in result) {
+        cmpRes = result;
         setCompareResult(result);
         setAnalysisResult((result as any).gemini);
         gRes = (result as any).gemini;
         oRes = (result as any).openai;
       } else {
         const fallbackRes = result as OrganonAiAnalysisResult;
-        setCompareResult({ engine: 'single', gemini: fallbackRes, openai: null });
+        cmpRes = { engine: 'single', gemini: fallbackRes, openai: null };
+        setCompareResult(cmpRes);
         setAnalysisResult(fallbackRes);
         gRes = fallbackRes;
         oRes = null;
       }
 
+      onStepUpdate('category_mapping', 'done');
+      if (shouldCrossCheck) {
+        onStepUpdate('crosscheck', 'done');
+      }
+
+      // Step 2: Ratio (Belegprüfer / Arbitrator)
+      let completeArb: CompleteArbitratorResult | null = null;
       if (enableRatio) {
-        // Build guaranteed complete evidence auditor result for all 10 categories, Table A and Table B
-        const completeArb = buildCompleteArbitratorResult(
+        onStepUpdate('arbitration', 'active');
+        onStepUpdate('evidence_check', 'active');
+        setDebugStatus(t('organonStepArbitration'));
+
+        let serverArb = (result as any).arbitrator_result || null;
+        if (!serverArb && (oRes || gRes)) {
+          try {
+            const arbRes = await fetch('/api/organon/arbitrate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                rawText: textToAnalyze,
+                geminiResult: gRes,
+                openaiResult: oRes,
+                language: language
+              })
+            });
+            if (arbRes.ok) {
+              const data = await arbRes.json();
+              if (data.result) {
+                serverArb = data.result;
+              }
+            }
+          } catch (e) {
+            console.warn("Arbitrate fetch notice:", e);
+          }
+        }
+
+        completeArb = buildCompleteArbitratorResult(
           textToAnalyze,
           gRes,
           oRes,
-          (result as any).arbitrator_result || null,
+          serverArb,
           language
         );
-        if ((result as any).arbitrator_result) {
+        if (serverArb) {
           completeArb.__isServerResult = true;
         }
         setArbitratorResult(completeArb);
-        fetchEndpruefer(textToAnalyze, completeArb, gRes, oRes, true);
-
-        // If server did not include full arbitrator_result, trigger background arbitration to refine
-        if (!(result as any).arbitrator_result) {
-          fetchArbitration(gRes, oRes, true);
-        }
+        onStepUpdate('arbitration', 'done');
+        onStepUpdate('evidence_check', 'done');
+        onStepUpdate('consolidation', 'done');
       } else {
         setArbitratorResult(null);
-        fetchEndpruefer(textToAnalyze, null, gRes, oRes, false);
       }
 
-      setDebugStatus('Analyse erfolgreich abgeschlossen.');
-      setActiveTab('gemini');
+      // Step 3: Decisor (Endprüfer) - executes directly after Ratio
+      onStepUpdate('final_check', 'active');
+      setDebugStatus(t('organonStepFinalCheck'));
+      const finalEndRes = await fetchEndpruefer(textToAnalyze, completeArb, gRes, oRes, enableRatio);
+      onStepUpdate('final_check', 'done');
+
+      // Update patient case with all results if active
+      if (patientCase && onSavePatientCase) {
+        onSavePatientCase({
+          ...patientCase,
+          hauptbeschwerde: textToAnalyze,
+          organonAnalysis: {
+            ...patientCase.organonAnalysis,
+            analysisResult: gRes,
+            compareResult: cmpRes,
+            arbitratorResult: completeArb,
+            endprueferResult: finalEndRes,
+            updatedAt: new Date().toISOString()
+          }
+        });
+      }
+
+      setLiveSteps(prev => prev.map(s => ({ ...s, status: 'done' })));
+      setDebugStatus('Analyse, Ratio und Decisor erfolgreich abgeschlossen.');
+      
+      // Default to Decisor (Endprüfer) tab so practitioner directly sees the final verdict & pathway choices
+      setActiveTab('endpruefer');
+
       if (openStage2Workflow || openCausaPopup || openLocalisatioPopup) {
         setIsStage2WorkflowModalOpen(true);
         setIsResultsModalOpen(false);
@@ -1045,6 +1113,32 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
     }
 
     setIsStage2WorkflowModalOpen(false);
+    setIsResultsModalOpen(true);
+  };
+
+  const handleAdoptFastResults = (synthesizedRecords: Record<string, any>, fullSummaryText: string) => {
+    const updatedStage2: Record<string, any> = { ...stage2Records, ...synthesizedRecords };
+    setStage2Records(updatedStage2);
+
+    if (patientCase && onSavePatientCase) {
+      onSavePatientCase({
+        ...patientCase,
+        hauptbeschwerde: narrationInput,
+        organonAnalysis: {
+          ...patientCase.organonAnalysis,
+          analysisResult,
+          compareResult,
+          arbitratorResult,
+          endprueferResult,
+          stage2Records: updatedStage2,
+          stage2CompletedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      });
+    }
+
+    setDebugStatus('Organon Fast Befund erfolgreich übernommen.');
+    setIsFastQuestionnaireModalOpen(false);
     setIsResultsModalOpen(true);
   };
 
@@ -1557,6 +1651,65 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
             </div>
           )}
         </div>
+
+        {/* Dual-Path Choice Action Banner after Dezisor / Endprüfer */}
+        <div className="p-4 bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 border border-teal-800/50 rounded-2xl text-white space-y-3 shadow-md">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-teal-600/40 rounded-lg text-teal-300">
+              <Sparkles className="w-4 h-4" />
+            </span>
+            <div>
+              <h5 className="text-xs font-bold text-white uppercase tracking-wider">{t('organonChoiceModalTitle')}</h5>
+              <p className="text-[11px] text-teal-200/90">{t('organonChoiceModalSubtitle')}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <button
+              type="button"
+              id="organon-choice-deepdive-btn"
+              onClick={() => setIsStage2WorkflowModalOpen(true)}
+              className="p-3.5 bg-slate-800/90 hover:bg-slate-800 border border-teal-500/40 hover:border-teal-400 rounded-xl text-left transition-all group cursor-pointer space-y-2 shadow-xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                  {t('organonChoiceDeepDiveTitle')}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/30">
+                  {t('organonStartStage2Workflow')}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-snug">{t('organonChoiceDeepDiveDesc')}</p>
+              <div className="pt-1 flex items-center gap-1.5 text-xs font-bold text-teal-300 group-hover:text-teal-200">
+                <span>{t('organonStartStage2Workflow')}</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </button>
+
+            <button
+              type="button"
+              id="organon-choice-fast-btn"
+              onClick={() => setIsFastQuestionnaireModalOpen(true)}
+              className="p-3.5 bg-gradient-to-br from-amber-950/80 to-slate-800/90 hover:from-amber-950 hover:to-slate-800 border border-amber-500/50 hover:border-amber-400 rounded-xl text-left transition-all group cursor-pointer space-y-2 shadow-xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  {t('organonChoiceFastTitle')}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
+                  {t('btnOrganonFast')}
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-100/90 leading-snug">{t('organonChoiceFastDesc')}</p>
+              <div className="pt-1 flex items-center gap-1.5 text-xs font-bold text-amber-300 group-hover:text-amber-200">
+                <span>{t('organonFastAdoptAndContinue')}</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -2057,6 +2210,17 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                   )}
                   <span>{t('organonStartStage2Workflow')}</span>
                 </button>
+
+                <button
+                  id="organon-start-fast-questionnaire-btn"
+                  type="button"
+                  onClick={() => setIsFastQuestionnaireModalOpen(true)}
+                  disabled={!narrationInput.trim() || isProcessing}
+                  className="px-5 py-3 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-700 hover:via-orange-700 hover:to-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer border border-amber-400/40"
+                >
+                  <Zap className="w-4 h-4 text-amber-200" />
+                  <span>{t('btnOrganonFast')}</span>
+                </button>
               </div>
             </div>
 
@@ -2122,6 +2286,15 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                 >
                   <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
                   <span>{t('organonStartStage2Workflow')}</span>
+                </button>
+                <button
+                  id="organon-open-fast-questionnaire-modal-btn"
+                  type="button"
+                  onClick={() => setIsFastQuestionnaireModalOpen(true)}
+                  className="px-3.5 py-1.5 bg-gradient-to-r from-amber-600/40 via-orange-600/40 to-amber-700/40 hover:from-amber-600/60 hover:via-orange-600/60 hover:to-amber-700/60 text-amber-200 border border-amber-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{t('btnOrganonFast')}</span>
                 </button>
                 <button 
                   onClick={() => setIsResultsModalOpen(false)}
@@ -2478,6 +2651,16 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
         onHahnemannCrossCheckChange={(enabled) => setEnableHahnemannCrossCheck(enabled)}
         onAdoptCategoryResult={handleAdoptStage2Result}
         onWorkflowCompleted={handleStage2WorkflowCompleted}
+      />
+
+      <OrganonFastQuestionnaireModal
+        isOpen={isFastQuestionnaireModalOpen}
+        onClose={() => setIsFastQuestionnaireModalOpen(false)}
+        rawText={analysisResult?.raw_text || narrationInput}
+        stage1Values={getStage1ValuesMap()}
+        endprueferResult={endprueferResult}
+        arbitratorResult={arbitratorResult}
+        onAdoptResults={handleAdoptFastResults}
       />
     </div>
   );

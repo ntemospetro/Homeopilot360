@@ -204,41 +204,7 @@ export const RemedyMonographModal: React.FC<RemedyMonographModalProps> = ({
             <p className="text-sm font-medium text-teal-300 truncate">
               {remedy.commonName}
             </p>
-            {hasAnyAuthors && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-xs text-slate-400 mr-0.5">{t('filterAuthorLabel')}:</span>
-                {authorsInfo.hahnemann && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Samuel Hahnemann
-                  </span>
-                )}
-                {authorsInfo.kent && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                    James Tyler Kent
-                  </span>
-                )}
-                {authorsInfo.hering && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                    Constantine Hering
-                  </span>
-                )}
-                {authorsInfo.boericke && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    William Boericke
-                  </span>
-                )}
-                {authorsInfo.boger && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                    Cyrus Maxwell Boger
-                  </span>
-                )}
-                {authorsInfo.allen && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/40" title="Henry C. Allen">
-                    Henry C. Allen
-                  </span>
-                )}
-              </div>
-            )}
+
           </div>
 
           <button

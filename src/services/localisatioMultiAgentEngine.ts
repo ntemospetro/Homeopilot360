@@ -287,7 +287,7 @@ Antworte AUSSCHLIESSLICH als valides JSON:
   let response;
   try {
     response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-flash-latest",
       contents: prompt,
       config: {
         temperature: 0.15,
@@ -374,7 +374,7 @@ export async function runGptLocalisatioAnalysis(
   const symptomLabel = symptomData?.symptomLabel || 'Hauptbeschwerde';
 
   const prompt = `${LOCALISATIO_SYSTEM_SPEC}
-DU BIST INSTANZ 2 (GPT-4o PRO ARCHITEKTUR-EMULATION).
+DU BIST AGENT 2 DES DUALEN GEMINI-FLASH-SYSTEMS (DER HAHNEMANN-METHODIK-INQUIRER FÜR LOCALISATIO).
 Prüfe den Fall streng nach klassischer Homöopathie (Hahnemann § 84: Der Patient schildert seine Beschwerden, Angehörige berichten, der Arzt beobachtet).
 Achte besonders darauf, dass phänomenologische Schmerzangaben nicht in moderne anatomische Fachtermini überinterpretiert werden!
 
@@ -390,7 +390,7 @@ Antworte als valides JSON:
   "activeSymptomId": "${activeSymptomId}",
   "atomicFacts": [],
   "nextQuestion": {
-    "questionText": "Frage von Instanz 2",
+    "questionText": "Frage von Agent 2",
     "orientationExample": "Orientierungshilfe",
     "targetDimension": "L1",
     "targetSymptomId": "${activeSymptomId}",
@@ -404,7 +404,7 @@ Antworte als valides JSON:
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-flash-latest",
       contents: prompt,
       config: {
         temperature: 0.25,
@@ -467,7 +467,7 @@ Antworte als valides JSON:
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-flash-latest",
       contents: prompt,
       config: {
         temperature: 0.1,

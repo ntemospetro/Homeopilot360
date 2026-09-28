@@ -13,7 +13,12 @@ if (typeof window !== 'undefined') {
       combined.includes("message port closed") ||
       combined.includes("resizeobserver loop") ||
       combined.includes("chrome-extension://") ||
-      combined.includes("moz-extension://")
+      combined.includes("moz-extension://") ||
+      combined.includes("could not reach cloud firestore backend") ||
+      combined.includes("@firebase/firestore: firestore") ||
+      combined.includes("exceeded the quota") ||
+      combined.includes("quotaexceedederror") ||
+      combined.includes("fatal quota error")
     );
   };
 

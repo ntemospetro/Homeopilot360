@@ -102,6 +102,7 @@ export interface AdminCredentials {
 
 export interface Therapist {
   id: string;
+  authUid?: string; // Firebase Auth User UID
   vorname: string;
   nachname: string;
   email: string;
@@ -172,6 +173,8 @@ export interface AnamnesisQuestion {
 
 export interface PatientCase {
   id: string;
+  ownerUid?: string; // Firebase Auth User UID for tenant isolation
+  isLegacyUnassigned?: boolean; // Flagged if case has no verified therapist ownership
   therapistId: string;
   patientName: string;
   patientAge?: number;

@@ -266,39 +266,7 @@ export const FunnelStageRemediesModal: React.FC<FunnelStageRemediesModalProps> =
                       {remedy.commonName}
                     </p>
 
-                    {/* Classical Authors tags */}
-                    <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                      {authors.hahnemann && (
-                        <span className="text-[9px] font-medium px-1 rounded bg-amber-50 text-amber-800 border border-amber-200/60" title="Samuel Hahnemann">
-                          S. Hahnemann
-                        </span>
-                      )}
-                      {authors.kent && (
-                        <span className="text-[9px] font-medium px-1 rounded bg-sky-50 text-sky-800 border border-sky-200/60" title="James Tyler Kent">
-                          J. T. Kent
-                        </span>
-                      )}
-                      {authors.hering && (
-                        <span className="text-[9px] font-medium px-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200/60" title="Constantine Hering">
-                          C. Hering
-                        </span>
-                      )}
-                      {authors.boericke && (
-                        <span className="text-[9px] font-medium px-1 rounded bg-teal-50 text-teal-800 border border-teal-200/60" title="William Boericke">
-                          W. Boericke
-                        </span>
-                      )}
-                      {authors.boger && (
-                        <span className="text-[9px] font-medium px-1 rounded bg-purple-50 text-purple-800 border border-purple-200/60" title="Cyrus Maxwell Boger">
-                          C. M. Boger
-                        </span>
-                      )}
-                      {authors.allen && (
-                        <span className="text-[9px] font-medium px-1 rounded bg-amber-50 text-amber-900 border border-amber-300/80" title="Henry C. Allen">
-                          H. C. Allen
-                        </span>
-                      )}
-                    </div>
+
 
                     {/* Main Indications preview */}
                     {remedy.mainIndications && remedy.mainIndications.length > 0 && (

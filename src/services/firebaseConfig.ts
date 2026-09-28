@@ -1,5 +1,6 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
 import appletConfig from '../../firebase-applet-config.json';
 
 export const FIREBASE_CONFIG = appletConfig || {
@@ -15,14 +16,44 @@ export const FIREBASE_CONFIG = appletConfig || {
   recaptchaSiteKey: ""
 };
 
+let appInstance: FirebaseApp | null = null;
 let dbInstance: Firestore | null = null;
+let authInstance: Auth | null = null;
+
+export function getFirebaseApp(): FirebaseApp | null {
+  if (typeof window === 'undefined') return null;
+  if (!appInstance) {
+    try {
+      appInstance = getApps().length > 0 ? getApp() : initializeApp(FIREBASE_CONFIG);
+    } catch (e) {
+      console.error('[Firebase] Failed to initialize App:', e);
+      return null;
+    }
+  }
+  return appInstance;
+}
+
+export function getFirebaseAuth(): Auth | null {
+  if (typeof window === 'undefined') return null;
+  if (authInstance) return authInstance;
+  const app = getFirebaseApp();
+  if (!app) return null;
+  try {
+    authInstance = getAuth(app);
+    return authInstance;
+  } catch (err) {
+    console.error('[Firebase] Failed to initialize Auth:', err);
+    return null;
+  }
+}
 
 export function getDb(): Firestore | null {
   if (typeof window === 'undefined') return null;
   if (dbInstance) return dbInstance;
 
   try {
-    const app = getApps().length > 0 ? getApp() : initializeApp(FIREBASE_CONFIG);
+    const app = getFirebaseApp();
+    if (!app) return null;
     const dbId = FIREBASE_CONFIG.firestoreDatabaseId || undefined;
     try {
       // experimentalForceLongPolling avoids WebChannel stream buffering and
@@ -42,7 +73,7 @@ export function getDb(): Firestore | null {
     }
     return dbInstance;
   } catch (err) {
-    console.error('[Firebase] Failed to initialize Firebase app:', err);
+    console.error('[Firebase] Failed to initialize Firebase Firestore:', err);
     return null;
   }
 }

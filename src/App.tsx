@@ -9,7 +9,9 @@ import {
   getTherapists,
   saveTherapists,
   getPatientCases,
+  saveAllPatientCases,
   safeLocalStorageSetItem,
+  initStorageHealthCheck,
   STORAGE_KEYS,
   getPackagePlans,
   savePackagePlans,
@@ -19,6 +21,7 @@ import {
   setStoredActiveView
 } from './services/storage';
 import { initCloudSync } from './services/cloudSyncService';
+import { FirebaseAuthService } from './services/firebaseAuthService';
 import { 
   initNavigation, 
   navigateTo, 
@@ -93,14 +96,16 @@ function AppContent() {
     };
   }, []);
 
-  // Initialize Firebase Cloud Sync (Firestore)
+  // Initialize Firebase Cloud Sync (Firestore) & Firebase Auth
   useEffect(() => {
+    initStorageHealthCheck();
+    FirebaseAuthService.init();
     initCloudSync(
       getTherapists,
       saveTherapists,
       () => getPatientCases(),
       (cases) => {
-        safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(cases));
+        saveAllPatientCases(cases);
         window.dispatchEvent(new Event('homoeo_cases_updated'));
       },
       getPackagePlans,

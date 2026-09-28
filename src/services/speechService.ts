@@ -54,14 +54,14 @@ export function deduplicateRepeatedPhrases(text: string): string {
   if (!trimmed) return '';
 
   // 1. Punctuation-based sentence deduplication
-  const sentences = trimmed.split(/(?<=[.?!;])\s+/);
+  const sentences = trimmed.split(/(?<=[.?!;·;])\s+/);
   let cleanSentences: string[] = [];
   for (const s of sentences) {
     const sTrimmed = s.trim();
     if (!sTrimmed) continue;
-    const norm = sTrimmed.toLowerCase().replace(/[.,!?;:]/g, '').trim();
+    const norm = sTrimmed.toLowerCase().replace(/[.,!?;:·;]/g, '').trim();
     const last = cleanSentences[cleanSentences.length - 1];
-    const lastNorm = last ? last.toLowerCase().replace(/[.,!?;:]/g, '').trim() : '';
+    const lastNorm = last ? last.toLowerCase().replace(/[.,!?;:·;]/g, '').trim() : '';
     if (last && norm === lastNorm) continue;
     cleanSentences.push(sTrimmed);
   }
@@ -78,8 +78,8 @@ export function deduplicateRepeatedPhrases(text: string): string {
     const maxN = Math.min(Math.floor(words.length / 2), 12);
     for (let n = maxN; n >= 1; n--) {
       for (let i = 0; i <= words.length - 2 * n; i++) {
-        const chunk1 = words.slice(i, i + n).map(w => w.toLowerCase().replace(/[.,!?;:]/g, '')).join(' ');
-        const chunk2 = words.slice(i + n, i + 2 * n).map(w => w.toLowerCase().replace(/[.,!?;:]/g, '')).join(' ');
+        const chunk1 = words.slice(i, i + n).map(w => w.toLowerCase().replace(/[.,!?;:·;]/g, '')).join(' ');
+        const chunk2 = words.slice(i + n, i + 2 * n).map(w => w.toLowerCase().replace(/[.,!?;:·;]/g, '')).join(' ');
         if (chunk1 && chunk1 === chunk2) {
           // Remove second duplicate chunk
           words.splice(i + n, n);
@@ -100,8 +100,8 @@ export function mergeWithOverlap(base: string, next: string): string {
   if (!b) return deduplicateRepeatedPhrases(n);
   if (!n) return deduplicateRepeatedPhrases(b);
 
-  const bLower = b.toLowerCase().replace(/[.,!?;:]/g, '');
-  const nLower = n.toLowerCase().replace(/[.,!?;:]/g, '');
+  const bLower = b.toLowerCase().replace(/[.,!?;:·;]/g, '');
+  const nLower = n.toLowerCase().replace(/[.,!?;:·;]/g, '');
 
   // If one already fully contains the other
   if (bLower === nLower) {
@@ -120,8 +120,8 @@ export function mergeWithOverlap(base: string, next: string): string {
   const maxCheck = Math.min(bWords.length, nWords.length, 12);
 
   for (let len = maxCheck; len >= 1; len--) {
-    const bSlice = bWords.slice(-len).map(w => w.toLowerCase().replace(/[.,!?;:]/g, '')).join(' ');
-    const nSlice = nWords.slice(0, len).map(w => w.toLowerCase().replace(/[.,!?;:]/g, '')).join(' ');
+    const bSlice = bWords.slice(-len).map(w => w.toLowerCase().replace(/[.,!?;:·;]/g, '')).join(' ');
+    const nSlice = nWords.slice(0, len).map(w => w.toLowerCase().replace(/[.,!?;:·;]/g, '')).join(' ');
     if (bSlice && bSlice === nSlice) {
       const remainingN = nWords.slice(len).join(' ');
       return deduplicateRepeatedPhrases(remainingN ? `${b} ${remainingN}` : b);

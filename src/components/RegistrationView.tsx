@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createTherapist, getLocalizedRegistrationTrial } from '../services/storage';
+import { createTherapist, getLocalizedRegistrationTrial, updateTherapist } from '../services/storage';
+import { FirebaseAuthService } from '../services/firebaseAuthService';
 import { Therapist, RegistrationTrialConfig } from '../types';
 import { useTranslation } from '../i18n/LanguageContext';
 import { TermsModal } from './TermsModal';
@@ -133,19 +134,30 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
     }
   };
 
-  const handleVerificationSuccess = () => {
+  const handleVerificationSuccess = async () => {
     try {
+      const email = formData.email.trim().toLowerCase();
+      const password = pendingPassword.trim();
+
+      // Create Firebase Auth user
+      const authUid = await FirebaseAuthService.registerTherapist(email, password);
+
       const created = createTherapist({
         vorname: formData.vorname.trim(),
         nachname: formData.nachname.trim(),
         praxisName: formData.praxisName.trim() || undefined,
         adresse: formData.adresse.trim(),
         land: formData.land.trim(),
-        email: formData.email.trim().toLowerCase(),
+        email: email,
         telefon: formData.telefon.trim(),
-        password: pendingPassword.trim(),
+        password: password,
         preferredLanguage: language,
       });
+
+      if (authUid) {
+        updateTherapist(created.id, { authUid });
+        created.authUid = authUid;
+      }
 
       setIsVerificationModalOpen(false);
       onSuccess(created);

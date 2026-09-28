@@ -7,6 +7,7 @@ import {
   QuestionHistoryItem 
 } from '../services/organonQuestionEngine';
 import { MessageSquare, Clock, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { VoiceInputButton } from './VoiceInputButton';
 
 interface OrganonDynamicQuestionModalProps {
   isOpen: boolean;
@@ -150,13 +151,23 @@ export const OrganonDynamicQuestionModal: React.FC<OrganonDynamicQuestionModalPr
               <p className="text-xs text-slate-600 leading-relaxed">
                 Geben Sie die Schilderung des Patienten ein, um den strukturierten Einzelfragen-Dialog nach Hahnemann & Bönninghausen zu starten.
               </p>
-              <textarea
-                rows={5}
-                value={editableRawText}
-                onChange={(e) => setEditableRawText(e.target.value)}
-                placeholder="Hier Fallbeschreibung / Patienten-O-Ton einfügen..."
-                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-colors"
-              />
+              <div className="relative text-left">
+                <textarea
+                  rows={5}
+                  value={editableRawText}
+                  onChange={(e) => setEditableRawText(e.target.value)}
+                  placeholder="Hier Fallbeschreibung / Patienten-O-Ton einfügen..."
+                  className="w-full p-3.5 pr-12 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-colors"
+                />
+                <div className="absolute top-3 right-3">
+                  <VoiceInputButton
+                    value={editableRawText}
+                    onChange={(newVal) => setEditableRawText(newVal)}
+                    context="main_complaint"
+                    size="sm"
+                  />
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => startEngine(editableRawText, initialMatrices, initialRelations)}
@@ -310,13 +321,23 @@ export const OrganonDynamicQuestionModal: React.FC<OrganonDynamicQuestionModalPr
                         </div>
 
                         <div className="space-y-2">
-                          <textarea
-                            rows={3}
-                            value={answerInput}
-                            onChange={(e) => setAnswerInput(e.target.value)}
-                            placeholder="Antwort des Patienten eingeben..."
-                            className="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
-                          />
+                          <div className="relative">
+                            <textarea
+                              rows={3}
+                              value={answerInput}
+                              onChange={(e) => setAnswerInput(e.target.value)}
+                              placeholder="Antwort des Patienten eingeben..."
+                              className="w-full p-3 pr-12 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
+                            />
+                            <div className="absolute top-2 right-2">
+                              <VoiceInputButton
+                                value={answerInput}
+                                onChange={(newVal) => setAnswerInput(newVal)}
+                                context="question_answer"
+                                size="xs"
+                              />
+                            </div>
+                          </div>
                           <button
                             type="submit"
                             disabled={loading || !answerInput.trim()}

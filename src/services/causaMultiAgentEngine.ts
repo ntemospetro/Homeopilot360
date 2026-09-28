@@ -205,8 +205,8 @@ WICHTIGSTE METHODISCHE REGELN:
      b) "Causa unsicher" (Patient vermutet Zusammenhang, Gegenbeispiele/Lücken bestehen)
      c) "Keine ausreichend belegte Causa ermittelbar" (völlig gleichwertiges, valides Ergebnis!)`;
 
-const CAUSA_PRIMARY_MODEL = "gemini-3.8-flash";
-const CAUSA_FALLBACK_MODEL = "gemini-3.8-flash";
+const CAUSA_PRIMARY_MODEL = "gemini-flash-latest";
+const CAUSA_FALLBACK_MODEL = "gemini-flash-latest";
 
 async function executeCausaAiGeneration(
   ai: GoogleGenAI,
@@ -247,8 +247,13 @@ export async function runGeminiCausaAnalysis(
 ): Promise<CausaAgentAnalysis> {
   const prompt = `${CAUSA_SYSTEM_SPEC}
 
-ROLLE: INSTANZ 1 (GEMINI 3.8 FLASH - ERSTANALYSE)
+ROLLE: AGENT 1 DES DUALEN GEMINI-FLASH-SYSTEMS (DER PHÄNOMENOLOGE & DIMENSIONS-PROFILER)
 Analysiere die Patientenaussagen unabhängig und erstelle deinen Vorschlag für die Causa-Klärung.
+Dein Hauptaugenmerk liegt auf der präzisen Trennung von:
+1. Tatsächlichen Fakten (was der Patient wirklich erlebt/gesagt hat)
+2. Bloßen Vermutungen des Patienten
+3. Ausdrücklichen Nicht-Erinnerlichkeiten ("weiß nicht", "nicht erinnerlich" als Information sichern, nicht als Verneinung werten!)
+4. Den 13 Causa-Dimensionen C1–C13.
 
 PATIENTENTEXT:
 """${rawText}"""
@@ -321,20 +326,16 @@ export async function runGptCausaAnalysis(
   history: Array<{ question: string; answer: string }>,
   language: string = "de"
 ): Promise<CausaAgentAnalysis> {
-  const rawOpenAiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || process.env.OPENAI_SECRET;
-  const openAiKey = typeof rawOpenAiKey === "string" ? rawOpenAiKey.trim() : "";
-  const isLikelyValidKey =
-    Boolean(openAiKey) &&
-    openAiKey.length > 20 &&
-    !isOpenAiCausaKeyInvalid &&
-    !openAiKey.includes("YOUR_") &&
-    !openAiKey.startsWith("sk-proj-YOUR") &&
-    !openAiKey.includes("MY_KEY");
-
+  // Pure Dual Gemini Flash Agent 2: Der Hahnemann-Fragentrichter & Methodik-Inquirer
+  // Läuft parallel zu Agent 1 in ~1 Sekunde und vermeidet jegliche externe OpenAI-Latenzen/Keys.
   const prompt = `${CAUSA_SYSTEM_SPEC}
 
-ROLLE: INSTANZ 2 (GPT / UNABHÄNGIGE ZWEITMEINUNG)
-WICHTIG: Du siehst Geminis Analyse NICHT! Untersuche den Fall vollkommen eigenständig und unvoreingenommen direkt anhand des Patiententextes und der bisherigen Antworten.
+ROLLE: AGENT 2 DES DUALEN GEMINI-FLASH-SYSTEMS (DER HAHNEMANN-METHODIK-INQUIRER)
+Du untersuchst den Fall vollkommen eigenständig, unvoreingenommen und streng nach den Regeln von Samuel Hahnemann (Organon §§ 83–104).
+Dein Hauptaugenmerk liegt auf der Formulierung der methodisch reinsten nächsten Frage:
+1. NULL SUGGESTION: Keine vorgefertigten Antwortoptionen, keine Ja/Nein-Fragen, keine Vorwegnahme von Ursachen!
+2. FRAGENTRICHTER STUFE 1: Halte die Frage weit und offen, damit der Kranke in eigenen Worten frei berichten kann (§ 84).
+3. PRAXISTAUGLICHES ORIENTIERUNGSBEISPIEL: Ein neutrales Beispiel für den Therapeuten (§ 88).
 
 PATIENTENTEXT:
 """${rawText}"""
@@ -371,34 +372,10 @@ Antworte AUSSCHLIESSLICH im folgenden JSON-Format ohne Markdown:
   }
 }`;
 
-  if (isLikelyValidKey) {
-    try {
-      const OpenAI = (await import("openai")).default;
-      const openai = new OpenAI({ apiKey: openAiKey, timeout: 30000, maxRetries: 1 });
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "Du bist Instanz 2 (GPT-4o) des Causa-Prüfsystems. Antworte ausschließlich in validem JSON." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.2,
-        response_format: { type: "json_object" }
-      });
-      const content = completion.choices[0]?.message?.content;
-      if (content) {
-        return JSON.parse(content);
-      }
-    } catch (e: any) {
-      isOpenAiCausaKeyInvalid = true;
-      console.log("[CausaMultiAgent] OpenAI direct credentials unavailable or inactive, smoothly utilizing independent second-opinion engine.");
-    }
-  }
-
-  // Fallback zu separatem, unabhängigem Prompt-Aufruf (Second-Opinion Profile)
   const response = await executeCausaAiGeneration(
     ai,
-    `[SYSTEM: DU ARBEITEST ALS VOLLKOMMEN UNABHÄNGIGE INSTANZ 2 (GPT-4o PRO EMULATION)]\n\n${prompt}`,
-    0.3,
+    prompt,
+    0.25,
     2048
   );
 

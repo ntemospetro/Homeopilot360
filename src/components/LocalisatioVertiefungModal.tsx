@@ -58,6 +58,7 @@ interface LocalisatioVertiefungModalProps {
   endprueferResult?: any | null;
   onAdoptLocalisatio?: (finalLocalisatioText: string) => void;
   hahnemannCrossCheck?: boolean;
+  mode?: 'gemini-only' | '3-tier' | 'ab-compare';
   isEmbedded?: boolean;
   onWorkflowComplete?: (finalLocalisatioText: string) => void;
   onPartialChange?: (finalLocalisatioText: string) => void;
@@ -71,6 +72,7 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
   endprueferResult = null,
   onAdoptLocalisatio,
   hahnemannCrossCheck = false,
+  mode: propMode,
   isEmbedded = false,
   onWorkflowComplete,
   onPartialChange
@@ -80,7 +82,7 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
   const [stateA, setStateA] = useState<LocalisatioVertiefungState | null>(null);
   const [stateB, setStateB] = useState<LocalisatioVertiefungState | null>(null);
   const [activeMode, setActiveMode] = useState<'gemini-only' | '3-tier' | 'ab-compare'>(
-    hahnemannCrossCheck ? '3-tier' : 'gemini-only'
+    propMode || (hahnemannCrossCheck ? '3-tier' : 'gemini-only')
   );
   const [loading, setLoading] = useState<boolean>(false);
   const [answerInput, setAnswerInput] = useState<string>('');
@@ -102,7 +104,7 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
 
   useEffect(() => {
     if (isOpen) {
-      const mode = hahnemannCrossCheck ? '3-tier' : 'gemini-only';
+      const mode = propMode || (hahnemannCrossCheck ? '3-tier' : 'gemini-only');
       setActiveMode(mode);
       setAnswerInput('');
       setShowHistory(false);
@@ -111,7 +113,7 @@ export const LocalisatioVertiefungModal: React.FC<LocalisatioVertiefungModalProp
     } else {
       stopRecording();
     }
-  }, [isOpen, hahnemannCrossCheck]);
+  }, [isOpen, hahnemannCrossCheck, propMode]);
 
   const loadInitialState = async (mode: 'gemini-only' | '3-tier' | 'ab-compare') => {
     setLoading(true);

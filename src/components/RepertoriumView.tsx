@@ -27,7 +27,9 @@ import {
   matchesAuthorFilter, 
   ClassicalAuthorFilterKey 
 } from '../data/classicalAuthorsMap';
+import { BoerickeRepertoryWizardView } from './BoerickeRepertoryWizardView';
 import { Therapist, PatientCase } from '../types';
+import { Users } from 'lucide-react';
 
 interface RepertoriumViewProps {
   therapist?: Therapist;
@@ -73,6 +75,9 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
   const [newClientBirthDate, setNewClientBirthDate] = useState<string>('');
   const [newClientPhone, setNewClientPhone] = useState<string>('');
   const [saveToast, setSaveToast] = useState<string | null>(null);
+
+  // Active View Mode: 'boericke_wizard' (Step-by-Step like schema) or 'classic_4pillar'
+  const [activeRepertoryMode, setActiveRepertoryMode] = useState<'boericke_wizard' | 'classic_4pillar'>('boericke_wizard');
 
   // Praxis-Bonus for Polychrests (+2 points) - default ACTIVE
   const [praxisBonusActive, setPraxisBonusActive] = useState<boolean>(true);
@@ -234,8 +239,8 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
     { key: 'kent' as ClassicalAuthorFilterKey, label: t('filterAuthorKent') },
     { key: 'hering' as ClassicalAuthorFilterKey, label: t('filterAuthorHering') },
     { key: 'boericke' as ClassicalAuthorFilterKey, label: t('filterAuthorBoericke') },
-    { key: 'boger' as ClassicalAuthorFilterKey, label: t('filterAuthorBoger' as any) || 'Boger' },
-    { key: 'allen' as ClassicalAuthorFilterKey, label: t('filterAuthorAllen' as any) || 'H. C. Allen' }
+    { key: 'boger' as ClassicalAuthorFilterKey, label: t('filterAuthorBoger') },
+    { key: 'allen' as ClassicalAuthorFilterKey, label: t('filterAuthorAllen') }
   ];
 
   // Compute live repertorisation using Classical Repertory Engine (Hahnemann, Kent, Hering, Boericke)
@@ -406,6 +411,34 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {/* Mode Switcher: Boericke Step-by-Step Wizard vs Classic 4-Pillars */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              id="repertorium-mode-boericke-wizard-btn"
+              onClick={() => setActiveRepertoryMode('boericke_wizard')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeRepertoryMode === 'boericke_wizard'
+                  ? 'bg-teal-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {t('repertoryWizardModeBoericke' as any) || 'Stufen-Repertorisation (nach Boericke)'}
+            </button>
+            <button
+              type="button"
+              id="repertorium-mode-classic-btn"
+              onClick={() => setActiveRepertoryMode('classic_4pillar')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeRepertoryMode === 'classic_4pillar'
+                  ? 'bg-teal-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {t('repertoryWizardModeClassic' as any) || 'Klassische 4-Säulen-Ansicht'}
+            </button>
+          </div>
+
           <button
             type="button"
             id="repertorium-assign-client-top-btn"
@@ -441,45 +474,15 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
         </div>
       </div>
 
-      {/* Classical Authors Selector Bar (Clean primary header matching image.png) */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs md:text-sm font-bold text-slate-900">
-              {t('filterAuthorLabel')}
-            </span>
-            <span className="text-xs text-slate-500">
-              — {selectedAuthors.includes('all') || selectedAuthors.length === 0
-                ? t('repertoriumScopeAll') 
-                : `${t('repertoriumScopeAuthor')} ${selectedAuthors.map(k => authors.find(a => a.key === k)?.label).filter(Boolean).join(', ')}`}
-            </span>
-          </div>
+      {/* VIEW RENDER: Either Boericke Step-by-Step Wizard or Classic 4-Pillar Repertorium */}
+      {activeRepertoryMode === 'boericke_wizard' ? (
+        <BoerickeRepertoryWizardView
+          onSelectRemedyForCase={onSelectRemedyForCase}
+          onGoToMateriaMedica={onGoToMateriaMedica}
+        />
+      ) : (
+        <>
 
-          <div className="flex items-center gap-2">
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 w-full">
-          {authors.map((auth) => {
-            const active = isAuthorActive(auth.key);
-            return (
-              <button
-                key={auth.key}
-                type="button"
-                id={`repertorium-filter-author-${auth.key}`}
-                onClick={() => handleAuthorClick(auth.key)}
-                className={`py-2 px-2 md:py-2.5 md:px-3 rounded-xl text-xs md:text-sm font-semibold transition-all cursor-pointer text-center truncate shadow-2xs ${
-                  active
-                    ? 'bg-teal-700 text-white font-bold shadow-xs ring-1 ring-teal-800'
-                    : 'bg-slate-100 hover:bg-slate-200/90 text-slate-700 border border-slate-200/80'
-                }`}
-              >
-                {auth.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Main Grid: Left = Symptoms Input, Right = Repertory Results */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -500,19 +503,7 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
             ))}
           </div>
 
-          {/* Classical Authors Guidance Card */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 text-xs text-slate-600 space-y-1.5 shadow-2xs">
-            <div className="flex items-center gap-2 font-bold text-slate-900">
-              <span>
-                {selectedAuthors.includes('all') || selectedAuthors.length === 0
-                  ? t('repertoriumBoerickeNotice') 
-                  : `${t('repertoriumScopeAuthor')} ${selectedAuthors.map(k => authors.find(a => a.key === k)?.label).filter(Boolean).join(', ')}`}
-              </span>
-            </div>
-            <p className="text-slate-600 leading-relaxed">
-              {t('repertoriumBoerickeGuidance')}
-            </p>
-          </div>
+
         </div>
 
         {/* Right Column: Narrowed Results List (7 cols on lg) */}
@@ -796,6 +787,41 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Klassische Autoren Filter (Multi-select) */}
+                  <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-teal-700" />
+                        {t('filterAuthorLabel')}:
+                      </span>
+                      {!selectedAuthors.includes('all') && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAuthors(['all'])}
+                          className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold cursor-pointer"
+                        >
+                          {t('resetFilters')}
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {authors.map((auth) => (
+                        <button
+                          key={auth.key}
+                          type="button"
+                          onClick={() => handleAuthorClick(auth.key)}
+                          className={`py-1.5 px-3 rounded-xl text-[10px] font-bold transition-all cursor-pointer shadow-2xs border ${
+                            isAuthorActive(auth.key)
+                              ? 'bg-teal-700 text-white border-teal-800 shadow-xs'
+                              : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
+                          }`}
+                        >
+                          {auth.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Decent Praxis-Bonus Toggle Card matching the image */}
@@ -1152,6 +1178,8 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
           )}
         </div>
       </div>
+        </>
+      )}
 
       {/* Monograph Detail Modal */}
       {selectedRemedy && (
