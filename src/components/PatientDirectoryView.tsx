@@ -3,13 +3,14 @@ import { Therapist, PatientCase, FollowUpEntry } from '../types';
 import { 
   getPatientCases, 
   savePatientCase, 
-  updatePatientStammdatenAcrossCases,
-  getRecentlyEditedPatientNames,
-  deletePatientCase,
-  deletePatientAndAllCases,
-  isFeatureLimitReached
+  updatePatientStammdatenAcrossCases, 
+  getRecentlyEditedPatientNames, 
+  deletePatientCase, 
+  deletePatientAndAllCases, 
+  isFeatureLimitReached 
 } from '../services/storage';
 import { useTranslation } from '../i18n/LanguageContext';
+import { useTerminology } from '../i18n/TerminologyContext';
 import { VoiceInputButton } from './VoiceInputButton';
 import { StammdatenModal } from './StammdatenModal';
 import { 
@@ -23,15 +24,29 @@ import {
   Mail, 
   Phone, 
   ArrowRight, 
+  ArrowLeft,
   X, 
-  ShieldCheck,
-  Calendar,
-  Sparkles,
-  Pill,
-  Clock,
-  Trash2,
-  AlertTriangle,
-  ChevronDown
+  Calendar, 
+  Sparkles, 
+  Pill, 
+  Clock, 
+  Trash2, 
+  AlertTriangle, 
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Filter, 
+  ArrowUpDown, 
+  User, 
+  Heart, 
+  Baby, 
+  Scale, 
+  Ruler, 
+  ExternalLink, 
+  Check,
+  MoreVertical,
+  Eye
 } from 'lucide-react';
 
 interface PatientDirectoryViewProps {
@@ -50,6 +65,8 @@ interface GroupedPatient {
   primaryCase: PatientCase;
   totalFollowUps: number;
   latestFollowUp?: FollowUpEntry;
+  lastActivityTimestamp: number;
+  lastActivityFormatted: string;
 }
 
 // Helper to split full name into first and last name cleanly
@@ -92,6 +109,144 @@ function formatLastActivity(timestamp: number, language: string, t: (key: any) =
   }
 }
 
+// Calculate BMI and appropriate category key
+function calculateBMI(heightCm?: number, weightKg?: number): { bmi: number; categoryKey: string } | null {
+  if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) return null;
+  const heightM = heightCm / 100;
+  const bmi = Math.round((weightKg / (heightM * heightM)) * 10) / 10;
+  let categoryKey = 'bmiCategoryNormal';
+  if (bmi < 18.5) categoryKey = 'bmiCategoryUnder';
+  else if (bmi < 25) categoryKey = 'bmiCategoryNormal';
+  else if (bmi < 30) categoryKey = 'bmiCategoryOver';
+  else categoryKey = 'bmiCategoryObese';
+  return { bmi, categoryKey };
+}
+
+// Stable deterministic numeric customer ID: e.g. 100261
+function getPatientCustomerNumber(patient: GroupedPatient): string {
+  if (patient.primaryCase.customStammdaten) {
+    const customNr = patient.primaryCase.customStammdaten.find(
+      d => {
+        const key = ((d as any).label || d.name || '').toLowerCase();
+        return key.includes('kundennummer') || key.includes('patientennummer') || key.includes('id');
+      }
+    );
+    if (customNr?.value?.trim()) return customNr.value.trim();
+  }
+  let hash = 0;
+  const str = patient.key || 'patient';
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) % 900000;
+  }
+  return (100000 + Math.abs(hash)).toString();
+}
+
+// Universal search matching across all patient attributes and treatment cases
+function matchesPatientUniversalSearch(p: GroupedPatient, rawQuery: string): boolean {
+  const q = rawQuery.toLowerCase().trim();
+  if (!q) return true;
+
+  const { firstName, lastName } = parsePatientName(p.name);
+  const custNr = getPatientCustomerNumber(p);
+
+  // Names, key & customer ID
+  if (p.name.toLowerCase().includes(q)) return true;
+  if (firstName.toLowerCase().includes(q)) return true;
+  if (lastName.toLowerCase().includes(q)) return true;
+  if (p.key.toLowerCase().includes(q)) return true;
+  if (custNr.toLowerCase().includes(q)) return true;
+
+  // Demographics from primary case
+  if (p.primaryCase.patientBirthDate?.toLowerCase().includes(q)) return true;
+  if (p.primaryCase.patientAge?.toString().includes(q)) return true;
+  if (p.primaryCase.patientGender?.toLowerCase().includes(q)) return true;
+  if (p.primaryCase.patientMaritalStatus?.toLowerCase().includes(q)) return true;
+
+  // Contact info
+  if (p.primaryCase.patientPhone?.toLowerCase().includes(q)) return true;
+  if (p.primaryCase.patientEmail?.toLowerCase().includes(q)) return true;
+
+  // Address fields (including legacy / arbitrary keys)
+  const primaryAny = p.primaryCase as any;
+  if (primaryAny.patientAddress?.toLowerCase().includes(q)) return true;
+  if (primaryAny.address?.toLowerCase().includes(q)) return true;
+  if (primaryAny.patientStreet?.toLowerCase().includes(q)) return true;
+  if (primaryAny.patientCity?.toLowerCase().includes(q)) return true;
+  if (primaryAny.patientZip?.toLowerCase().includes(q)) return true;
+  if (primaryAny.strasse?.toLowerCase().includes(q)) return true;
+  if (primaryAny.ort?.toLowerCase().includes(q)) return true;
+  if (primaryAny.plz?.toLowerCase().includes(q)) return true;
+
+  // Custom master data fields
+  if (p.primaryCase.customStammdaten) {
+    const matchedCustom = p.primaryCase.customStammdaten.some(cs => {
+      const fieldName = ((cs as any).label || cs.name || '').toLowerCase();
+      const val = (cs.value || '').toLowerCase();
+      return fieldName.includes(q) || val.includes(q);
+    });
+    if (matchedCustom) return true;
+  }
+
+  // Children names
+  if (p.primaryCase.childrenList && p.primaryCase.childrenList.some(ch => ch.name.toLowerCase().includes(q))) {
+    return true;
+  }
+
+  // Cases, anamnesis, symptoms, modalities, remedies, medications, follow-ups
+  return p.cases.some(c => {
+    const cAny = c as any;
+    if (c.patientEmail?.toLowerCase().includes(q)) return true;
+    if (c.patientPhone?.toLowerCase().includes(q)) return true;
+    if (c.patientBirthDate?.toLowerCase().includes(q)) return true;
+    if (cAny.patientAddress?.toLowerCase().includes(q)) return true;
+    if (cAny.address?.toLowerCase().includes(q)) return true;
+    if (cAny.patientStreet?.toLowerCase().includes(q)) return true;
+    if (cAny.patientCity?.toLowerCase().includes(q)) return true;
+    if (cAny.patientZip?.toLowerCase().includes(q)) return true;
+    if (cAny.strasse?.toLowerCase().includes(q)) return true;
+    if (cAny.ort?.toLowerCase().includes(q)) return true;
+    if (cAny.plz?.toLowerCase().includes(q)) return true;
+
+    if (c.customStammdaten && c.customStammdaten.some(cs => {
+      const fieldName = ((cs as any).label || cs.name || '').toLowerCase();
+      const val = (cs.value || '').toLowerCase();
+      return fieldName.includes(q) || val.includes(q);
+    })) return true;
+
+    if (c.hauptbeschwerde?.toLowerCase().includes(q)) return true;
+    if (c.spontanbericht?.toLowerCase().includes(q)) return true;
+    if (c.gemuetPsyche?.toLowerCase().includes(q)) return true;
+    if (c.koerperAllgemein?.toLowerCase().includes(q)) return true;
+    if (c.lokalsymptome?.toLowerCase().includes(q)) return true;
+    if (c.modalitaetenBesser?.toLowerCase().includes(q)) return true;
+    if (c.modalitaetenSchlechter?.toLowerCase().includes(q)) return true;
+    if (c.bisherigeMittel?.toLowerCase().includes(q)) return true;
+    if (c.anamneseDatum?.toLowerCase().includes(q)) return true;
+    if (c.medikamenteList?.some(m => m.name.toLowerCase().includes(q) || m.dosierung.toLowerCase().includes(q) || (m.wirkstoff && m.wirkstoff.toLowerCase().includes(q)))) return true;
+    if (c.remedySuggestions?.some(r => r.name.toLowerCase().includes(q) || (r.description && r.description.toLowerCase().includes(q)))) return true;
+    if (c.followUps?.some(fu => (fu.trend && fu.trend.toLowerCase().includes(q)) || (fu.notes && fu.notes.toLowerCase().includes(q)) || (fu.remedyRecommendations && fu.remedyRecommendations.toLowerCase().includes(q)))) return true;
+
+    return false;
+  });
+}
+
+// Formatted Date & Time for Table: e.g. 28.05.2025 13:23
+function formatActivityDateTime(timestamp: number, lang: string): string {
+  if (!timestamp || timestamp <= 0) return '—';
+  try {
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return '—';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
+  } catch {
+    return '—';
+  }
+}
+
 export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
   therapist,
   onOpenCaseInWorkspace,
@@ -101,16 +256,56 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
   onActionHandled,
 }) => {
   const { t, language } = useTranslation();
+  const { termPatient, termPatients, termPatientenkartei } = useTerminology();
   const [cases, setCases] = useState<PatientCase[]>(() => getPatientCases(therapist.id));
   const [recentEditsRev, setRecentEditsRev] = useState(0);
   const [selectedPatientKey, setSelectedPatientKey] = useState<string | null>(null);
   const [activeCaseTabId, setActiveCaseTabId] = useState<string | null>(null);
   
-  // Case Search & Accordion State
+  // Directory Search, Filter & Sort State
+  const [directorySearchQuery, setDirectorySearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState<'all' | 'recent' | 'with_cases' | 'no_cases'>('all');
+  const [sortField, setSortField] = useState<'name_asc' | 'name_desc' | 'activity_desc' | 'activity_asc' | 'cases_desc' | 'age_desc'>('activity_desc');
+  
+  // Pagination & Multi-Selection State (max 10 per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedPatientKeys, setSelectedPatientKeys] = useState<Set<string>>(new Set());
+  const [actionMenuOpenKey, setActionMenuOpenKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleCloseMenu = () => setActionMenuOpenKey(null);
+    if (actionMenuOpenKey) {
+      document.addEventListener('click', handleCloseMenu);
+      return () => document.removeEventListener('click', handleCloseMenu);
+    }
+  }, [actionMenuOpenKey]);
+
+  // Quick Customer Entry Form State (on top of directory, closed by default upon page opening)
+  const [isQuickEntryOpen, setIsQuickEntryOpen] = useState(false);
+  // Recent Patients Table State (collapsed by default upon page opening)
+  const [isRecentPatientsOpen, setIsRecentPatientsOpen] = useState(false);
+  const [quickName, setQuickName] = useState('');
+  const [quickBirthDate, setQuickBirthDate] = useState('');
+  const [quickAge, setQuickAge] = useState<number | undefined>(undefined);
+  const [quickGender, setQuickGender] = useState<'weiblich' | 'männlich' | 'divers'>('weiblich');
+  const [quickPhone, setQuickPhone] = useState('');
+  const [quickEmail, setQuickEmail] = useState('');
+  const [quickMaritalStatus, setQuickMaritalStatus] = useState('');
+  const [quickHeightCm, setQuickHeightCm] = useState<number | undefined>(undefined);
+  const [quickWeightKg, setQuickWeightKg] = useState<number | undefined>(undefined);
+  const [quickHasChildren, setQuickHasChildren] = useState(false);
+  const [quickChildrenCount, setQuickChildrenCount] = useState<number>(0);
+  const [quickIsPregnant, setQuickIsPregnant] = useState(false);
+  const [quickPregnancyMonth, setQuickPregnancyMonth] = useState<number | undefined>(undefined);
+  const [quickChiefComplaint, setQuickChiefComplaint] = useState('');
+  const [saveSuccessToast, setSaveSuccessToast] = useState(false);
+
+  // Case Search & Accordion State within Active Customer Page
   const [caseSearchQuery, setCaseSearchQuery] = useState('');
   const [expandedCaseIds, setExpandedCaseIds] = useState<Set<string>>(new Set());
 
-  // Reset case search and collapse all cases when changing selected patient
+  // Reset case search and expand first case when changing selected patient
   useEffect(() => {
     setCaseSearchQuery('');
     setExpandedCaseIds(new Set());
@@ -128,10 +323,6 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
     });
   };
 
-  // Patient / Customer Selection Modal
-  const [isSelectPatientModalOpen, setIsSelectPatientModalOpen] = useState(false);
-  const [modalSearchQuery, setModalSearchQuery] = useState('');
-
   // Modals & Editors
   const [isEditStammdatenOpen, setIsEditStammdatenOpen] = useState(false);
   const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState(false);
@@ -142,8 +333,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
       setIsNewPatientModalOpen(true);
       onActionHandled?.();
     } else if (initialOpenAction === 'select_patient') {
-      setModalSearchQuery('');
-      setIsSelectPatientModalOpen(true);
+      setSelectedPatientKey(null);
       onActionHandled?.();
     }
   }, [initialOpenAction, onActionHandled]);
@@ -201,7 +391,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleCasesUpdated = () => {
       refreshData();
     };
@@ -216,86 +406,49 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
     };
   }, [therapist.id]);
 
-  const handleSaveNewPatient = (data: Partial<PatientCase>) => {
-    const pName = data.patientName?.trim() || '';
-    const checkPatients = isFeatureLimitReached(therapist.id, 'maxPatients', 1, pName);
-    if (checkPatients.reached) {
-      window.dispatchEvent(new CustomEvent('homoeo_action_limit_reached', {
-        detail: { feature: t('tariffLimitPatientsLabel'), limit: checkPatients.limit }
-      }));
-      return;
+  // Helper to compute patient's last edited/consulted timestamp
+  const getPatientLastActivityTimestamp = (patientCases: PatientCase[], patientName: string): number => {
+    let latest = 0;
+    
+    // Check recorded edit timestamps in storage
+    const recentList = getRecentlyEditedPatientNames();
+    const found = recentList.find(r => r.name.toLowerCase() === patientName.toLowerCase());
+    if (found && found.timestamp > latest) {
+      latest = found.timestamp;
     }
 
-    const checkCases = isFeatureLimitReached(therapist.id, 'maxCases', 1);
-    if (checkCases.reached) {
-      window.dispatchEvent(new CustomEvent('homoeo_action_limit_reached', {
-        detail: { feature: t('tariffLimitCasesLabel'), limit: checkCases.limit }
-      }));
-      return;
+    // Check case timestamps
+    for (const c of patientCases) {
+      if (c.updatedAt) {
+        const time = new Date(c.updatedAt).getTime();
+        if (!isNaN(time) && time > latest) latest = time;
+      }
+      if (c.analyzedAt) {
+        const time = new Date(c.analyzedAt).getTime();
+        if (!isNaN(time) && time > latest) latest = time;
+      }
+      if (c.therapyRecommendations?.updatedAt) {
+        const time = new Date(c.therapyRecommendations.updatedAt).getTime();
+        if (!isNaN(time) && time > latest) latest = time;
+      }
+      if (c.initialPrescription?.prescribedAt) {
+        const time = new Date(c.initialPrescription.prescribedAt).getTime();
+        if (!isNaN(time) && time > latest) latest = time;
+      }
+      if (c.followUps && c.followUps.length > 0) {
+        for (const fu of c.followUps) {
+          if (fu.createdAt) {
+            const time = new Date(fu.createdAt).getTime();
+            if (!isNaN(time) && time > latest) latest = time;
+          }
+        }
+      }
+      if (c.anamneseDatum) {
+        const time = new Date(c.anamneseDatum).getTime();
+        if (!isNaN(time) && time > latest) latest = time;
+      }
     }
-
-    const newCaseId = 'case-' + Date.now();
-    const isFemale = (data.patientGender || 'weiblich') === 'weiblich';
-    const created = savePatientCase({
-      therapistId: therapist.id,
-      patientName: data.patientName?.trim() || '',
-      patientBirthDate: data.patientBirthDate || '',
-      patientAge: data.patientAge,
-      patientGender: data.patientGender || 'weiblich',
-      patientHeightCm: data.patientHeightCm,
-      patientWeightKg: data.patientWeightKg,
-      patientMaritalStatus: data.patientMaritalStatus || '',
-      anamneseDatum: data.anamneseDatum || new Date().toISOString().split('T')[0],
-      patientEmail: data.patientEmail || '',
-      patientPhone: data.patientPhone || '',
-      isPregnant: isFemale ? !!data.isPregnant : false,
-      pregnancyMonth: isFemale && data.isPregnant ? data.pregnancyMonth : undefined,
-      hasChildren: !!data.hasChildren,
-      childrenCount: data.hasChildren ? (data.childrenList?.length || 0) : 0,
-      childrenList: data.hasChildren ? (data.childrenList ? [...data.childrenList] : []) : [],
-      customStammdaten: data.customStammdaten ? [...data.customStammdaten] : [],
-      hauptbeschwerde: '',
-      anamnesisQuestions: [],
-      spontanbericht: '',
-      modalitaetenBesser: '',
-      modalitaetenSchlechter: '',
-      gemuetPsyche: '',
-      koerperAllgemein: '',
-      lokalsymptome: '',
-      bisherigeMittel: '',
-      id: newCaseId,
-    });
-    setIsNewPatientModalOpen(false);
-    refreshData();
-    if (data.patientName) {
-      setSelectedPatientKey(data.patientName.trim().toLowerCase());
-      setActiveCaseTabId(created.id || newCaseId);
-      onOpenCaseInWorkspace(created);
-    }
-  };
-
-  const getGenderLabel = (gender?: string) => {
-    if (!gender) return '—';
-    switch (gender) {
-      case 'weiblich': return t('genderFemale');
-      case 'männlich': return t('genderMale');
-      case 'divers': return t('genderOther');
-      default: return gender;
-    }
-  };
-
-  const getMaritalStatusLabel = (status?: string) => {
-    if (!status) return '';
-    switch (status) {
-      case 'ledig': return t('maritalSingle');
-      case 'verheiratet': return t('maritalMarried');
-      case 'in Partnerschaft': return t('maritalPartnership');
-      case 'geschieden': return t('maritalDivorced');
-      case 'getrennt lebend': return t('maritalSeparated');
-      case 'verwitwet': return t('maritalWidowed');
-      case 'sonstiges': return t('maritalOther');
-      default: return status;
-    }
+    return latest;
   };
 
   // Group cases by patient identity (case-insensitive name)
@@ -327,43 +480,138 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       });
 
+      const patientName = primaryCase.patientName || t('patientNameLabel') || 'Patient';
+      const timestamp = getPatientLastActivityTimestamp(sortedCases, patientName);
+
       result.push({
         key,
-        name: primaryCase.patientName || t('patientNameLabel') || 'Patient',
+        name: patientName,
         cases: sortedCases,
         primaryCase,
         totalFollowUps,
         latestFollowUp: sortedFollowUps[0],
+        lastActivityTimestamp: timestamp,
+        lastActivityFormatted: formatLastActivity(timestamp, language, t)
       });
     });
 
-    return result.sort((a, b) => a.name.localeCompare(b.name, language));
-  }, [cases, language, t]);
+    return result;
+  }, [cases, recentEditsRev, language, t]);
+
+  // Filter and sort patients for the main directory view
+  const filteredAndSortedPatients = useMemo(() => {
+    let list = [...groupedPatients];
+
+    // 1. Text Search Filter across ALL fields (Name, Vorname, Geburtsdatum, Kundennummer, Adresse, Telefon, E-Mail, Fälle, Symptome etc.)
+    if (directorySearchQuery.trim()) {
+      list = list.filter(p => matchesPatientUniversalSearch(p, directorySearchQuery));
+    }
+
+    // 2. Category Filter
+    if (filterCategory === 'recent') {
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      list = list.filter(p => p.lastActivityTimestamp >= sevenDaysAgo);
+    } else if (filterCategory === 'with_cases') {
+      list = list.filter(p => p.cases.length > 0 && p.cases.some(c => !!c.hauptbeschwerde || (c.remedySuggestions && c.remedySuggestions.length > 0)));
+    } else if (filterCategory === 'no_cases') {
+      list = list.filter(p => p.cases.length === 0 || p.cases.every(c => !c.hauptbeschwerde));
+    }
+
+    // 3. Sorting
+    list.sort((a, b) => {
+      switch (sortField) {
+        case 'name_asc':
+          return a.name.localeCompare(b.name, language);
+        case 'name_desc':
+          return b.name.localeCompare(a.name, language);
+        case 'activity_desc':
+          return (b.lastActivityTimestamp || 0) - (a.lastActivityTimestamp || 0);
+        case 'activity_asc':
+          return (a.lastActivityTimestamp || 0) - (b.lastActivityTimestamp || 0);
+        case 'cases_desc':
+          return b.cases.length - a.cases.length;
+        case 'age_desc':
+          return (b.primaryCase.patientAge || 0) - (a.primaryCase.patientAge || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return list;
+  }, [groupedPatients, directorySearchQuery, filterCategory, sortField, language]);
+
+  // Table 1: Recent patients (most recently active, up to 5)
+  const recentPatients = useMemo(() => {
+    let recent = [...groupedPatients].sort((a, b) => (b.lastActivityTimestamp || 0) - (a.lastActivityTimestamp || 0));
+    
+    if (directorySearchQuery.trim()) {
+      recent = recent.filter(p => matchesPatientUniversalSearch(p, directorySearchQuery));
+    }
+    
+    return recent.slice(0, 5);
+  }, [groupedPatients, directorySearchQuery]);
+
+  // Table 2: All patients pagination calculations (max 10 per page default)
+  const totalPages = Math.ceil(filteredAndSortedPatients.length / itemsPerPage) || 1;
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedPatients = useMemo(() => {
+    const start = (validCurrentPage - 1) * itemsPerPage;
+    return filteredAndSortedPatients.slice(start, start + itemsPerPage);
+  }, [filteredAndSortedPatients, validCurrentPage, itemsPerPage]);
+
+  const startRecord = filteredAndSortedPatients.length === 0 ? 0 : (validCurrentPage - 1) * itemsPerPage + 1;
+  const endRecord = Math.min(validCurrentPage * itemsPerPage, filteredAndSortedPatients.length);
+
+  // Multi-selection helpers
+  const toggleSelectPatient = (key: string) => {
+    setSelectedPatientKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleSelectAllOnPage = (patientsOnPage: GroupedPatient[]) => {
+    const allSelected = patientsOnPage.length > 0 && patientsOnPage.every(p => selectedPatientKeys.has(p.key));
+    setSelectedPatientKeys(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        patientsOnPage.forEach(p => next.delete(p.key));
+      } else {
+        patientsOnPage.forEach(p => next.add(p.key));
+      }
+      return next;
+    });
+  };
+
+  // Status badge helper (Art der Registrierung)
+  const getRegistrationTypeBadge = (patient: GroupedPatient) => {
+    const hasFullData = (!!patient.primaryCase.patientEmail || !!patient.primaryCase.patientPhone) && patient.cases.length > 0;
+    if (hasFullData) {
+      return {
+        label: t('regTypeFull'),
+        className: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+      };
+    }
+    if (patient.cases.length > 0) {
+      return {
+        label: t('regTypeDevice'),
+        className: 'bg-slate-100 text-slate-700 border border-slate-200/80'
+      };
+    }
+    return {
+      label: t('regTypeQuick'),
+      className: 'bg-teal-50 text-teal-700 border border-teal-200/60'
+    };
+  };
 
   // Active patient based purely on explicit user selection
   const activePatient = useMemo(() => {
     if (!selectedPatientKey) return null;
     return groupedPatients.find(p => p.key === selectedPatientKey) || null;
   }, [groupedPatients, selectedPatientKey]);
-
-  // Filter patients for the popup modal
-  const modalFilteredPatients = useMemo(() => {
-    if (!modalSearchQuery.trim()) return groupedPatients;
-    const q = modalSearchQuery.toLowerCase().trim();
-    return groupedPatients.filter(p => {
-      const { firstName, lastName } = parsePatientName(p.name);
-      if (p.name.toLowerCase().includes(q)) return true;
-      if (firstName.toLowerCase().includes(q)) return true;
-      if (lastName.toLowerCase().includes(q)) return true;
-      if (p.primaryCase.patientBirthDate?.toLowerCase().includes(q)) return true;
-      if (p.primaryCase.patientPhone?.toLowerCase().includes(q)) return true;
-      if (p.primaryCase.patientEmail?.toLowerCase().includes(q)) return true;
-      return p.cases.some(c => 
-        (c.hauptbeschwerde && c.hauptbeschwerde.toLowerCase().includes(q)) ||
-        (c.spontanbericht && c.spontanbericht.toLowerCase().includes(q))
-      );
-    });
-  }, [groupedPatients, modalSearchQuery]);
 
   // Active selected case within the active patient
   const activeCase = useMemo(() => {
@@ -438,73 +686,163 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
     });
   }, [activePatient, caseSearchQuery, language]);
 
-  // Helper to compute patient's last edited/consulted timestamp
-  const getPatientLastActivityTimestamp = (patient: GroupedPatient): number => {
-    let latest = 0;
-    
-    // Check recorded edit timestamps in storage
-    const recentList = getRecentlyEditedPatientNames();
-    const found = recentList.find(r => r.name.toLowerCase() === patient.name.toLowerCase());
-    if (found && found.timestamp > latest) {
-      latest = found.timestamp;
+  // Handle Quick Customer Registration directly from the page form
+  const handleSaveQuickCustomer = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const pName = quickName.trim();
+    if (!pName) return;
+
+    const checkPatients = isFeatureLimitReached(therapist.id, 'maxPatients', 1, pName);
+    if (checkPatients.reached) {
+      window.dispatchEvent(new CustomEvent('homoeo_action_limit_reached', {
+        detail: { feature: t('tariffLimitPatientsLabel'), limit: checkPatients.limit }
+      }));
+      return;
     }
 
-    // Check case timestamps
-    for (const c of patient.cases) {
-      if (c.updatedAt) {
-        const time = new Date(c.updatedAt).getTime();
-        if (!isNaN(time) && time > latest) latest = time;
-      }
-      if (c.analyzedAt) {
-        const time = new Date(c.analyzedAt).getTime();
-        if (!isNaN(time) && time > latest) latest = time;
-      }
-      if (c.therapyRecommendations?.updatedAt) {
-        const time = new Date(c.therapyRecommendations.updatedAt).getTime();
-        if (!isNaN(time) && time > latest) latest = time;
-      }
-      if (c.initialPrescription?.prescribedAt) {
-        const time = new Date(c.initialPrescription.prescribedAt).getTime();
-        if (!isNaN(time) && time > latest) latest = time;
-      }
-      if (c.followUps && c.followUps.length > 0) {
-        for (const fu of c.followUps) {
-          if (fu.createdAt) {
-            const time = new Date(fu.createdAt).getTime();
-            if (!isNaN(time) && time > latest) latest = time;
-          }
-        }
-      }
-      if (c.anamneseDatum) {
-        const time = new Date(c.anamneseDatum).getTime();
-        if (!isNaN(time) && time > latest) latest = time;
-      }
+    const checkCases = isFeatureLimitReached(therapist.id, 'maxCases', 1);
+    if (checkCases.reached) {
+      window.dispatchEvent(new CustomEvent('homoeo_action_limit_reached', {
+        detail: { feature: t('tariffLimitCasesLabel'), limit: checkCases.limit }
+      }));
+      return;
     }
-    return latest;
+
+    const newCaseId = 'case-' + Date.now();
+    const isFemale = quickGender === 'weiblich';
+    const created = savePatientCase({
+      therapistId: therapist.id,
+      patientName: pName,
+      patientBirthDate: quickBirthDate || '',
+      patientAge: quickAge,
+      patientGender: quickGender,
+      patientHeightCm: quickHeightCm,
+      patientWeightKg: quickWeightKg,
+      patientMaritalStatus: quickMaritalStatus || '',
+      anamneseDatum: new Date().toISOString().split('T')[0],
+      patientEmail: quickEmail || '',
+      patientPhone: quickPhone || '',
+      isPregnant: isFemale ? quickIsPregnant : false,
+      pregnancyMonth: isFemale && quickIsPregnant ? quickPregnancyMonth : undefined,
+      hasChildren: quickHasChildren,
+      childrenCount: quickHasChildren ? (quickChildrenCount || 1) : 0,
+      childrenList: [],
+      customStammdaten: [],
+      hauptbeschwerde: quickChiefComplaint.trim(),
+      anamnesisQuestions: [],
+      spontanbericht: '',
+      modalitaetenBesser: '',
+      modalitaetenSchlechter: '',
+      gemuetPsyche: '',
+      koerperAllgemein: '',
+      lokalsymptome: '',
+      bisherigeMittel: '',
+      id: newCaseId,
+    });
+
+    // Reset Form Fields
+    setQuickName('');
+    setQuickBirthDate('');
+    setQuickAge(undefined);
+    setQuickGender('weiblich');
+    setQuickPhone('');
+    setQuickEmail('');
+    setQuickMaritalStatus('');
+    setQuickHeightCm(undefined);
+    setQuickWeightKg(undefined);
+    setQuickHasChildren(false);
+    setQuickChildrenCount(0);
+    setQuickIsPregnant(false);
+    setQuickPregnancyMonth(undefined);
+    setQuickChiefComplaint('');
+
+    refreshData();
+    setSelectedPatientKey(pName.toLowerCase());
+    setActiveCaseTabId(created.id || newCaseId);
+    setSaveSuccessToast(true);
+    setTimeout(() => setSaveSuccessToast(false), 3500);
   };
 
-  // 3 Most recently edited patients
-  const recentEditedPatients = useMemo(() => {
-    if (groupedPatients.length === 0) return [];
-    
-    const enriched = groupedPatients.map(p => {
-      const timestamp = getPatientLastActivityTimestamp(p);
-      return {
-        ...p,
-        lastActivityTimestamp: timestamp,
-        lastActivityFormatted: formatLastActivity(timestamp, language, t)
-      };
-    });
+  const handleSaveModalPatient = (data: Partial<PatientCase>) => {
+    const pName = data.patientName?.trim() || '';
+    const checkPatients = isFeatureLimitReached(therapist.id, 'maxPatients', 1, pName);
+    if (checkPatients.reached) {
+      window.dispatchEvent(new CustomEvent('homoeo_action_limit_reached', {
+        detail: { feature: t('tariffLimitPatientsLabel'), limit: checkPatients.limit }
+      }));
+      return;
+    }
 
-    enriched.sort((a, b) => {
-      if (b.lastActivityTimestamp !== a.lastActivityTimestamp) {
-        return b.lastActivityTimestamp - a.lastActivityTimestamp;
-      }
-      return a.name.localeCompare(b.name, language);
-    });
+    const checkCases = isFeatureLimitReached(therapist.id, 'maxCases', 1);
+    if (checkCases.reached) {
+      window.dispatchEvent(new CustomEvent('homoeo_action_limit_reached', {
+        detail: { feature: t('tariffLimitCasesLabel'), limit: checkCases.limit }
+      }));
+      return;
+    }
 
-    return enriched.slice(0, 3);
-  }, [groupedPatients, recentEditsRev, language, t]);
+    const newCaseId = 'case-' + Date.now();
+    const isFemale = (data.patientGender || 'weiblich') === 'weiblich';
+    const created = savePatientCase({
+      therapistId: therapist.id,
+      patientName: data.patientName?.trim() || '',
+      patientBirthDate: data.patientBirthDate || '',
+      patientAge: data.patientAge,
+      patientGender: data.patientGender || 'weiblich',
+      patientHeightCm: data.patientHeightCm,
+      patientWeightKg: data.patientWeightKg,
+      patientMaritalStatus: data.patientMaritalStatus || '',
+      anamneseDatum: data.anamneseDatum || new Date().toISOString().split('T')[0],
+      patientEmail: data.patientEmail || '',
+      patientPhone: data.patientPhone || '',
+      isPregnant: isFemale ? !!data.isPregnant : false,
+      pregnancyMonth: isFemale && data.isPregnant ? data.pregnancyMonth : undefined,
+      hasChildren: !!data.hasChildren,
+      childrenCount: data.hasChildren ? (data.childrenList?.length || 0) : 0,
+      childrenList: data.hasChildren ? (data.childrenList ? [...data.childrenList] : []) : [],
+      customStammdaten: data.customStammdaten ? [...data.customStammdaten] : [],
+      hauptbeschwerde: '',
+      anamnesisQuestions: [],
+      spontanbericht: '',
+      modalitaetenBesser: '',
+      modalitaetenSchlechter: '',
+      gemuetPsyche: '',
+      koerperAllgemein: '',
+      lokalsymptome: '',
+      bisherigeMittel: '',
+      id: newCaseId,
+    });
+    setIsNewPatientModalOpen(false);
+    refreshData();
+    if (data.patientName) {
+      setSelectedPatientKey(data.patientName.trim().toLowerCase());
+      setActiveCaseTabId(created.id || newCaseId);
+    }
+  };
+
+  const getGenderLabel = (gender?: string) => {
+    if (!gender) return '—';
+    switch (gender) {
+      case 'weiblich': return t('genderFemale');
+      case 'männlich': return t('genderMale');
+      case 'divers': return t('genderOther');
+      default: return gender;
+    }
+  };
+
+  const getMaritalStatusLabel = (status?: string) => {
+    if (!status) return '—';
+    switch (status) {
+      case 'ledig': return t('maritalSingle');
+      case 'verheiratet': return t('maritalMarried');
+      case 'in Partnerschaft': return t('maritalPartnership');
+      case 'geschieden': return t('maritalDivorced');
+      case 'getrennt lebend': return t('maritalSeparated');
+      case 'verwitwet': return t('maritalWidowed');
+      case 'sonstiges': return t('maritalOther');
+      default: return status;
+    }
+  };
 
   // Open Stammdaten Editor Modal
   const handleOpenEditStammdaten = () => {
@@ -512,204 +850,1103 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
     setIsEditStammdatenOpen(true);
   };
 
+  // Quick BMI Preview for form
+  const quickBmi = calculateBMI(quickHeightCm, quickWeightKg);
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-100">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 font-serif">{t('patientDirectoryTitle')}</h1>
-              <p className="text-xs text-slate-500">
-                {t('patientDirectorySubtitle')}
-              </p>
-            </div>
+      {/* Toast Notification on Save */}
+      {saveSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-teal-800 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-teal-600 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="w-7 h-7 rounded-xl bg-teal-600 flex items-center justify-center shrink-0">
+            <Check className="w-4 h-4 text-white" />
           </div>
+          <span className="text-xs sm:text-sm font-semibold">{t('customerSavedSuccessToast')}</span>
         </div>
+      )}
 
-        {/* Stats */}
-        <div className="flex items-center gap-2">
-          <div className="bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-xl text-center">
-            <span className="block text-xs font-bold text-slate-800">{groupedPatients.length}</span>
-            <span className="block text-[10px] text-slate-400 font-medium">{t('patientsCountLabel')}</span>
-          </div>
-          <div className="bg-teal-50 border border-teal-200/60 px-3.5 py-1.5 rounded-xl text-center">
-            <span className="block text-xs font-bold text-teal-800">{cases.length}</span>
-            <span className="block text-[10px] text-teal-600 font-medium">{t('casesTotalLabel')}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. MAIN PATIENT WORKSPACE (FULL WIDTH) */}
+      {/* VIEW 1: WHEN NO CUSTOMER IS SELECTED -> FULL DIRECTORY WITH LIVE ENTRY & STRUCTURED SEARCH/SORT */}
       {!activePatient ? (
         <div className="space-y-6">
-          {/* Prompt card when no patient is active */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center shadow-xs">
-            <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-700 mb-4 mx-auto shadow-2xs">
-              <Users className="w-8 h-8" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-bold text-slate-800 font-serif mb-2">
-              {t('selectPatientPrompt')}
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mb-6 leading-relaxed">
-              {t('selectPatientPromptSub')}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                id="btn-new-patient-directory-empty"
-                onClick={() => setIsNewPatientModalOpen(true)}
-                className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-xs cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{t('btnNewPatientAdmission')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setModalSearchQuery('');
-                  setIsSelectPatientModalOpen(true);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-xs cursor-pointer"
-              >
-                <Users className="w-4 h-4 text-teal-600" />
-                <span>{t('btnOpenPatientSelectionModal')}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Picker: 3 most recently edited customers */}
-          {recentEditedPatients.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-teal-600" />
-                  <span>{t('recentEditedPatientsHeader')} ({recentEditedPatients.length})</span>
-                </h4>
-
-                <div className="flex items-center gap-3">
-                  {groupedPatients.length > 3 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModalSearchQuery('');
-                        setIsSelectPatientModalOpen(true);
-                      }}
-                      className="text-xs font-semibold text-teal-700 hover:text-teal-800 flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <span>{t('viewAllPatientsLink', { count: groupedPatients.length })}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <span className="text-[11px] text-slate-400">{t('clickOpensFileBadge')}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentEditedPatients.map((p) => {
-                  const initials = p.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase();
-                  const caseCount = p.cases.length;
-
-                  return (
-                    <div
-                      key={p.key}
-                      onClick={() => {
-                        setSelectedPatientKey(p.key);
-                      }}
-                      className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-teal-400 hover:shadow-md transition-all cursor-pointer space-y-3 group"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-teal-600 group-hover:bg-teal-700 text-white font-bold text-sm flex items-center justify-center shrink-0 transition-colors shadow-xs">
-                            {initials || 'P'}
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="font-bold text-slate-900 text-sm group-hover:text-teal-700 transition-colors truncate">
-                              {p.name}
-                            </h4>
-                            <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              {p.primaryCase.patientAge && <span>{p.primaryCase.patientAge} {t('yearsOld')}</span>}
-                              {p.primaryCase.patientGender && <span>• {getGenderLabel(p.primaryCase.patientGender)}</span>}
-                            </div>
-                          </div>
-                        </div>
-
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200/60 shrink-0">
-                          {caseCount} {caseCount === 1 ? t('caseSingle') : t('casePlural')}
-                        </span>
-                      </div>
-
-                      {p.lastActivityFormatted && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
-                          <Clock className="w-3 h-3 text-teal-600 shrink-0" />
-                          <span className="truncate">
-                            {t('lastEdited')}: <strong className="font-semibold text-slate-700">{p.lastActivityFormatted}</strong>
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                        <span className="truncate">
-                          {p.primaryCase.patientPhone || p.primaryCase.patientEmail || t('noContactData')}
-                        </span>
-                        <span className="text-teal-700 font-semibold flex items-center gap-1 shrink-0 group-hover:translate-x-0.5 transition-transform">
-                          <span>{t('patientRecord')}</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* 1. CUSTOMER / PATIENT HEADER & STAMMDATEN CARD (FULL WIDTH) */}
-          <div className="w-full bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs relative overflow-hidden">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0">
-                  {activePatient.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'P'}
+          {/* 1. DIRECT CUSTOMER ENTRY FORM ("wo die Kunden eingegeben werden") */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+            {/* Header / Collapse Trigger */}
+            <div 
+              onClick={() => setIsQuickEntryOpen(!isQuickEntryOpen)}
+              className={`flex items-center justify-between px-5 sm:px-6 py-4 bg-gradient-to-r from-teal-50/70 via-slate-50/40 to-white cursor-pointer hover:bg-slate-50/60 transition-colors select-none ${
+                isQuickEntryOpen ? 'border-b border-slate-100' : ''
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+                  <User className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-xl font-bold text-slate-900 font-serif">{activePatient.name}</h2>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200">
-                      {activePatient.cases.length === 1 
-                        ? t('registeredCaseSingle') 
-                        : t('registeredCases').replace('{count}', activePatient.cases.length.toString())}
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 font-serif">
+                      {t('customerEntryHeader')}
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-100 text-teal-800">
+                      {t('customerDirectInputBadge')}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {t('patientRecord')} • {t('lastConsultation')}: {activePatient.primaryCase.anamneseDatum ? new Date(activePatient.primaryCase.anamneseDatum).toLocaleDateString(language) : t('unknownDate')}
+                  <p className="text-[11px] text-slate-500">
+                    {t('customerEntrySubtitle')}
                   </p>
                 </div>
               </div>
 
-              {/* Actions: Stammdaten bearbeiten & Auswahl aufheben & Kunde löschen */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 text-slate-400 text-xs">
+                <span>{isQuickEntryOpen ? t('quickInputCollapse') : t('quickInputExpand')}</span>
+                {isQuickEntryOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </div>
+
+            {/* Entry Form Body */}
+            {isQuickEntryOpen && (
+              <form onSubmit={handleSaveQuickCustomer} className="p-5 sm:p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                  {/* Name (Vor- & Nachname) */}
+                  <div className="lg:col-span-2">
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientName')} *
+                    </label>
+                    <div className="relative flex items-center">
+                      <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
+                      <input
+                        type="text"
+                        required
+                        value={quickName}
+                        onChange={(e) => setQuickName(e.target.value)}
+                        placeholder={t('patientNamePlaceholder')}
+                        className="w-full pl-8 pr-9 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/20 h-[38px] transition-all bg-white"
+                      />
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                        <VoiceInputButton
+                          value={quickName}
+                          onChange={(val) => setQuickName(val)}
+                          size="xs"
+                          mode="append"
+                          id="quick-voice-customer-name"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Geburtsdatum */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientBirthDate')}
+                    </label>
+                    <div className="relative">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                      <input
+                        type="date"
+                        value={quickBirthDate}
+                        onChange={(e) => {
+                          const bDate = e.target.value;
+                          let calcAge = quickAge;
+                          if (bDate) {
+                            const diff = Date.now() - new Date(bDate).getTime();
+                            const ageDate = new Date(diff);
+                            calcAge = Math.abs(ageDate.getUTCFullYear() - 1970);
+                          }
+                          setQuickBirthDate(bDate);
+                          if (calcAge !== undefined && !isNaN(calcAge) && calcAge >= 0 && calcAge <= 125) {
+                            setQuickAge(calcAge);
+                          }
+                        }}
+                        className="w-full pl-8 pr-2 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Alter */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientAge')}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={125}
+                      value={quickAge ?? ''}
+                      onChange={(e) => setQuickAge(e.target.value ? parseInt(e.target.value) : undefined)}
+                      placeholder={t('patientAgePlaceholder')}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                    />
+                  </div>
+
+                  {/* Geschlecht */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientGender')}
+                    </label>
+                    <select
+                      value={quickGender}
+                      onChange={(e) => setQuickGender(e.target.value as any)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                    >
+                      <option value="weiblich">{t('genderFemale')}</option>
+                      <option value="männlich">{t('genderMale')}</option>
+                      <option value="divers">{t('genderOther')}</option>
+                    </select>
+                  </div>
+
+                  {/* Familienstand */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientMaritalStatus')}
+                    </label>
+                    <select
+                      value={quickMaritalStatus}
+                      onChange={(e) => setQuickMaritalStatus(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                    >
+                      <option value="">{t('maritalOther')}</option>
+                      <option value="ledig">{t('maritalSingle')}</option>
+                      <option value="verheiratet">{t('maritalMarried')}</option>
+                      <option value="in Partnerschaft">{t('maritalPartnership')}</option>
+                      <option value="geschieden">{t('maritalDivorced')}</option>
+                      <option value="getrennt lebend">{t('maritalSeparated')}</option>
+                      <option value="verwitwet">{t('maritalWidowed')}</option>
+                    </select>
+                  </div>
+
+                  {/* Telefonnummer */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientPhone')}
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                      <input
+                        type="tel"
+                        value={quickPhone}
+                        onChange={(e) => setQuickPhone(e.target.value)}
+                        placeholder={t('patientPhonePlaceholder')}
+                        className="w-full pl-8 pr-2 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* E-Mail */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientEmail')}
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                      <input
+                        type="email"
+                        value={quickEmail}
+                        onChange={(e) => setQuickEmail(e.target.value)}
+                        placeholder={t('patientEmailPlaceholder')}
+                        className="w-full pl-8 pr-2 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Größe (cm) */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientHeight')}
+                    </label>
+                    <div className="relative">
+                      <Ruler className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                      <input
+                        type="number"
+                        min={30}
+                        max={260}
+                        value={quickHeightCm ?? ''}
+                        onChange={(e) => setQuickHeightCm(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        placeholder={t('patientHeightPlaceholder')}
+                        className="w-full pl-8 pr-2 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Gewicht (kg) */}
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                      {t('patientWeight')}
+                    </label>
+                    <div className="relative">
+                      <Scale className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                      <input
+                        type="number"
+                        min={1}
+                        max={300}
+                        step={0.1}
+                        value={quickWeightKg ?? ''}
+                        onChange={(e) => setQuickWeightKg(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        placeholder={t('patientWeightPlaceholder')}
+                        className="w-full pl-8 pr-2 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* BMI Vorschau */}
+                  {quickBmi && (
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                      <span className="font-bold text-slate-600">{t('bmiLabel')}:</span>
+                      <span className="font-mono font-bold text-slate-900">{quickBmi.bmi}</span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-100 text-teal-800">
+                        {t(quickBmi.categoryKey as any)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Kinder & Schwangerschaft Toggles */}
+                  <div className="flex items-center gap-4 flex-wrap pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={quickHasChildren}
+                        onChange={(e) => {
+                          setQuickHasChildren(e.target.checked);
+                          if (e.target.checked && !quickChildrenCount) setQuickChildrenCount(1);
+                        }}
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+                      />
+                      <span className="font-semibold text-xs">{t('hasChildren')}</span>
+                    </label>
+
+                    {quickHasChildren && (
+                      <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={quickChildrenCount}
+                        onChange={(e) => setQuickChildrenCount(parseInt(e.target.value) || 1)}
+                        className="w-16 px-2 py-1 border border-slate-300 rounded-lg text-xs"
+                      />
+                    )}
+
+                    {quickGender === 'weiblich' && (
+                      <label className="flex items-center gap-2 cursor-pointer text-slate-700 ml-2">
+                        <input
+                          type="checkbox"
+                          checked={quickIsPregnant}
+                          onChange={(e) => setQuickIsPregnant(e.target.checked)}
+                          className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+                        />
+                        <span className="font-semibold text-xs">{t('pregnantYes')}</span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Optional Erste Hauptbeschwerde */}
+                <div className="pt-1">
+                  <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wide text-[11px]">
+                    {t('caseChiefComplaint')} ({t('firstAdmission')})
+                  </label>
+                  <div className="relative flex items-center">
+                    <Activity className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={quickChiefComplaint}
+                      onChange={(e) => setQuickChiefComplaint(e.target.value)}
+                      placeholder={t('patientDataDesc')}
+                      className="w-full pl-8 pr-9 py-2 border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-600 h-[38px] transition-all bg-white"
+                    />
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                      <VoiceInputButton
+                        value={quickChiefComplaint}
+                        onChange={(val) => setQuickChiefComplaint(val)}
+                        size="xs"
+                        mode="append"
+                        id="quick-voice-complaint"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions Row */}
+                <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{t('btnSaveCustomer')}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          {/* 2. CUSTOMER LIST & SEARCH CONTROLS */}
+          <div className="space-y-5">
+            {/* Search Bar & Controls Bar */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                {/* Search Field */}
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={directorySearchQuery}
+                    onChange={(e) => {
+                      setDirectorySearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder={t('universalSearchPlaceholder')}
+                    className="w-full pl-10 pr-20 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-teal-600 focus:bg-white transition-all shadow-2xs"
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    {directorySearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDirectorySearchQuery('');
+                          setCurrentPage(1);
+                        }}
+                        className="p-1 text-slate-400 hover:text-slate-600 rounded-md cursor-pointer"
+                        title={t('clearBtn')}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <VoiceInputButton
+                      value={directorySearchQuery}
+                      onChange={(val) => {
+                        setDirectorySearchQuery(val);
+                        setCurrentPage(1);
+                      }}
+                      size="xs"
+                      mode="append"
+                      id="directory-voice-search"
+                    />
+                  </div>
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="flex items-center gap-2 self-end lg:self-auto shrink-0 flex-wrap">
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="text-slate-500 font-medium hidden sm:inline">{t('sortByLabel')}:</span>
+                    <select
+                      value={sortField}
+                      onChange={(e) => setSortField(e.target.value as any)}
+                      className="bg-transparent text-slate-800 font-bold focus:outline-none cursor-pointer text-xs"
+                    >
+                      <option value="activity_desc">{t('sortActivityDesc')}</option>
+                      <option value="activity_asc">{t('sortActivityAsc')}</option>
+                      <option value="name_asc">{t('sortNameAsc')}</option>
+                      <option value="name_desc">{t('sortNameDesc')}</option>
+                      <option value="cases_desc">{t('sortCasesDesc')}</option>
+                      <option value="age_desc">{t('sortAgeDesc')}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter Tabs / Badges */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs border-t border-slate-100 pt-2.5">
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedPatientKey(null);
+                    setFilterCategory('all');
+                    setCurrentPage(1);
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
-                  title={t('unselectPatientBtn')}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    filterCategory === 'all'
+                      ? 'bg-teal-600 text-white shadow-2xs'
+                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
                 >
-                  <X className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{t('switchPatient')}</span>
+                  {t('filterAllCustomers')} ({groupedPatients.length})
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterCategory('recent');
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    filterCategory === 'recent'
+                      ? 'bg-teal-600 text-white shadow-2xs'
+                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {t('filterRecentActive')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterCategory('with_cases');
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    filterCategory === 'with_cases'
+                      ? 'bg-teal-600 text-white shadow-2xs'
+                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {t('filterWithCases')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterCategory('no_cases');
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    filterCategory === 'no_cases'
+                      ? 'bg-teal-600 text-white shadow-2xs'
+                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {t('filterWithoutCases')}
+                </button>
+
+                <div className="ml-auto text-slate-400 text-[11px] hidden sm:block">
+                  {t('paginationShowing', { start: startRecord, end: endRecord, total: filteredAndSortedPatients.length })}
+                </div>
+              </div>
+            </div>
+
+            {/* TABELLE 1: LETZTE KUNDEN / PATIENTEN / KLIENTEN (COLLAPSIBLE / DEFAULT CLOSED) */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setIsRecentPatientsOpen(!isRecentPatientsOpen)}
+                className={`w-full flex items-center justify-between px-4 sm:px-5 py-3.5 bg-gradient-to-r from-slate-50/80 via-white to-white hover:bg-slate-50 transition-colors cursor-pointer select-none text-left ${
+                  isRecentPatientsOpen ? 'border-b border-slate-200/90' : ''
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 border border-teal-200/60 flex items-center justify-center">
+                    <Clock className="w-3.5 h-3.5 text-teal-700" />
+                  </div>
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+                    {t('recentCustomersTitle', { term: termPatients })}
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                    {recentPatients.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                  <span>{isRecentPatientsOpen ? t('recentPatientsCollapse') : t('recentPatientsExpand')}</span>
+                  {isRecentPatientsOpen ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                </div>
+              </button>
+
+              {isRecentPatientsOpen && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-50/80 text-slate-600 border-b border-slate-200/90 text-[11px] uppercase tracking-wider font-semibold select-none">
+                    <tr>
+                      <th className="w-10 px-4 py-3.5 text-center">
+                        <input
+                          type="checkbox"
+                          checked={recentPatients.length > 0 && recentPatients.every(p => selectedPatientKeys.has(p.key))}
+                          onChange={() => toggleSelectAllOnPage(recentPatients)}
+                          className="rounded border-slate-300 text-teal-700 focus:ring-teal-600 cursor-pointer w-4 h-4"
+                          title={t('selectAllTooltip')}
+                        />
+                      </th>
+                      <th 
+                        onClick={() => setSortField(sortField === 'name_asc' ? 'name_desc' : 'name_asc')}
+                        className="py-3.5 px-4 font-semibold text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('patientName')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('colRegistrationType')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('colCustomerNumber')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('patientEmail')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => setSortField(sortField === 'activity_desc' ? 'activity_asc' : 'activity_desc')}
+                        className="py-3.5 px-4 font-semibold text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('colLastActivity')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => setSortField(sortField === 'cases_desc' ? 'name_asc' : 'cases_desc')}
+                        className="py-3.5 px-4 font-semibold text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('colScorePoints')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th className="w-12 px-4 py-3.5 text-center font-semibold text-slate-700">
+                        {t('colActions')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {recentPatients.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-8 px-4 text-center text-slate-400 text-xs">
+                          {t('noRecentCustomers')}
+                        </td>
+                      </tr>
+                    ) : (
+                      recentPatients.map((p) => {
+                        const isSelected = selectedPatientKeys.has(p.key);
+                        const badge = getRegistrationTypeBadge(p);
+                        const custNr = getPatientCustomerNumber(p);
+                        const points = p.cases.length > 0 ? (p.cases.length * 20 + p.totalFollowUps * 10) : 10;
+                        const initials = p.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'K';
+
+                        return (
+                          <tr
+                            key={p.key}
+                            onClick={() => {
+                              setSelectedPatientKey(p.key);
+                              if (p.cases.length > 0) setActiveCaseTabId(p.cases[0].id);
+                            }}
+                            className={`hover:bg-slate-50/80 cursor-pointer transition-colors border-b border-slate-100 last:border-0 group select-none ${
+                              isSelected ? 'bg-teal-50/30' : ''
+                            }`}
+                          >
+                            <td 
+                              className="w-10 px-4 py-3.5 text-center" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelectPatient(p.key);
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}}
+                                className="rounded border-slate-300 text-teal-700 focus:ring-teal-600 cursor-pointer w-4 h-4"
+                              />
+                            </td>
+
+                            <td className="py-3.5 px-4 font-bold text-slate-900 group-hover:text-teal-800 transition-colors">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-teal-700/10 text-teal-800 font-bold text-xs flex items-center justify-center shrink-0 border border-teal-200/50">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="font-bold text-slate-900 group-hover:text-teal-800 transition-colors block truncate">
+                                    {p.name}
+                                  </span>
+                                  {p.primaryCase.patientBirthDate && (
+                                    <span className="text-[10px] text-slate-400 block font-normal">
+                                      * {p.primaryCase.patientBirthDate}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${badge.className}`}>
+                                {badge.label}
+                              </span>
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-600 text-xs font-semibold">
+                              {custNr}
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 text-xs">
+                              <span className="truncate max-w-[200px] block" title={p.primaryCase.patientEmail || ''}>
+                                {p.primaryCase.patientEmail || '—'}
+                              </span>
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 text-xs">
+                              {formatActivityDateTime(p.lastActivityTimestamp, language)}
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap text-slate-700 text-xs font-semibold">
+                              {points}
+                            </td>
+
+                            <td 
+                              className="w-12 px-4 py-3.5 text-center relative whitespace-nowrap"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setActionMenuOpenKey(actionMenuOpenKey === `recent-${p.key}` ? null : `recent-${p.key}`)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                title={t('colActions')}
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+
+                              {actionMenuOpenKey === `recent-${p.key}` && (
+                                <div className="absolute right-4 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 text-xs animate-in fade-in duration-100 text-left">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActionMenuOpenKey(null);
+                                      setSelectedPatientKey(p.key);
+                                      if (p.cases.length > 0) setActiveCaseTabId(p.cases[0].id);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-semibold cursor-pointer"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-teal-600" />
+                                    <span>{t('actionViewCustomerRecord')}</span>
+                                  </button>
+
+                                  {onNewCaseForPatient && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenKey(null);
+                                        onNewCaseForPatient(p.name, p.primaryCase);
+                                      }}
+                                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-semibold cursor-pointer"
+                                    >
+                                      <Plus className="w-3.5 h-3.5 text-teal-600" />
+                                      <span>{t('actionNewCaseForCustomer')}</span>
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActionMenuOpenKey(null);
+                                      setSelectedPatientKey(p.key);
+                                      setIsEditStammdatenOpen(true);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-semibold cursor-pointer"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>{t('actionEditStammdaten')}</span>
+                                  </button>
+
+                                  <div className="my-1 border-t border-slate-100" />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActionMenuOpenKey(null);
+                                      handleRequestDeleteCustomer(p);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-rose-50 flex items-center gap-2.5 text-rose-600 font-semibold cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>{t('actionDeleteCustomer')}</span>
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+            {/* TABELLE 2: ALLE KUNDEN / PATIENTEN / KLIENTEN (MIT PAGINIERUNG) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-teal-700" />
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+                    {t('allCustomersTitle', { term: termPatients })}
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    {filteredAndSortedPatients.length}
+                  </span>
+                </div>
+
+                {selectedPatientKeys.size > 0 && (
+                  <span className="text-[11px] font-semibold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">
+                    {t('selectedCountLabel', { count: selectedPatientKeys.size })}
+                  </span>
+                )}
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-xs">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-50/80 text-slate-600 border-b border-slate-200/90 text-[11px] uppercase tracking-wider font-semibold select-none">
+                    <tr>
+                      <th className="w-10 px-4 py-3.5 text-center">
+                        <input
+                          type="checkbox"
+                          checked={paginatedPatients.length > 0 && paginatedPatients.every(p => selectedPatientKeys.has(p.key))}
+                          onChange={() => toggleSelectAllOnPage(paginatedPatients)}
+                          className="rounded border-slate-300 text-teal-700 focus:ring-teal-600 cursor-pointer w-4 h-4"
+                          title={t('selectAllTooltip')}
+                        />
+                      </th>
+                      <th 
+                        onClick={() => setSortField(sortField === 'name_asc' ? 'name_desc' : 'name_asc')}
+                        className="py-3.5 px-4 font-semibold text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('patientName')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('colRegistrationType')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('colCustomerNumber')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th className="py-3.5 px-4 font-semibold text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('patientEmail')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => setSortField(sortField === 'activity_desc' ? 'activity_asc' : 'activity_desc')}
+                        className="py-3.5 px-4 font-semibold text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('colLastActivity')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th 
+                        onClick={() => setSortField(sortField === 'cases_desc' ? 'name_asc' : 'cases_desc')}
+                        className="py-3.5 px-4 font-semibold text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{t('colScorePoints')}</span>
+                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                        </div>
+                      </th>
+                      <th className="w-12 px-4 py-3.5 text-center font-semibold text-slate-700">
+                        {t('colActions')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {paginatedPatients.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-8 px-4 text-center text-slate-400 text-xs">
+                          {t('noCustomersInTable')}
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedPatients.map((p) => {
+                        const isSelected = selectedPatientKeys.has(p.key);
+                        const badge = getRegistrationTypeBadge(p);
+                        const custNr = getPatientCustomerNumber(p);
+                        const points = p.cases.length > 0 ? (p.cases.length * 20 + p.totalFollowUps * 10) : 10;
+                        const initials = p.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'K';
+
+                        return (
+                          <tr
+                            key={p.key}
+                            onClick={() => {
+                              setSelectedPatientKey(p.key);
+                              if (p.cases.length > 0) setActiveCaseTabId(p.cases[0].id);
+                            }}
+                            className={`hover:bg-slate-50/80 cursor-pointer transition-colors border-b border-slate-100 last:border-0 group select-none ${
+                              isSelected ? 'bg-teal-50/30' : ''
+                            }`}
+                          >
+                            <td 
+                              className="w-10 px-4 py-3.5 text-center" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelectPatient(p.key);
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}}
+                                className="rounded border-slate-300 text-teal-700 focus:ring-teal-600 cursor-pointer w-4 h-4"
+                              />
+                            </td>
+
+                            <td className="py-3.5 px-4 font-bold text-slate-900 group-hover:text-teal-800 transition-colors">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-teal-700/10 text-teal-800 font-bold text-xs flex items-center justify-center shrink-0 border border-teal-200/50">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="font-bold text-slate-900 group-hover:text-teal-800 transition-colors block truncate">
+                                    {p.name}
+                                  </span>
+                                  {p.primaryCase.patientBirthDate && (
+                                    <span className="text-[10px] text-slate-400 block font-normal">
+                                      * {p.primaryCase.patientBirthDate}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${badge.className}`}>
+                                {badge.label}
+                              </span>
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-600 text-xs font-semibold">
+                              {custNr}
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 text-xs">
+                              <span className="truncate max-w-[200px] block" title={p.primaryCase.patientEmail || ''}>
+                                {p.primaryCase.patientEmail || '—'}
+                              </span>
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 text-xs">
+                              {formatActivityDateTime(p.lastActivityTimestamp, language)}
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap text-slate-700 text-xs font-semibold">
+                              {points}
+                            </td>
+
+                            <td 
+                              className="w-12 px-4 py-3.5 text-center relative whitespace-nowrap"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setActionMenuOpenKey(actionMenuOpenKey === `all-${p.key}` ? null : `all-${p.key}`)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                title={t('colActions')}
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+
+                              {actionMenuOpenKey === `all-${p.key}` && (
+                                <div className="absolute right-4 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 text-xs animate-in fade-in duration-100 text-left">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActionMenuOpenKey(null);
+                                      setSelectedPatientKey(p.key);
+                                      if (p.cases.length > 0) setActiveCaseTabId(p.cases[0].id);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-semibold cursor-pointer"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-teal-600" />
+                                    <span>{t('actionViewCustomerRecord')}</span>
+                                  </button>
+
+                                  {onNewCaseForPatient && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenKey(null);
+                                        onNewCaseForPatient(p.name, p.primaryCase);
+                                      }}
+                                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-semibold cursor-pointer"
+                                    >
+                                      <Plus className="w-3.5 h-3.5 text-teal-600" />
+                                      <span>{t('actionNewCaseForCustomer')}</span>
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActionMenuOpenKey(null);
+                                      setSelectedPatientKey(p.key);
+                                      setIsEditStammdatenOpen(true);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-semibold cursor-pointer"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>{t('actionEditStammdaten')}</span>
+                                  </button>
+
+                                  <div className="my-1 border-t border-slate-100" />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActionMenuOpenKey(null);
+                                      handleRequestDeleteCustomer(p);
+                                    }}
+                                    className="w-full px-3.5 py-2 text-left hover:bg-rose-50 flex items-center gap-2.5 text-rose-600 font-semibold cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>{t('actionDeleteCustomer')}</span>
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+
+                {/* Pagination Controls */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3.5 bg-slate-50/70 border-t border-slate-200/90 text-xs text-slate-600">
+                  <div>
+                    <span>
+                      {startRecord}–{endRecord} {t('paginationOf')} {filteredAndSortedPatients.length} {termPatients}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* Items per page selector */}
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                          setItemsPerPage(Number(e.target.value));
+                          setCurrentPage(1);
+                        }}
+                        className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700 cursor-pointer focus:outline-none shadow-2xs hover:border-slate-300"
+                      >
+                        <option value={10}>10 {t('itemsPerPageLabel')}</option>
+                        <option value={25}>25 {t('itemsPerPageLabel')}</option>
+                        <option value={50}>50 {t('itemsPerPageLabel')}</option>
+                      </select>
+                    </div>
+
+                    {/* Page navigation */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={validCurrentPage <= 1}
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+                        title={t('prevPageBtn')}
+                      >
+                        <ChevronLeft className="w-4 h-4 text-slate-600" />
+                      </button>
+
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          if (totalPages <= 7) return true;
+                          if (page === 1 || page === totalPages) return true;
+                          return Math.abs(page - validCurrentPage) <= 1;
+                        })
+                        .map((page, idx, arr) => {
+                          const prev = arr[idx - 1];
+                          const hasGap = prev && page - prev > 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {hasGap && <span className="px-1 text-slate-400">...</span>}
+                              <button
+                                type="button"
+                                onClick={() => setCurrentPage(page)}
+                                className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                  validCurrentPage === page
+                                    ? 'bg-teal-900 text-white shadow-xs'
+                                    : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+
+                      <button
+                        type="button"
+                        disabled={validCurrentPage >= totalPages}
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+                        title={t('nextPageBtn')}
+                      >
+                        <ChevronRight className="w-4 h-4 text-slate-600" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* VIEW 2: DEDICATED CUSTOMER PAGE ("wenn man den Kunden dann anklickt... dann sollte das zu der Kundenseite gehen. In der Kundenseite selbst gibt es den Kunden komplett, man sieht also alle Daten, wie man sie eben auch sieht im in dem Pop-up, aber schöner alles gebaut und dann eben, was bis jetzt hier passiert ist") */
+        <div className="space-y-6">
+          {/* Top Breadcrumb & Navigation Bar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 sm:px-6 rounded-2xl border border-slate-200/80 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedPatientKey(null)}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-2xs"
+            >
+              <ArrowLeft className="w-4 h-4 text-teal-700" />
+              <span>{t('backToCustomerDirectory')}</span>
+            </button>
+
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span className="font-medium">{t('patientDirectoryTitle')}</span>
+              <span>/</span>
+              <span className="font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                {activePatient.name}
+              </span>
+            </div>
+          </div>
+
+          {/* 1. CUSTOMER HERO PROFILE CARD */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs relative overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-5 border-b border-slate-100">
+              {/* Profile Details */}
+              <div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 font-serif">{activePatient.name}</h2>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                    {activePatient.cases.length === 1 
+                      ? t('registeredCaseSingle') 
+                      : t('registeredCases').replace('{count}', activePatient.cases.length.toString())}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                  <span>{t('patientRecord')}: <strong className="text-slate-700 font-semibold">{activePatient.key}</strong></span>
+                  <span>•</span>
+                  <span>{t('lastConsultation')}: {activePatient.primaryCase.anamneseDatum ? new Date(activePatient.primaryCase.anamneseDatum).toLocaleDateString(language) : t('unknownDate')}</span>
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {onNewCaseForPatient && (
+                  <button
+                    type="button"
+                    onClick={() => onNewCaseForPatient(activePatient.name, activePatient.primaryCase)}
+                    className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{t('actionNewCaseForCustomer')}</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
                   onClick={handleOpenEditStammdaten}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                  className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
                 >
                   <Edit3 className="w-3.5 h-3.5 text-slate-500" />
                   <span>{t('editMasterData')}</span>
@@ -719,7 +1956,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onOpenOrganonForCase(activePatient.primaryCase)}
-                    className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                    className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
                     title={t('btnOrganonAnalysis') || 'Organon'}
                   >
                     <Sparkles className="w-3.5 h-3.5 text-white" />
@@ -730,79 +1967,167 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRequestDeleteCustomer(activePatient)}
-                  className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                  className="p-2 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
                   title={t('btnDeleteCustomer')}
                 >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                  <span>{t('btnDeleteCustomer')}</span>
+                  <Trash2 className="w-4 h-4 text-rose-600" />
                 </button>
               </div>
             </div>
 
-            {/* Structured Stammdaten Grid (Full Width) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mt-4 text-xs">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="block text-[10px] text-slate-400 font-medium">{t('birthdateAndAge')}</span>
-                <span className="font-semibold text-slate-800">
-                  {activePatient.primaryCase.patientBirthDate || '—'} 
-                  {activePatient.primaryCase.patientAge ? ` (${activePatient.primaryCase.patientAge} ${t('yearsOld')})` : ''}
+            {/* 2. COMPLETE STAMMDATEN BENTO GRID ("man sieht also alle Daten, wie man sie eben auch sieht im in dem Pop-up, aber schöner alles gebaut") */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5 text-xs">
+              {/* Card A: Demografie & Basisdaten */}
+              <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-2.5">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-teal-600" />
+                  <span>{t('personalDataSection')}</span>
                 </span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between border-b border-slate-200/50 pb-1">
+                    <span className="text-slate-400">{t('patientBirthDate')}:</span>
+                    <span className="font-semibold text-slate-800">{activePatient.primaryCase.patientBirthDate || '—'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-200/50 pb-1">
+                    <span className="text-slate-400">{t('patientAge')}:</span>
+                    <span className="font-semibold text-slate-800">{activePatient.primaryCase.patientAge ? `${activePatient.primaryCase.patientAge} ${t('yearsOld')}` : '—'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-200/50 pb-1">
+                    <span className="text-slate-400">{t('patientGender')}:</span>
+                    <span className="font-semibold text-slate-800">{getGenderLabel(activePatient.primaryCase.patientGender)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{t('patientMaritalStatus')}:</span>
+                    <span className="font-semibold text-slate-800">{getMaritalStatusLabel(activePatient.primaryCase.patientMaritalStatus)}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="block text-[10px] text-slate-400 font-medium">{t('genderAndStatus')}</span>
-                <span className="font-semibold text-slate-800">
-                  {getGenderLabel(activePatient.primaryCase.patientGender)}
-                  {activePatient.primaryCase.patientMaritalStatus ? ` • ${getMaritalStatusLabel(activePatient.primaryCase.patientMaritalStatus)}` : ''}
-                </span>
-              </div>
+              {/* Card B: Körpermaße & BMI */}
+              {(() => {
+                const bmiData = calculateBMI(activePatient.primaryCase.patientHeightCm, activePatient.primaryCase.patientWeightKg);
+                return (
+                  <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-2.5">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Scale className="w-3.5 h-3.5 text-teal-600" />
+                      <span>{t('bodyDataSection')}</span>
+                    </span>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between border-b border-slate-200/50 pb-1">
+                        <span className="text-slate-400">{t('patientHeight')}:</span>
+                        <span className="font-semibold text-slate-800">
+                          {activePatient.primaryCase.patientHeightCm ? `${activePatient.primaryCase.patientHeightCm} cm` : '—'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-200/50 pb-1">
+                        <span className="text-slate-400">{t('patientWeight')}:</span>
+                        <span className="font-semibold text-slate-800">
+                          {activePatient.primaryCase.patientWeightKg ? `${activePatient.primaryCase.patientWeightKg} kg` : '—'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-0.5">
+                        <span className="text-slate-400">{t('bmiLabel')}:</span>
+                        {bmiData ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold font-mono text-slate-900">{bmiData.bmi}</span>
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-100 text-teal-800">
+                              {t(bmiData.categoryKey as any)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="block text-[10px] text-slate-400 font-medium">{t('heightAndWeight')}</span>
-                <span className="font-semibold text-slate-800">
-                  {activePatient.primaryCase.patientHeightCm ? `${activePatient.primaryCase.patientHeightCm} cm` : '—'} 
-                  {activePatient.primaryCase.patientWeightKg ? ` / ${activePatient.primaryCase.patientWeightKg} kg` : ''}
+              {/* Card C: Familie, Kinder & Schwangerschaft */}
+              <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-2.5">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Baby className="w-3.5 h-3.5 text-teal-600" />
+                  <span>{t('familyLifeSection')}</span>
                 </span>
-              </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between border-b border-slate-200/50 pb-1">
+                    <span className="text-slate-400">{t('hasChildren')}:</span>
+                    <span className="font-semibold text-slate-800">
+                      {activePatient.primaryCase.hasChildren 
+                        ? t('childrenCountLabel', { count: activePatient.primaryCase.childrenCount || activePatient.primaryCase.childrenList?.length || 1 })
+                        : t('noChildren')}
+                    </span>
+                  </div>
 
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="block text-[10px] text-slate-400 font-medium">{t('hasChildren')}</span>
-                <span className="font-semibold text-slate-800">
-                  {activePatient.primaryCase.hasChildren 
-                    ? t('childrenCountLabel').replace('{count}', (activePatient.primaryCase.childrenCount || activePatient.primaryCase.childrenList?.length || 1).toString()) 
-                    : t('noChildren')}
-                </span>
-              </div>
-
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
-                <span className="block text-[10px] text-slate-400 font-medium">{t('contactData')}</span>
-                <div className="flex flex-col gap-0.5 font-semibold text-slate-800 mt-0.5 truncate">
-                  {activePatient.primaryCase.patientPhone && (
-                    <a href={`tel:${activePatient.primaryCase.patientPhone}`} className="hover:text-teal-700 flex items-center gap-1 truncate text-[11px]">
-                      <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                      <span className="truncate">{activePatient.primaryCase.patientPhone}</span>
-                    </a>
+                  {activePatient.primaryCase.isPregnant && (
+                    <div className="flex justify-between border-b border-slate-200/50 pb-1">
+                      <span className="text-slate-400">{t('pregnantYes')}:</span>
+                      <span className="font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded">
+                        {activePatient.primaryCase.pregnancyMonth 
+                          ? `${activePatient.primaryCase.pregnancyMonth}. ${t('pregnantMonthLabel')}`
+                          : t('pregnantYes')}
+                      </span>
+                    </div>
                   )}
-                  {activePatient.primaryCase.patientEmail && (
-                    <a href={`mailto:${activePatient.primaryCase.patientEmail}`} className="hover:text-teal-700 flex items-center gap-1 truncate text-[11px]">
-                      <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                      <span className="truncate">{activePatient.primaryCase.patientEmail}</span>
-                    </a>
-                  )}
-                  {!activePatient.primaryCase.patientPhone && !activePatient.primaryCase.patientEmail && (
-                    <span className="text-slate-400">{t('noContactData')}</span>
+
+                  {activePatient.primaryCase.childrenList && activePatient.primaryCase.childrenList.length > 0 && (
+                    <div className="pt-1 space-y-1">
+                      {activePatient.primaryCase.childrenList.slice(0, 3).map((ch) => (
+                        <div key={ch.id} className="text-[11px] text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 truncate">
+                          {ch.name || t('childrenDetailsTitle')} {ch.age ? `(${ch.age} ${t('yearsOld')})` : ''}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Custom Stammdaten / Extra Fields */}
+              {/* Card D: Kontakt & Erreichbarkeit */}
+              <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-2.5">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-teal-600" />
+                  <span>{t('contactData')}</span>
+                </span>
+                <div className="space-y-2">
+                  {activePatient.primaryCase.patientPhone ? (
+                    <a
+                      href={`tel:${activePatient.primaryCase.patientPhone}`}
+                      className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 hover:border-teal-400 hover:text-teal-700 transition-colors"
+                    >
+                      <span className="font-semibold truncate">{activePatient.primaryCase.patientPhone}</span>
+                      <span className="text-[10px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-bold shrink-0">
+                        {t('callPhoneAction')}
+                      </span>
+                    </a>
+                  ) : (
+                    <div className="text-slate-400 text-[11px]">{t('noContactData')}</div>
+                  )}
+
+                  {activePatient.primaryCase.patientEmail && (
+                    <a
+                      href={`mailto:${activePatient.primaryCase.patientEmail}`}
+                      className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 hover:border-teal-400 hover:text-teal-700 transition-colors"
+                    >
+                      <span className="font-semibold truncate">{activePatient.primaryCase.patientEmail}</span>
+                      <span className="text-[10px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-bold shrink-0">
+                        {t('sendEmailAction')}
+                      </span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Custom Stammdaten / Extra Fields (Full Width) */}
               {activePatient.primaryCase.customStammdaten && activePatient.primaryCase.customStammdaten.length > 0 && (
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 col-span-2 sm:col-span-3 lg:col-span-5">
-                  <span className="block text-[10px] text-slate-400 font-medium">{t('extraFields')}</span>
-                  <div className="flex flex-wrap gap-2 mt-1">
+                <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 col-span-1 md:col-span-2 lg:col-span-4">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <Edit3 className="w-3.5 h-3.5 text-teal-600" />
+                    <span>{t('extraFields')}</span>
+                  </span>
+                  <div className="flex flex-wrap gap-2">
                     {activePatient.primaryCase.customStammdaten.map((cs) => (
-                      <span key={cs.id} className="inline-block bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-xs">
-                        <strong className="text-slate-600">{cs.name}:</strong> {cs.value}
+                      <span key={cs.id} className="inline-block bg-white px-3 py-1 rounded-xl border border-slate-200 text-xs">
+                        <strong className="text-slate-700 font-semibold">{cs.name}:</strong> {cs.value}
                       </span>
                     ))}
                   </div>
@@ -811,26 +2136,34 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
             </div>
           </div>
 
-          {/* 2. CASES UNDER CUSTOMER (FULL WIDTH ACCORDION WITH SEARCH & SCROLL) */}
-          <div className="w-full space-y-3">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 shrink-0">
-                <FileText className="w-5 h-5 text-teal-600" />
-                <h3 className="font-bold text-slate-900 text-base">
-                  {t('casesOfPatient').replace('{count}', activePatient.cases.length.toString())}
-                </h3>
+          {/* 3. TREATMENT PROGRESSION & CASE TIMELINE ("und dann eben, was bis jetzt hier passiert ist") */}
+          <div className="space-y-4">
+            {/* Header & Case Search */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-100">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base font-serif">
+                    {t('treatmentHistoryTitle')} ({activePatient.cases.length})
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {t('treatmentHistorySubtitle')}
+                  </p>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2.5 flex-1 max-w-lg md:justify-end">
-                {/* Search input for cases */}
-                <div className="relative flex-1 min-w-[200px]">
+              {/* Search Within Patient Cases */}
+              <div className="flex items-center gap-2.5 flex-1 max-w-md md:justify-end">
+                <div className="relative flex-1">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     value={caseSearchQuery}
                     onChange={(e) => setCaseSearchQuery(e.target.value)}
                     placeholder={t('searchCasesPlaceholder')}
-                    className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/30 transition-all shadow-2xs"
+                    className="w-full pl-8 pr-8 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-teal-600 focus:bg-white transition-all shadow-2xs"
                   />
                   {caseSearchQuery && (
                     <button
@@ -848,24 +2181,34 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onNewCaseForPatient(activePatient.name, activePatient.primaryCase)}
-                    className="px-3.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                    className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shrink-0 shadow-2xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>{t('btnNewPatientAdmission')}</span>
+                    <span>{t('actionNewCaseForCustomer')}</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Cases list or empty states */}
+            {/* Cases Timeline List */}
             {activePatient.cases.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-xs">
-                <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                <p className="font-semibold text-slate-700">{t('noCasesForPatient')}</p>
+              <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500 text-xs shadow-xs space-y-3">
+                <FileText className="w-10 h-10 mx-auto text-slate-300" />
+                <p className="font-semibold text-slate-700 text-sm">{t('noCasesForCustomerPrompt')}</p>
+                {onNewCaseForPatient && (
+                  <button
+                    type="button"
+                    onClick={() => onNewCaseForPatient(activePatient.name, activePatient.primaryCase)}
+                    className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs inline-flex items-center gap-2 cursor-pointer shadow-xs"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{t('btnStartFirstCase')}</span>
+                  </button>
+                )}
               </div>
             ) : filteredCases.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-xs space-y-2">
-                <Search className="w-7 h-7 mx-auto text-slate-300" />
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-xs space-y-2 shadow-xs">
+                <Search className="w-8 h-8 mx-auto text-slate-300" />
                 <p className="font-semibold text-slate-700">{t('noCasesFoundForSearch')}</p>
                 <button
                   type="button"
@@ -876,7 +2219,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                 </button>
               </div>
             ) : (
-              <div className={filteredCases.length > 5 ? "max-h-[580px] overflow-y-auto pr-1.5 space-y-3 custom-scrollbar" : "space-y-3"}>
+              <div className="space-y-4">
                 {filteredCases.map((c, idx) => {
                   const originalIndex = activePatient.cases.findIndex(item => item.id === c.id);
                   const caseNum = originalIndex !== -1 ? activePatient.cases.length - originalIndex : activePatient.cases.length - idx;
@@ -898,8 +2241,8 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                       {/* Case Card Header Row (Clickable Accordion Trigger) */}
                       <div
                         onClick={() => toggleCaseExpanded(c.id)}
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 cursor-pointer select-none hover:bg-slate-50/70 transition-colors ${
-                          isExpanded ? 'border-b border-slate-100 bg-slate-50/30' : ''
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:px-5 cursor-pointer select-none hover:bg-slate-50/70 transition-colors ${
+                          isExpanded ? 'border-b border-slate-100 bg-slate-50/40' : ''
                         }`}
                       >
                         <div className="flex items-center gap-2.5 flex-wrap">
@@ -936,7 +2279,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                           )}
                         </div>
 
-                        {/* Action Buttons: Fall löschen & Repertorisation (compact with icons) */}
+                        {/* Action Buttons: Workspace / Organon / Delete */}
                         <div 
                           className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap"
                           onClick={(e) => e.stopPropagation()}
@@ -944,17 +2287,17 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleRequestDeleteCase(c, caseNum, activePatient.name)}
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-rose-600 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                            className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-500 hover:text-rose-600 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
                             title={t('btnDeleteCase')}
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-slate-400" />
+                            <Trash2 className="w-3.5 h-3.5" />
                             <span>{t('btnDeleteCase')}</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => onOpenCaseInWorkspace(c)}
-                            className="px-3 py-1.5 rounded-lg bg-[#00897b] hover:bg-[#00796b] active:bg-[#00695c] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                            className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
                             title={t('repertorisationBtn')}
                           >
                             <ArrowRight className="w-3.5 h-3.5 text-white" />
@@ -965,7 +2308,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                             <button
                               type="button"
                               onClick={() => onOpenOrganonForCase(c)}
-                              className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
                               title={t('btnOrganonAnalysis') || 'Organon'}
                             >
                               <Sparkles className="w-3.5 h-3.5 text-white" />
@@ -975,77 +2318,77 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                         </div>
                       </div>
 
-                      {/* Case Details Body - Accordion style (expanded only) */}
+                      {/* Case Details Body (Always visible or expanded) */}
                       {isExpanded && (
-                        <div className="p-5 pt-4 space-y-3 text-xs animate-in fade-in slide-in-from-top-1 duration-150">
+                        <div className="p-5 sm:p-6 pt-4 space-y-4 text-xs animate-in fade-in slide-in-from-top-1 duration-150 border-t border-slate-100">
                           {/* Hauptbeschwerde */}
-                          <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100 space-y-1">
+                          <div className="bg-slate-50/90 p-4 rounded-2xl border border-slate-200/80 space-y-1.5">
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1.5">
                               <Activity className="w-3.5 h-3.5 text-teal-600" />
                               <span>{t('caseChiefComplaint')}</span>
                             </span>
-                            <p className="text-slate-900 text-sm font-medium leading-relaxed">
+                            <p className="text-slate-900 text-sm font-semibold leading-relaxed">
                               {c.hauptbeschwerde || t('noChiefComplaint')}
                             </p>
                           </div>
 
-                          {/* Modalities, Symptoms & Medications Grid */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {/* Modalitäten, Symptome & Medikation Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {/* Modalitäten */}
                             {hasModalities && (
-                              <div className="p-3 rounded-xl border border-slate-100 bg-white space-y-1.5 shadow-2xs">
+                              <div className="p-4 rounded-2xl border border-slate-200/80 bg-white space-y-2 shadow-2xs">
                                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                   {t('caseModalities')}
                                 </span>
                                 {c.modalitaetenBesser && (
-                                  <div className="text-slate-700 text-[11px]">
+                                  <div className="text-slate-700 text-xs">
                                     <strong className="text-emerald-700">{t('betterPrefix')}</strong> {c.modalitaetenBesser}
                                   </div>
                                 )}
                                 {c.modalitaetenSchlechter && (
-                                  <div className="text-slate-700 text-[11px]">
+                                  <div className="text-slate-700 text-xs">
                                     <strong className="text-rose-700">{t('worsePrefix')}</strong> {c.modalitaetenSchlechter}
                                   </div>
                                 )}
                               </div>
                             )}
 
-                            {/* Spontanbericht & Symptomnotizen */}
+                            {/* Spontanbericht & Notizen */}
                             {hasNotes && (
-                              <div className="p-3 rounded-xl border border-slate-100 bg-white space-y-1 shadow-2xs">
+                              <div className="p-4 rounded-2xl border border-slate-200/80 bg-white space-y-2 shadow-2xs">
                                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                   {t('caseNotes')}
                                 </span>
                                 {c.spontanbericht && (
-                                  <p className="text-slate-700 text-[11px] line-clamp-3 leading-relaxed">
+                                  <p className="text-slate-700 text-xs line-clamp-3 leading-relaxed">
                                     {c.spontanbericht}
                                   </p>
                                 )}
                                 {c.gemuetPsyche && !c.spontanbericht && (
-                                  <p className="text-slate-700 text-[11px] line-clamp-3 leading-relaxed">
+                                  <p className="text-slate-700 text-xs line-clamp-3 leading-relaxed">
                                     {c.gemuetPsyche}
                                   </p>
                                 )}
                               </div>
                             )}
 
-                            {/* Medikation & Bisherige Mittel */}
+                            {/* Medikation */}
                             {hasMedications && (
-                              <div className="p-3 rounded-xl border border-slate-100 bg-white space-y-1.5 shadow-2xs">
+                              <div className="p-4 rounded-2xl border border-slate-200/80 bg-white space-y-2 shadow-2xs">
                                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1">
-                                  <Pill className="w-3 h-3 text-teal-600" />
+                                  <Pill className="w-3.5 h-3.5 text-teal-600" />
                                   <span>{t('caseMedications')}</span>
                                 </span>
                                 {c.medikamenteList && c.medikamenteList.length > 0 ? (
                                   <div className="flex flex-wrap gap-1">
                                     {c.medikamenteList.map((m, mIdx) => (
-                                      <span key={mIdx} className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 text-[10px] font-medium">
+                                      <span key={mIdx} className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-[11px] font-medium">
                                         {m.name}{m.dosierung ? ` (${m.dosierung})` : ''}
                                       </span>
                                     ))}
                                   </div>
                                 ) : c.bisherigeMittel ? (
-                                  <p className="text-slate-700 text-[11px] line-clamp-2">
+                                  <p className="text-slate-700 text-xs line-clamp-2">
                                     {c.bisherigeMittel}
                                   </p>
                                 ) : null}
@@ -1053,21 +2396,53 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                             )}
                           </div>
 
-                          {/* Top-Mittel / Repertorisations-Empfehlungen */}
+                          {/* Top-Mittel / Repertorisations-Ergebnisse */}
                           {hasRemedies && (
-                            <div className="p-3 rounded-xl bg-teal-50/50 border border-teal-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-teal-950">
-                                <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                            <div className="p-4 rounded-2xl bg-teal-50/60 border border-teal-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 text-xs font-bold text-teal-950">
+                                <Sparkles className="w-4 h-4 text-teal-600" />
                                 <span>{t('caseTopRemedies')}:</span>
                               </div>
-                              <div className="flex items-center gap-1.5 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 {c.remedySuggestions?.slice(0, 4).map((r, rIdx) => (
                                   <span
                                     key={rIdx}
-                                    className="px-2.5 py-0.5 rounded-lg bg-white border border-teal-200 text-teal-900 font-bold text-xs shadow-2xs"
+                                    className="px-3 py-1 rounded-xl bg-white border border-teal-200 text-teal-900 font-bold text-xs shadow-2xs"
                                   >
                                     {r.name} <span className="text-teal-600 font-normal">({r.score}%)</span>
                                   </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Follow-ups List */}
+                          {c.followUps && c.followUps.length > 0 && (
+                            <div className="space-y-2 pt-2">
+                              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1.5">
+                                <Activity className="w-3.5 h-3.5 text-teal-600" />
+                                <span>{t('followUpsSubtitle')} ({c.followUps.length})</span>
+                              </span>
+                              <div className="space-y-2">
+                                {c.followUps.map((fu, fuIdx) => (
+                                  <div key={fu.id || fuIdx} className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 text-xs space-y-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="font-bold text-slate-800">
+                                        {fu.dateDisplay || (fu.createdAt ? new Date(fu.createdAt).toLocaleDateString(language) : `${t('followUpSingle')} ${fuIdx + 1}`)}
+                                      </span>
+                                      {fu.trend && (
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800">
+                                          {fu.trend}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {fu.befindenVerlauf && (
+                                      <p className="text-slate-700 leading-relaxed">{fu.befindenVerlauf}</p>
+                                    )}
+                                    {fu.notes && (
+                                      <p className="text-slate-500 italic">{fu.notes}</p>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             </div>
@@ -1083,7 +2458,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
         </div>
       )}
 
-      {/* MODAL 3: EDIT STAMMDATEN MODAL */}
+      {/* EDIT STAMMDATEN MODAL */}
       {activePatient && (
         <StammdatenModal
           isOpen={isEditStammdatenOpen}
@@ -1097,201 +2472,7 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
         />
       )}
 
-      {/* 5. PATIENT / CUSTOMER SELECTION POPUP MODAL */}
-      {isSelectPatientModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-teal-50/50 to-slate-50/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-xs">
-                  <Users className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base font-serif">
-                    {t('patientSelectionModalTitle')}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {t('patientSelectionModalSubtitle')}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsSelectPatientModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Search Bar */}
-            <div className="p-4 border-b border-slate-100 bg-white">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={modalSearchQuery}
-                  onChange={(e) => setModalSearchQuery(e.target.value)}
-                  placeholder={t('searchCustomerModalPlaceholder')}
-                  autoFocus
-                  className="w-full pl-10 pr-20 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50/70 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-teal-600 focus:bg-white transition-all"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {modalSearchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setModalSearchQuery('')}
-                      className="p-1 text-slate-400 hover:text-slate-600 rounded-md cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <VoiceInputButton
-                    value={modalSearchQuery}
-                    onChange={(val) => setModalSearchQuery(val)}
-                    size="xs"
-                    mode="append"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-between mt-2 px-1 text-[11px] text-slate-400">
-                <span>{modalFilteredPatients.length} {t('patientsCountLabel')}</span>
-                <span>{t('clickOpensFileBadge')}</span>
-              </div>
-            </div>
-
-            {/* Patients Table */}
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-              {modalFilteredPatients.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">
-                  <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                  <p className="font-semibold text-slate-700 text-sm">{t('noPatientsFound')}</p>
-                  <p className="text-xs text-slate-400 mt-1">{t('noPatientsFoundSub')}</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 text-[11px] uppercase tracking-wider font-semibold">
-                        <th className="py-3 px-4">{t('colLastName')}</th>
-                        <th className="py-3 px-4">{t('colFirstName')}</th>
-                        <th className="py-3 px-4">{t('colBirthDate')}</th>
-                        <th className="py-3 px-4">{t('colPhone')}</th>
-                        <th className="py-3 px-3 text-center">{t('colCasesCount')}</th>
-                        <th className="py-3 px-4 text-right">{t('colAction')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
-                      {modalFilteredPatients.map((p) => {
-                        const { firstName, lastName } = parsePatientName(p.name);
-                        const isSelected = activePatient?.key === p.key;
-
-                        return (
-                          <tr
-                            key={p.key}
-                            onClick={() => {
-                              setSelectedPatientKey(p.key);
-                              setActiveCaseTabId(p.cases[0].id);
-                              setIsSelectPatientModalOpen(false);
-                            }}
-                            className={`cursor-pointer transition-colors group ${
-                              isSelected 
-                                ? 'bg-teal-50/80 font-medium' 
-                                : 'hover:bg-teal-50/40'
-                            }`}
-                          >
-                            <td className="py-3 px-4 font-bold text-slate-900">
-                              {lastName}
-                            </td>
-                            <td className="py-3 px-4 text-slate-800">
-                              {firstName}
-                            </td>
-                            <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
-                              {p.primaryCase.patientBirthDate ? (
-                                <span>
-                                  {p.primaryCase.patientBirthDate}
-                                  {p.primaryCase.patientAge ? ` (${p.primaryCase.patientAge} ${t('yearsOld')})` : ''}
-                                </span>
-                              ) : p.primaryCase.patientAge ? (
-                                <span>{p.primaryCase.patientAge} {t('yearsOld')}</span>
-                              ) : (
-                                <span className="text-slate-400">—</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
-                              {p.primaryCase.patientPhone ? (
-                                <span className="flex items-center gap-1.5">
-                                  <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                                  <span>{p.primaryCase.patientPhone}</span>
-                                </span>
-                              ) : (
-                                <span className="text-slate-400">—</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3 text-center">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
-                                {p.cases.length}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-right whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPatientKey(p.key);
-                                    setActiveCaseTabId(p.cases[0].id);
-                                    setIsSelectPatientModalOpen(false);
-                                    if (p.cases && p.cases.length > 0) {
-                                      onOpenCaseInWorkspace(p.cases[0]);
-                                    }
-                                  }}
-                                  className="px-3 py-1.5 rounded-lg bg-teal-600 group-hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>{t('btnSelectAndTransfer')}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRequestDeleteCustomer(p);
-                                  }}
-                                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-300 transition-colors cursor-pointer"
-                                  title={t('btnDeleteCustomer')}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs">
-              <span className="text-slate-500">
-                {modalFilteredPatients.length} {t('patientsListHeader')}
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsSelectPatientModalOpen(false)}
-                className="px-4 py-1.5 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 cursor-pointer transition-colors"
-              >
-                {t('cancelBtn')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* NEW PATIENT MODAL */}
+      {/* NEW PATIENT MODAL (FALLBACK / TRIGGERED BY ACTIONS) */}
       <StammdatenModal
         isOpen={isNewPatientModalOpen}
         onClose={() => setIsNewPatientModalOpen(false)}
@@ -1310,14 +2491,14 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
           lokalsymptome: '',
           bisherigeMittel: '',
         }}
-        onSave={handleSaveNewPatient}
+        onSave={handleSaveModalPatient}
       />
 
       {/* DELETION CONFIRMATION DIALOG (WITH SECURITY CODE '360') */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl border border-rose-200 shadow-2xl max-w-md w-full overflow-hidden p-6 space-y-5 animate-in zoom-in-95 duration-150">
-            {/* Header with red warning badge */}
+            {/* Header with warning badge */}
             <div className="flex items-start gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
                 <AlertTriangle className="w-6 h-6 text-rose-600" />
@@ -1355,7 +2536,6 @@ export const PatientDirectoryView: React.FC<PatientDirectoryViewProps> = ({
                     </span>
                   </div>
 
-                  {/* Beschwerde kurz aufzeigen */}
                   <div className="space-y-1 pt-1">
                     <span className="text-slate-500 font-medium block">{t('confirmDeleteComplaintLabel')}:</span>
                     <p className="text-slate-800 italic bg-white p-2.5 rounded-lg border border-slate-200 leading-relaxed font-medium">

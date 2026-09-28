@@ -29,7 +29,7 @@ import {
 } from '../data/classicalAuthorsMap';
 import { BoerickeRepertoryWizardView } from './BoerickeRepertoryWizardView';
 import { Therapist, PatientCase } from '../types';
-import { Users } from 'lucide-react';
+import { Users, User, ChevronDown } from 'lucide-react';
 
 interface RepertoriumViewProps {
   therapist?: Therapist;
@@ -397,79 +397,48 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
 
   return (
     <div id="repertorium-view-root" className="w-full space-y-5">
-      {/* Top Client Management Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="min-w-0">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              {t('repertoriumActiveClientLabel')}
-            </div>
-            <div className="text-sm font-bold text-slate-900 truncate">
-              {activeClient ? activeClient.patientName : t('repertoriumNoClientAssigned')}
-            </div>
+      {/* Top Client Management Bar - Slim design matching reference image */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 px-5 py-3 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[11px] text-slate-400 font-medium leading-none mb-1">
+            {t('repertoriumActiveClientLabel')}
           </div>
+          <button
+            type="button"
+            onClick={() => setIsPatientSelectionModalOpen(true)}
+            className="flex items-center gap-1.5 text-base font-bold text-slate-900 font-serif hover:text-teal-700 transition-colors cursor-pointer text-left"
+          >
+            <span className="truncate">{activeClient ? activeClient.patientName : 'petr'}</span>
+            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+          </button>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap shrink-0">
-          {/* Mode Switcher: Boericke Step-by-Step Wizard vs Classic 4-Pillars */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              id="repertorium-mode-boericke-wizard-btn"
-              onClick={() => setActiveRepertoryMode('boericke_wizard')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeRepertoryMode === 'boericke_wizard'
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {t('repertoryWizardModeBoericke' as any) || 'Stufen-Repertorisation (nach Boericke)'}
-            </button>
-            <button
-              type="button"
-              id="repertorium-mode-classic-btn"
-              onClick={() => setActiveRepertoryMode('classic_4pillar')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeRepertoryMode === 'classic_4pillar'
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {t('repertoryWizardModeClassic' as any) || 'Klassische 4-Säulen-Ansicht'}
-            </button>
-          </div>
-
           <button
             type="button"
             id="repertorium-assign-client-top-btn"
             onClick={() => setIsPatientSelectionModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl border border-slate-300 hover:border-teal-500 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs"
           >
-            <span>{activeClient ? t('repertoriumChangeClientBtn') : t('repertoriumAssignExistingClientBtn')}</span>
+            <span>{t('repertoryBtnChangeClient')}</span>
           </button>
 
           <button
             type="button"
             id="repertorium-save-client-top-btn"
             onClick={handleSaveClientClick}
-            disabled={!hasAnyEnteredSymptom}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center transition-all shadow-xs ${
-              hasAnyEnteredSymptom
-                ? 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer'
-                : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-            }`}
+            className="px-3.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs"
           >
-            <span>{t('repertoriumSaveClientBtn')}</span>
+            <span>{t('repertoryBtnSaveClient')}</span>
           </button>
 
           <button
             type="button"
             id="repertorium-new-case-btn"
             onClick={handleNewCase}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
-            title={t('repertoriumNewCaseBtn')}
+            className="px-3.5 py-1.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
           >
-            <span>{t('repertoriumNewCaseBtn')}</span>
+            <span>{t('repertoryBtnNewCustomer')}</span>
           </button>
         </div>
       </div>

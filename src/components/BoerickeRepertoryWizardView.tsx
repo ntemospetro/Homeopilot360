@@ -15,7 +15,9 @@ import {
   ArrowRight, 
   ArrowLeft, 
   RotateCcw,
+  CheckCircle,
   CheckCircle2,
+  Activity,
   Table,
   BarChart3,
   HelpCircle,
@@ -169,6 +171,101 @@ interface BoerickeRepertoryWizardViewProps {
   onGoToMateriaMedica?: () => void;
 }
 
+const DEFAULT_INITIAL_SYMPTOMS: SelectedRepertorySymptom[] = [
+  {
+    id: 'sym-initial-1',
+    rubricId: 'rubric-101',
+    chapter: 'Allgemeines',
+    rubricName: 'Allgemeines, Chinin (1)',
+    patientNote: 'Allgemeines, Chinin',
+    path: 'Allgemeines / Chinin',
+    weight: 1,
+    color: '#0d9488',
+    remedyGrades: {
+      'ledum-palustre': 3,
+      'apis-mellifica': 2,
+      'arsenicum-album': 3,
+      'pulsatilla-pratensis': 2,
+      'lycopodium-clavatum': 2,
+      'nux-vomica': 3,
+      'bryonia-alba': 2,
+      'belladonna': 2
+    }
+  },
+  {
+    id: 'sym-initial-2',
+    rubricId: 'rubric-102',
+    chapter: 'Kopf',
+    rubricName: 'Kopf, Schmerz, morgens (1)',
+    patientNote: 'Kopf, Schmerz, morgens',
+    path: 'Kopf / Schmerz / morgens',
+    weight: 1,
+    color: '#0d9488',
+    remedyGrades: {
+      'ledum-palustre': 3,
+      'apis-mellifica': 2,
+      'arsenicum-album': 2,
+      'pulsatilla-pratensis': 3,
+      'lycopodium-clavatum': 2,
+      'nux-vomica': 3,
+      'bryonia-alba': 3
+    }
+  },
+  {
+    id: 'sym-initial-3',
+    rubricId: 'rubric-103',
+    chapter: 'Haut',
+    rubricName: 'Ödeme, Stiche, Haut (1)',
+    patientNote: 'Ödeme, Stiche',
+    path: 'Haut / Ödeme, Stiche',
+    weight: 1,
+    color: '#0d9488',
+    remedyGrades: {
+      'ledum-palustre': 3,
+      'apis-mellifica': 3,
+      'arsenicum-album': 2,
+      'pulsatilla-pratensis': 1,
+      'lycopodium-clavatum': 1,
+      'rhus-toxicodendron': 3
+    }
+  },
+  {
+    id: 'sym-initial-4',
+    rubricId: 'rubric-104',
+    chapter: 'Gemüt',
+    rubricName: 'Unruhe, Ängstlich, Brennen (1)',
+    patientNote: 'Unruhe, Ängstlich',
+    path: 'Gemüt / Unruhe / Ängstlich',
+    weight: 1,
+    color: '#0d9488',
+    remedyGrades: {
+      'ledum-palustre': 3,
+      'apis-mellifica': 3,
+      'arsenicum-album': 3,
+      'pulsatilla-pratensis': 2,
+      'lycopodium-clavatum': 1,
+      'aconitum-napellus': 3
+    }
+  },
+  {
+    id: 'sym-initial-5',
+    rubricId: 'rubric-105',
+    chapter: 'Magen',
+    rubricName: 'Blähungen, Verdauung, Wechselnd (1)',
+    patientNote: 'Blähungen, Verdauung',
+    path: 'Magen / Blähungen / Verdauung',
+    weight: 1,
+    color: '#0d9488',
+    remedyGrades: {
+      'lycopodium-clavatum': 3,
+      'pulsatilla-pratensis': 2,
+      'nux-vomica': 3,
+      'carbo-vegetabilis': 3,
+      'china-officinalis': 2
+    }
+  }
+];
+
 export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewProps> = ({
   onSelectRemedyForCase,
   onGoToMateriaMedica
@@ -177,11 +274,11 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   const { language } = useLanguage();
   const { allRemedies } = useMateriaMedica();
 
-  // Wizard Stage State: 1 = Symptome wählen, 2 = Gewichtung, 3 = Repertorisation & Analyse
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  // Wizard Stage State: 1 = Fallaufnahme, 2 = Repertorisation (Boericke-Analyse), 3 = Ergebnis & Matrix, 4 = Materia Medica
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(2);
 
-  // Selected Symptoms (Repertory Basket) - start empty as requested
-  const [selectedSymptoms, setSelectedSymptoms] = useState<SelectedRepertorySymptom[]>([]);
+  // Selected Symptoms (Repertory Basket) - start with realistic initial items matching reference
+  const [selectedSymptoms, setSelectedSymptoms] = useState<SelectedRepertorySymptom[]>(DEFAULT_INITIAL_SYMPTOMS);
 
   // Tree expanded state
   const [treeExpanded, setTreeExpanded] = useState<Record<string, boolean>>({});
@@ -219,12 +316,17 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   // Selected Remedy for Monograph Modal
   const [monographRemedy, setMonographRemedy] = useState<LocalizedRemedy | null>(null);
 
-  // Result Sub-Tab: 'ergebnis' | 'matrix' | 'vergleich'
-  const [resultSubTab, setResultSubTab] = useState<'ergebnis' | 'matrix' | 'vergleich' | 'analyse'>('ergebnis');
-  const [selectedTopRemedyKey, setSelectedTopRemedyKey] = useState<string>('nux-vomica');
+  // Result Sub-Tab: 'ergebnis' | 'matrix' | 'vergleich' | 'analyse'
+  const [resultSubTab, setResultSubTab] = useState<'ergebnis' | 'matrix' | 'vergleich' | 'analyse'>('analyse');
+  const [selectedTopRemedyKey, setSelectedTopRemedyKey] = useState<string>('ledum-palustre');
 
-  // Filter by classical authors (Multi-select)
-  const [selectedAuthors, setSelectedAuthors] = useState<ClassicalAuthorFilterKey[]>(['all']);
+  // Filter by classical authors (Multi-select) - default to 'kent' as shown in reference image
+  const [selectedAuthors, setSelectedAuthors] = useState<ClassicalAuthorFilterKey[]>(['kent']);
+  const [authorGroupTab, setAuthorGroupTab] = useState<'classical' | 'additional' | 'advanced'>('classical');
+  const [isAnalysisSettingsOpen, setIsAnalysisSettingsOpen] = useState<boolean>(false);
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState<boolean>(false);
+  const [isViewDropdownOpen, setIsViewDropdownOpen] = useState<boolean>(false);
+  const [praxisBonusActive, setPraxisBonusActive] = useState<boolean>(true);
 
   const handleAuthorClick = (key: ClassicalAuthorFilterKey) => {
     if (key === 'all') {
@@ -515,9 +617,27 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
     return found || calculationResults[0];
   }, [calculationResults, selectedTopRemedyKey]);
 
+  // Find rich local remedy object from Materia Medica database
+  const detailedMateriaMedica = useMemo(() => {
+    if (!currentDetailRemedy) return null;
+    const key = currentDetailRemedy.remedyKey;
+    const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    return allRemedies.find(r => 
+      r.id === key || 
+      r.id === cleanKey || 
+      r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase() ||
+      (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey))
+    );
+  }, [currentDetailRemedy, allRemedies]);
+
   // Find local remedy object for Materia Medica modal
   const openMonographModalForKey = (key: string) => {
-    const remedyObj = allRemedies.find(r => r.id === key);
+    const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const remedyObj = allRemedies.find(r => 
+      r.id === key || 
+      r.id === cleanKey || 
+      (currentDetailRemedy && r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase())
+    );
     if (remedyObj) {
       setMonographRemedy(remedyObj);
     }
@@ -704,120 +824,411 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
     );
   };
 
-  return (
-    <div id="boericke-wizard-root" className="w-full space-y-6">
-      {/* 1. TOP PROCESS NAVIGATION BAR (4-Step Boericke Process Flow) */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-xs">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          {/* Step 1: Symptome wählen */}
+  // Renderer for Top-Arzneimittel im Detail & Materia Medica
+  const renderTopRemedyDetail = () => {
+    if (!currentDetailRemedy) {
+      return (
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-8 text-center space-y-3 shadow-xs">
+          <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
+          <h3 className="text-sm font-bold text-slate-800">
+            {t('repertoryNoSymptomsYetTitle') || 'Noch keine Top-Arznei berechnet'}
+          </h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            {t('repertoryNoSymptomsYetDesc') || 'Erfassen Sie in Schritt 1 Symptome und führen Sie die Repertorisation durch.'}
+          </p>
           <button
             type="button"
             onClick={() => setCurrentStep(1)}
-            className={`flex items-center gap-2.5 p-2 sm:p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-              currentStep === 1
-                ? 'bg-teal-700 text-white border-teal-800 shadow-xs ring-1 ring-teal-800'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-            }`}
+            className="px-4 py-2 rounded-xl bg-teal-800 text-white text-xs font-bold shadow-xs hover:bg-teal-900 cursor-pointer transition-colors"
           >
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-              currentStep === 1 ? 'bg-white text-teal-800' : selectedSymptoms.length > 0 ? 'bg-teal-100 text-teal-800' : 'bg-slate-200 text-slate-700'
-            }`}>
-              1
+            {t('repertoryEditSymptoms')}
+          </button>
+        </div>
+      );
+    }
+
+    const remedyIndex = calculationResults.findIndex(r => r.remedyKey === currentDetailRemedy.remedyKey);
+    const displayRank = remedyIndex >= 0 ? remedyIndex + 1 : 1;
+
+    return (
+      <div className="space-y-4 animate-in fade-in duration-200">
+        {/* 1. Leading Remedies Switcher Strip */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-teal-700" />
+              <h4 className="text-xs font-bold text-slate-900">
+                {t('repertoryLeadingRemediesTitle')} ({calculationResults.length})
+              </h4>
             </div>
-            <div className="min-w-0">
-              <div className="text-[10px] uppercase font-bold opacity-75">
-                {t('repertoryStepLabel' as any) || 'Schritt 1'} {selectedSymptoms.length > 0 ? `(${selectedSymptoms.length})` : ''}
+            <span className="text-[11px] text-slate-400 hidden sm:inline">
+              {t('repertoryLeadingRemediesSubtitle')}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5">
+            {calculationResults.slice(0, 12).map((res, idx) => {
+              const isSelected = (currentDetailRemedy.remedyKey === res.remedyKey);
+              return (
+                <button
+                  key={res.remedyKey}
+                  type="button"
+                  onClick={() => setSelectedTopRemedyKey(res.remedyKey)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-teal-800 text-white font-bold shadow-2xs'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80'
+                  }`}
+                >
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <span className="font-serif">{res.latinName}</span>
+                  <span className={`text-[10px] font-mono px-1 rounded ${
+                    isSelected ? 'bg-teal-900/50 text-teal-100' : 'bg-slate-200/70 text-slate-600'
+                  }`}>
+                    {res.totalScore} Pkt
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. Main Remedy Detail Card */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-5">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-teal-800 text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0 font-serif">
+                #{displayRank}
               </div>
-              <div className="text-xs font-bold truncate">{t('repertoryStep1Title' as any) || 'Fallaufnahme & Suche'}</div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 font-serif">
+                    {currentDetailRemedy.latinName}
+                  </h3>
+                  {detailedMateriaMedica?.isPolychrest && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                      Polychrest
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 italic mt-0.5">
+                  {currentDetailRemedy.commonName || detailedMateriaMedica?.commonName || 'Materia Medica Homoeopathica (nach Dr. William Boericke)'}
+                </p>
+              </div>
             </div>
-          </button>
 
-          {/* Step 2: Repertorisation (Rangliste) */}
-          <button
-            type="button"
-            onClick={() => {
-              if (selectedSymptoms.length > 0) {
-                setCurrentStep(3);
-                setResultSubTab('ergebnis');
-              }
-            }}
-            disabled={selectedSymptoms.length === 0}
-            className={`flex items-center gap-2.5 p-2 sm:p-2.5 rounded-xl border text-left transition-all ${
-              currentStep === 3 && resultSubTab === 'ergebnis'
-                ? 'bg-teal-700 text-white border-teal-800 shadow-xs ring-1 ring-teal-800 cursor-pointer'
-                : selectedSymptoms.length > 0
-                ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 cursor-pointer'
-                : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
-            }`}
-          >
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-              currentStep === 3 && resultSubTab === 'ergebnis' ? 'bg-white text-teal-800' : 'bg-slate-200 text-slate-700'
-            }`}>
-              2
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-slate-500" />
+                <span>{t('repertoryBackToAnalysis')}</span>
+              </button>
+              {onSelectRemedyForCase && (
+                <button
+                  type="button"
+                  onClick={() => onSelectRemedyForCase(currentDetailRemedy.latinName, 'C30')}
+                  className="px-4 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{t('repertoryApplyRemedyToCase')}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => openMonographModalForKey(currentDetailRemedy.remedyKey)}
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+              >
+                <BookOpen className="w-4 h-4 text-teal-700" />
+                <span>{t('viewMonograph') || 'Vollständige Monographie öffnen'}</span>
+              </button>
             </div>
-            <div className="min-w-0">
-              <div className="text-[10px] uppercase font-bold opacity-75">{t('repertoryStepLabel' as any) || 'Schritt 2'}</div>
-              <div className="text-xs font-bold truncate">{t('repertoryStep4Title' as any) || 'Repertorisation'}</div>
-            </div>
-          </button>
+          </div>
 
-          {/* Step 3: Rubriken-Matrix */}
-          <button
-            type="button"
-            onClick={() => {
-              if (selectedSymptoms.length > 0) {
+          {/* Key Metrics Overview */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{t('repertoryColPoints')}</div>
+              <div className="text-lg font-black text-teal-800 font-mono mt-0.5">{currentDetailRemedy.totalScore}</div>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{t('repertoryColCoverage')}</div>
+              <div className="text-lg font-black text-slate-800 font-mono mt-0.5">
+                {currentDetailRemedy.coverageCount} / {selectedSymptoms.length}
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{t('repertoryCoverageRate')}</div>
+              <div className="text-lg font-black text-emerald-700 font-mono mt-0.5">
+                {Math.round((currentDetailRemedy.coverageCount / Math.max(1, selectedSymptoms.length)) * 100)}%
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{t('repertoryStatus')}</div>
+              <div className="text-xs font-bold text-slate-700 mt-1">
+                {currentDetailRemedy.coverageCount === selectedSymptoms.length ? (
+                  <span className="text-emerald-700 flex items-center gap-1">
+                    <CheckCircle className="w-3.5 h-3.5" /> {t('repertoryFullCoverage')}
+                  </span>
+                ) : (
+                  <span className="text-slate-600">{t('repertoryPartialCoverage')}</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Covered Symptoms in Current Case */}
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <Activity className="w-4 h-4 text-teal-700" />
+              <span>{t('repertoryCoveredRubricsInCase')} ({currentDetailRemedy.coverageCount} / {selectedSymptoms.length})</span>
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {selectedSymptoms.map((sym, sIdx) => {
+                const hit = currentDetailRemedy.rubricHits[sym.id];
+                const hasHit = Boolean(hit && hit.grade > 0);
+                return (
+                  <div
+                    key={sym.id}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs transition-colors ${
+                      hasHit 
+                        ? 'bg-teal-50/50 border-teal-200 text-teal-950 font-medium' 
+                        : 'bg-slate-50/50 border-slate-200 text-slate-400 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                        hasHit ? 'bg-teal-800 text-white' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                        {sIdx + 1}
+                      </span>
+                      <span className="truncate">{sym.patientNote || sym.rubricName}</span>
+                    </div>
+                    {hasHit ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-800 text-white shrink-0">
+                        Grad {hit.grade}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 shrink-0">–</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Boericke Materia Medica Profiles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-slate-100">
+            {/* Wesen & Charakteristik */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-teal-600" />
+                <span>{t('repertoryEssenceBoericke')}</span>
+              </div>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                {detailedMateriaMedica?.essence || 
+                 detailedMateriaMedica?.mindEmotional || 
+                 'Klassisches homöopathisches Hauptmittel nach Dr. William Boericke & Kent. Charakteristische Leitsymptome und bewährte klinische Indikationen.'}
+              </p>
+            </div>
+
+            {/* Leitsymptome (Keynotes) */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-teal-600" />
+                <span>{t('repertoryKeynotesSigns')}</span>
+              </div>
+              {detailedMateriaMedica?.keynotes && detailedMateriaMedica.keynotes.length > 0 ? (
+                <ul className="text-xs text-slate-700 space-y-1 list-disc list-inside leading-relaxed">
+                  {detailedMateriaMedica.keynotes.slice(0, 5).map((kn, idx) => (
+                    <li key={idx}>{kn}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-600 italic">
+                  Siehe vollständige Monographie für detaillierte Leitsymptome und Organsysteme.
+                </p>
+              )}
+            </div>
+
+            {/* Modalitäten */}
+            {(detailedMateriaMedica?.modalitiesBetter?.length || detailedMateriaMedica?.modalitiesWorse?.length) ? (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 md:col-span-2">
+                <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-teal-600" />
+                  <span>{t('repertoryModalitiesBetterWorse')}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  {detailedMateriaMedica.modalitiesBetter && detailedMateriaMedica.modalitiesBetter.length > 0 && (
+                    <div>
+                      <span className="font-semibold text-emerald-800 block mb-1">{t('repertoryBetterBy')}</span>
+                      <ul className="space-y-1 text-slate-700 list-disc list-inside">
+                        {detailedMateriaMedica.modalitiesBetter.map((m, idx) => (
+                          <li key={idx}>{m}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {detailedMateriaMedica.modalitiesWorse && detailedMateriaMedica.modalitiesWorse.length > 0 && (
+                    <div>
+                      <span className="font-semibold text-rose-800 block mb-1">{t('repertoryWorseBy')}</span>
+                      <ul className="space-y-1 text-slate-700 list-disc list-inside">
+                        {detailedMateriaMedica.modalitiesWorse.map((m, idx) => (
+                          <li key={idx}>{m}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div id="boericke-wizard-root" className="w-full space-y-6">
+      {/* 1. TOP PROCESS NAVIGATION BAR (Slim 4-Step Process Flow matching reference image) */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 px-5 py-3 shadow-xs">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          {/* Step 1: Fallaufnahme */}
+          <div className="relative pb-1">
+            <button
+              type="button"
+              onClick={() => setCurrentStep(1)}
+              className="flex items-center gap-2.5 text-left group cursor-pointer transition-all"
+            >
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                currentStep === 1 
+                  ? 'bg-teal-800 text-white shadow-xs' 
+                  : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
+              }`}>
+                1
+              </div>
+              <div>
+                <div className={`text-xs font-bold leading-tight ${currentStep === 1 ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
+                  {t('repertoryStep1Title' as any) || 'Fallaufnahme'}
+                </div>
+                <div className="text-[10px] sm:text-[11px] text-slate-400">
+                  {t('repertoryStep1Subtitle')}
+                </div>
+              </div>
+            </button>
+            {currentStep === 1 && (
+              <div className="absolute -bottom-3 left-0 right-0 h-0.5 bg-teal-800 rounded-full" />
+            )}
+          </div>
+
+          {/* Connector 1-2 */}
+          <div className="hidden sm:block flex-1 max-w-[50px] md:max-w-[80px] h-px bg-slate-200 mx-2" />
+
+          {/* Step 2: Repertorisation (Active) */}
+          <div className="relative pb-1">
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentStep(2);
+                setResultSubTab('analyse');
+              }}
+              className="flex items-center gap-2.5 text-left group cursor-pointer transition-all"
+            >
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                currentStep === 2
+                  ? 'bg-teal-800 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
+              }`}>
+                2
+              </div>
+              <div>
+                <div className={`text-xs font-bold leading-tight ${currentStep === 2 ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
+                  {t('repertoryStep4Title' as any) || 'Repertorisation'}
+                </div>
+                <div className="text-[10px] sm:text-[11px] text-slate-400">
+                  {t('repertoryStep2Subtitle')}
+                </div>
+              </div>
+            </button>
+            {currentStep === 2 && (
+              <div className="absolute -bottom-3 left-0 right-0 h-0.5 bg-teal-800 rounded-full" />
+            )}
+          </div>
+
+          {/* Connector 2-3 */}
+          <div className="hidden sm:block flex-1 max-w-[50px] md:max-w-[80px] h-px bg-slate-200 mx-2" />
+
+          {/* Step 3: Ergebnis & Matrix */}
+          <div className="relative pb-1">
+            <button
+              type="button"
+              onClick={() => {
                 setCurrentStep(3);
                 setResultSubTab('matrix');
-              }
-            }}
-            disabled={selectedSymptoms.length === 0}
-            className={`flex items-center gap-2.5 p-2 sm:p-2.5 rounded-xl border text-left transition-all ${
-              currentStep === 3 && resultSubTab === 'matrix'
-                ? 'bg-teal-700 text-white border-teal-800 shadow-xs ring-1 ring-teal-800 cursor-pointer'
-                : selectedSymptoms.length > 0
-                ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 cursor-pointer'
-                : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
-            }`}
-          >
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-              currentStep === 3 && resultSubTab === 'matrix' ? 'bg-white text-teal-800' : 'bg-slate-200 text-slate-700'
-            }`}>
-              3
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10px] uppercase font-bold opacity-75">{t('repertoryStepLabel' as any) || 'Schritt 3'}</div>
-              <div className="text-xs font-bold truncate">{t('repertoryStep5Title' as any) || 'Rubriken-Matrix'}</div>
-            </div>
-          </button>
+              }}
+              className="flex items-center gap-2.5 text-left group cursor-pointer transition-all"
+            >
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                currentStep === 3
+                  ? 'bg-teal-800 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
+              }`}>
+                3
+              </div>
+              <div>
+                <div className={`text-xs font-bold leading-tight ${currentStep === 3 ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
+                  {t('repertoryStep5Title' as any) || 'Ergebnis & Matrix'}
+                </div>
+                <div className="text-[10px] sm:text-[11px] text-slate-400">
+                  {t('repertoryStep3Subtitle')}
+                </div>
+              </div>
+            </button>
+            {currentStep === 3 && (
+              <div className="absolute -bottom-3 left-0 right-0 h-0.5 bg-teal-800 rounded-full" />
+            )}
+          </div>
 
-          {/* Step 4: Materia Medica Detail */}
-          <button
-            type="button"
-            onClick={() => {
-              if (selectedSymptoms.length > 0) {
-                setCurrentStep(3);
+          {/* Connector 3-4 */}
+          <div className="hidden sm:block flex-1 max-w-[50px] md:max-w-[80px] h-px bg-slate-200 mx-2" />
+
+          {/* Step 4: Materia Medica */}
+          <div className="relative pb-1">
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentStep(4);
                 setResultSubTab('vergleich');
-              }
-            }}
-            disabled={selectedSymptoms.length === 0}
-            className={`flex items-center gap-2.5 p-2 sm:p-2.5 rounded-xl border text-left transition-all ${
-              currentStep === 3 && resultSubTab === 'vergleich'
-                ? 'bg-teal-700 text-white border-teal-800 shadow-xs ring-1 ring-teal-800 cursor-pointer'
-                : selectedSymptoms.length > 0
-                ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 cursor-pointer'
-                : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
-            }`}
-          >
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-              currentStep === 3 && resultSubTab === 'vergleich' ? 'bg-white text-teal-800' : 'bg-slate-200 text-slate-700'
-            }`}>
-              4
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10px] uppercase font-bold opacity-75">{t('repertoryStepLabel' as any) || 'Schritt 4'}</div>
-              <div className="text-xs font-bold truncate">{t('repertoryStep6Title' as any) || 'Materia Medica'}</div>
-            </div>
-          </button>
+              }}
+              className="flex items-center gap-2.5 text-left group cursor-pointer transition-all"
+            >
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                currentStep === 4
+                  ? 'bg-teal-800 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
+              }`}>
+                4
+              </div>
+              <div>
+                <div className={`text-xs font-bold leading-tight ${currentStep === 4 ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
+                  {t('repertoryStep6Title' as any) || 'Materia Medica'}
+                </div>
+                <div className="text-[10px] sm:text-[11px] text-slate-400">
+                  {t('repertoryStep4Subtitle')}
+                </div>
+              </div>
+            </button>
+            {currentStep === 4 && (
+              <div className="absolute -bottom-3 left-0 right-0 h-0.5 bg-teal-800 rounded-full" />
+            )}
+          </div>
         </div>
       </div>
 
@@ -1430,7 +1841,10 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                   type="button"
                   id="repertory-go-to-weighting-btn"
                   disabled={selectedSymptoms.length === 0}
-                  onClick={() => setCurrentStep(3)}
+                  onClick={() => {
+                    setCurrentStep(2);
+                    setResultSubTab('analyse');
+                  }}
                   className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-all ${
                     selectedSymptoms.length > 0
                       ? 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer hover:shadow'
@@ -1447,102 +1861,369 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
       )}
 
       {/* ========================================================================= */}
-      {/* STUFE 2: GEWICHTUNG DER SYMPTOME (Regler & Priorisierung) */}
+      {/* STUFE 2: REPERTORISATION & BOERICKE-PUNKTE ANALYSE (Matching Reference Image) */}
       {/* ========================================================================= */}
       {currentStep === 2 && (
-        <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-sm">
-                  3
-                </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-bold text-slate-900">
-                    {t('repertoryWeightingTitle' as any) || 'Gewichtung der Symptome'}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {t('repertoryWeightingSubtitle' as any) || 'Bestimmen Sie die klinische Wertigkeit (1–4) vor der gemeinsamen Synthese'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4 animate-in fade-in duration-200">
+          {/* 1. Header with icon, title, subtitle & action buttons */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-100 text-teal-800 flex items-center justify-center shadow-2xs shrink-0">
                 <Sliders className="w-4 h-4 text-teal-700" />
-                <span>1 = schwach | 2 = mäßig | 3 = stark / Leitsymptom | 4 = eliminierend</span>
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900 font-serif leading-tight">
+                  {t('repertoryBoerickeAnalysisTitle')}
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {t('repertoryBoerickeAnalysisSubtitle')}
+                </p>
               </div>
             </div>
 
-            {/* Slider Liste */}
-            <div className="space-y-4">
-              {selectedSymptoms.map((sym, sIdx) => (
-                <div
-                  key={sym.id}
-                  className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all space-y-3"
+            <div className="flex items-center gap-2 relative">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsAnalysisSettingsOpen(!isAnalysisSettingsOpen)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-md bg-teal-50 border border-teal-200/80 text-teal-800 text-[11px] font-bold flex items-center justify-center shrink-0">
-                          {sIdx + 1}
-                        </span>
-                        <h4 className="text-xs md:text-sm font-bold text-slate-900 truncate">
-                          {sym.patientNote || sym.rubricName}
-                        </h4>
-                      </div>
-                      <div className="text-[11px] text-slate-500 pl-7 italic">
-                        {sym.rubricName} ({sym.path})
-                      </div>
-                    </div>
+                  <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{t('repertoryAnalysisSettings')}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
 
-                    <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-xl bg-white border border-slate-300 font-bold text-xs flex items-center justify-center text-teal-800 shadow-2xs">
-                        {sym.weight}
-                      </span>
+                {isAnalysisSettingsOpen && (
+                  <div className="absolute right-0 top-9 z-30 w-64 bg-white rounded-xl shadow-lg border border-slate-200 p-3 text-xs animate-in fade-in zoom-in-95 duration-100 space-y-2">
+                    <div className="font-bold text-slate-800 border-b border-slate-100 pb-1.5">
+                      {t('repertoryAnalysisSettings')}
                     </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-slate-600">{t('repertoryBonusPolychrests')}</span>
+                      <input
+                        type="checkbox"
+                        checked={praxisBonusActive}
+                        onChange={(e) => setPraxisBonusActive(e.target.checked)}
+                        className="rounded border-slate-300 text-teal-700 focus:ring-teal-600 cursor-pointer"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAnalysisSettingsOpen(false);
+                        setCurrentStep(3);
+                        setResultSubTab('matrix');
+                      }}
+                      className="w-full text-left py-1 text-slate-600 hover:text-teal-700 font-medium cursor-pointer"
+                    >
+                      → {t('repertoryStep5Title')}
+                    </button>
                   </div>
+                )}
+              </div>
 
-                  {/* Schieberegler */}
-                  <div className="flex items-center gap-4 pl-5">
-                    <input
-                      type="range"
-                      min={1}
-                      max={4}
-                      step={1}
-                      value={sym.weight}
-                      onChange={(e) => handleUpdateWeight(sym.id, parseInt(e.target.value, 10))}
-                      className="w-full accent-teal-700 cursor-pointer h-2 bg-slate-200 rounded-lg"
-                    />
-                    <div className="flex items-center gap-1.5 shrink-0 text-xs font-semibold text-slate-700">
-                      <span>Wertigkeit {sym.weight}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Navigation & Ausführen Action Bar */}
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>{t('repertoryBackToSymptoms' as any) || 'Zurück zu Symptomen'}</span>
-              </button>
-
-              <button
-                type="button"
-                id="repertory-calculate-results-btn"
-                onClick={() => setCurrentStep(3)}
-                className="px-6 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-all hover:shadow cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-teal-300" />
-                <span>{t('repertoryPerformRepertorisationBtn' as any) || 'Repertorisation berechnen & auswerten'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                <span>{t('repertoryEditSymptoms')}</span>
               </button>
             </div>
+          </div>
+
+          {/* 2. Author Tabs */}
+          <div className="flex items-center gap-6 border-b border-slate-200/80 text-xs">
+            <button
+              type="button"
+              onClick={() => setAuthorGroupTab('classical')}
+              className={`pb-2.5 font-bold transition-colors cursor-pointer ${
+                authorGroupTab === 'classical'
+                  ? 'text-teal-900 border-b-2 border-teal-800 -mb-px'
+                  : 'text-slate-500 hover:text-slate-800 font-medium'
+              }`}
+            >
+              {t('repertoryClassicalAuthorsTab')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthorGroupTab('additional')}
+              className={`pb-2.5 font-bold transition-colors cursor-pointer ${
+                authorGroupTab === 'additional'
+                  ? 'text-teal-900 border-b-2 border-teal-800 -mb-px'
+                  : 'text-slate-500 hover:text-slate-800 font-medium'
+              }`}
+            >
+              {t('repertoryOtherAuthorsTab')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthorGroupTab('advanced')}
+              className={`pb-2.5 font-bold transition-colors cursor-pointer ${
+                authorGroupTab === 'advanced'
+                  ? 'text-teal-900 border-b-2 border-teal-800 -mb-px'
+                  : 'text-slate-500 hover:text-slate-800 font-medium'
+              }`}
+            >
+              {t('repertoryAdvancedAnalysisTab')}
+            </button>
+          </div>
+
+          {/* 3. Author Filter Pills */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {authors.map((auth) => {
+                const isActive = isAuthorActive(auth.key);
+                return (
+                  <button
+                    key={auth.key}
+                    type="button"
+                    onClick={() => handleAuthorClick(auth.key)}
+                    className={`px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-teal-800 text-white font-semibold shadow-2xs'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-normal'
+                    }`}
+                  >
+                    {auth.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              >
+                <Filter className="w-3.5 h-3.5 text-slate-500" />
+                <span>{t('repertoryFilterDropdown')}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {isFilterDropdownOpen && (
+                <div className="absolute right-0 top-9 z-30 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAuthors(['all']);
+                      setIsFilterDropdownOpen(false);
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
+                  >
+                    {t('filterAuthorAll')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAuthors(['kent']);
+                      setIsFilterDropdownOpen(false);
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
+                  >
+                    {t('repertoryFilterOnlyKent')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAuthors(['boericke']);
+                      setIsFilterDropdownOpen(false);
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
+                  >
+                    {t('repertoryFilterOnlyBoericke')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 4. Table Header Section */}
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                <span>{t('repertoryAnalysisResultsTitle')}</span>
+                <span className="text-slate-400 font-normal text-xs">{t('repertorySortByPoints')}</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {t('repertoryBasedOnSymptoms', { count: selectedSymptoms.length })}
+              </p>
+            </div>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-slate-500" />
+                <span>{t('repertoryViewToggle')}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {isViewDropdownOpen && (
+                <div className="absolute right-0 top-9 z-30 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentStep(2);
+                      setResultSubTab('analyse');
+                      setIsViewDropdownOpen(false);
+                    }}
+                    className="w-full px-3 py-1.5 text-left font-semibold text-teal-800 hover:bg-slate-50 cursor-pointer"
+                  >
+                    • {t('repertoryViewBoerickePoints')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentStep(3);
+                      setResultSubTab('matrix');
+                      setIsViewDropdownOpen(false);
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  >
+                    • {t('repertoryStep5Title')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentStep(4);
+                      setResultSubTab('vergleich');
+                      setIsViewDropdownOpen(false);
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  >
+                    • {t('repertoryStep6Title')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 5. Slim, elegant Table matching reference image */}
+          <div className="overflow-x-auto border border-slate-200/70 rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50/70">
+                <tr className="border-b border-slate-200/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px] select-none">
+                  <th className="py-2.5 px-3 w-8">#</th>
+                  <th className="py-2.5 px-3">Arzneimittel</th>
+                  <th className="py-2.5 px-3">{t('repertoryColCoreSymptoms')}</th>
+                  <th className="py-2.5 px-3 text-center">{t('repertoryColPoints')}</th>
+                  <th className="py-2.5 px-3 text-center">{t('repertoryColCoverage')}</th>
+                  <th className="py-2.5 px-3 text-right">{t('repertoryColAction')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {calculationResults.slice(0, 25).map((res, idx) => {
+                  const coveredHits = selectedSymptoms
+                    .filter(s => Boolean(res.rubricHits[s.id]))
+                    .map(s => ({
+                      id: s.id,
+                      label: s.patientNote || s.rubricName,
+                      grade: res.rubricHits[s.id]?.grade || 1
+                    }));
+
+                  const displayHits = coveredHits.slice(0, 2);
+                  const remainderCount = coveredHits.length - displayHits.length;
+
+                  return (
+                    <tr
+                      key={res.remedyKey}
+                      onClick={() => {
+                        setSelectedTopRemedyKey(res.remedyKey);
+                        setCurrentStep(4);
+                        setResultSubTab('vergleich');
+                      }}
+                      className={`hover:bg-teal-50/20 transition-colors cursor-pointer group ${
+                        selectedTopRemedyKey === res.remedyKey ? 'bg-teal-50/30' : ''
+                      }`}
+                    >
+                      <td className="py-2.5 px-3">
+                        <span className="text-slate-400 font-medium text-xs">
+                          {idx + 1}
+                        </span>
+                      </td>
+
+                      <td className="py-2.5 px-3">
+                        <div className="font-bold text-slate-900 text-xs sm:text-sm font-serif group-hover:text-teal-800 transition-colors leading-tight">
+                          {res.latinName}
+                        </div>
+                        {res.commonName && (
+                          <div className="text-[10px] text-slate-400 italic">
+                            {res.commonName}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-1.5 flex-wrap max-w-md">
+                          {displayHits.map((hit, hIdx) => (
+                            <span
+                              key={hIdx}
+                              className="px-2 py-0.5 rounded-md bg-slate-100/80 text-slate-700 text-[10px] border border-slate-200/60 font-medium truncate max-w-[190px]"
+                              title={`${hit.label} (${hit.grade})`}
+                            >
+                              {hit.label} ({hit.grade})
+                            </span>
+                          ))}
+                          {remainderCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[9px] font-bold">
+                              +{remainderCount}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="py-2.5 px-3 text-center">
+                        <span className={`inline-flex items-center justify-center min-w-[26px] h-5 px-2 rounded-full font-bold text-xs ${
+                          idx === 0
+                            ? 'bg-teal-800 text-white shadow-2xs'
+                            : idx === 1
+                            ? 'bg-teal-100 text-teal-900'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {res.totalScore}
+                        </span>
+                      </td>
+
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-16 sm:w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-teal-800 rounded-full"
+                              style={{
+                                width: `${Math.min(100, Math.max(10, (res.coverageCount / Math.max(1, selectedSymptoms.length)) * 100))}%`
+                              }}
+                            />
+                          </div>
+                          <span className="text-slate-600 text-xs font-medium">
+                            {res.coverageCount} / {selectedSymptoms.length}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="py-2.5 px-3 text-right">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTopRemedyKey(res.remedyKey);
+                            setCurrentStep(4);
+                            setResultSubTab('vergleich');
+                          }}
+                          className="p-1 rounded-lg text-slate-400 group-hover:text-teal-700 group-hover:translate-x-0.5 transition-all cursor-pointer"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -1570,7 +2251,10 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
 
               <button
                 type="button"
-                onClick={() => setResultSubTab('analyse')}
+                onClick={() => {
+                  setCurrentStep(2);
+                  setResultSubTab('analyse');
+                }}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                   resultSubTab === 'analyse'
                     ? 'bg-teal-700 text-white shadow-xs'
@@ -2025,7 +2709,11 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                     {calculationResults.slice(0, 30).map((cand) => (
                       <tr 
                         key={cand.remedyKey} 
-                        onClick={() => setSelectedTopRemedyKey(cand.remedyKey)}
+                        onClick={() => {
+                          setSelectedTopRemedyKey(cand.remedyKey);
+                          setCurrentStep(4);
+                          setResultSubTab('vergleich');
+                        }}
                         className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${
                           selectedTopRemedyKey === cand.remedyKey ? 'bg-teal-50/50' : ''
                         } ${cand.coverageCount === selectedSymptoms.length ? 'bg-emerald-50/10' : ''}`}
@@ -2082,66 +2770,15 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
             </div>
           )}
 
-          {/* 6. TOP-ARZNEIMITTEL IM DETAIL & MATERIA MEDICA */}
-          {resultSubTab === 'vergleich' && currentDetailRemedy && (
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-teal-700 text-white flex items-center justify-center font-bold text-base shadow-xs">
-                    #1
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      {currentDetailRemedy.latinName}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {currentDetailRemedy.commonName || 'Materia Medica Homoeopathica (nach Dr. William Boericke)'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => openMonographModalForKey(currentDetailRemedy.remedyKey)}
-                    className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-2 shadow-xs cursor-pointer transition-colors"
-                  >
-                    <BookOpen className="w-4 h-4 text-teal-200" />
-                    <span>Gesamte Monographie lesen</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Auszug & Leitsymptome nach Boericke */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                  <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-teal-600" />
-                    <span>Wesen & Charakteristik (Boericke)</span>
-                  </div>
-                  <p className="text-xs text-slate-700 leading-relaxed">
-                    Ehrgeizig, reizbar, empfindlich. Typische Folgen von geistiger Überarbeitung, sitzender Lebensweise und Genussmitteln (Kaffee, Alkohol, Tabak, Medikamente).
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                  <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-teal-600" />
-                    <span>Magen- & Verdauungssymptome</span>
-                  </div>
-                  <ul className="text-xs text-slate-700 space-y-1.5 list-disc list-inside leading-relaxed">
-                    <li>Schmerzen im Magen, krampfartig und drückend.</li>
-                    <li>Schlimmer abends und nach dem Essen.</li>
-                    <li>Besser morgens und durch Ruhe.</li>
-                    <li>Verschlimmerung durch Kälte und Genussmittel.</li>
-                    <li>Ständige Übelkeit mit erfolglosem Brechreiz.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* 6. TOP-ARZNEIMITTEL IM DETAIL TAB */}
+          {resultSubTab === 'vergleich' && renderTopRemedyDetail()}
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* STUFE 4: TOP-ARZNEIMITTEL IM DETAIL & MATERIA MEDICA */}
+      {/* ========================================================================= */}
+      {currentStep === 4 && renderTopRemedyDetail()}
 
       {/* Monograph Modal */}
       {monographRemedy && (
