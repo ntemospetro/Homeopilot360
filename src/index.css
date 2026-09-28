@@ -100,6 +100,27 @@
   background: #94a3b8;
 }
 
+/* Thin subtle green scrollbar */
+.scrollbar-thin-teal::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+.scrollbar-thin-teal::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+.scrollbar-thin-teal::-webkit-scrollbar-thumb {
+  background: #0d9488;
+  border-radius: 9999px;
+}
+.scrollbar-thin-teal::-webkit-scrollbar-thumb:hover {
+  background: #0f766e;
+}
+.scrollbar-thin-teal {
+  scrollbar-width: thin;
+  scrollbar-color: #0d9488 #f1f5f9;
+}
+
 /* Hide scrollbar completely across all browsers */
 .no-scrollbar::-webkit-scrollbar {
   display: none !important;

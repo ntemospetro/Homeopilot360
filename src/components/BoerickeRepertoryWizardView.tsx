@@ -37,7 +37,8 @@ import {
 } from '../services/repertory/boerickeInteractiveRepertoryData';
 import { SymptomWeightGrade } from '../services/boerickeRepertoryService';
 import { RemedyMonographModal } from './RemedyMonographModal';
-import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { LocalizedRemedy, getLocalizedRemedies } from '../data/materiaMedicaData';
+import { getCanonicalKentChapterTranslations } from '../data/canonicalKentChapters';
 
 interface KentRubricItem {
   id: string;
@@ -269,10 +270,10 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   const { allRemedies } = useMateriaMedica();
 
   // Wizard Stage State: 1 = Fallaufnahme, 2 = Repertorisation (Boericke-Analyse), 3 = Ergebnis & Matrix, 4 = Materia Medica
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(2);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Selected Symptoms (Repertory Basket) - start with realistic initial items matching reference
-  const [selectedSymptoms, setSelectedSymptoms] = useState<SelectedRepertorySymptom[]>(DEFAULT_INITIAL_SYMPTOMS);
+  // Selected Symptoms (Repertory Basket) - start completely empty ready for initial input
+  const [selectedSymptoms, setSelectedSymptoms] = useState<SelectedRepertorySymptom[]>([]);
 
   // Tree expanded state
   const [treeExpanded, setTreeExpanded] = useState<Record<string, boolean>>({});
@@ -290,7 +291,9 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
 
   // Stufen-Drilldown State (wie bei der Repertory-Seite)
   const [chapters, setChapters] = useState<string[]>(FALLBACK_KENT_CHAPTERS);
-  const [chapterTranslations, setChapterTranslations] = useState<Record<string, string>>({});
+  const [chapterTranslations, setChapterTranslations] = useState<Record<string, string>>(() => {
+    return getCanonicalKentChapterTranslations(language);
+  });
   const [drillChapter, setDrillChapter] = useState<string>('');
   const [drillSymptom, setDrillSymptom] = useState<string>('');
   const [drillZusatz, setDrillZusatz] = useState<string[]>([]);
@@ -327,6 +330,12 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   useEffect(() => {
     let isCancelled = false;
     const fetchChapters = async () => {
+      // Pre-seed immediately with canonical translations for selected language
+      const bundledTrans = getCanonicalKentChapterTranslations(language);
+      if (bundledTrans && Object.keys(bundledTrans).length > 0) {
+        setChapterTranslations(bundledTrans);
+      }
+
       try {
         const res = await fetch('/api/kent/drilldown', {
           method: 'POST',
@@ -337,7 +346,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
         if (!isCancelled && data.success && Array.isArray(data.nextOptions)) {
           setChapters(data.nextOptions);
           if (data.translatedOptions) {
-            setChapterTranslations(data.translatedOptions);
+            setChapterTranslations(prev => ({ ...prev, ...data.translatedOptions }));
           }
         }
       } catch {
@@ -589,11 +598,21 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   // Find local remedy object for Materia Medica modal
   const openMonographModalForKey = (key: string) => {
     const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    const remedyObj = allRemedies.find(r => 
+    let remedyObj = allRemedies.find(r => 
       r.id === key || 
       r.id === cleanKey || 
-      (currentDetailRemedy && r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase())
+      (currentDetailRemedy && r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase()) ||
+      (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey))
     );
+    if (!remedyObj) {
+      const fallbackList = getLocalizedRemedies(language);
+      remedyObj = fallbackList.find(r => 
+        r.id === key || 
+        r.id === cleanKey || 
+        (currentDetailRemedy && r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase()) ||
+        (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey))
+      );
+    }
     if (remedyObj) {
       setMonographRemedy(remedyObj);
     }
@@ -822,7 +841,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 pt-0.5 scrollbar-thin-teal">
             {calculationResults.slice(0, 12).map((res, idx) => {
               const isSelected = (currentDetailRemedy.remedyKey === res.remedyKey);
               return (
@@ -879,24 +898,6 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setCurrentStep(2)}
-                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 text-slate-500" />
-                <span>{t('repertoryBackToAnalysis')}</span>
-              </button>
-              {onSelectRemedyForCase && (
-                <button
-                  type="button"
-                  onClick={() => onSelectRemedyForCase(currentDetailRemedy.latinName, 'C30')}
-                  className="px-4 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>{t('repertoryApplyRemedyToCase')}</span>
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => openMonographModalForKey(currentDetailRemedy.remedyKey)}

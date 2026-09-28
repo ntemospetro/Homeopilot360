@@ -48,7 +48,9 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
   // Patient / Client Management State
   const [cases, setCases] = useState<PatientCase[]>(() => getPatientCases());
   const [activeClient, setActiveClient] = useState<PatientCase | null>(() => {
-    if (currentCase && currentCase.patientName && currentCase.id) return currentCase as PatientCase;
+    if (currentCase && currentCase.patientName && currentCase.patientName.trim()) {
+      return currentCase as PatientCase;
+    }
     return null;
   });
 
@@ -59,8 +61,10 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
   }, []);
 
   useEffect(() => {
-    if (currentCase && currentCase.patientName && currentCase.id) {
+    if (currentCase && currentCase.patientName && currentCase.patientName.trim()) {
       setActiveClient(currentCase as PatientCase);
+    } else {
+      setActiveClient(null);
     }
   }, [currentCase]);
 
@@ -355,51 +359,53 @@ export const RepertoriumView: React.FC<RepertoriumViewProps> = ({
 
   return (
     <div id="repertorium-view-root" className="w-full space-y-5">
-      {/* Top Client Management Bar - Slim design matching reference image */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 px-5 py-3 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-[11px] text-slate-400 font-medium leading-none mb-1">
-            {t('repertoriumActiveClientLabel')}
+      {/* Top Client Management Bar - Only shown when a client is actively selected */}
+      {Boolean(activeClient && activeClient.patientName && activeClient.patientName.trim()) && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 px-5 py-3 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] text-slate-400 font-medium leading-none mb-1">
+              {t('repertoriumActiveClientLabel')}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPatientSelectionModalOpen(true)}
+              className="flex items-center gap-1.5 text-base font-bold text-slate-900 font-serif hover:text-teal-700 transition-colors cursor-pointer text-left"
+            >
+              <span className="truncate">{activeClient?.patientName}</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsPatientSelectionModalOpen(true)}
-            className="flex items-center gap-1.5 text-base font-bold text-slate-900 font-serif hover:text-teal-700 transition-colors cursor-pointer text-left"
-          >
-            <span className="truncate">{activeClient ? activeClient.patientName : 'petr'}</span>
-            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
-          </button>
+
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            <button
+              type="button"
+              id="repertorium-assign-client-top-btn"
+              onClick={() => setIsPatientSelectionModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs"
+            >
+              <span>{t('repertoryBtnChangeClient')}</span>
+            </button>
+
+            <button
+              type="button"
+              id="repertorium-save-client-top-btn"
+              onClick={handleSaveClientClick}
+              className="px-3.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs"
+            >
+              <span>{t('repertoryBtnSaveClient')}</span>
+            </button>
+
+            <button
+              type="button"
+              id="repertorium-new-case-btn"
+              onClick={handleNewCase}
+              className="px-3.5 py-1.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
+            >
+              <span>{t('repertoryBtnNewCustomer')}</span>
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
-          <button
-            type="button"
-            id="repertorium-assign-client-top-btn"
-            onClick={() => setIsPatientSelectionModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs"
-          >
-            <span>{t('repertoryBtnChangeClient')}</span>
-          </button>
-
-          <button
-            type="button"
-            id="repertorium-save-client-top-btn"
-            onClick={handleSaveClientClick}
-            className="px-3.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs"
-          >
-            <span>{t('repertoryBtnSaveClient')}</span>
-          </button>
-
-          <button
-            type="button"
-            id="repertorium-new-case-btn"
-            onClick={handleNewCase}
-            className="px-3.5 py-1.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
-          >
-            <span>{t('repertoryBtnNewCustomer')}</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* VIEW RENDER: Either Boericke Step-by-Step Wizard or Classic 4-Pillar Repertorium */}
       {activeRepertoryMode === 'boericke_wizard' ? (

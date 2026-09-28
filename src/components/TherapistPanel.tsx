@@ -46,11 +46,8 @@ import { ComprehensiveAnalysisView } from './ComprehensiveAnalysisView';
 import { TherapyRecommendationsView } from './TherapyRecommendationsView';
 import { PatientDirectoryView } from './PatientDirectoryView';
 import { OrganonView } from './OrganonView';
-import { OrganonV2View } from './OrganonV2View';
-import { OrganonV3View } from './OrganonV3View';
 import { MateriaMedicaView } from './MateriaMedicaView';
 import { RepertoriumView } from './RepertoriumView';
-import { RepertoryView } from './RepertoryView';
 import { AcuteIntakeView } from './AcuteIntakeView';
 import { MedicationResearchView } from './MedicationResearchView';
 import { UserManualView } from './UserManualView';
@@ -182,7 +179,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { t, language } = useTranslation();
   const { termPatientenkartei, termPatient, termPatients } = useTerminology();
-  const [panelTab, setPanelTab] = useState<'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'repertory' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'organon_v2' | 'organon_v3' | 'profile' | 'tariff'>(() => getStoredTherapistTab() as any);
+  const [panelTab, setPanelTab] = useState<'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff'>(() => getStoredTherapistTab() as any);
   const [patientDirectoryAction, setPatientDirectoryAction] = useState<'new_patient' | 'select_patient' | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [lockedPageAttempt, setLockedPageAttempt] = useState<{ key: string; name: string } | null>(null);
@@ -204,15 +201,11 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
         return 'materiamedica';
       case 'repertorium':
         return 'repertorium';
-      case 'repertory':
-        return null; // Publicly accessible custom page
       case 'medications':
         return 'medications';
       case 'documentation':
         return 'documentation';
       case 'organon':
-      case 'organon_v2':
-      case 'organon_v3':
         return 'cases';
       default:
         return null;
@@ -231,18 +224,12 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
         return t('tabMateriaMedica');
       case 'repertorium':
         return t('tabRepertorium');
-      case 'repertory':
-        return t('tabRepertory');
       case 'medications':
         return t('tabMedications');
       case 'documentation':
         return t('tabDocumentation');
       case 'organon':
         return t('tabOrganonAnalysis') || 'Organon-Analyse';
-      case 'organon_v2':
-        return t('tabOrganonV2') || 'Organon V2 (Highspeed)';
-      case 'organon_v3':
-        return t('tabOrganonV3') || 'Organon V3';
       default:
         return tab;
     }
@@ -250,7 +237,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
 
   const isTabAllowed = (tab: string): boolean => {
     const pageKey = getPagePermissionKeyForTab(tab);
-    if (!pageKey) return true; // Profile, tariff, custom repertory always allowed
+    if (!pageKey) return true; // Profile, tariff always allowed
     return tariffAccess.isPageAllowed(pageKey);
   };
 
@@ -260,7 +247,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
     return tariffAccess.isPageHidden(pageKey);
   };
 
-  const handleSelectTab = (tab: 'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'repertory' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'organon_v2' | 'organon_v3' | 'profile' | 'tariff') => {
+  const handleSelectTab = (tab: 'cases' | 'patients' | 'materiamedica' | 'repertorium' | 'quickintake' | 'medications' | 'documentation' | 'organon' | 'profile' | 'tariff') => {
     if (!isTabAllowed(tab)) {
       setLockedPageAttempt({ key: tab, name: getPageDisplayName(tab) });
       return;
@@ -2021,30 +2008,6 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
               </button>
             )}
 
-            {/* 3b. Repertory (Custom) */}
-            {!isTabHidden('repertory') && (
-              <button
-                type="button"
-                id="sidebar-nav-tab-repertory"
-                onClick={() => handleSelectTab('repertory')}
-                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors cursor-pointer ${
-                  panelTab === 'repertory'
-                    ? 'bg-teal-50 text-teal-900 font-bold border border-teal-100/50'
-                    : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <BookOpen className={`w-4 h-4 ${isTabAllowed('repertory') ? 'text-teal-600' : 'text-slate-400'}`} />
-                  <span className={!isTabAllowed('repertory') ? 'text-slate-500' : ''}>{t('tabRepertory')}</span>
-                </div>
-                {!isTabAllowed('repertory') && (
-                  <span title={t('tariffPageLockedTooltip')}>
-                    <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  </span>
-                )}
-              </button>
-            )}
-
             {/* 4. Repertorisation */}
             {!isTabHidden('cases') && (
               <button
@@ -2139,46 +2102,6 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
                 )}
               </button>
             )}
-
-            {/* Organon V2 (Highspeed) */}
-            <button
-              type="button"
-              id="sidebar-nav-tab-organon-v2"
-              onClick={() => handleSelectTab('organon_v2')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors cursor-pointer ${
-                panelTab === 'organon_v2'
-                  ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-900 font-bold border border-teal-200'
-                  : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Zap className={`w-4 h-4 ${panelTab === 'organon_v2' ? 'text-emerald-600' : 'text-teal-600'}`} />
-                <span>{t('tabOrganonV2')}</span>
-              </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                {t('badgeNew')}
-              </span>
-            </button>
-
-            {/* Organon V3 (GPT) */}
-            <button
-              type="button"
-              id="sidebar-nav-tab-organon-v3"
-              onClick={() => handleSelectTab('organon_v3')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors cursor-pointer ${
-                panelTab === 'organon_v3'
-                  ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-900 font-bold border border-teal-200'
-                  : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <BookOpen className={`w-4 h-4 ${panelTab === 'organon_v3' ? 'text-teal-600' : 'text-slate-500'}`} />
-                <span>{t('tabOrganonV3')}</span>
-              </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-100 text-teal-800 font-bold">
-                {t('badgeGpt')}
-              </span>
-            </button>
           </div>
         </div>
         
@@ -2352,37 +2275,6 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
             refreshCases();
           }}
           onBack={() => handleSelectTab('patients')}
-          onSwitchToV2={() => handleSelectTab('organon_v2')}
-        />
-      )}
-
-      {/* TAB CONTENT: ORGANON V2 (HIGHSPEED) */}
-      {panelTab === 'organon_v2' && (
-        <OrganonV2View
-          patientCase={currentCase as PatientCase}
-          onSavePatientCase={(updated) => {
-            setCurrentCase(updated);
-            savePatientCase(updated);
-            refreshCases();
-          }}
-          onBack={() => handleSelectTab('patients')}
-          onSwitchToV1={() => handleSelectTab('organon')}
-          onSwitchToV3={() => handleSelectTab('organon_v3')}
-        />
-      )}
-
-      {/* TAB CONTENT: ORGANON V3 (PURE GPT) */}
-      {panelTab === 'organon_v3' && (
-        <OrganonV3View
-          patientCase={currentCase as PatientCase}
-          onSavePatientCase={(updated) => {
-            setCurrentCase(updated);
-            savePatientCase(updated);
-            refreshCases();
-          }}
-          onBack={() => handleSelectTab('patients')}
-          onSwitchToV1={() => handleSelectTab('organon')}
-          onSwitchToV2={() => handleSelectTab('organon_v2')}
         />
       )}
 
@@ -2416,15 +2308,6 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
             }));
           }}
           onGoToMateriaMedica={() => handleSelectTab('materiamedica')}
-        />
-      )}
-
-      {/* TAB CONTENT: REPERTORY (CUSTOM IMPORT) */}
-      {panelTab === 'repertory' && (
-        <RepertoryView
-          therapist={therapist}
-          currentCase={currentCase}
-          onSaveCase={(saved) => setCurrentCase(saved)}
         />
       )}
 

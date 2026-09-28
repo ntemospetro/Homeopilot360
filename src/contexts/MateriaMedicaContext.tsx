@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { LocalizedRemedy } from '../data/materiaMedicaData';
+import { LocalizedRemedy, getLocalizedRemedies } from '../data/materiaMedicaData';
 import { useTranslation } from '../i18n/LanguageContext';
 
 interface MateriaMedicaContextType {
@@ -13,7 +13,10 @@ const MateriaMedicaContext = createContext<MateriaMedicaContextType | undefined>
 
 export const MateriaMedicaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { language } = useTranslation();
-  const [allRemedies, setAllRemedies] = useState<LocalizedRemedy[]>([]);
+  // Pre-initialize with synchronous local dataset so remedies are never empty
+  const [allRemedies, setAllRemedies] = useState<LocalizedRemedy[]>(() => {
+    return getLocalizedRemedies(language);
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,16 +27,22 @@ export const MateriaMedicaProvider: React.FC<{ children: ReactNode }> = ({ child
       const response = await fetch(`/api/materia-medica?lang=${language}`);
       if (!response.ok) throw new Error('Failed to fetch Materia Medica data');
       const data = await response.json();
-      setAllRemedies(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setAllRemedies(data);
+      } else {
+        setAllRemedies(getLocalizedRemedies(language));
+      }
     } catch (err: any) {
-      console.error('Materia Medica fetch error:', err);
-      setError(err.message || 'Error loading remedies');
+      // Graceful fallback to bundled dataset (vital for Hostinger or static deployments)
+      setAllRemedies(getLocalizedRemedies(language));
+      setError(null);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    setAllRemedies(getLocalizedRemedies(language));
     fetchRemedies();
   }, [language]);
 
