@@ -41,7 +41,7 @@ import { LocalizedRemedy } from '../data/materiaMedicaData';
 import { getLocalizedRemedies } from '../data/materiaMedicaDatabase';
 import { getCanonicalKentChapterTranslations } from '../data/canonicalKentChapters';
 import { getCanonicalKentTermTranslation } from '../data/canonicalKentTerms';
-import { performClientKentDrilldown, searchClientKentRubrics } from '../services/repertory/clientKentRepertoryService';
+import { performClientKentDrilldown, searchClientKentRubrics, getClientKentTranslations } from '../services/repertory/clientKentRepertoryService';
 import { resolveKentRemedyId, getKentRemedyFullName } from '../data/kentRemedyMapping';
 
 interface KentRubricItem {
@@ -307,6 +307,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   const [drillTranslatedOptions, setDrillTranslatedOptions] = useState<Record<string, string>>({});
   const [drillPathTranslations, setDrillPathTranslations] = useState<Record<string, string>>({});
   const [drillRubrics, setDrillRubrics] = useState<KentRubricItem[]>([]);
+  const [clientKentTranslations, setClientKentTranslations] = useState<Record<string, string>>({});
   const [isDrillLoading, setIsDrillLoading] = useState(false);
   const [drillFilterQuery, setDrillFilterQuery] = useState('');
 
@@ -325,6 +326,21 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   const calculationResults = useMemo(() => {
     return calculateBoerickeRepertorisation(selectedSymptoms, allRemedies, 'all');
   }, [selectedSymptoms, allRemedies]);
+
+  // Load complete Kent repertory translations dictionary for active language
+  useEffect(() => {
+    let isCancelled = false;
+    if (language === 'de') {
+      setClientKentTranslations({});
+      return;
+    }
+    getClientKentTranslations(language).then((dict) => {
+      if (!isCancelled && dict && Object.keys(dict).length > 0) {
+        setClientKentTranslations(dict);
+      }
+    });
+    return () => { isCancelled = true; };
+  }, [language]);
 
   // Fetch chapters list on mount / language switch
   useEffect(() => {
@@ -558,24 +574,32 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
       if (k.toLowerCase() === lower && v) return v;
     }
 
-    // 3. Check chapterTranslations (exact & lowercase)
+    // 3. Check loaded complete clientKentTranslations dictionary (24,898 terms)
+    if (clientKentTranslations[trimmed]) return clientKentTranslations[trimmed];
+    if (clientKentTranslations[lower]) return clientKentTranslations[lower];
+
+    // 4. Check chapterTranslations (exact & lowercase)
     if (chapterTranslations[trimmed]) return chapterTranslations[trimmed];
     for (const [k, v] of Object.entries(chapterTranslations)) {
       if (k.toLowerCase() === lower && v) return v;
     }
 
-    // 4. Check canonical chapter map
+    // 5. Check canonical chapter map
     const chapterMap = getCanonicalKentChapterTranslations(language);
     if (chapterMap[trimmed]) return chapterMap[trimmed];
     for (const [k, v] of Object.entries(chapterMap)) {
       if (k.toLowerCase() === lower && v) return v;
     }
 
-    // 5. Check canonical clinical terms
+    // 6. Check canonical clinical terms
     const canon = getCanonicalKentTermTranslation(trimmed, language as any);
     if (canon) return canon;
 
-    // 6. Compound split if term contains delimiters like ',' or ' - '
+    // 7. Case-insensitive search in clientKentTranslations
+    const caseInsensitiveMatch = Object.entries(clientKentTranslations).find(([k]) => k.toLowerCase() === lower)?.[1];
+    if (caseInsensitiveMatch) return caseInsensitiveMatch;
+
+    // 8. Compound split if term contains delimiters like ',' or ' - '
     if (trimmed.includes(',') || trimmed.includes(' - ') || trimmed.includes(' / ')) {
       const delimiter = trimmed.includes(',') ? ',' : trimmed.includes(' - ') ? ' - ' : ' / ';
       const parts = trimmed.split(delimiter);
@@ -593,7 +617,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
     }
 
     return trimmed;
-  }, [language, drillPathTranslations, drillTranslatedOptions, chapterTranslations]);
+  }, [language, drillPathTranslations, drillTranslatedOptions, clientKentTranslations, chapterTranslations]);
 
   // Title of the current drilldown stage in Stufenansicht (Stufe 1, 2, 3, 4, 5, 6...)
   const drillLevelTitle = useMemo(() => {
@@ -798,9 +822,11 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
       rawLabel = chapter;
     }
 
-    const translatedLabel = explicitTranslatedLabel
-      || (childrenData?.translatedOptions && childrenData.translatedOptions[rawLabel]) 
-      || resolveStageTerm(rawLabel);
+    const translatedLabel = (explicitTranslatedLabel && explicitTranslatedLabel !== rawLabel)
+      ? explicitTranslatedLabel
+      : (childrenData?.translatedOptions && childrenData.translatedOptions[rawLabel] && childrenData.translatedOptions[rawLabel] !== rawLabel)
+      ? childrenData.translatedOptions[rawLabel]
+      : resolveStageTerm(rawLabel);
 
     const handleToggle = async (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -809,6 +835,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
 
       if (nextState && !childrenData && !isLoading) {
         setTreeLoading(prev => ({ ...prev, [nodeKey]: true }));
+        let data: any = null;
         try {
           const res = await fetch('/api/kent/drilldown', {
             method: 'POST',
@@ -820,29 +847,44 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
               lang: language
             })
           });
-          const data = await res.json();
-          if (data.success) {
-            if (data.translatedOptions) {
-              setDrillTranslatedOptions(prev => ({ ...prev, ...data.translatedOptions }));
-            }
-            if (data.pathTranslations) {
-              setDrillPathTranslations(prev => ({ ...prev, ...data.pathTranslations }));
-            }
-            setTreeChildren(prev => ({
-              ...prev,
-              [nodeKey]: {
-                options: data.nextOptions || [],
-                translatedOptions: data.translatedOptions || {},
-                rubrics: data.rubrics || [],
-                nextLevelType: data.nextLevelType
-              }
-            }));
+          if (res.ok) {
+            data = await res.json();
           }
-        } catch (err) {
-          console.error('Error fetching tree branch:', err);
-        } finally {
-          setTreeLoading(prev => ({ ...prev, [nodeKey]: false }));
+        } catch {
+          // Backend call failed, fallback below
         }
+
+        if (!data || !data.success) {
+          try {
+            data = await performClientKentDrilldown({
+              chapter,
+              symptom: symptom || undefined,
+              zusatz: zusatz.length > 0 ? zusatz : undefined,
+              lang: language
+            });
+          } catch (fallbackErr) {
+            console.error('Static tree fallback drilldown error:', fallbackErr);
+          }
+        }
+
+        if (data && data.success) {
+          if (data.translatedOptions) {
+            setDrillTranslatedOptions(prev => ({ ...prev, ...data.translatedOptions }));
+          }
+          if (data.pathTranslations) {
+            setDrillPathTranslations(prev => ({ ...prev, ...data.pathTranslations }));
+          }
+          setTreeChildren(prev => ({
+            ...prev,
+            [nodeKey]: {
+              options: data.nextOptions || [],
+              translatedOptions: data.translatedOptions || {},
+              rubrics: data.rubrics || [],
+              nextLevelType: data.nextLevelType
+            }
+          }));
+        }
+        setTreeLoading(prev => ({ ...prev, [nodeKey]: false }));
       }
     };
 
@@ -873,14 +915,21 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
         {isExpanded && childrenData && (
           <div className="pl-3.5 border-l border-slate-200 ml-2.5 space-y-1">
             {/* Sub-level options for deeper stages (Stufe 2, 3, 4, 5, 6, ...) */}
-            {childrenData.options.map(opt => {
-              const optTrans = childrenData.translatedOptions?.[opt] || drillTranslatedOptions[opt];
-              if (!symptom) {
-                return renderKentTreeNode(chapter, opt, [], depth + 1, optTrans);
-              } else {
-                return renderKentTreeNode(chapter, symptom, [...zusatz, opt], depth + 1, optTrans);
-              }
-            })}
+            {(() => {
+              const sortedOptions = [...childrenData.options].sort((a, b) => {
+                const trA = childrenData.translatedOptions?.[a] || resolveStageTerm(a) || a;
+                const trB = childrenData.translatedOptions?.[b] || resolveStageTerm(b) || b;
+                return trA.localeCompare(trB, language === 'de' ? 'de' : language);
+              });
+              return sortedOptions.map(opt => {
+                const optTrans = childrenData.translatedOptions?.[opt] || drillTranslatedOptions[opt] || resolveStageTerm(opt);
+                if (!symptom) {
+                  return renderKentTreeNode(chapter, opt, [], depth + 1, optTrans);
+                } else {
+                  return renderKentTreeNode(chapter, symptom, [...zusatz, opt], depth + 1, optTrans);
+                }
+              });
+            })()}
 
             {/* Rubrics at this level with Mittel count and + button - only show terminating rubrics at this exact depth so each appears only once! */}
             {symptom && childrenData.rubrics && childrenData.rubrics.length > 0 && (() => {
@@ -899,10 +948,12 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                 <div className="space-y-1 pt-1">
                   {terminatingRubrics.map(rubric => {
                     const isSelected = selectedSymptoms.some(s => s.rubricId === String(rubric.id));
-                    const rubricPath = rubric.pathTranslated || rubric.path;
+                    const rubricPath = rubric.pathTranslated || (rubric.path ? rubric.path.split(', ').map(p => resolveStageTerm(p.trim())).join(' ➔ ') : '');
                     const rubricTitle = (rubric.zusatz && rubric.zusatz.length > 0)
-                      ? (rubric.zusatzTranslated ? rubric.zusatzTranslated.join(', ') : rubric.zusatz.join(', '))
-                      : (rubric.symptomTranslated || rubric.symptom || rubricPath);
+                      ? (rubric.zusatzTranslated && rubric.zusatzTranslated.length > 0
+                          ? rubric.zusatzTranslated.join(', ')
+                          : rubric.zusatz.map((z: string) => resolveStageTerm(z)).join(', '))
+                      : (rubric.symptomTranslated || resolveStageTerm(rubric.symptom) || rubricPath);
 
                     return (
                       <div
@@ -1616,9 +1667,11 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                       <div className="max-h-[220px] overflow-y-auto space-y-1 pr-1 border border-slate-100 rounded-xl p-2 bg-slate-50/40 divide-y divide-slate-100">
                         {drillRubrics.map((rubric) => {
                           const isSelected = selectedSymptoms.some(s => s.rubricId === String(rubric.id));
-                          const rubricPath = rubric.pathTranslated || rubric.path;
+                          const rubricPath = rubric.pathTranslated || (rubric.path ? rubric.path.split(', ').map(p => resolveStageTerm(p.trim())).join(' ➔ ') : '');
                           const rubricTitle = (rubric.zusatz && rubric.zusatz.length > 0)
-                            ? (rubric.zusatzTranslated ? rubric.zusatzTranslated.join(', ') : rubric.zusatz.map((z: string) => resolveStageTerm(z)).join(', '))
+                            ? (rubric.zusatzTranslated && rubric.zusatzTranslated.length > 0
+                                ? rubric.zusatzTranslated.join(', ')
+                                : rubric.zusatz.map((z: string) => resolveStageTerm(z)).join(', '))
                             : (rubric.symptomTranslated || resolveStageTerm(rubric.symptom) || rubricPath);
 
                           return (

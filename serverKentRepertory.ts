@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { GoogleGenAI } from "@google/genai";
+import { getCanonicalKentTermTranslation } from "./src/data/canonicalKentTerms";
 
 const getBaseDir = () => (typeof __dirname !== "undefined" ? __dirname : process.cwd());
 
@@ -672,6 +673,15 @@ function lookupTrans(term: string, transMap: Record<string, string>, lang?: stri
         }
       }
     }
+  }
+
+  if (result === term && lang && lang !== "de") {
+    const trimmed = term.trim();
+    if (CANONICAL_KENT_CHAPTERS[trimmed]?.[lang]) {
+      return CANONICAL_KENT_CHAPTERS[trimmed][lang];
+    }
+    const canon = getCanonicalKentTermTranslation(trimmed, lang as any);
+    if (canon) return canon;
   }
 
   return capitalizeFirstLetter(result);

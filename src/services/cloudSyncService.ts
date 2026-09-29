@@ -10,7 +10,7 @@ import {
   where,
   Unsubscribe
 } from 'firebase/firestore';
-import { getDb } from './firebaseConfig';
+import { getDb, getFirebaseAuth } from './firebaseConfig';
 import { Therapist, PatientCase, PackagePlan } from '../types';
 
 /**
@@ -136,86 +136,64 @@ export async function initCloudSync(
       }
     });
 
-    // 2. CASES SYNC
-    const casesCol = collection(db, 'cases');
-    try {
-      const casesSnap = await getDocs(casesCol);
-      if (casesSnap.empty) {
-        // First-time seed: push existing local cases to Firestore
-        const localCases = getLocalCases();
-        if (localCases.length > 0) {
-          console.log(`[CloudSync] Initial seed: uploading ${localCases.length} patient cases to Firestore...`);
-          const batch = writeBatch(db);
-          for (const c of localCases) {
-            const ref = doc(db, 'cases', c.id);
-            batch.set(ref, sanitizeForFirestore({
-              ...c,
-              ownerUid: c.ownerUid || c.therapistId || 'legacy-owner'
-            }));
+    // 2. CASES SYNC (tied to authenticated user session)
+    const attachCasesSync = (authUid?: string) => {
+      if (unsubCases) {
+        unsubCases();
+        unsubCases = null;
+      }
+      if (!authUid) return;
+
+      try {
+        const casesCol = collection(db, 'cases');
+        const q = query(casesCol, where('ownerUid', '==', authUid));
+
+        unsubCases = onSnapshot(q, (snapshot) => {
+          if (!snapshot.empty) {
+            const cloudCases: PatientCase[] = [];
+            snapshot.forEach(snap => {
+              cloudCases.push(snap.data() as PatientCase);
+            });
+            saveLocalCases(cloudCases);
+            setSyncStatus('synced');
           }
-          await batch.commit();
-        }
-      } else {
-        // Cloud has cases: merge them into local storage
-        const cloudCases: PatientCase[] = [];
-        casesSnap.forEach(snap => {
-          cloudCases.push(snap.data() as PatientCase);
+        }, (err) => {
+          if (err?.code !== 'permission-denied') {
+            console.warn('[CloudSync] Cases listener notice:', err?.message || err);
+          }
+          if (err?.code === 'unavailable') {
+            setSyncStatus('offline');
+          }
         });
-        const localCases = getLocalCases();
-
-        const mergedMap = new Map<string, PatientCase>();
-        for (const c of localCases) {
-          mergedMap.set(c.id, c);
+      } catch (err: any) {
+        if (err?.code !== 'permission-denied') {
+          console.warn('[CloudSync] Cases sync setup notice:', err?.message || err);
         }
-        for (const c of cloudCases) {
-          mergedMap.set(c.id, c);
-        }
-        const mergedList = Array.from(mergedMap.values());
-        saveLocalCases(mergedList);
       }
-    } catch (caseErr: any) {
-      console.warn('[CloudSync] Cases initial query notice (will sync via listener/offline cache):', caseErr?.message || caseErr);
+    };
+
+    const auth = getFirebaseAuth();
+    if (auth?.currentUser) {
+      attachCasesSync(auth.currentUser.uid);
     }
-
-    // Real-time listener for Cases
-    unsubCases = onSnapshot(casesCol, (snapshot) => {
-      if (!snapshot.empty) {
-        const cloudCases: PatientCase[] = [];
-        snapshot.forEach(snap => {
-          cloudCases.push(snap.data() as PatientCase);
-        });
-        saveLocalCases(cloudCases);
-        setSyncStatus('synced');
-      }
-    }, (err) => {
-      console.warn('[CloudSync] Cases listener notice:', err?.message || err);
-      if (err?.code === 'unavailable') {
-        setSyncStatus('offline');
-      }
+    auth?.onAuthStateChanged((user) => {
+      attachCasesSync(user?.uid);
     });
 
-    // 3. PACKAGES SYNC (optional)
+    // 3. PACKAGES SYNC (optional, read-only for public/clients)
     if (getLocalPackages && saveLocalPackages) {
       try {
         const packagesCol = collection(db, 'packages');
         const pkgSnap = await getDocs(packagesCol);
-        if (pkgSnap.empty) {
-          const localPkgs = getLocalPackages();
-          if (localPkgs.length > 0) {
-            const batch = writeBatch(db);
-            for (const p of localPkgs) {
-              const ref = doc(db, 'packages', p.id);
-              batch.set(ref, sanitizeForFirestore(p));
-            }
-            await batch.commit();
-          }
-        } else {
+        if (!pkgSnap.empty) {
           const cloudPkgs: PackagePlan[] = [];
           pkgSnap.forEach(snap => cloudPkgs.push(snap.data() as PackagePlan));
           saveLocalPackages(cloudPkgs);
         }
-      } catch (pkgErr) {
-        console.warn('[CloudSync] Package sync skipped or deferred:', pkgErr);
+      } catch (pkgErr: any) {
+        if (pkgErr?.code !== 'permission-denied') {
+          console.warn('[CloudSync] Package sync notice:', pkgErr?.message || pkgErr);
+        }
       }
     }
 
@@ -246,8 +224,10 @@ export async function cloudSaveTherapist(therapist: Therapist): Promise<void> {
   try {
     const ref = doc(db, 'therapists', therapist.id);
     await setDoc(ref, sanitizeForFirestore(therapist), { merge: true });
-  } catch (err) {
-    console.warn(`[CloudSync] Failed to save therapist ${therapist.id} to Firestore:`, err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn(`[CloudSync] Failed to save therapist ${therapist.id} to Firestore:`, err?.message || err);
+    }
   }
 }
 
@@ -260,8 +240,10 @@ export async function cloudDeleteTherapist(therapistId: string): Promise<void> {
   try {
     const ref = doc(db, 'therapists', therapistId);
     await deleteDoc(ref);
-  } catch (err) {
-    console.warn(`[CloudSync] Failed to delete therapist ${therapistId} from Firestore:`, err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn(`[CloudSync] Failed to delete therapist ${therapistId} from Firestore:`, err?.message || err);
+    }
   }
 }
 
@@ -278,8 +260,10 @@ export async function cloudSaveCase(patientCase: PatientCase): Promise<void> {
     };
     const ref = doc(db, 'cases', patientCase.id);
     await setDoc(ref, sanitizeForFirestore(payload), { merge: true });
-  } catch (err) {
-    console.warn(`[CloudSync] Failed to save case ${patientCase.id} to Firestore:`, err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn(`[CloudSync] Failed to save case ${patientCase.id} to Firestore:`, err?.message || err);
+    }
   }
 }
 
@@ -292,8 +276,10 @@ export async function cloudDeleteCase(caseId: string): Promise<void> {
   try {
     const ref = doc(db, 'cases', caseId);
     await deleteDoc(ref);
-  } catch (err) {
-    console.warn(`[CloudSync] Failed to delete case ${caseId} from Firestore:`, err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn(`[CloudSync] Failed to delete case ${caseId} from Firestore:`, err?.message || err);
+    }
   }
 }
 
@@ -309,8 +295,10 @@ export async function cloudDeleteCases(caseIds: string[]): Promise<void> {
       batch.delete(doc(db, 'cases', id));
     }
     await batch.commit();
-  } catch (err) {
-    console.warn('[CloudSync] Failed to batch delete cases from Firestore:', err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn('[CloudSync] Failed to batch delete cases from Firestore:', err?.message || err);
+    }
   }
 }
 
@@ -323,8 +311,10 @@ export async function cloudSaveTherapistBalance(therapistId: string, balanceData
   try {
     const ref = doc(db, 'therapist_balances', therapistId);
     await setDoc(ref, sanitizeForFirestore(balanceData), { merge: true });
-  } catch (err) {
-    console.warn(`[CloudSync] Failed to save balance for ${therapistId}:`, err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn(`[CloudSync] Failed to save balance for ${therapistId}:`, err?.message || err);
+    }
   }
 }
 
@@ -337,8 +327,10 @@ export async function cloudSavePaymentLog(paymentLog: any): Promise<void> {
   try {
     const ref = doc(db, 'billing_payments', paymentLog.id);
     await setDoc(ref, sanitizeForFirestore(paymentLog), { merge: true });
-  } catch (err) {
-    console.warn(`[CloudSync] Failed to save payment log ${paymentLog.id}:`, err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn(`[CloudSync] Failed to save payment log ${paymentLog.id}:`, err?.message || err);
+    }
   }
 }
 
@@ -348,11 +340,15 @@ export async function cloudSavePaymentLog(paymentLog: any): Promise<void> {
 export async function cloudSavePackagePlan(plan: PackagePlan): Promise<void> {
   const db = getDb();
   if (!db || !plan?.id) return;
+  const auth = getFirebaseAuth();
+  if (!auth?.currentUser) return;
   try {
     const ref = doc(db, 'packages', plan.id);
     await setDoc(ref, sanitizeForFirestore(plan), { merge: true });
-  } catch (err) {
-    console.warn(`[CloudSync] Failed to save package plan ${plan.id} to Firestore:`, err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn(`[CloudSync] Failed to save package plan ${plan.id} to Firestore:`, err?.message || err);
+    }
   }
 }
 
@@ -362,10 +358,14 @@ export async function cloudSavePackagePlan(plan: PackagePlan): Promise<void> {
 export async function cloudDeletePackagePlan(planId: string): Promise<void> {
   const db = getDb();
   if (!db || !planId) return;
+  const auth = getFirebaseAuth();
+  if (!auth?.currentUser) return;
   try {
     const ref = doc(db, 'packages', planId);
     await deleteDoc(ref);
-  } catch (err) {
-    console.warn(`[CloudSync] Failed to delete package plan ${planId} from Firestore:`, err);
+  } catch (err: any) {
+    if (err?.code !== 'permission-denied') {
+      console.warn(`[CloudSync] Failed to delete package plan ${planId} from Firestore:`, err?.message || err);
+    }
   }
 }

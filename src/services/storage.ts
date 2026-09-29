@@ -1285,12 +1285,14 @@ export function getPackagePlans(): PackagePlan[] {
   }
 }
 
-export function savePackagePlans(plans: PackagePlan[]): void {
+export function savePackagePlans(plans: PackagePlan[], syncToCloud = false): void {
   safeLocalStorageSetItem(STORAGE_KEYS.PACKAGES, JSON.stringify(plans));
   window.dispatchEvent(new Event('homoeo_packages_updated'));
-  // Sync each plan to Firestore in the background
-  for (const p of plans) {
-    cloudSavePackagePlan(p);
+  // Sync each plan to Firestore in the background only when explicitly requested by admin
+  if (syncToCloud) {
+    for (const p of plans) {
+      cloudSavePackagePlan(p);
+    }
   }
 }
 
@@ -1309,7 +1311,7 @@ export function createPackagePlan(data: Omit<PackagePlan, 'id' | 'createdAt'>): 
   }
 
   const updated = [...updatedList, newPlan];
-  savePackagePlans(updated);
+  savePackagePlans(updated, true);
   return newPlan;
 }
 
@@ -1329,7 +1331,7 @@ export function updatePackagePlan(id: string, updates: Partial<PackagePlan>): Pa
   };
 
   updatedList[index] = updatedItem;
-  savePackagePlans(updatedList);
+  savePackagePlans(updatedList, true);
   return updatedItem;
 }
 
@@ -1343,7 +1345,7 @@ export function deletePackagePlan(id: string): boolean {
   if (filtered.length > 0 && !filtered.some(p => p.isDefault)) {
     filtered[0].isDefault = true;
   }
-  savePackagePlans(filtered);
+  savePackagePlans(filtered, false);
   cloudDeletePackagePlan(id);
   return true;
 }
