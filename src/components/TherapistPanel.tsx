@@ -1720,11 +1720,6 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
   };
 
   const goToNextStep = () => {
-    if (!hasPatientData) {
-      openModal('stammdaten');
-      setIsStammdatenModalOpen(true);
-      return;
-    }
     if (currentStep < totalWizardSteps) {
       setCurrentStep(prev => prev + 1);
     }
@@ -1735,12 +1730,6 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
       setCurrentStep(prev => prev - 1);
     }
   };
-
-  useEffect(() => {
-    if (!hasPatientData && currentStep !== 1) {
-      setCurrentStep(1);
-    }
-  }, [hasPatientData, currentStep]);
 
   const renderCasesListContent = (isDrawerMode = false) => {
     let displayCases: PatientCase[] = [];
@@ -2360,136 +2349,7 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
       {/* TAB CONTENT 5: CASE RECORDS & SEQUENTIAL REPERTORISATION WORKFLOW */}
       {panelTab === 'cases' && (
         <div className="space-y-6">
-          {!hasPatientData ? (
-            /* START-LAYOUT WIE IM BILD (ohne Erfolgsleiste, mit oberem Teil, Auswahlkarte und zuletzt bearbeiteten Kunden) */
-            <div className="space-y-6">
-              {/* Prompt Card: Wählen Sie einen Patienten aus */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center shadow-xs">
-                <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-700 mb-4 mx-auto shadow-2xs">
-                  <Users className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-800 font-serif mb-2">
-                  {t('selectPatientPrompt')}
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mb-6 leading-relaxed">
-                  {t('selectPatientPromptSub')}
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    id="btn-case-doc-new-patient"
-                    onClick={handleStartNewPatient}
-                    className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-xs cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>{t('btnNewPatientAdmission')}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    id="btn-case-doc-select-patient"
-                    onClick={() => {
-                      openModal('patient_select');
-                      setIsPatientSelectionModalOpen(true);
-                    }}
-                    className="px-5 py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-xs cursor-pointer"
-                  >
-                    <Users className="w-4 h-4 text-teal-600" />
-                    <span>{t('btnOpenPatientSelectionModal')}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Zuletzt bearbeitete Kunden (3) */}
-              {recentEditedPatients.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-teal-600" />
-                      <span>{t('recentEditedPatientsHeader')} ({recentEditedPatients.length})</span>
-                    </h4>
-
-                    <div className="flex items-center gap-3">
-                      {groupedPatients.length > 3 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            openModal('patient_select');
-                            setIsPatientSelectionModalOpen(true);
-                          }}
-                          className="text-xs font-semibold text-teal-700 hover:text-teal-800 flex items-center gap-1 cursor-pointer transition-colors"
-                        >
-                          <span>{t('viewAllPatientsLink', { count: groupedPatients.length })}</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      <span className="text-[11px] text-slate-400">{t('clickOpensFileBadge')}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {recentEditedPatients.map((p) => {
-                      const initials = p.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase();
-                      const caseCount = p.cases.length;
-
-                      return (
-                        <div
-                          key={p.key}
-                          onClick={() => {
-                            handleSelectCase(p.primaryCase);
-                          }}
-                          className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-teal-400 hover:shadow-md transition-all cursor-pointer space-y-3 group"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-10 h-10 rounded-xl bg-teal-600 group-hover:bg-teal-700 text-white font-bold text-sm flex items-center justify-center shrink-0 transition-colors shadow-xs">
-                                {initials || 'P'}
-                              </div>
-                              <div className="min-w-0">
-                                <h4 className="font-bold text-slate-900 text-sm group-hover:text-teal-700 transition-colors truncate">
-                                  {p.name}
-                                </h4>
-                                <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                  {p.primaryCase.patientAge && <span>{p.primaryCase.patientAge} {t('yearsOld')}</span>}
-                                  {p.primaryCase.patientGender && <span>• {getGenderLabel(p.primaryCase.patientGender)}</span>}
-                                </div>
-                              </div>
-                            </div>
-
-                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200/60 shrink-0">
-                              {caseCount} {caseCount === 1 ? t('caseSingle') : t('casePlural')}
-                            </span>
-                          </div>
-
-                          {p.lastActivityFormatted && (
-                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
-                              <Clock className="w-3 h-3 text-teal-600 shrink-0" />
-                              <span className="truncate">
-                                {t('lastEdited')}: <strong className="font-semibold text-slate-700">{p.lastActivityFormatted}</strong>
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                            <span className="truncate">
-                              {p.primaryCase.patientPhone || p.primaryCase.patientEmail || t('noContactData')}
-                            </span>
-                            <span className="text-teal-700 font-semibold flex items-center gap-1 shrink-0 group-hover:translate-x-0.5 transition-transform">
-                              <span>{t('patientRecord')}</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* ACTIVE PATIENT WORKSPACE (hasPatientData === true) */
-            <>
-              {/* DISCREET FLOATING TAB (Left Edge): 1-click access to cases */}
+          {/* DISCREET FLOATING TAB (Left Edge): 1-click access to cases */}
           {!isSidebarPinned && (
             <button
               type="button"
@@ -2700,19 +2560,19 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
             {/* Right Column: SEQUENTIAL CASE INPUT WIZARD */}
             <div className={isSidebarPinned ? "lg:col-span-8 space-y-5" : "space-y-5 w-full"}>
               {/* 1. KUNDENDATEN / PATIENT HEADER CARD (Clean single-row card matching layout in reference image) */}
-              {hasPatientData && (
-                <div className="w-full bg-white rounded-2xl border border-slate-200/80 px-5 py-4 shadow-xs relative">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-full bg-[#005f56] text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0 font-serif">
-                        {patientInitials}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <h2 className="text-xl font-bold text-slate-900 font-serif">
-                            {currentCase.patientName || t('unnamedPatient')}
-                          </h2>
-                          {/* Interactive discreet case count badge */}
+              <div className="w-full bg-white rounded-2xl border border-slate-200/80 px-5 py-4 shadow-xs relative">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-full bg-[#005f56] text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0 font-serif">
+                      {hasPatientData ? patientInitials : <User className="w-6 h-6 text-white" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h2 className="text-xl font-bold text-slate-900 font-serif">
+                          {currentCase.patientName || t('noPatientSelectedTitle')}
+                        </h2>
+                        {/* Interactive discreet case count badge / patient selection */}
+                        {hasPatientData ? (
                           <button
                             type="button"
                             id="btn-header-cases-badge"
@@ -2727,95 +2587,123 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
                             </span>
                             <ChevronDown className="w-3 h-3 text-teal-600" />
                           </button>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {t('patientRecord')} • {t('lastConsultation')}: {lastConsultationFormatted}
-                        </p>
+                        ) : (
+                          <button
+                            type="button"
+                            id="btn-header-select-patient-badge"
+                            onClick={() => {
+                              openModal('patient_select');
+                              setIsPatientSelectionModalOpen(true);
+                            }}
+                            className="px-3 py-0.5 rounded-full text-xs font-medium bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200/90 transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                            title={t('btnOpenPatientSelectionModal')}
+                          >
+                            <Users className="w-3 h-3 text-teal-600" />
+                            <span>{t('btnOpenPatientSelectionModal')}</span>
+                          </button>
+                        )}
                       </div>
-                    </div>
-
-                    {/* Header Actions */}
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      {/* Active case indicator */}
-                      <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-700 shadow-2xs">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="text-slate-500 font-normal">{t('activeCasePrefix')}:</span>
-                        <span className="font-bold text-slate-900">
-                          {t('caseNumber').replace('{num}', String(activeCaseNumber))}
-                        </span>
-                      </div>
-
-                      {/* Master data edit button */}
-                      <button
-                        type="button"
-                        id="btn-edit-master-data"
-                        onClick={() => {
-                          openModal('stammdaten');
-                          setIsStammdatenModalOpen(true);
-                        }}
-                        className="px-3.5 py-1.5 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-                      >
-                        <Edit3 className="w-3.5 h-3.5 text-slate-500" />
-                        <span>{t('editMasterData')}</span>
-                      </button>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {t('patientRecord')} • {hasPatientData ? `${t('lastConsultation')}: ${lastConsultationFormatted}` : t('noPatientDataLoadedTitle')}
+                      </p>
                     </div>
                   </div>
+
+                  {/* Header Actions */}
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* Active case indicator */}
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-700 shadow-2xs">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="text-slate-500 font-normal">{t('activeCasePrefix')}:</span>
+                      <span className="font-bold text-slate-900">
+                        {t('caseNumber').replace('{num}', String(activeCaseNumber))}
+                      </span>
+                    </div>
+
+                    {/* Quick Patient Selection Button if empty */}
+                    {!hasPatientData && (
+                      <button
+                        type="button"
+                        id="btn-header-select-patient"
+                        onClick={() => {
+                          openModal('patient_select');
+                          setIsPatientSelectionModalOpen(true);
+                        }}
+                        className="px-3.5 py-1.5 rounded-full border border-teal-300 bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <Users className="w-3.5 h-3.5 text-teal-700" />
+                        <span>{t('btnOpenPatientSelectionModal')}</span>
+                      </button>
+                    )}
+
+                    {/* Master data edit button */}
+                    <button
+                      type="button"
+                      id="btn-edit-master-data"
+                      onClick={() => {
+                        openModal('stammdaten');
+                        setIsStammdatenModalOpen(true);
+                      }}
+                      className="px-3.5 py-1.5 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{t('editMasterData')}</span>
+                    </button>
+                  </div>
                 </div>
-              )}
+              </div>
 
               {/* 2. STEP NAVIGATION BAR: Uniform gray for inactive, green for active */}
-              {hasPatientData && (
-                <div className={`w-full grid grid-cols-4 ${totalWizardSteps >= 8 ? 'sm:grid-cols-8' : totalWizardSteps === 7 ? 'sm:grid-cols-7' : totalWizardSteps === 6 ? 'sm:grid-cols-6' : 'sm:grid-cols-5'} gap-2 pb-1`}>
-                  {wizardSteps.map((step, index) => {
-                    const stepNum = index + 1;
-                    const isActive = currentStep === stepNum;
-                    const { status } = getStepInfo(stepNum);
-                    const isComplete = status === 'complete';
-                    const isPartial = status === 'partial';
-                    const showCheckmark = isComplete || stepNum >= 7;
+              <div className={`w-full grid grid-cols-4 ${totalWizardSteps >= 8 ? 'sm:grid-cols-8' : totalWizardSteps === 7 ? 'sm:grid-cols-7' : totalWizardSteps === 6 ? 'sm:grid-cols-6' : 'sm:grid-cols-5'} gap-2 pb-1`}>
+                {wizardSteps.map((step, index) => {
+                  const stepNum = index + 1;
+                  const isActive = currentStep === stepNum;
+                  const { status } = getStepInfo(stepNum);
+                  const isComplete = status === 'complete';
+                  const isPartial = status === 'partial';
+                  const showCheckmark = isComplete || stepNum >= 7;
 
-                    return (
-                      <button
-                        key={step.id}
-                        type="button"
-                        onClick={() => setCurrentStep(stepNum)}
-                        className={`group relative flex flex-col items-center justify-center p-2.5 rounded-2xl text-center transition-all cursor-pointer ${
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => setCurrentStep(stepNum)}
+                      className={`group relative flex flex-col items-center justify-center p-2.5 rounded-2xl text-center transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#00897b] text-white font-bold border border-[#00796b] shadow-xs after:content-[""] after:absolute after:-bottom-2.5 after:left-1/2 after:-translate-x-1/2 after:border-solid after:border-t-[#00897b] after:border-t-[8px] after:border-x-transparent after:border-x-[6px] after:border-b-0 after:z-20'
+                          : 'bg-white text-slate-700 border border-slate-200/90 hover:bg-slate-50 hover:text-slate-900 shadow-2xs'
+                      }`}
+                      title={
+                        isComplete
+                          ? t('stepTooltipComplete', { name: step.name })
+                          : isPartial
+                          ? t('stepTooltipPartial', { name: step.name })
+                          : t('stepTooltipEmpty', { name: step.name })
+                      }
+                    >
+                      <div
+                        className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] mb-1 font-mono font-bold ${
                           isActive
-                            ? 'bg-[#00897b] text-white font-bold border border-[#00796b] shadow-xs after:content-[""] after:absolute after:-bottom-2.5 after:left-1/2 after:-translate-x-1/2 after:border-solid after:border-t-[#00897b] after:border-t-[8px] after:border-x-transparent after:border-x-[6px] after:border-b-0 after:z-20'
-                            : 'bg-white text-slate-700 border border-slate-200/90 hover:bg-slate-50 hover:text-slate-900 shadow-2xs'
+                            ? 'bg-[#00695c] text-white'
+                            : 'bg-slate-100 text-slate-500'
                         }`}
-                        title={
-                          isComplete
-                            ? t('stepTooltipComplete', { name: step.name })
-                            : isPartial
-                            ? t('stepTooltipPartial', { name: step.name })
-                            : t('stepTooltipEmpty', { name: step.name })
-                        }
                       >
-                        <div
-                          className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] mb-1 font-mono font-bold ${
-                            isActive
-                              ? 'bg-[#00695c] text-white'
-                              : 'bg-slate-100 text-slate-500'
-                          }`}
-                        >
-                          {showCheckmark ? (
-                            <Check className={`w-3.5 h-3.5 stroke-[2.5] ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                          ) : (
-                            <span>{stepNum}</span>
-                          )}
-                        </div>
-                        <span className={`text-[11px] leading-tight truncate w-full block ${isActive ? 'font-bold text-white' : 'font-medium text-slate-700'}`}>
-                          {step.shortName || step.name.split('. ')[1] || step.name}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                        {showCheckmark ? (
+                          <Check className={`w-3.5 h-3.5 stroke-[2.5] ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                        ) : (
+                          <span>{stepNum}</span>
+                        )}
+                      </div>
+                      <span className={`text-[11px] leading-tight truncate w-full block ${isActive ? 'font-bold text-white' : 'font-medium text-slate-700'}`}>
+                        {step.shortName || step.name.split('. ')[1] || step.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
               {/* If step 1 (Stammdaten) is active, show the structured 5-column overview card above the active step form card (matches reference image) */}
-              {currentStepConfig.id === 'stammdaten' && hasPatientData && (
+              {currentStepConfig.id === 'stammdaten' && (
                 <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
                     <div className="bg-white p-3.5 rounded-xl border border-slate-100 flex flex-col justify-center">
@@ -4115,17 +4003,15 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
                   <span className="font-semibold text-slate-800">
                     {stepNames[currentStep - 1] || currentStepConfig.name} ({currentStep} / {totalWizardSteps})
                   </span>
-                  {hasPatientData && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200/80 font-medium">
-                      <Check className="w-3.5 h-3.5 text-teal-600" />
-                      <span>{t('btnAutoSaved')}</span>
-                    </span>
-                  )}
+                  <span className="inline-flex items-center gap-1 text-[11px] text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200/80 font-medium">
+                    <Check className="w-3.5 h-3.5 text-teal-600" />
+                    <span>{t('btnAutoSaved')}</span>
+                  </span>
                 </div>
 
                 {/* Next / Action Buttons */}
                 <div className="flex items-center gap-2">
-                  {!hasPatientData ? null : currentStepConfig.id === 'uebersicht' ? (
+                  {currentStepConfig.id === 'uebersicht' ? (
                     <>
                       <button
                         type="button"
@@ -4230,10 +4116,8 @@ export const TherapistPanel: React.FC<TherapistPanelProps> = ({
             </div>
           </div>
         </div>
-        </>
-      )}
-    </div>
-  )}
+      </div>
+    )}
 
       {/* Homoeopathic In-Depth 6-Pillars Wizard Modal */}
       <ComplaintQuestionsWizardModal
