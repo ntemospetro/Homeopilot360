@@ -1233,6 +1233,35 @@ if ($route === 'medications/translate' || $route === 'translate' || $route === '
 }
 
 // =========================================================================
+// ROUTE 4B: MATERIA MEDICA (/api/materia-medica)
+// =========================================================================
+if ($route === 'materia-medica' || $route === 'api/materia-medica') {
+    $lang = isset($_GET['lang']) ? strtolower(trim($_GET['lang'])) : 'de';
+    $validLangs = ['de', 'en', 'es', 'fr', 'it', 'el', 'ru'];
+    if (!in_array($lang, $validLangs)) {
+        $lang = 'de';
+    }
+
+    $candidates = [
+        getDataFilePath("materia_medica_{$lang}.json"),
+        __DIR__ . "/../public/data/materia_medica_{$lang}.json",
+        __DIR__ . "/../data/materia_medica_{$lang}.json",
+        __DIR__ . "/data/materia_medica_{$lang}.json",
+    ];
+
+    foreach ($candidates as $f) {
+        if (!empty($f) && file_exists($f)) {
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: public, max-age=86400');
+            readfile($f);
+            exit;
+        }
+    }
+
+    sendJsonResponse([]);
+}
+
+// =========================================================================
 // ROUTE 5: SITE CONFIG (/api/site/config & /api/site-config)
 // =========================================================================
 if ($route === 'site/config' || $route === 'site-config') {

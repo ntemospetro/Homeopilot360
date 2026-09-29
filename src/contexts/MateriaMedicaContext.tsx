@@ -14,50 +14,35 @@ const MateriaMedicaContext = createContext<MateriaMedicaContextType | undefined>
 
 export const MateriaMedicaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { language } = useTranslation();
-  // Pre-initialize with synchronous local dataset so remedies are never empty
+  // Always synchronously initialized and updated with the complete 702-remedy dataset
   const [allRemedies, setAllRemedies] = useState<LocalizedRemedy[]>(() => {
     return getLocalizedRemedies(language);
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRemedies = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/materia-medica?lang=${encodeURIComponent(language)}`);
-      if (!response.ok) throw new Error('Failed to fetch Materia Medica data');
-      const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setAllRemedies(data);
-      } else {
-        const local = getLocalizedRemedies(language);
-        if (local && local.length > 0) {
-          setAllRemedies(local);
-        }
-      }
-    } catch {
-      // Graceful fallback to bundled dataset (vital for Hostinger or static deployments)
-      const local = getLocalizedRemedies(language);
-      if (local && local.length > 0) {
-        setAllRemedies(local);
-      }
-      setError(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Instantly sync remedies when language changes - zero latency, zero network requests, zero 404 errors
   useEffect(() => {
     const local = getLocalizedRemedies(language);
     if (local && local.length > 0) {
       setAllRemedies(local);
     }
-    fetchRemedies();
   }, [language]);
 
+  const refresh = async () => {
+    setIsLoading(true);
+    try {
+      const local = getLocalizedRemedies(language);
+      if (local && local.length > 0) {
+        setAllRemedies(local);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <MateriaMedicaContext.Provider value={{ allRemedies, isLoading, error, refresh: fetchRemedies }}>
+    <MateriaMedicaContext.Provider value={{ allRemedies, isLoading, error, refresh }}>
       {children}
     </MateriaMedicaContext.Provider>
   );
