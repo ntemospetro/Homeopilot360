@@ -129,6 +129,11 @@ function emergencyEvictNonEssentialStorage(): void {
  */
 export function initStorageHealthCheck(): void {
   if (typeof window === 'undefined') return;
+  // Pre-emptively hydrate complete cases from IndexedDB into RAM on cold start
+  try {
+    hydrateCasesFromIndexedDB();
+  } catch {}
+
   try {
     const probeKey = '__homoeo_quota_probe__';
     localStorage.setItem(probeKey, '1');
@@ -237,7 +242,7 @@ export function safeLocalStorageSetItem(key: string, value: string): boolean {
                 try {
                   const compacted = compactCasesForLocalStorage(parsedCases).slice(0, limit);
                   localStorage.setItem(key, JSON.stringify(compacted));
-                  console.info(`[Storage] Saved ${limit} cases snapshot to localStorage. Complete data (${parsedCases.length} cases) preserved in RAM and IndexedDB.`);
+                  console.debug(`[Storage] Saved ${limit} cases snapshot to localStorage. Complete data (${parsedCases.length} cases) preserved in RAM and IndexedDB.`);
                   return true;
                 } catch {
                   // Retry with smaller slice
@@ -1869,6 +1874,14 @@ export function saveAllPatientCases(allCases: PatientCase[]): boolean {
   saveCasesToIndexedDB(allCases).catch(err => {
     console.warn('[Storage] IndexedDB cases save notice:', err);
   });
+
+  // When cases exceed 25, localStorage (5MB browser origin limit) will hit QuotaExceededError.
+  // Full data is safely persisted in IndexedDB and memory. Save a clean fast snapshot in localStorage:
+  if (allCases.length > 25) {
+    const compacted = compactCasesForLocalStorage(allCases).slice(0, 25);
+    return safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(compacted));
+  }
+
   return safeLocalStorageSetItem(STORAGE_KEYS.CASES, JSON.stringify(allCases));
 }
 
