@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation, useLanguage } from '../i18n/LanguageContext';
 import { useMateriaMedica } from '../contexts/MateriaMedicaContext';
 import { 
@@ -537,6 +537,64 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
     }
   };
 
+  // Robust stage term translation resolver across all dictionaries, maps and fallbacks
+  const resolveStageTerm = useCallback((term: string | undefined): string => {
+    if (!term) return '';
+    if (language === 'de') return term;
+
+    const trimmed = term.trim();
+    if (!trimmed) return '';
+    const lower = trimmed.toLowerCase();
+
+    // 1. Check pathTranslations (exact & lowercase)
+    if (drillPathTranslations[trimmed]) return drillPathTranslations[trimmed];
+    for (const [k, v] of Object.entries(drillPathTranslations)) {
+      if (k.toLowerCase() === lower && v) return v;
+    }
+
+    // 2. Check drillTranslatedOptions (exact & lowercase)
+    if (drillTranslatedOptions[trimmed]) return drillTranslatedOptions[trimmed];
+    for (const [k, v] of Object.entries(drillTranslatedOptions)) {
+      if (k.toLowerCase() === lower && v) return v;
+    }
+
+    // 3. Check chapterTranslations (exact & lowercase)
+    if (chapterTranslations[trimmed]) return chapterTranslations[trimmed];
+    for (const [k, v] of Object.entries(chapterTranslations)) {
+      if (k.toLowerCase() === lower && v) return v;
+    }
+
+    // 4. Check canonical chapter map
+    const chapterMap = getCanonicalKentChapterTranslations(language);
+    if (chapterMap[trimmed]) return chapterMap[trimmed];
+    for (const [k, v] of Object.entries(chapterMap)) {
+      if (k.toLowerCase() === lower && v) return v;
+    }
+
+    // 5. Check canonical clinical terms
+    const canon = getCanonicalKentTermTranslation(trimmed, language as any);
+    if (canon) return canon;
+
+    // 6. Compound split if term contains delimiters like ',' or ' - '
+    if (trimmed.includes(',') || trimmed.includes(' - ') || trimmed.includes(' / ')) {
+      const delimiter = trimmed.includes(',') ? ',' : trimmed.includes(' - ') ? ' - ' : ' / ';
+      const parts = trimmed.split(delimiter);
+      let changed = false;
+      const translatedParts = parts.map(p => {
+        const pTrim = p.trim();
+        const tr = resolveStageTerm(pTrim);
+        if (tr && tr !== pTrim) {
+          changed = true;
+          return tr;
+        }
+        return pTrim;
+      });
+      if (changed) return translatedParts.join(delimiter === ',' ? ', ' : delimiter);
+    }
+
+    return trimmed;
+  }, [language, drillPathTranslations, drillTranslatedOptions, chapterTranslations]);
+
   // Title of the current drilldown stage in Stufenansicht (Stufe 1, 2, 3, 4, 5, 6...)
   const drillLevelTitle = useMemo(() => {
     if (drillLevelType === 'chapter') {
@@ -554,13 +612,22 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
 
   // Filtered options in the current drilldown stage
   const filteredDrillOptions = useMemo(() => {
-    if (!drillFilterQuery.trim()) return drillOptions;
-    const q = drillFilterQuery.toLowerCase();
-    return drillOptions.filter(opt => {
-      const trans = (drillTranslatedOptions[opt] || chapterTranslations[opt] || getCanonicalKentTermTranslation(opt, language as any) || opt).toLowerCase();
-      return trans.includes(q) || opt.toLowerCase().includes(q);
+    let opts = [...drillOptions];
+    if (drillFilterQuery.trim()) {
+      const q = drillFilterQuery.toLowerCase();
+      opts = opts.filter(opt => {
+        const trans = resolveStageTerm(opt).toLowerCase();
+        return trans.includes(q) || opt.toLowerCase().includes(q);
+      });
+    }
+    // Sort options by localized name in the active language
+    opts.sort((a, b) => {
+      const transA = resolveStageTerm(a) || a;
+      const transB = resolveStageTerm(b) || b;
+      return transA.localeCompare(transB, language === 'de' ? 'de' : language);
     });
-  }, [drillOptions, drillFilterQuery, drillTranslatedOptions, chapterTranslations, language]);
+    return opts;
+  }, [drillOptions, drillFilterQuery, resolveStageTerm, language]);
 
   // Handpicked clinical favorites from Kent rubrics
   const favoriteRubrics = useMemo<KentRubricItem[]>(() => {
@@ -733,10 +800,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
 
     const translatedLabel = explicitTranslatedLabel
       || (childrenData?.translatedOptions && childrenData.translatedOptions[rawLabel]) 
-      || drillPathTranslations[rawLabel]
-      || drillTranslatedOptions[rawLabel] 
-      || chapterTranslations[rawLabel] 
-      || rawLabel;
+      || resolveStageTerm(rawLabel);
 
     const handleToggle = async (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -1402,7 +1466,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                                 : 'text-slate-600 hover:text-teal-800 hover:bg-slate-200/60'
                             }`}
                           >
-                            {drillPathTranslations[drillChapter] || chapterTranslations[drillChapter] || drillTranslatedOptions[drillChapter] || drillChapter}
+                            {resolveStageTerm(drillChapter)}
                           </button>
                         </>
                       )}
@@ -1419,7 +1483,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                                 : 'text-slate-600 hover:text-teal-800 hover:bg-slate-200/60'
                             }`}
                           >
-                            {drillPathTranslations[drillSymptom] || drillTranslatedOptions[drillSymptom] || getCanonicalKentTermTranslation(drillSymptom, language as any) || drillSymptom}
+                            {resolveStageTerm(drillSymptom)}
                           </button>
                         </>
                       )}
@@ -1438,7 +1502,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                                   : 'text-slate-600 hover:text-teal-800 hover:bg-slate-200/60'
                               }`}
                             >
-                              {drillPathTranslations[zus] || drillTranslatedOptions[zus] || getCanonicalKentTermTranslation(zus, language as any) || zus}
+                              {resolveStageTerm(zus)}
                             </button>
                           </React.Fragment>
                         );
@@ -1512,7 +1576,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                         </div>
                       ) : (
                         filteredDrillOptions.map((opt) => {
-                          const transName = drillTranslatedOptions[opt] || chapterTranslations[opt] || getCanonicalKentTermTranslation(opt, language as any) || opt;
+                          const transName = resolveStageTerm(opt);
                           return (
                             <button
                               key={opt}
@@ -1554,8 +1618,8 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                           const isSelected = selectedSymptoms.some(s => s.rubricId === String(rubric.id));
                           const rubricPath = rubric.pathTranslated || rubric.path;
                           const rubricTitle = (rubric.zusatz && rubric.zusatz.length > 0)
-                            ? (rubric.zusatzTranslated ? rubric.zusatzTranslated.join(', ') : rubric.zusatz.map((z: string) => getCanonicalKentTermTranslation(z, language as any) || z).join(', '))
-                            : (rubric.symptomTranslated || getCanonicalKentTermTranslation(rubric.symptom, language as any) || rubric.symptom || rubricPath);
+                            ? (rubric.zusatzTranslated ? rubric.zusatzTranslated.join(', ') : rubric.zusatz.map((z: string) => resolveStageTerm(z)).join(', '))
+                            : (rubric.symptomTranslated || resolveStageTerm(rubric.symptom) || rubricPath);
 
                           return (
                             <div

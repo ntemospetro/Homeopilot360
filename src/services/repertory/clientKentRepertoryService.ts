@@ -100,12 +100,12 @@ function translateTerm(term: string, transMap: Record<string, string>, lang: str
   }
 
   // 5. Tokenized fallback for compound terms
-  if (trimmed.includes(' ') || trimmed.includes('-')) {
-    const parts = trimmed.split(/(\s+|-)/);
+  if (trimmed.includes(' ') || trimmed.includes('-') || trimmed.includes(',')) {
+    const parts = trimmed.split(/(\s+|-|,)/);
     let changed = false;
     const translatedParts = parts.map(part => {
       const pTrim = part.trim();
-      if (!pTrim) return part;
+      if (!pTrim || part === ',' || part === '-') return part;
       const t = transMap[pTrim] || getCanonicalKentTermTranslation(pTrim, lang as any);
       if (t) {
         changed = true;

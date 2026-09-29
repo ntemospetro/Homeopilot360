@@ -127,7 +127,50 @@ export const CANONICAL_KENT_TERMS: Record<string, Partial<Record<LanguageCode, s
   "Hüfte": { en: "Hip", es: "Cadera", fr: "Hanche", it: "Anca", el: "Ισχίο", ru: "Бедро", de: "Hüfte" },
   "Lendenregion": { en: "Lumbar region", es: "Región lumbar", fr: "Région lombaire", it: "Regione lombare", el: "Οσφυϊκή χώρα", ru: "Поясничная область", de: "Lendenregion" },
   "Rückenregion": { en: "Back region", es: "Región de la espalda", fr: "Région du dos", it: "Regione dorsale", el: "Περιοχή ράχης", ru: "Область спины", de: "Rückenregion" },
-  "Nacken": { en: "Nape of neck", es: "Nuca", fr: "Nuque", it: "Nuca", el: "Αυχένας", ru: "Затылок / Шея", de: "Nacken" }
+  "Nacken": { en: "Nape of neck", es: "Nuca", fr: "Nuque", it: "Nuca", el: "Αυχένας", ru: "Затылок / Шея", de: "Nacken" },
+
+  // Clinical Pathology, Tissues & Homeopathic Lesions
+  "Abszesse": { en: "Abscesses", es: "Abscesos", fr: "Abcès", it: "Ascessi", el: "Αποστήματα", ru: "Абсцессы", de: "Abszesse" },
+  "Abszess": { en: "Abscess", es: "Absceso", fr: "Abcès", it: "Ascesso", el: "Απόστημα", ru: "Абсцесс", de: "Abszess" },
+  "Drüsen": { en: "Glands", es: "Glándulas", fr: "Glandes", it: "Ghiandole", el: "Αδένες", ru: "Железы", de: "Drüsen" },
+  "Drüse": { en: "Gland", es: "Glándula", fr: "Glande", it: "Ghiandola", el: "Αδένας", ru: "Железа", de: "Drüse" },
+  "wiederkehrend": { en: "Recurrent / Relapsing", es: "Recurrente", fr: "Récurrent", it: "Ricorrente", el: "Επαναλαμβανόμενο", ru: "Рецидивирующий", de: "wiederkehrend" },
+  "rezidivierend": { en: "Relapsing / Recurrent", es: "Recidivante", fr: "Récidivant", it: "Recidivante", el: "Υποτροπιάζον", ru: "Рецидивирующий", de: "rezidivierend" },
+  "periodisch": { en: "Periodic", es: "Periódico", fr: "Périodique", it: "Periodico", el: "Περιοδικός", ru: "Периодический", de: "periodisch" },
+  "chronisch": { en: "Chronic", es: "Crónico", fr: "Chronique", it: "Cronico", el: "Χρόνιος", ru: "Хронический", de: "chronisch" },
+  "akut": { en: "Acute", es: "Agudo", fr: "Aigu", it: "Acuto", el: "Οξύς", ru: "Острый", de: "akut" },
+  "plötzlich": { en: "Sudden", es: "Repentino", fr: "Soudain", it: "Improvviso", el: "Ξαφνικός", ru: "Внезапный", de: "plötzlich" },
+  "allmählich": { en: "Gradual", es: "Gradual", fr: "Progressif", it: "Graduale", el: "Σταδιακός", ru: "Постепенный", de: "allmählich" },
+  "anhaltend": { en: "Constant / Persistent", es: "Constante", fr: "Persistant", it: "Persistente", el: "Επίμονος", ru: "Постоянный", de: "anhaltend" },
+  "wandernd": { en: "Wandering / Shifting", es: "Errático", fr: "Erratique", it: "Vagante", el: "Πλανώμενος", ru: "Блуждающий", de: "wandernd" },
+  "Eiterung": { en: "Suppuration", es: "Supuración", fr: "Suppuration", it: "Suppurazione", el: "Διαπύηση", ru: "Нагноение", de: "Eiterung" },
+  "eitrig": { en: "Purulent", es: "Purulento", fr: "Purulent", it: "Purulento", el: "Πυώδης", ru: "Гнойный", de: "eitrig" },
+  "Fisteln": { en: "Fistulae", es: "Fístulas", fr: "Fistules", it: "Fistole", el: "Συρίγγια", ru: "Свищи", de: "Fisteln" },
+  "Fistel": { en: "Fistula", es: "Fístula", fr: "Fistule", it: "Fistola", el: "Συρίγγιο", ru: "Свищ", de: "Fistel" },
+  "Furunkel": { en: "Boils / Furuncles", es: "Forúnculos", fr: "Furoncles", it: "Foruncoli", el: "Δοθιήνες", ru: "Фурункулы", de: "Furunkel" },
+  "Karbunkel": { en: "Carbuncles", es: "Carbunclos", fr: "Anthrax", it: "Carbonchi", el: "Άνθρακες", ru: "Карбункулы", de: "Karbunkel" },
+  "Wunden": { en: "Wounds", es: "Heridas", fr: "Plaies", it: "Ferite", el: "Πληγές", ru: "Раны", de: "Wunden" },
+  "Knochen": { en: "Bones", es: "Huesos", fr: "Os", it: "Ossa", el: "Οστά", ru: "Кости", de: "Knochen" },
+  "Gelenke": { en: "Joints", es: "Articulaciones", fr: "Articulations", it: "Articolazioni", el: "Αρθρώσεις", ru: "Суставы", de: "Gelenke" },
+  "Muskeln": { en: "Muscles", es: "Músculos", fr: "Muscles", it: "Muscoli", el: "Μύες", ru: "Мышцы", de: "Muskeln" },
+  "Sehnen": { en: "Tendons", es: "Tendones", fr: "Tendons", it: "Tendini", el: "Τένοντες", ru: "Сухожилия", de: "Sehnen" },
+  "Knorpel": { en: "Cartilage", es: "Cartílago", fr: "Cartilage", it: "Cartilagine", el: "Χόνδρος", ru: "Хрящ", de: "Knorpel" },
+  "Blut": { en: "Blood", es: "Sangre", fr: "Sang", it: "Sangue", el: "Αίμα", ru: "Кровь", de: "Blut" },
+  "Blutung": { en: "Bleeding / Hemorrhage", es: "Hemorragia", fr: "Hémorragie", it: "Emorragia", el: "Αιμορραγία", ru: "Кровотечение", de: "Blutung" },
+  "Nerven": { en: "Nerves", es: "Nervios", fr: "Nerfs", it: "Nervi", el: "Νεύρα", ru: "Нервы", de: "Nerven" },
+  "Gefäße": { en: "Vessels", es: "Vasos", fr: "Vaisseaux", it: "Vasi", el: "Αγγεία", ru: "Сосуды", de: "Gefäße" },
+  "Verhärtung": { en: "Induration / Hardening", es: "Induración", fr: "Induration", it: "Indurimento", el: "Σκλήρυνση", ru: "Затвердение", de: "Verhärtung" },
+  "Tumoren": { en: "Tumors", es: "Tumores", fr: "Tumeurs", it: "Tumori", el: "Όγκοι", ru: "Опухоли", de: "Tumoren" },
+  "Polypen": { en: "Polyps", es: "Pólipos", fr: "Polypes", it: "Polipi", el: "Πολύποδες", ru: "Полипы", de: "Polypen" },
+  "Warzen": { en: "Warts", es: "Verrugas", fr: "Verrues", it: "Verruche", el: "Μυρμηγκιές", ru: "Бородавки", de: "Warzen" },
+  "Gelbsucht": { en: "Jaundice", es: "Ictericia", fr: "Ictère / Jaunisse", it: "Itterizia", el: "Ίκτερος", ru: "Желтуха", de: "Gelbsucht" },
+  "Blässe": { en: "Paleness / Pallor", es: "Palidez", fr: "Pâleur", it: "Pallore", el: "Ωχρότητα", ru: "Бледность", de: "Blässe" },
+  "Zyanose": { en: "Cyanosis", es: "Cianosis", fr: "Cyanose", it: "Cianosi", el: "Κυάνωση", ru: "Цианоз", de: "Zyanose" },
+  "Ohnmacht": { en: "Fainting / Syncope", es: "Desmayo", fr: "Évanouissement", it: "Svenimento", el: "Λιποθυμία", ru: "Обморок", de: "Ohnmacht" },
+  "Kollaps": { en: "Collapse", es: "Colapso", fr: "Effondrement", it: "Collasso", el: "Κατάρρευση", ru: "Коллапс", de: "Kollaps" },
+  "Abmagerung": { en: "Emaciation", es: "Demacración", fr: "Émaciation", it: "Emaciazione", el: "Αποίσχνανση", ru: "Истощение", de: "Abmagerung" },
+  "Ödem": { en: "Edema / Dropsy", es: "Edema", fr: "Œdème", it: "Edema", el: "Οίδημα", ru: "Отек", de: "Ödem" },
+  "Wassersucht": { en: "Dropsy", es: "Hidropesía", fr: "Hydropisie", it: "Idropisia", el: "Υδρωπικία", ru: "Водянка", de: "Wassersucht" }
 };
 
 export function getCanonicalKentTermTranslation(term: string, lang: LanguageCode): string | undefined {
@@ -146,6 +189,25 @@ export function getCanonicalKentTermTranslation(term: string, lang: LanguageCode
   for (const [key, map] of Object.entries(CANONICAL_KENT_TERMS)) {
     if (key.toLowerCase() === lower && map[lang]) {
       return map[lang];
+    }
+  }
+
+  // Comma-separated or compound parts (e.g. "Drüsen, Abszesse" or "Schmerz, brennend")
+  if (clean.includes(',') || clean.includes(' - ') || clean.includes(' / ')) {
+    const delimiter = clean.includes(',') ? ',' : clean.includes(' - ') ? ' - ' : ' / ';
+    const parts = clean.split(delimiter);
+    let anyFound = false;
+    const translatedParts = parts.map(p => {
+      const pTrim = p.trim();
+      const tr = getCanonicalKentTermTranslation(pTrim, lang);
+      if (tr) {
+        anyFound = true;
+        return tr;
+      }
+      return pTrim;
+    });
+    if (anyFound) {
+      return translatedParts.join(delimiter === ',' ? ', ' : delimiter);
     }
   }
 

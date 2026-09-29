@@ -1,13 +1,13 @@
 [
   {
     "therapistId": "th-101",
-    "balanceEur": 112.5977,
+    "balanceEur": 112.5964,
     "totalDepositedEur": 115,
     "lowBalanceThreshold": 5,
     "autoReloadEnabled": false,
     "autoReloadAmount": 20,
     "lastDepositAt": "2026-09-09T12:20:06.595Z",
-    "updatedAt": "2026-09-28T16:32:11.548Z"
+    "updatedAt": "2026-09-29T06:49:39.409Z"
   },
   {
     "therapistId": "th-102",
@@ -41,52 +41,12 @@
   },
   {
     "therapistId": "th_automated_test_therapist_99",
-    "balanceEur": 170,
-    "totalDepositedEur": 170,
-    "lowBalanceThreshold": 5,
-    "autoReloadEnabled": false,
-    "autoReloadAmount": 20,
-    "lastDepositAt": "2026-09-29T05:57:21.033Z",
-    "updatedAt": "2026-09-29T05:57:21.033Z"
-  },
-  {
-    "therapistId": "th_audit_server_flow_1790661307048",
-    "balanceEur": 120,
-    "totalDepositedEur": 120,
-    "lowBalanceThreshold": 5,
-    "autoReloadEnabled": false,
-    "autoReloadAmount": 20,
-    "lastDepositAt": "2026-09-29T05:55:07.217Z",
-    "updatedAt": "2026-09-29T05:55:07.217Z"
-  },
-  {
-    "therapistId": "th_audit_server_flow_1790661333905",
     "balanceEur": 70,
     "totalDepositedEur": 70,
     "lowBalanceThreshold": 5,
     "autoReloadEnabled": false,
     "autoReloadAmount": 20,
-    "lastDepositAt": "2026-09-29T05:55:34.053Z",
-    "updatedAt": "2026-09-29T05:55:34.053Z"
-  },
-  {
-    "therapistId": "th_audit_server_flow_1790661402184",
-    "balanceEur": 70,
-    "totalDepositedEur": 70,
-    "lowBalanceThreshold": 5,
-    "autoReloadEnabled": false,
-    "autoReloadAmount": 20,
-    "lastDepositAt": "2026-09-29T05:56:42.348Z",
-    "updatedAt": "2026-09-29T05:56:42.348Z"
-  },
-  {
-    "therapistId": "th_audit_server_flow_1790661440377",
-    "balanceEur": 70,
-    "totalDepositedEur": 70,
-    "lowBalanceThreshold": 5,
-    "autoReloadEnabled": false,
-    "autoReloadAmount": 20,
-    "lastDepositAt": "2026-09-29T05:57:20.508Z",
-    "updatedAt": "2026-09-29T05:57:20.508Z"
+    "lastDepositAt": "2026-09-29T05:19:18.859Z",
+    "updatedAt": "2026-09-29T05:19:18.859Z"
   }
 ]

@@ -1,5 +1,21 @@
 [
   {
+    "id": "tok-1790664579409-0ulvl",
+    "timestamp": "2026-09-29T06:49:39.409Z",
+    "therapistId": "th-101",
+    "therapistName": "Katharina Lindemann",
+    "therapistEmail": "k.lindemann@naturheilpraxis-berlin.de",
+    "endpoint": "/api/kent/drilldown",
+    "actionName": "Repertorium Live-Übersetzung (EN: 2 Begriffe)",
+    "model": "gemini-3.8-flash",
+    "promptTokens": 131,
+    "candidatesTokens": 149,
+    "cachedTokens": 0,
+    "totalTokens": 280,
+    "costEur": 0.0006,
+    "customerCostEur": 0.00131
+  },
+  {
     "id": "tok-1790613131548-ie0vp",
     "timestamp": "2026-09-28T16:32:11.548Z",
     "therapistId": "th-101",

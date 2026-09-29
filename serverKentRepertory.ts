@@ -346,7 +346,40 @@ export const CURATED_KENT_TERMS: Record<string, Record<string, string>> = {
   "Schulter": { en: "Shoulder", es: "Hombro", fr: "Épaule", it: "Spalla", el: "Ώμος", ru: "Плечо" },
   "Hüfte": { en: "Hip", es: "Cadera", fr: "Hanche", it: "Anca", el: "Ισχίο", ru: "Бедро" },
   "Lendenregion": { en: "Lumbar region", es: "Región lumbar", fr: "Région lombaire", it: "Regione lombare", el: "Οσφυϊκή χώρα", ru: "Поясничная область" },
-  "Rückenregion": { en: "Back region", es: "Región de la espalda", fr: "Région du dos", it: "Regione dorsale", el: "Περιοχή ράχης", ru: "Область спины" }
+  "Rückenregion": { en: "Back region", es: "Región de la espalda", fr: "Région du dos", it: "Regione dorsale", el: "Περιοχή ράχης", ru: "Область спины" },
+  "Abszesse": { en: "Abscesses", es: "Abscesos", fr: "Abcès", it: "Ascessi", el: "Αποστήματα", ru: "Абсцессы" },
+  "Abszess": { en: "Abscess", es: "Absceso", fr: "Abcès", it: "Ascesso", el: "Απόστημα", ru: "Абсцесс" },
+  "Drüsen": { en: "Glands", es: "Glándulas", fr: "Glandes", it: "Ghiandole", el: "Αδένες", ru: "Железы" },
+  "Drüse": { en: "Gland", es: "Glándula", fr: "Glande", it: "Ghiandola", el: "Αδένας", ru: "Желеζα" },
+  "wiederkehrend": { en: "Recurrent", es: "Recurrente", fr: "Récurrent", it: "Ricorrente", el: "Επαναλαμβανόμενο", ru: "Рецидивирующий" },
+  "rezidivierend": { en: "Relapsing / Recurrent", es: "Recidivante", fr: "Récidivant", it: "Recidivante", el: "Υποτροπιάζον", ru: "Рецидивирующий" },
+  "periodisch": { en: "Periodic", es: "Periódico", fr: "Périodique", it: "Periodico", el: "Περιοδικός", ru: "Периодический" },
+  "chronisch": { en: "Chronic", es: "Crónico", fr: "Chronique", it: "Cronico", el: "Χρόνιος", ru: "Хронический" },
+  "akut": { en: "Acute", es: "Agudo", fr: "Aigu", it: "Acuto", el: "Οξύς", ru: "Острый" },
+  "plötzlich": { en: "Sudden", es: "Repentino", fr: "Soudain", it: "Improvviso", el: "Ξαφνικός", ru: "Внезапный" },
+  "allmählich": { en: "Gradual", es: "Gradual", fr: "Progressif", it: "Graduale", el: "Σταδιακός", ru: "Постепенный" },
+  "anhaltend": { en: "Constant", es: "Constante", fr: "Persistant", it: "Persistente", el: "Επίμονος", ru: "Постоянный" },
+  "wandernd": { en: "Wandering", es: "Errático", fr: "Erratique", it: "Vagante", el: "Πλανώμενος", ru: "Блуждающий" },
+  "brennend": { en: "Burning", es: "Ardiente", fr: "Brûlant", it: "Bruciante", el: "Καυστικός", ru: "Жгучий" },
+  "stechend": { en: "Stitching", es: "Punzante", fr: "Piquant", it: "Pungente", el: "Νυγμώδης", ru: "Колющий" },
+  "drückend": { en: "Pressing", es: "Opresivo", fr: "Pressant", it: "Pressorio", el: "Πιεστικός", ru: "Давящий" },
+  "Eiterung": { en: "Suppuration", es: "Supuración", fr: "Suppuration", it: "Suppurazione", el: "Διαπύηση", ru: "Нагноение" },
+  "eitrig": { en: "Purulent", es: "Purulento", fr: "Purulent", it: "Purulento", el: "Πυώδης", ru: "Гнойный" },
+  "Fisteln": { en: "Fistulae", es: "Fístulas", fr: "Fistules", it: "Fistole", el: "Συρίγγια", ru: "Свищи" },
+  "Fistel": { en: "Fistula", es: "Fístula", fr: "Fistule", it: "Fistola", el: "Συρίγγιο", ru: "Свищ" },
+  "Furunkel": { en: "Boils", es: "Forúnculos", fr: "Furoncles", it: "Foruncoli", el: "Δοθιήνες", ru: "Фурункулы" },
+  "Karbunkel": { en: "Carbuncles", es: "Carbunclos", fr: "Anthrax", it: "Carbonchi", el: "Άνθρακες", ru: "Карбункулы" },
+  "Wunden": { en: "Wounds", es: "Heridas", fr: "Plaies", it: "Ferite", el: "Πληγές", ru: "Раны" },
+  "Knochen": { en: "Bones", es: "Huesos", fr: "Os", it: "Ossa", el: "Οστά", ru: "Кости" },
+  "Gelenke": { en: "Joints", es: "Articulaciones", fr: "Articulations", it: "Articolazioni", el: "Αρθρώσεις", ru: "Суставы" },
+  "Muskeln": { en: "Muscles", es: "Músculos", fr: "Muscles", it: "Muscoli", el: "Μύες", ru: "Мышцы" },
+  "Sehnen": { en: "Tendons", es: "Tendones", fr: "Tendons", it: "Tendini", el: "Τένοντες", ru: "Сухожилия" },
+  "Blut": { en: "Blood", es: "Sangre", fr: "Sang", it: "Sangue", el: "Αίμα", ru: "Кровь" },
+  "Blutung": { en: "Bleeding", es: "Hemorragia", fr: "Hémorragie", it: "Emorragia", el: "Αιμορραγία", ru: "Кровотечение" },
+  "Nerven": { en: "Nerves", es: "Nervios", fr: "Nerfs", it: "Nervi", el: "Νεύρα", ru: "Нервы" },
+  "Gefäße": { en: "Vessels", es: "Vasos", fr: "Vaisseaux", it: "Vasi", el: "Αγγεία", ru: "Сосуды" },
+  "Verhärtung": { en: "Induration", es: "Induración", fr: "Induration", it: "Indurimento", el: "Σκλήρυνση", ru: "Затвердение" },
+  "Tumoren": { en: "Tumors", es: "Tumores", fr: "Tumeurs", it: "Tumori", el: "Όγκοι", ru: "Опухоли" }
 };
 
 let translationsCache: Record<string, Record<string, string>> | null = null;
@@ -373,8 +406,22 @@ function persistTranslations(): void {
   if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
   saveDebounceTimer = setTimeout(() => {
     try {
-      const transPath = resolveKentDataFile("kent_translations.json");
-      fs.writeFileSync(transPath, JSON.stringify(translationsCache, null, 2), "utf-8");
+      const payload = JSON.stringify(translationsCache, null, 2);
+      const pathsToSave = [
+        path.resolve("./data/kent_translations.json"),
+        path.resolve("./public/data/kent_translations.json"),
+        path.resolve("./dist/data/kent_translations.json")
+      ];
+      for (const p of pathsToSave) {
+        try {
+          const dir = path.dirname(p);
+          if (fs.existsSync(dir)) {
+            fs.writeFileSync(p, payload, "utf-8");
+          }
+        } catch {
+          // ignore single write failure
+        }
+      }
     } catch (err) {
       console.error("[KENT_TRANS] Failed to save translations:", err);
     }
