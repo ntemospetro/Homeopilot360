@@ -4,7 +4,8 @@ import {
   determineFactStatusForStatement,
   detectEpistemicConfidence,
   createInitialDimensionStates,
-  seedCausaStateFromOrganonEndpruefer
+  seedCausaStateFromOrganonEndpruefer,
+  sanitizeCausaPatientText
 } from '../src/services/causaSeedService.ts';
 import { CAUSA_DIMENSION_KEYS } from '../src/types/causaDeepDive.ts';
 import { EndprueferResult } from '../src/types.ts';
@@ -138,5 +139,135 @@ describe('Causa Deep-Dive - Paket 1 Basis & Invarianten', () => {
     assert.equal(state.dimensions.C1.completion, 'UNERHOBEN');
     assert.equal(state.dimensions.C8.completion, 'UNERHOBEN');
     assert.equal(state.isFinished, false);
+  });
+
+  it('7. Benachbarte Zustände: Multiple Dimensionen gleichzeitig (C1, C3, C5, C8, C9) und Unberührte bleiben UNERHOBEN', () => {
+    const multiEndpruefer: EndprueferResult = {
+      overall_status: 'PASS',
+      total_categories_checked: 10,
+      correct_count: 10,
+      flagged_count: 0,
+      audit_changes: [],
+      final_corrected_output: 'Komplexe Anamnese.',
+      category_checks: [
+        {
+          category: 'Causa (Möglicher Auslöser)',
+          schiedsrichter_result: 'Beginn vor 3 Wochen nach schwerem Autounfall. Kein Vorerkrankungsereignis erinnerlich.',
+          raw_text_snippet: 'vor 3 Wochen nach Unfall',
+          decision: 'CORRECT',
+          issue: null,
+          reasoning: 'Klar belegt',
+          severity: null,
+          minimal_correction: '',
+          atomic_claims: [
+            {
+              claim: 'Beginn vor 3 Wochen',
+              raw_text_snippet: 'vor 3 Wochen',
+              is_supported: true,
+              issue: null,
+              decision: 'CORRECT'
+            },
+            {
+              claim: 'Unfall ging den Symptomen voraus',
+              raw_text_snippet: 'nach Autounfall',
+              is_supported: true,
+              issue: null,
+              decision: 'CORRECT'
+            },
+            {
+              claim: 'An ein früheres Ereignis erinnert sich die Patientin nicht',
+              raw_text_snippet: 'erinnert sich nicht',
+              is_supported: true,
+              issue: null,
+              decision: 'CORRECT'
+            }
+          ]
+        },
+        {
+          category: 'Animus / Mens (Gemüt)',
+          schiedsrichter_result: 'Starker beruflicher Stress und chronische Erschöpfung.',
+          raw_text_snippet: 'Stress und Erschöpfung',
+          decision: 'CORRECT',
+          issue: null,
+          reasoning: 'Belegt',
+          severity: null,
+          minimal_correction: '',
+          atomic_claims: [
+            {
+              claim: 'Massiver beruflicher Stress vorhanden',
+              raw_text_snippet: 'beruflicher Stress',
+              is_supported: true,
+              issue: null,
+              decision: 'CORRECT'
+            },
+            {
+              claim: 'Patientin fühlt sich völlig erschöpft und ausgelaugt',
+              raw_text_snippet: 'ausgelaugt und erschöpft',
+              is_supported: true,
+              issue: null,
+              decision: 'CORRECT'
+            }
+          ]
+        }
+      ]
+    };
+
+    const state = seedCausaStateFromOrganonEndpruefer(
+      'Beginn vor 3 Wochen nach schwerem Autounfall. Starker Stress und Erschöpfung. Erinnert sich nicht an frühere Anlässe.',
+      multiEndpruefer,
+      'Zuschreibung durch Patientin: Überlastung'
+    );
+
+    // 1. Facts wurden für die verschiedenen Dimensionen korrekt extrahiert
+    assert.ok(state.facts.length >= 4);
+
+    // 2. Betroffene Dimensionen müssen exakt TEILWEISE_ERHOBEN sein (niemals UNERHOBEN, niemals voreilig AUSREICHEND)
+    assert.equal(state.dimensions.C1.completion, 'TEILWEISE_ERHOBEN'); // Beginn vor 3 Wochen
+    assert.equal(state.dimensions.C3.completion, 'TEILWEISE_ERHOBEN'); // Unfall / Erinnerungslücke
+    assert.equal(state.dimensions.C9.completion, 'TEILWEISE_ERHOBEN'); // Stress / Belastung
+    assert.equal(state.dimensions.C5.completion, 'TEILWEISE_ERHOBEN'); // Erschöpfung / Ausgangszustand
+
+    // 3. Unberührte benachbarte Dimensionen MÜSSEN zwingend UNERHOBEN und APPLIKABEL bleiben
+    const untouchedKeys = ['C2', 'C4', 'C6', 'C7', 'C10', 'C11', 'C12', 'C13'] as const;
+    for (const key of untouchedKeys) {
+      assert.equal(state.dimensions[key].completion, 'UNERHOBEN', `Dimension ${key} muss UNERHOBEN bleiben`);
+      assert.equal(state.dimensions[key].applicability, 'APPLIKABEL', `Dimension ${key} muss APPLIKABEL bleiben`);
+    }
+
+    // 4. Nicht-erinnerlicher Sachverhalt muss in terminalPaths enthalten sein
+    assert.ok(state.terminalPaths.some(p => p.includes('C3')));
+  });
+
+  it('8. Erweiterte Verneinungs- vs. Nicht-Erinnerlichkeits-Klassifikation', () => {
+    // Echte Verneinungen / Ausschlüsse
+    assert.equal(determineFactStatusForStatement('Ein Trauma schloss sie kategorisch aus.'), 'AUSDRÜCKLICH_VERNEINT');
+    assert.equal(determineFactStatusForStatement('Definitiv nicht durch äußere Kälte verursacht.'), 'AUSDRÜCKLICH_VERNEINT');
+    assert.equal(determineFactStatusForStatement('Ein seelischer Konflikt wurde ausdrücklich ausgeschlossen.'), 'AUSDRÜCKLICH_VERNEINT');
+    assert.equal(determineFactStatusForStatement('Einen Unfall schloss er aus.'), 'AUSDRÜCKLICH_VERNEINT');
+
+    // Mangelnde Erinnerung / Benennbarkeit (KEIN Ausschluss)
+    assert.equal(determineFactStatusForStatement('Könne er nicht nennen.'), 'NICHT_ERINNERLICH');
+    assert.equal(determineFactStatusForStatement('Erinnert sich nicht an den Auslöser.'), 'NICHT_ERINNERLICH');
+    assert.equal(determineFactStatusForStatement('Wann das genau anfing, weiß er nicht mehr.'), 'NICHT_ERINNERLICH');
+    assert.equal(determineFactStatusForStatement('Patientin hat keine Erinnerung an den Vorfall.'), 'NICHT_ERINNERLICH');
+    assert.equal(determineFactStatusForStatement('Ihr fällt kein Grund ein.'), 'NICHT_ERINNERLICH');
+  });
+
+  it('9. Epistemische Confidence-Differenzierung & Abschwächer', () => {
+    assert.equal(detectEpistemicConfidence('Ich glaube, es war der nasse Schirm.'), 'VERMUTUNG');
+    assert.equal(detectEpistemicConfidence('Ich vermute eine Erkältung nach dem Baden.'), 'VERMUTUNG');
+    assert.equal(detectEpistemicConfidence('Vielleicht war es Zugluft im Zug.'), 'UNSICHER_SCHWANKEND');
+    assert.equal(detectEpistemicConfidence('Könnte eventuell mit Schlafmangel zusammenhängen.'), 'UNSICHER_SCHWANKEND');
+    assert.equal(detectEpistemicConfidence('Ich weiß nicht, wie das kam.'), 'WEISS_NICHT');
+    assert.equal(detectEpistemicConfidence('Oft habe ich das im Winter bei trockenem Frost.'), 'SICHERE_BEOBACHTUNG');
+  });
+
+  it('10. Bereinigung von Repertorisations-Artefakten aus Patiententexten', () => {
+    const raw = 'Kopfschmerz drückend. (Homöopathische Interpretation: Belladonna Leitsymptom) Klassische Einzelfall-Repertorisation nach Sonnenstich.';
+    const sanitized = sanitizeCausaPatientText(raw);
+    assert.equal(sanitized.includes('Homöopathische Interpretation'), false);
+    assert.equal(sanitized.includes('Klassische Einzelfall-Repertorisation'), false);
+    assert.ok(sanitized.includes('Kopfschmerz drückend'));
+    assert.ok(sanitized.includes('nach Sonnenstich'));
   });
 });

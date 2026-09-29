@@ -250,6 +250,20 @@ export function creditDepositToBalance(params: {
 }): TherapistBalanceRecord {
   const map = getStoredBalances();
   const record = map[params.therapistId] || getTherapistBalanceRecord(params.therapistId);
+
+  // Idempotency check: prevent duplicate crediting for the same stripeSessionId or stripePaymentIntentId
+  if (params.stripeSessionId || params.stripePaymentIntentId) {
+    const existingLogs = getPaymentLogs(params.therapistId);
+    const alreadyProcessed = existingLogs.some(p => 
+      (params.stripeSessionId && p.stripeSessionId === params.stripeSessionId) ||
+      (params.stripePaymentIntentId && p.stripePaymentIntentId === params.stripePaymentIntentId)
+    );
+    if (alreadyProcessed) {
+      console.warn(`[Stripe Billing] Duplicate payment event ignored for session ${params.stripeSessionId || params.stripePaymentIntentId}. Already credited.`);
+      return record;
+    }
+  }
+
   const addAmount = Math.max(0, Number(params.amountEur) || 0);
 
   record.balanceEur = Math.round((record.balanceEur + addAmount) * 100) / 100;

@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import { GoogleGenAI } from "@google/genai";
 
+const getBaseDir = () => (typeof __dirname !== "undefined" ? __dirname : process.cwd());
+
 export interface KentRubric {
   id: string; // Spalte A: Rubrik-ID
   chapter: string; // Spalte B: Beschwerde / Kapitel
@@ -29,14 +31,15 @@ let isLoaded = false;
 let isLoading = false;
 
 function resolveKentDataFile(filename: string): string {
+  const baseDir = getBaseDir();
   const candidates = [
     path.resolve("./data", filename),
     path.resolve("./dist/data", filename),
     path.resolve("./public/data", filename),
-    path.resolve(__dirname, "./data", filename),
-    path.resolve(__dirname, "../data", filename),
-    path.resolve(__dirname, "./dist/data", filename),
-    path.resolve(__dirname, "./public/data", filename)
+    path.resolve(baseDir, "./data", filename),
+    path.resolve(baseDir, "../data", filename),
+    path.resolve(baseDir, "./dist/data", filename),
+    path.resolve(baseDir, "./public/data", filename)
   ];
   for (const c of candidates) {
     if (fs.existsSync(c)) return c;

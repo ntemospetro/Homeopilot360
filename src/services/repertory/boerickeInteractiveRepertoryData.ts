@@ -1,6 +1,7 @@
 import { SymptomWeightGrade } from '../boerickeRepertoryService';
 import { ClassicalAuthorFilterKey, matchesAuthorFilters } from '../../data/classicalAuthorsMap';
 import { LocalizedRemedy } from '../../data/materiaMedicaData';
+import { resolveKentRemedyId, getKentRemedyFullName } from '../../data/kentRemedyMapping';
 
 export interface BoerickeCategoryNode {
   id: string;
@@ -1540,7 +1541,8 @@ export function calculateBoerickeRepertorisation(
   }>();
 
   const getRemedyInfo = (key: string) => {
-    const found = allRemedies.find(r => r.id === key);
+    const resolvedId = resolveKentRemedyId(key);
+    const found = allRemedies.find(r => r.id === key || r.id === resolvedId);
     if (found) {
       return {
         latinName: found.latinName,
@@ -1548,7 +1550,8 @@ export function calculateBoerickeRepertorisation(
         isPolychrest: Boolean(found.isPolychrest)
       };
     }
-    const latin = key.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const fullName = getKentRemedyFullName(key);
+    const latin = fullName || key.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     return { latinName: latin, commonName: '', isPolychrest: false };
   };
 

@@ -72,7 +72,16 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  
+  // Port- und Modusauflösung:
+  // - In Container-Umgebungen mit Nginx-Reverse-Proxy (AI Studio Container / Cloud Run mit Nginx)
+  //   gibt DEFAULT_APP_PORT (3000) den Zielport vor, da Nginx bereits auf PORT (8080) lauscht.
+  // - In Standalone-Deployments (ohne vorgeschalteten Nginx) wird direkt process.env.PORT verwendet.
+  // - Fallback ist Port 3000.
+  const isProduction = process.env.NODE_ENV === "production" || (typeof __filename !== "undefined" && __filename.endsWith(".cjs")) || Boolean(process.argv[1] && process.argv[1].includes("dist"));
+  const PORT = process.env.DEFAULT_APP_PORT 
+    ? parseInt(process.env.DEFAULT_APP_PORT, 10) 
+    : (process.env.PORT ? parseInt(process.env.PORT, 10) : 3000);
 
   // Pre-load Kent database in the background on startup
   ensureKentDatabaseLoaded().catch((err) => {
@@ -6283,7 +6292,7 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   // 5b. Verify Session and Credit Balance only upon Stripe Confirmation
   app.get(["/api/billing/verify-session", "/api/billing/verify-session/"], async (req, res) => {
     try {
-      const sessionId = (req.query.sessionId as string) || '';
+      const sessionId = (req.query.sessionId as string) || (req.query.session_id as string) || '';
       const therapistIdParam = (req.query.therapistId as string) || '';
 
       if (!sessionId) {
@@ -6467,14 +6476,23 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
       let event: any = null;
       const client = getStripeClient();
 
-      if (client && config.webhookSecret && sig && (req as any).rawBody) {
-        try {
-          event = client.webhooks.constructEvent((req as any).rawBody, sig as string, config.webhookSecret);
-        } catch (err: any) {
-          console.warn('[Stripe Webhook] Signature verification failed:', err.message);
-          return res.status(400).send(`Webhook Error: ${err.message}`);
+      if (config.webhookSecret) {
+        if (!sig || !(req as any).rawBody) {
+          return res.status(400).send('Webhook Error: Missing stripe-signature header or raw body');
+        }
+        if (client) {
+          try {
+            event = client.webhooks.constructEvent((req as any).rawBody, sig as string, config.webhookSecret);
+          } catch (err: any) {
+            console.warn('[Stripe Webhook] Signature verification failed:', err.message);
+            return res.status(400).send(`Webhook Error: ${err.message}`);
+          }
         }
       } else {
+        const isAuthSim = req.headers['x-admin-simulation'] === 'true' || req.query.admin_sim === 'true' || process.env.NODE_ENV !== 'production';
+        if (!isAuthSim) {
+          return res.status(401).json({ error: 'Unauthenticated webhook request in production' });
+        }
         event = req.body;
       }
 
@@ -7066,7 +7084,7 @@ Erstelle eine GFM-Markdown-Tabelle für die 5 Organsysteme:
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

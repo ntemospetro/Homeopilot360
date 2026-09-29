@@ -63,26 +63,34 @@ export function determineFactStatusForStatement(text: string): EpistemicFactStat
   // Echter expliziter Ausschluss
   if (
     lower.includes('definitiv kein') ||
+    lower.includes('definitiv nicht') ||
     lower.includes('ausdrücklich verneint') ||
+    lower.includes('ausdrücklich ausgeschlossen') ||
     lower.includes('überhaupt kein anlass') ||
     lower.includes('keinerlei ereignis vorhanden') ||
-    lower.includes('gab sicher kein')
+    lower.includes('gab sicher kein') ||
+    lower.includes('kategorisch aus') ||
+    lower.includes('schloss sie aus') ||
+    lower.includes('schloss er aus') ||
+    lower.includes('schließt er aus') ||
+    lower.includes('schließt sie aus')
   ) {
     return 'AUSDRÜCKLICH_VERNEINT';
   }
 
   // Unfähigkeit zur Benennung / Erinnerung
   if (
+    /k(?:ö|a)nn(?:e|en|t)?(\s+\w+)?\s+(?:nicht\s+nennen|kein|keinen)/i.test(lower) ||
+    /f(?:ä|a)llt(\s+\w+)?\s+kein/i.test(lower) ||
+    /wei(?:ß|ss)(\s+\w+)?\s+nicht\s+mehr/i.test(lower) ||
+    lower.includes('nicht erinnerlich') ||
+    lower.includes('erinnert sich nicht') ||
+    lower.includes('nicht erinnern') ||
+    lower.includes('keine erinnerung') ||
     lower.includes('kann kein') ||
     lower.includes('könne kein') ||
     lower.includes('kann keinen') ||
-    lower.includes('könne sie nicht nennen') ||
-    lower.includes('kann nicht nennen') ||
-    lower.includes('fällt kein') ||
-    lower.includes('nicht erinnerlich') ||
-    lower.includes('erinnert sich nicht') ||
-    lower.includes('weiß nicht mehr') ||
-    lower.includes('weiss nicht mehr')
+    lower.includes('kann nicht nennen')
   ) {
     return 'NICHT_ERINNERLICH';
   }
@@ -147,10 +155,10 @@ export function seedCausaStateFromOrganonEndpruefer(
   ) => {
     if (!claimText || !claimText.trim()) return;
     const cleanClaim = claimText.trim();
-    // Prüfen, ob für dieses semantische Ziel bereits ein identischer oder gleichwertiger Fakt vorliegt
+    // Prüfen, ob für dieses semantische Ziel bereits ein identischer Fakt vorliegt
     const isDuplicate = facts.some(f => 
       f.dimensionId === dimId && 
-      (f.normalizedValue?.semanticTarget === semanticTarget || f.evidenceText === evidenceText || f.normalizedValue?.text === cleanClaim)
+      (f.evidenceText === evidenceText || f.normalizedValue?.text === cleanClaim)
     );
     if (isDuplicate) return;
 
@@ -175,7 +183,7 @@ export function seedCausaStateFromOrganonEndpruefer(
     });
 
     if (status === 'NICHT_ERINNERLICH') {
-      const termEntry = `${dimId}:${semanticTarget} - Patient erinnert den Sachverhalt nicht. Nicht erneut erfragen.`;
+      const termEntry = `${dimId}:${semanticTarget} - Patient erinnert den Sachverhalt nicht (nicht erinnerlich). Nicht erneut erfragen.`;
       if (!terminalPaths.includes(termEntry)) {
         terminalPaths.push(termEntry);
       }
@@ -201,8 +209,18 @@ export function seedCausaStateFromOrganonEndpruefer(
           supportedClaims.forEach(ac => {
             const claimLower = ac.claim.toLowerCase();
             const snip = ac.raw_text_snippet || snippet;
-            if (claimLower.includes('ereignis') || claimLower.includes('anlass') || claimLower.includes('vorfall')) {
+            if (claimLower.includes('ereignis') || claimLower.includes('anlass') || claimLower.includes('vorfall') || claimLower.includes('unfall')) {
               addFact('C3', 'konkretes_ereignis', snip, ac.claim, 'c3_ereignis');
+            } else if (
+              claimLower.includes('beginn') ||
+              claimLower.includes('seit') ||
+              claimLower.includes('wochen') ||
+              claimLower.includes('tage') ||
+              claimLower.includes('monate') ||
+              claimLower.includes('jahre') ||
+              claimLower.includes('stunden')
+            ) {
+              addFact('C1', 'chronologischer_beginn', snip, ac.claim, 'c1_zeitpunkt_beginn');
             } else if (claimLower.includes('kälte') || claimLower.includes('wind') || claimLower.includes('nässe') || claimLower.includes('zugluft') || claimLower.includes('spaziergang')) {
               addFact('C4', 'phaenomenologie_einwirkung', snip, ac.claim, 'c4_einwirkung');
             } else if (claimLower.includes('glaube') || claimLower.includes('vermute') || claimLower.includes('unsicher')) {
@@ -304,18 +322,8 @@ export function seedCausaStateFromOrganonEndpruefer(
   // NICHT_WEITER_KLÄRBAR ist nur zulässig, wenn alle Fakten in dieser Dimension NICHT_ERINNERLICH sind.
   for (const fact of facts) {
     const dim = dimensions[fact.dimensionId];
-    if (dim) {
-      if (fact.epistemicStatus === 'NICHT_ERINNERLICH') {
-        const dimFacts = facts.filter(f => f.dimensionId === fact.dimensionId);
-        const allNotRemembered = dimFacts.length > 0 && dimFacts.every(f => f.epistemicStatus === 'NICHT_ERINNERLICH');
-        if (allNotRemembered) {
-          dim.completion = 'NICHT_WEITER_KLÄRBAR';
-        } else {
-          dim.completion = 'TEILWEISE_ERHOBEN';
-        }
-      } else if (dim.completion === 'UNERHOBEN') {
-        dim.completion = 'TEILWEISE_ERHOBEN';
-      }
+    if (dim && dim.completion === 'UNERHOBEN') {
+      dim.completion = 'TEILWEISE_ERHOBEN';
     }
   }
 

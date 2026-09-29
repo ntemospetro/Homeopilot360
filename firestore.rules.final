@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Vertrauenswürdige Admin-Prüfung:
+    // 1. Zwingend über vertrauenswürdig verwaltete Admin-Zuordnung in /admins/{adminUid}
+    // 2. Bootstrap-E-Mail NUR mit kryptografisch verifizierter E-Mail-Adresse (email_verified == true)
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (
+          'email' in request.auth.token &&
+          'email_verified' in request.auth.token &&
+          request.auth.token.email == 'ntemos.petros@gmail.com' &&
+          request.auth.token.email_verified == true
+        )
+      );
+    }
+
+    // Default deny für alle nicht explizit freigegebenen Pfade
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Admin-Zuordnungen: Rein serverseitig verwaltet; Selbstvergabe durch Clients strikt verboten!
+    match /admins/{adminUid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Pakete & Tarife: Öffentlich lesbar, Schreibzugriff strikt auf Admins beschränkt
+    match /packages/{packageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Öffentliches Therapeuten-Verzeichnis (falls benötigt: getrennt von privaten Daten)
+    match /public_therapists/{therapistId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (request.auth.uid == therapistId || isAdmin());
+    }
+
+    // Private Therapeutenprofile:
+    // Strikter Schutz privater Daten (Telefon, Adresse, Bank-/Tarifdaten, E-Mail).
+    // Lesbar AUSSCHLIESSLICH durch den jeweiligen Inhaber oder berechtigte Administratoren.
+    match /therapists/{therapistId} {
+      // 1. Lesen: Nur der Inhaber selbst oder ein autorisierter Admin
+      allow read: if isSignedIn() && (
+        request.auth.uid == therapistId || 
+        ('authUid' in resource.data && resource.data.authUid == request.auth.uid) ||
+        isAdmin()
+      );
+
+      // 2. Anlegen: Nur authentifizierte Benutzer für ihr eigenes Profil (oder Admin)
+      allow create: if isSignedIn() && (
+        request.auth.uid == therapistId || 
+        (request.resource.data.authUid == request.auth.uid) ||
+        isAdmin()
+      );
+
+      // 3. Ändern: Getrennt von Löschen! Prüft request.resource.data gegen Entführung der authUid
+      allow update: if isSignedIn() && (
+        request.auth.uid == therapistId || 
+        ('authUid' in resource.data && resource.data.authUid == request.auth.uid) ||
+        isAdmin()
+      ) && (
+        !('authUid' in request.resource.data) ||
+        ('authUid' in resource.data && request.resource.data.authUid == resource.data.authUid) ||
+        request.resource.data.authUid == request.auth.uid ||
+        isAdmin()
+      );
+
+      // 4. Löschen: Getrennt von Update! Greift NIEMALS auf request.resource zu (verhindert NullPointerException)
+      allow delete: if isSignedIn() && (
+        request.auth.uid == therapistId || 
+        ('authUid' in resource.data && resource.data.authUid == request.auth.uid) ||
+        isAdmin()
+      );
+    }
+
+    // Hilfsfunktion: Bestimmt den Fall-Eigentümer robust gegen fehlende/widersprüchliche Felder
+    function isCaseOwner(data) {
+      // Wenn ownerUid existiert und befüllt ist, ist sie die ALLEINIGE Autorität:
+      return ('ownerUid' in data && data.ownerUid != null && data.ownerUid != '')
+        ? data.ownerUid == request.auth.uid
+        // Fallback nur für Altfälle (Legacy), die vor Einführung von ownerUid nur therapistId hatten:
+        : ('therapistId' in data && data.therapistId != null && data.therapistId != '' && data.therapistId == request.auth.uid);
+    }
+
+    // Patient cases - Strikte Mandantenisolation & Schutz vor Besitzmanipulation
+    match /cases/{caseId} {
+      // 1. Lesen: Nur der autorisierte Eigentümer (oder Admin)
+      allow read: if isSignedIn() && (isCaseOwner(resource.data) || isAdmin());
+
+      // 2. Anlegen: Muss dem angemeldeten Benutzer als ownerUid zugeordnet sein
+      allow create: if isSignedIn() && (
+        request.resource.data.ownerUid == request.auth.uid ||
+        (request.resource.data.therapistId == request.auth.uid && (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid)) ||
+        isAdmin()
+      );
+
+      // 3. Bearbeiten: Nur Eigentümer; Besitzwechsel (ownerUid / therapistId) strikt verboten!
+      allow update: if isSignedIn() && (
+        (isCaseOwner(resource.data) || isAdmin()) &&
+        // ownerUid darf niemals auf einen anderen Benutzer umgeschrieben werden
+        (!('ownerUid' in resource.data) || request.resource.data.ownerUid == resource.data.ownerUid) &&
+        (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid || isAdmin()) &&
+        // therapistId darf nicht auf einen fremden Therapeuten umgeschrieben werden
+        (!('therapistId' in resource.data) || request.resource.data.therapistId == resource.data.therapistId || isAdmin())
+      );
+
+      // 4. Löschen: Nur Eigentümer oder Admin
+      allow delete: if isSignedIn() && (isCaseOwner(resource.data) || isAdmin());
+    }
+
+    // Therapist Stripe & token balances - Vertrauenswürdiger Server-Ablauf
+    match /therapist_balances/{therapistId} {
+      // Lesen: Nur der berechtigte Therapeut (oder Admin)
+      allow read: if isSignedIn() && (
+        request.auth.uid == therapistId ||
+        ('authUid' in resource.data && resource.data.authUid == request.auth.uid) ||
+        isAdmin()
+      );
+
+      // Schreiben: Clientseitiges Schreiben ist komplett verboten!
+      // Guthabenaufladungen und Salden werden ausschließlich durch den vertrauenswürdigen Server (Stripe Webhook) verwaltet.
+      allow write: if false;
+    }
+
+    // Billing payment records - Revisionssicher & strikt isoliert
+    match /billing_payments/{paymentId} {
+      // 1. Lesen: Nur der eigene Therapeut darf seine Belege einsehen (oder Admin)
+      allow read: if isSignedIn() && (resource.data.therapistId == request.auth.uid || isAdmin());
+
+      // 2. Anlegen: Client darf allenfalls einen initialen 'pending'-Beleg für sich selbst anlegen
+      allow create: if isSignedIn() && (
+        request.resource.data.therapistId == request.auth.uid &&
+        request.resource.data.status in ['pending', 'initiated']
+      );
+
+      // 3. Ändern: Client-Updates strikt verboten!
+      // Statusänderungen ('succeeded'), Betragsänderungen und Besitzübernahmen
+      // dürfen AUSSCHLIESSLICH über den sicheren Stripe-Webhook / Server erfolgen.
+      allow update: if false;
+
+      // 4. Löschen: Revisionssicherer Audit-Trail, Finanzbelege dürfen clientseitig nicht gelöscht werden
+      allow delete: if false;
+    }
+  }
+}

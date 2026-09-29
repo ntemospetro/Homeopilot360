@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation, useLanguage } from '../i18n/LanguageContext';
 import {
   analyzeOrganonText,
@@ -269,6 +269,47 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
   const [showCorrectionReviewArea, setShowCorrectionReviewArea] = useState<boolean>(false);
   const [correctedNarrationDraft, setCorrectedNarrationDraft] = useState<string>('');
   const [draftOriginalNarration, setDraftOriginalNarration] = useState<string>('');
+
+  // Structured Live Steps computation for the right-hand panel
+  const displayLiveSteps = useMemo<LiveProcessStep[]>(() => {
+    if (isProcessing && liveSteps.length > 0) {
+      return liveSteps;
+    }
+    const shouldCrossCheck = enableGptCompare || enableHahnemannCrossCheck;
+    if ((compareResult || analysisResult) && !isProcessing) {
+      const steps: LiveProcessStep[] = [
+        { id: 'patient_text', labelKey: 'organonStepPatientText', status: 'done' },
+        { id: 'text_decomposition', labelKey: 'organonStepTextDecomposition', status: 'done' },
+        { id: 'category_mapping', labelKey: 'organonStepCategoryMapping', status: 'done' },
+      ];
+      if (shouldCrossCheck) {
+        steps.push({ id: 'crosscheck', labelKey: 'organonStepCrossCheck', status: 'done' });
+      }
+      if (enableRatio) {
+        steps.push({ id: 'arbitration', labelKey: 'organonStepArbitration', status: 'done' });
+      }
+      steps.push({ id: 'evidence_check', labelKey: 'organonStepEvidenceCheck', status: 'done' });
+      steps.push({ id: 'consolidation', labelKey: 'organonStepConsolidation', status: 'done' });
+      steps.push({ id: 'final_check', labelKey: 'organonStepFinalCheck', status: 'done' });
+      return steps;
+    }
+    const hasText = narrationInput.trim().length > 0;
+    const steps: LiveProcessStep[] = [
+      { id: 'patient_text', labelKey: 'organonStepPatientText', status: hasText ? 'done' : 'pending' },
+      { id: 'text_decomposition', labelKey: 'organonStepTextDecomposition', status: 'pending' },
+      { id: 'category_mapping', labelKey: 'organonStepCategoryMapping', status: 'pending' },
+    ];
+    if (shouldCrossCheck) {
+      steps.push({ id: 'crosscheck', labelKey: 'organonStepCrossCheck', status: 'pending' });
+    }
+    if (enableRatio) {
+      steps.push({ id: 'arbitration', labelKey: 'organonStepArbitration', status: 'pending' });
+    }
+    steps.push({ id: 'evidence_check', labelKey: 'organonStepEvidenceCheck', status: 'pending' });
+    steps.push({ id: 'consolidation', labelKey: 'organonStepConsolidation', status: 'pending' });
+    steps.push({ id: 'final_check', labelKey: 'organonStepFinalCheck', status: 'pending' });
+    return steps;
+  }, [isProcessing, liveSteps, compareResult, analysisResult, narrationInput, enableGptCompare, enableHahnemannCrossCheck, enableRatio]);
 
   // Voice recording state & refs
   const [isRecording, setIsRecording] = useState(false);
@@ -1794,62 +1835,6 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex flex-col font-sans antialiased p-4 sm:p-6 lg:p-8 max-w-[1800px] w-full mx-auto gap-6">
-      {/* Patient Connected Banner */}
-      {patientCase && (
-        <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-700 text-white font-bold flex items-center justify-center shrink-0">
-              {patientCase.patientName[0]}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-teal-950 text-sm">{patientCase.patientName}</span>
-                {patientCase.patientAge && <span className="text-xs text-teal-800">• {patientCase.patientAge} J.</span>}
-                {patientCase.patientGender && <span className="text-xs text-teal-800">• {patientCase.patientGender}</span>}
-              </div>
-              <p className="text-xs text-teal-800/80 mt-0.5">
-                {t('organonActivePatientNotice' as any) || 'Aktiver Patient in der Organon-Analyse (Änderungen werden automatisch gespeichert)'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {onBack && (
-              <button
-                type="button"
-                onClick={onBack}
-                className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-teal-800 border border-teal-200 text-xs font-semibold shadow-2xs cursor-pointer flex items-center gap-1.5"
-              >
-                <span>{t('backToPatientRecord' as any) || 'Zurück zur Akte'}</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                if (onSavePatientCase) {
-                  onSavePatientCase({
-                    ...patientCase,
-                    hauptbeschwerde: narrationInput,
-                    organonAnalysis: {
-                      ...patientCase?.organonAnalysis,
-                      analysisResult,
-                      compareResult,
-                      arbitratorResult,
-                      endprueferResult,
-                      stage2Records,
-                      updatedAt: new Date().toISOString()
-                    }
-                  });
-                }
-              }}
-              className="px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-2xs cursor-pointer flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>{t('saveChanges') || 'Speichern'}</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Top Header Card (Uniform Akutanalyse / Falldokumentation Design) */}
       <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -1858,25 +1843,24 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
               <Stethoscope className="w-6 h-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl font-bold text-slate-900 font-serif">
-                  {t('organonDecompositionTitle')}
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80 shadow-2xs">
+              <h1 className="text-xl font-bold text-slate-900 font-serif tracking-tight">
+                {t('organonDecompositionTitle')}
+              </h1>
+              <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 flex-wrap">
+                <span className="font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded text-[11px] border border-teal-200/60">
                   {t('organonTestModeBadge')}
                 </span>
+                <span aria-hidden="true" className="text-slate-300">·</span>
+                <span>{t('organonClinicalAnalysisSub')}</span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {t('organonClinicalAnalysisSub')}
-              </p>
             </div>
           </div>
         </div>
 
         {/* Structured 3-Column Meta Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 text-xs">
-          <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
+          <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/60 flex items-center gap-3 hover:bg-slate-50 transition-colors">
+            <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
               <Mic className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -1884,8 +1868,8 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
               <span className="font-semibold text-slate-800 text-xs truncate block">{t('organonVoiceDictationSub')}</span>
             </div>
           </div>
-          <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
+          <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/60 flex items-center gap-3 hover:bg-slate-50 transition-colors">
+            <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
               <Stethoscope className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -1893,8 +1877,8 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
               <span className="font-semibold text-slate-800 text-xs truncate block">{t('organonHahnemannRefs')}</span>
             </div>
           </div>
-          <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
+          <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/60 flex items-center gap-3 hover:bg-slate-50 transition-colors">
+            <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/80">
               <Sparkles className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -1934,14 +1918,14 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
               <button
                 type="button"
                 onClick={() => { setActiveTab('gemini'); setIsResultsModalOpen(true); }}
-                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-teal-300 rounded-xl text-xs font-semibold border border-teal-500/30 transition-all cursor-pointer"
+                className="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-teal-300 rounded-xl text-xs font-semibold border border-teal-500/30 transition-all cursor-pointer"
               >
                 {t('organonGeniusLabel')}
               </button>
               <button
                 type="button"
                 onClick={() => { setActiveTab('openai'); setIsResultsModalOpen(true); }}
-                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-indigo-300 rounded-xl text-xs font-semibold border border-indigo-500/30 transition-all cursor-pointer"
+                className="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-indigo-300 rounded-xl text-xs font-semibold border border-indigo-500/30 transition-all cursor-pointer"
               >
                 {t('organonOptimusLabel')}
               </button>
@@ -1949,7 +1933,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                 <button
                   type="button"
                   onClick={() => { setActiveTab('arbitrator'); setIsResultsModalOpen(true); }}
-                  className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-purple-300 rounded-xl text-xs font-semibold border border-purple-500/30 transition-all cursor-pointer"
+                  className="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-purple-300 rounded-xl text-xs font-semibold border border-purple-500/30 transition-all cursor-pointer"
                 >
                   {t('organonStrictArbiterLabel')}
                 </button>
@@ -1957,7 +1941,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
               <button
                 type="button"
                 onClick={() => { setActiveTab('endpruefer'); setIsResultsModalOpen(true); }}
-                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-emerald-300 rounded-xl text-xs font-semibold border border-emerald-500/30 transition-all cursor-pointer"
+                className="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-emerald-300 rounded-xl text-xs font-semibold border border-emerald-500/30 transition-all cursor-pointer"
               >
                 {t('organonEndprueferTabLabel')}
               </button>
@@ -1973,11 +1957,15 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
           </div>
         )}
 
-        {/* Center Input Form (Patientenschilderung) */}
-        <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col">
+        {/* Main 2-Column Grid: Left = Narration & Controls, Right = Live Process Tracker (Strukturierte Fallanalyse nach Hahnemann) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Center Input Form (Patientenschilderung) */}
+          <div className="lg:col-span-8 flex flex-col gap-6 w-full">
+            <div className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <label htmlFor="patient-narration-input" className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
-              {t('organonChiefComplaintHeader')}
+            <label htmlFor="patient-narration-input" className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="w-4 h-4 text-teal-700" />
+              <span>{t('organonChiefComplaintHeader')}</span>
             </label>
 
             {narrationInput && (
@@ -2002,7 +1990,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                   value={narrationInput}
                   onChange={(e) => setNarrationInput(e.target.value)}
                   placeholder={t('organonExamplePlaceholder')}
-                  className="w-full h-full min-h-[180px] p-4 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all resize-y shadow-2xs"
+                  className="w-full h-full min-h-[190px] p-4 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all resize-y shadow-2xs leading-relaxed"
                 />
               </div>
 
@@ -2011,10 +1999,10 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                 type="button"
                 onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
                 disabled={!isSpeechSupported}
-                className={`w-full sm:w-32 md:w-36 shrink-0 rounded-xl text-white flex flex-col items-center justify-center gap-2 p-3 transition-all shadow-xs cursor-pointer min-h-[180px] border ${
+                className={`w-full sm:w-36 md:w-40 shrink-0 rounded-xl text-white flex flex-col items-center justify-center gap-2.5 p-3.5 transition-all shadow-xs cursor-pointer min-h-[190px] border ${
                   isRecording
-                    ? 'bg-rose-600 hover:bg-rose-700 animate-pulse border-rose-700'
-                    : 'bg-[#00897b] hover:bg-[#00796b] border-teal-800/20'
+                    ? 'bg-rose-600 hover:bg-rose-700 animate-pulse border-rose-700 shadow-rose-200'
+                    : 'bg-[#00897b] hover:bg-[#00796b] border-teal-800/20 shadow-teal-100'
                 } ${!isSpeechSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white shadow-inner">
@@ -2062,7 +2050,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                 type="button"
                 onClick={handleRestoreOriginal}
                 disabled={!originalNarrationInput}
-                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 disabled:opacity-40 text-slate-800 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>{t('organonRestoreOriginal')}</span>
@@ -2071,7 +2059,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                 type="button"
                 onClick={handleCorrectSpelling}
                 disabled={!narrationInput.trim() || isCorrectingSpelling}
-                className="py-3 px-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="py-2.5 px-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isCorrectingSpelling ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -2122,11 +2110,13 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-slate-100 gap-4">
-              <div className="flex flex-col gap-2.5">
-                {/* Switch 1: GPT-4o Pro Vergleich (Zweitmeinung) */}
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
+            {/* Control Panel: Settings & Action Buttons */}
+            <div className="flex flex-col pt-4 border-t border-slate-100 gap-4">
+              {/* Configuration Switches (Optimus, Hahnemann-Gegenprüfung, Ratio) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Switch 1: Optimus Vergleich (Zweitmeinung) */}
+                <div className="p-3 bg-slate-50/70 border border-slate-200/70 rounded-xl flex items-start gap-3 hover:bg-slate-50 transition-colors">
+                  <label className="relative inline-flex items-center cursor-pointer mt-0.5 shrink-0">
                     <input
                       type="checkbox"
                       checked={enableGptCompare}
@@ -2135,17 +2125,17 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     />
                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
                   </label>
-                  <div className="text-left">
-                    <span className="text-xs font-semibold text-slate-700 block">{t('organonGptCompareLabel')}</span>
-                    <span className="text-[10px] text-slate-400 block">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-slate-800 block truncate">{t('organonGptCompareLabel')}</span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">
                       {enableGptCompare ? t('organonGptActive') : t('organonGptInactive')}
                     </span>
                   </div>
                 </div>
 
-                {/* Switch 2: Hahnemann-Gegenprüfung (direkt darunter, standardmäßig AUS) */}
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
+                {/* Switch 2: Hahnemann-Gegenprüfung */}
+                <div className="p-3 bg-slate-50/70 border border-slate-200/70 rounded-xl flex items-start gap-3 hover:bg-slate-50 transition-colors">
+                  <label className="relative inline-flex items-center cursor-pointer mt-0.5 shrink-0">
                     <input
                       type="checkbox"
                       checked={enableHahnemannCrossCheck}
@@ -2154,17 +2144,17 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     />
                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
                   </label>
-                  <div className="text-left">
-                    <span className="text-xs font-semibold text-slate-700 block">{t('organonHahnemannCrossCheckLabel')}</span>
-                    <span className="text-[10px] text-slate-400 block">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-slate-800 block truncate">{t('organonHahnemannCrossCheckLabel')}</span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">
                       {enableHahnemannCrossCheck ? t('organonHahnemannCrossCheckActive') : t('organonHahnemannCrossCheckInactive')}
                     </span>
                   </div>
                 </div>
 
-                {/* Switch 3: Ratio (Belegprüfer) (standardmäßig EIN) */}
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
+                {/* Switch 3: Ratio (Belegprüfer) */}
+                <div className="p-3 bg-slate-50/70 border border-slate-200/70 rounded-xl flex items-start gap-3 hover:bg-slate-50 transition-colors">
+                  <label className="relative inline-flex items-center cursor-pointer mt-0.5 shrink-0">
                     <input
                       type="checkbox"
                       checked={enableRatio}
@@ -2173,22 +2163,24 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                     />
                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
                   </label>
-                  <div className="text-left">
-                    <span className="text-xs font-semibold text-slate-700 block">{t('organonRatioToggleLabel')}</span>
-                    <span className="text-[10px] text-slate-400 block">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-slate-800 block truncate">{t('organonRatioToggleLabel')}</span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">
                       {enableRatio ? t('organonRatioActive') : t('organonRatioInactive')}
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-3 ml-auto">
+
+              {/* Action Buttons - Moved under the switches */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => handleAnalyze(undefined, false)}
                   disabled={!narrationInput.trim() || isProcessing}
-                  className="px-5 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-3.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer w-full"
                 >
-                  {isProcessing && !isCausaTriggered ? (
+                  {isProcessing && !isCausaTriggered && !isStage2WorkflowTriggered ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
                     <Send className="w-4 h-4" />
@@ -2201,7 +2193,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                   type="button"
                   onClick={() => handleAnalyze(undefined, false, false, true)}
                   disabled={!narrationInput.trim() || isProcessing}
-                  className="px-5 py-3 bg-gradient-to-r from-emerald-700 via-teal-700 to-indigo-800 hover:from-emerald-800 hover:via-teal-800 hover:to-indigo-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer border border-emerald-500/30"
+                  className="px-5 py-3.5 bg-gradient-to-r from-emerald-700 via-teal-700 to-indigo-800 hover:from-emerald-800 hover:via-teal-800 hover:to-indigo-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/30 w-full"
                 >
                   {isProcessing && isStage2WorkflowTriggered ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -2216,7 +2208,7 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
                   type="button"
                   onClick={() => setIsFastQuestionnaireModalOpen(true)}
                   disabled={!narrationInput.trim() || isProcessing}
-                  className="px-5 py-3 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-700 hover:via-orange-700 hover:to-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer border border-amber-400/40"
+                  className="px-5 py-3.5 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-700 hover:via-orange-700 hover:to-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer border border-amber-400/40 w-full"
                 >
                   <Zap className="w-4 h-4 text-amber-200" />
                   <span>{t('btnOrganonFast')}</span>
@@ -2224,12 +2216,19 @@ export const OrganonView: React.FC<OrganonViewProps> = ({
               </div>
             </div>
 
-            {/* Dynamische Prozessliste während der Analyse */}
-            {isProcessing && liveSteps.length > 0 && (
-              <div className="w-full pt-2">
-                <OrganonLiveProgress steps={liveSteps} />
-              </div>
-            )}
+            </div>
+          </div>
+        </div>
+
+          {/* Right Column: Strukturierte Fallanalyse nach Hahnemann */}
+          <div className="lg:col-span-4 w-full">
+            <div className="sticky top-6">
+              <OrganonLiveProgress 
+                steps={displayLiveSteps} 
+                isProcessing={isProcessing}
+                className="w-full bg-white rounded-2xl border border-slate-200/80 shadow-xs"
+              />
+            </div>
           </div>
         </div>
 

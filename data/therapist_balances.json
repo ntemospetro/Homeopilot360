@@ -28,5 +28,65 @@
     "autoReloadAmount": 50,
     "lastDepositAt": "2026-09-02T08:15:00Z",
     "updatedAt": "2026-09-24T15:51:53.304Z"
+  },
+  {
+    "therapistId": "th_isolation_test_user_42",
+    "balanceEur": 55,
+    "totalDepositedEur": 55,
+    "lowBalanceThreshold": 5,
+    "autoReloadEnabled": false,
+    "autoReloadAmount": 20,
+    "lastDepositAt": "2026-09-29T05:19:01.154Z",
+    "updatedAt": "2026-09-29T05:19:01.154Z"
+  },
+  {
+    "therapistId": "th_automated_test_therapist_99",
+    "balanceEur": 170,
+    "totalDepositedEur": 170,
+    "lowBalanceThreshold": 5,
+    "autoReloadEnabled": false,
+    "autoReloadAmount": 20,
+    "lastDepositAt": "2026-09-29T05:57:21.033Z",
+    "updatedAt": "2026-09-29T05:57:21.033Z"
+  },
+  {
+    "therapistId": "th_audit_server_flow_1790661307048",
+    "balanceEur": 120,
+    "totalDepositedEur": 120,
+    "lowBalanceThreshold": 5,
+    "autoReloadEnabled": false,
+    "autoReloadAmount": 20,
+    "lastDepositAt": "2026-09-29T05:55:07.217Z",
+    "updatedAt": "2026-09-29T05:55:07.217Z"
+  },
+  {
+    "therapistId": "th_audit_server_flow_1790661333905",
+    "balanceEur": 70,
+    "totalDepositedEur": 70,
+    "lowBalanceThreshold": 5,
+    "autoReloadEnabled": false,
+    "autoReloadAmount": 20,
+    "lastDepositAt": "2026-09-29T05:55:34.053Z",
+    "updatedAt": "2026-09-29T05:55:34.053Z"
+  },
+  {
+    "therapistId": "th_audit_server_flow_1790661402184",
+    "balanceEur": 70,
+    "totalDepositedEur": 70,
+    "lowBalanceThreshold": 5,
+    "autoReloadEnabled": false,
+    "autoReloadAmount": 20,
+    "lastDepositAt": "2026-09-29T05:56:42.348Z",
+    "updatedAt": "2026-09-29T05:56:42.348Z"
+  },
+  {
+    "therapistId": "th_audit_server_flow_1790661440377",
+    "balanceEur": 70,
+    "totalDepositedEur": 70,
+    "lowBalanceThreshold": 5,
+    "autoReloadEnabled": false,
+    "autoReloadAmount": 20,
+    "lastDepositAt": "2026-09-29T05:57:20.508Z",
+    "updatedAt": "2026-09-29T05:57:20.508Z"
   }
 ]

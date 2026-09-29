@@ -508,9 +508,9 @@ export const CausaVertiefungModal: React.FC<CausaVertiefungModalProps> = ({
 
         {branchKey === 'A' && branchState.turnDurations?.geminiMs != null && (
           <div className="text-[10px] text-slate-400 font-mono bg-slate-950/60 p-2 rounded-lg border border-slate-800 flex items-center justify-between flex-wrap gap-1">
-            <span>Gemini: {((branchState.turnDurations.geminiMs || 0) / 1000).toFixed(1)}s</span>
+            <span>Genius: {((branchState.turnDurations.geminiMs || 0) / 1000).toFixed(1)}s</span>
             <span>•</span>
-            <span>GPT: {((branchState.turnDurations.gptMs || 0) / 1000).toFixed(1)}s</span>
+            <span>Optimus: {((branchState.turnDurations.gptMs || 0) / 1000).toFixed(1)}s</span>
             <span>•</span>
             <span>Arb: {((branchState.turnDurations.arbitratorMs || 0) / 1000).toFixed(1)}s</span>
           </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
-import { Check, RefreshCw } from 'lucide-react';
+import { Check, RefreshCw, Activity } from 'lucide-react';
 
 export type LiveProcessStepStatus = 'pending' | 'active' | 'done';
 
@@ -17,6 +17,7 @@ interface OrganonLiveProgressProps {
   orientation?: 'vertical' | 'horizontal';
   titleKey?: TranslationKey;
   subTitleKey?: TranslationKey;
+  isProcessing?: boolean;
 }
 
 export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
@@ -24,9 +25,11 @@ export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
   className = '',
   orientation = 'vertical',
   titleKey = 'organonLiveProcessTitle',
-  subTitleKey = 'organonLiveProcessSub'
+  subTitleKey = 'organonLiveProcessSub',
+  isProcessing = false
 }) => {
   const { t } = useTranslation();
+  const allDone = steps.length > 0 && steps.every(s => s.status === 'done');
 
   if (orientation === 'horizontal') {
     return (
@@ -37,7 +40,13 @@ export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
         {/* Compact Header */}
         <div className="flex items-center gap-2.5 pb-2.5 mb-3 border-b border-slate-800">
           <div className="relative w-6 h-6 rounded-full border border-teal-500/30 flex items-center justify-center bg-teal-500/10 shrink-0">
-            <RefreshCw className="w-3.5 h-3.5 text-teal-400 animate-spin" />
+            {isProcessing ? (
+              <RefreshCw className="w-3.5 h-3.5 text-teal-400 animate-spin" />
+            ) : allDone ? (
+              <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" />
+            ) : (
+              <Activity className="w-3.5 h-3.5 text-teal-400" />
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <h4 className="text-xs font-bold text-slate-100 tracking-tight">
@@ -119,18 +128,30 @@ export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
   return (
     <div 
       id="organon-live-progress-container"
-      className={`p-5 rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-lg backdrop-blur-xs transition-all ${className}`}
+      className={`p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs transition-all ${className}`}
     >
       {/* Header with quiet, continuous activity spinner */}
-      <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100 dark:border-slate-800/80">
-        <div className="relative w-8 h-8 rounded-full border border-teal-500/30 flex items-center justify-center bg-teal-500/10 shrink-0">
-          <RefreshCw className="w-4 h-4 text-teal-600 dark:text-teal-400 animate-spin" />
+      <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100">
+        <div className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 ${
+          isProcessing 
+            ? 'border-teal-500/40 bg-teal-50 text-teal-600' 
+            : allDone 
+              ? 'border-emerald-500/40 bg-emerald-50 text-emerald-600' 
+              : 'border-teal-200/60 bg-teal-50/70 text-teal-700'
+        }`}>
+          {isProcessing ? (
+            <RefreshCw className="w-4 h-4 text-teal-600 animate-spin" />
+          ) : allDone ? (
+            <Check className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
+          ) : (
+            <Activity className="w-4 h-4 text-teal-700" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+          <h4 className="text-xs font-bold text-slate-900 tracking-tight">
             {t(titleKey)}
           </h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+          <p className="text-[11px] text-slate-500 truncate mt-0.5">
             {t(subTitleKey)}
           </p>
         </div>
@@ -150,7 +171,7 @@ export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
               {!isLast && (
                 <div 
                   className={`absolute left-[9.5px] top-6 bottom-[-14px] w-0.5 transition-colors ${
-                    isDone ? 'bg-emerald-400/40 dark:bg-emerald-500/30' : 'bg-slate-200 dark:bg-slate-800'
+                    isDone ? 'bg-emerald-400/50' : 'bg-slate-200'
                   }`}
                 />
               )}
@@ -164,7 +185,7 @@ export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
                 {isDone && (
                   <div 
                     id={`step-indicator-${step.id}-done`}
-                    className="w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-500/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs"
+                    className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-500/50 flex items-center justify-center text-emerald-600 shadow-2xs"
                   >
                     <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                   </div>
@@ -182,7 +203,7 @@ export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
                 {isPending && (
                   <div 
                     id={`step-indicator-${step.id}-pending`}
-                    className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-700 bg-transparent flex items-center justify-center"
+                    className="w-5 h-5 rounded-full border-2 border-slate-300 bg-transparent flex items-center justify-center"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-transparent" />
                   </div>
@@ -194,10 +215,10 @@ export const OrganonLiveProgress: React.FC<OrganonLiveProgressProps> = ({
                 <span 
                   className={`text-xs transition-colors block ${
                     isActive 
-                      ? 'font-semibold text-slate-900 dark:text-white' 
+                      ? 'font-semibold text-slate-900' 
                       : isDone 
-                        ? 'font-medium text-slate-700 dark:text-slate-300' 
-                        : 'text-slate-400 dark:text-slate-500 font-normal'
+                        ? 'font-medium text-slate-700' 
+                        : 'text-slate-400 font-normal'
                   }`}
                 >
                   {t(step.labelKey)}

@@ -42,6 +42,7 @@ import { getLocalizedRemedies } from '../data/materiaMedicaDatabase';
 import { getCanonicalKentChapterTranslations } from '../data/canonicalKentChapters';
 import { getCanonicalKentTermTranslation } from '../data/canonicalKentTerms';
 import { performClientKentDrilldown, searchClientKentRubrics } from '../services/repertory/clientKentRepertoryService';
+import { resolveKentRemedyId, getKentRemedyFullName } from '../data/kentRemedyMapping';
 
 interface KentRubricItem {
   id: string;
@@ -272,8 +273,8 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   const { language } = useLanguage();
   const { allRemedies } = useMateriaMedica();
 
-  // Wizard Stage State: 1 = Fallaufnahme, 2 = Repertorisation (Boericke-Analyse), 3 = Ergebnis & Matrix, 4 = Materia Medica
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+  // Wizard Stage State: 1 = Fallaufnahme, 2 = Ergebnis & Matrix, 3 = Materia Medica
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   // Selected Symptoms (Repertory Basket) - start completely empty ready for initial input
   const [selectedSymptoms, setSelectedSymptoms] = useState<SelectedRepertorySymptom[]>([]);
@@ -316,13 +317,9 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   // Selected Remedy for Monograph Modal
   const [monographRemedy, setMonographRemedy] = useState<LocalizedRemedy | null>(null);
 
-  // Result Sub-Tab: 'ergebnis' | 'matrix' | 'vergleich' | 'analyse'
-  const [resultSubTab, setResultSubTab] = useState<'ergebnis' | 'matrix' | 'vergleich' | 'analyse'>('analyse');
+  // Result Sub-Tab: 'matrix' | 'ergebnis' | 'vergleich'
+  const [resultSubTab, setResultSubTab] = useState<'matrix' | 'ergebnis' | 'vergleich'>('matrix');
   const [selectedTopRemedyKey, setSelectedTopRemedyKey] = useState<string>('ledum-palustre');
-
-  const [isAnalysisSettingsOpen, setIsAnalysisSettingsOpen] = useState<boolean>(false);
-  const [isViewDropdownOpen, setIsViewDropdownOpen] = useState<boolean>(false);
-  const [praxisBonusActive, setPraxisBonusActive] = useState<boolean>(true);
 
   // Calculation of Repertorisation across all remedies
   const calculationResults = useMemo(() => {
@@ -355,7 +352,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
             return;
           }
         }
-      } catch (e) {
+      } catch {
         // Fallback to static client data
       }
 
@@ -590,16 +587,11 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
 
     const remedyGrades: Record<string, SymptomWeightGrade> = {};
 
-    if (item.remedies && typeof item.remedies === 'object') {
-      Object.entries(item.remedies).forEach(([k, g]) => {
+    const rawRemedies = item.remedies || item.remedyGrades;
+    if (rawRemedies && typeof rawRemedies === 'object') {
+      Object.entries(rawRemedies).forEach(([k, g]) => {
         const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-        const mappedKey = ALIAS_ID_MAP[cleanKey] || cleanKey;
-        remedyGrades[mappedKey] = Math.min(4, Math.max(1, Number(g))) as SymptomWeightGrade;
-      });
-    } else if (item.remedyGrades) {
-      Object.entries(item.remedyGrades).forEach(([k, g]) => {
-        const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-        const mappedKey = ALIAS_ID_MAP[cleanKey] || cleanKey;
+        const mappedKey = resolveKentRemedyId(k) || ALIAS_ID_MAP[cleanKey] || cleanKey;
         remedyGrades[mappedKey] = Math.min(4, Math.max(1, Number(g))) as SymptomWeightGrade;
       });
     }
@@ -650,33 +642,74 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
   const detailedMateriaMedica = useMemo(() => {
     if (!currentDetailRemedy) return null;
     const key = currentDetailRemedy.remedyKey;
+    const resolvedId = resolveKentRemedyId(key);
     const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const fullName = getKentRemedyFullName(key);
+
     return allRemedies.find(r => 
+      r.id === resolvedId ||
       r.id === key || 
       r.id === cleanKey || 
-      r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase() ||
-      (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey))
+      (fullName && r.latinName.toLowerCase() === fullName.toLowerCase()) ||
+      (currentDetailRemedy.latinName && r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase()) ||
+      (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey || a.toLowerCase() === resolvedId))
     );
   }, [currentDetailRemedy, allRemedies]);
 
   // Find local remedy object for Materia Medica modal
   const openMonographModalForKey = (key: string) => {
+    const resolvedId = resolveKentRemedyId(key);
     const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const fullName = getKentRemedyFullName(key);
+
     let remedyObj = allRemedies.find(r => 
+      r.id === resolvedId ||
       r.id === key || 
       r.id === cleanKey || 
+      (fullName && r.latinName.toLowerCase() === fullName.toLowerCase()) ||
       (currentDetailRemedy && r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase()) ||
-      (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey))
+      (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey || a.toLowerCase() === resolvedId))
     );
+
     if (!remedyObj) {
       const fallbackList = getLocalizedRemedies(language);
       remedyObj = fallbackList.find(r => 
+        r.id === resolvedId ||
         r.id === key || 
         r.id === cleanKey || 
+        (fullName && r.latinName.toLowerCase() === fullName.toLowerCase()) ||
         (currentDetailRemedy && r.latinName.toLowerCase() === currentDetailRemedy.latinName.toLowerCase()) ||
-        (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey))
+        (r.aliases && r.aliases.some(a => a.toLowerCase() === key || a.toLowerCase() === cleanKey || a.toLowerCase() === resolvedId))
       );
     }
+
+    if (!remedyObj) {
+      // Synthesize clean fallback monograph for rare Kent remedy not in standard 702 Boericke list
+      const displayName = fullName || currentDetailRemedy?.latinName || key.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const matchingSymptoms = selectedSymptoms
+        .filter(s => currentDetailRemedy?.rubricHits?.[s.id])
+        .map(s => s.patientNote || s.rubricName);
+
+      remedyObj = {
+        id: resolvedId || cleanKey,
+        latinName: displayName,
+        categoryKey: 'other',
+        commonName: currentDetailRemedy?.commonName || 'Repertorium Homoeopathicum (Dr. J. T. Kent)',
+        category: 'Klassisches Kent-Einzelmittel',
+        origin: 'Repertorium Generale (Dr. J. T. Kent)',
+        essence: `Klassisches Einzelmittel nach dem Kent-Repertorium, indiziert für die im Fall ausgewählten Symptome.`,
+        mainIndications: matchingSymptoms.length > 0 ? matchingSymptoms : ['Repertoriums-Indikation nach Symptomenähnlichkeit'],
+        keynotes: matchingSymptoms,
+        mindEmotional: '',
+        modalitiesBetter: ['Ruhe', 'Frische Luft', 'Wärme'],
+        modalitiesWorse: ['Kälte', 'Bewegung', 'Wetterwechsel'],
+        potenciesAndDosage: 'D6, D12, C30 oder Hochpotenzen je nach Ähnlichkeitsgesetz.',
+        sphereOfAction: [displayName],
+        differentialRemedies: [],
+        searchKeywords: [displayName.toLowerCase(), resolvedId, cleanKey]
+      };
+    }
+
     if (remedyObj) {
       setMonographRemedy(remedyObj);
     }
@@ -1118,9 +1151,9 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
 
   return (
     <div id="boericke-wizard-root" className="w-full space-y-6">
-      {/* 1. TOP PROCESS NAVIGATION BAR (Slim 4-Step Process Flow matching reference image) */}
+      {/* 1. TOP PROCESS NAVIGATION BAR (Slim 3-Step Process Flow) */}
       <div className="bg-white rounded-2xl border border-slate-200/80 px-5 py-3 shadow-xs">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
+        <div className="flex items-center justify-between max-w-3xl mx-auto">
           {/* Step 1: Fallaufnahme */}
           <div className="relative pb-1">
             <button
@@ -1150,15 +1183,15 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
           </div>
 
           {/* Connector 1-2 */}
-          <div className="hidden sm:block flex-1 max-w-[50px] md:max-w-[80px] h-px bg-slate-200 mx-2" />
+          <div className="hidden sm:block flex-1 max-w-[60px] md:max-w-[100px] h-px bg-slate-200 mx-3" />
 
-          {/* Step 2: Repertorisation (Active) */}
+          {/* Step 2: Ergebnis & Matrix */}
           <div className="relative pb-1">
             <button
               type="button"
               onClick={() => {
                 setCurrentStep(2);
-                setResultSubTab('analyse');
+                setResultSubTab('matrix');
               }}
               className="flex items-center gap-2.5 text-left group cursor-pointer transition-all"
             >
@@ -1171,10 +1204,10 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
               </div>
               <div>
                 <div className={`text-xs font-bold leading-tight ${currentStep === 2 ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
-                  {t('repertoryStep4Title' as any) || 'Repertorisation'}
+                  {t('repertoryStep5Title' as any) || 'Ergebnis & Matrix'}
                 </div>
                 <div className="text-[10px] sm:text-[11px] text-slate-400">
-                  {t('repertoryStep2Subtitle')}
+                  {t('repertoryStep3Subtitle')}
                 </div>
               </div>
             </button>
@@ -1184,69 +1217,35 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
           </div>
 
           {/* Connector 2-3 */}
-          <div className="hidden sm:block flex-1 max-w-[50px] md:max-w-[80px] h-px bg-slate-200 mx-2" />
+          <div className="hidden sm:block flex-1 max-w-[60px] md:max-w-[100px] h-px bg-slate-200 mx-3" />
 
-          {/* Step 3: Ergebnis & Matrix */}
+          {/* Step 3: Top-Arznei im Detail */}
           <div className="relative pb-1">
             <button
               type="button"
               onClick={() => {
-                setCurrentStep(3);
-                setResultSubTab('matrix');
+                setCurrentStep(2);
+                setResultSubTab('vergleich');
               }}
               className="flex items-center gap-2.5 text-left group cursor-pointer transition-all"
             >
               <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
-                currentStep === 3
+                currentStep === 2 && resultSubTab === 'vergleich'
                   ? 'bg-teal-800 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
               }`}>
                 3
               </div>
               <div>
-                <div className={`text-xs font-bold leading-tight ${currentStep === 3 ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
-                  {t('repertoryStep5Title' as any) || 'Ergebnis & Matrix'}
-                </div>
-                <div className="text-[10px] sm:text-[11px] text-slate-400">
-                  {t('repertoryStep3Subtitle')}
-                </div>
-              </div>
-            </button>
-            {currentStep === 3 && (
-              <div className="absolute -bottom-3 left-0 right-0 h-0.5 bg-teal-800 rounded-full" />
-            )}
-          </div>
-
-          {/* Connector 3-4 */}
-          <div className="hidden sm:block flex-1 max-w-[50px] md:max-w-[80px] h-px bg-slate-200 mx-2" />
-
-          {/* Step 4: Materia Medica */}
-          <div className="relative pb-1">
-            <button
-              type="button"
-              onClick={() => {
-                setCurrentStep(4);
-                setResultSubTab('vergleich');
-              }}
-              className="flex items-center gap-2.5 text-left group cursor-pointer transition-all"
-            >
-              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
-                currentStep === 4
-                  ? 'bg-teal-800 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
-              }`}>
-                4
-              </div>
-              <div>
-                <div className={`text-xs font-bold leading-tight ${currentStep === 4 ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
-                  {t('repertoryStep6Title' as any) || 'Materia Medica'}
+                <div className={`text-xs font-bold leading-tight ${currentStep === 2 && resultSubTab === 'vergleich' ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
+                  {t('repertoryTabMateriaMedicaDetail' as any) || 'Top-Arznei im Detail'}
                 </div>
                 <div className="text-[10px] sm:text-[11px] text-slate-400">
                   {t('repertoryStep4Subtitle')}
                 </div>
               </div>
             </button>
-            {currentStep === 4 && (
+            {currentStep === 2 && resultSubTab === 'vergleich' && (
               <div className="absolute -bottom-3 left-0 right-0 h-0.5 bg-teal-800 rounded-full" />
             )}
           </div>
@@ -1864,7 +1863,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                   disabled={selectedSymptoms.length === 0}
                   onClick={() => {
                     setCurrentStep(2);
-                    setResultSubTab('analyse');
+                    setResultSubTab('matrix');
                   }}
                   className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-all ${
                     selectedSymptoms.length > 0
@@ -1882,304 +1881,14 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
       )}
 
       {/* ========================================================================= */}
-      {/* STUFE 2: REPERTORISATION & BOERICKE-PUNKTE ANALYSE (Matching Reference Image) */}
+      {/* STUFE 2: REPERTORISATIONSERGEBNIS, MATRIX & MATERIA MEDICA */}
       {/* ========================================================================= */}
       {currentStep === 2 && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4 animate-in fade-in duration-200">
-          {/* 1. Header with icon, title, subtitle & action buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-100 text-teal-800 flex items-center justify-center shadow-2xs shrink-0">
-                <Sliders className="w-4 h-4 text-teal-700" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-slate-900 font-serif leading-tight">
-                  {t('repertoryBoerickeAnalysisTitle')}
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {t('repertoryBoerickeAnalysisSubtitle')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 relative">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsAnalysisSettingsOpen(!isAnalysisSettingsOpen)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                >
-                  <Sliders className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{t('repertoryAnalysisSettings')}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                </button>
-
-                {isAnalysisSettingsOpen && (
-                  <div className="absolute right-0 top-9 z-30 w-64 bg-white rounded-xl shadow-lg border border-slate-200 p-3 text-xs animate-in fade-in zoom-in-95 duration-100 space-y-2">
-                    <div className="font-bold text-slate-800 border-b border-slate-100 pb-1.5">
-                      {t('repertoryAnalysisSettings')}
-                    </div>
-                    <div className="flex items-center justify-between py-1">
-                      <span className="text-slate-600">{t('repertoryBonusPolychrests')}</span>
-                      <input
-                        type="checkbox"
-                        checked={praxisBonusActive}
-                        onChange={(e) => setPraxisBonusActive(e.target.checked)}
-                        className="rounded border-slate-300 text-teal-700 focus:ring-teal-600 cursor-pointer"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAnalysisSettingsOpen(false);
-                        setCurrentStep(3);
-                        setResultSubTab('matrix');
-                      }}
-                      className="w-full text-left py-1 text-slate-600 hover:text-teal-700 font-medium cursor-pointer"
-                    >
-                      → {t('repertoryStep5Title')}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setCurrentStep(1)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                <span>{t('repertoryEditSymptoms')}</span>
-              </button>
-            </div>
-          </div>
-
-
-          {/* 4. Table Header Section */}
-          <div className="flex items-center justify-between pt-1">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
-                <span>{t('repertoryAnalysisResultsTitle')}</span>
-                <span className="text-slate-400 font-normal text-xs">{t('repertorySortByPoints')}</span>
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {t('repertoryBasedOnSymptoms', { count: selectedSymptoms.length })}
-              </p>
-            </div>
-
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-slate-500" />
-                <span>{t('repertoryViewToggle')}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-
-              {isViewDropdownOpen && (
-                <div className="absolute right-0 top-9 z-30 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCurrentStep(2);
-                      setResultSubTab('analyse');
-                      setIsViewDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left font-semibold text-teal-800 hover:bg-slate-50 cursor-pointer"
-                  >
-                    • {t('repertoryViewBoerickePoints')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCurrentStep(3);
-                      setResultSubTab('matrix');
-                      setIsViewDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 cursor-pointer"
-                  >
-                    • {t('repertoryStep5Title')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCurrentStep(4);
-                      setResultSubTab('vergleich');
-                      setIsViewDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-slate-700 hover:bg-slate-50 cursor-pointer"
-                  >
-                    • {t('repertoryStep6Title')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 5. Slim, elegant Table matching reference image */}
-          <div className="overflow-x-auto border border-slate-200/70 rounded-xl">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/70">
-                <tr className="border-b border-slate-200/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px] select-none">
-                  <th className="py-2.5 px-3 w-8">#</th>
-                  <th className="py-2.5 px-3">Arzneimittel</th>
-                  <th className="py-2.5 px-3">{t('repertoryColCoreSymptoms')}</th>
-                  <th className="py-2.5 px-3 text-center">{t('repertoryColPoints')}</th>
-                  <th className="py-2.5 px-3 text-center">{t('repertoryColCoverage')}</th>
-                  <th className="py-2.5 px-3 text-right">{t('repertoryColAction')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {calculationResults.slice(0, 25).map((res, idx) => {
-                  const coveredHits = selectedSymptoms
-                    .filter(s => Boolean(res.rubricHits[s.id]))
-                    .map(s => ({
-                      id: s.id,
-                      label: s.patientNote || s.rubricName,
-                      grade: res.rubricHits[s.id]?.grade || 1
-                    }));
-
-                  const displayHits = coveredHits.slice(0, 2);
-                  const remainderCount = coveredHits.length - displayHits.length;
-
-                  return (
-                    <tr
-                      key={res.remedyKey}
-                      onClick={() => {
-                        setSelectedTopRemedyKey(res.remedyKey);
-                        setCurrentStep(4);
-                        setResultSubTab('vergleich');
-                      }}
-                      className={`hover:bg-teal-50/20 transition-colors cursor-pointer group ${
-                        selectedTopRemedyKey === res.remedyKey ? 'bg-teal-50/30' : ''
-                      }`}
-                    >
-                      <td className="py-2.5 px-3">
-                        <span className="text-slate-400 font-medium text-xs">
-                          {idx + 1}
-                        </span>
-                      </td>
-
-                      <td className="py-2.5 px-3">
-                        <div className="font-bold text-slate-900 text-xs sm:text-sm font-serif group-hover:text-teal-800 transition-colors leading-tight">
-                          {res.latinName}
-                        </div>
-                        {res.commonName && (
-                          <div className="text-[10px] text-slate-400 italic">
-                            {res.commonName}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center gap-1.5 flex-wrap max-w-md">
-                          {displayHits.map((hit, hIdx) => (
-                            <span
-                              key={hIdx}
-                              className="px-2 py-0.5 rounded-md bg-slate-100/80 text-slate-700 text-[10px] border border-slate-200/60 font-medium truncate max-w-[190px]"
-                              title={`${hit.label} (${hit.grade})`}
-                            >
-                              {hit.label} ({hit.grade})
-                            </span>
-                          ))}
-                          {remainderCount > 0 && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[9px] font-bold">
-                              +{remainderCount}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-2.5 px-3 text-center">
-                        <span className={`inline-flex items-center justify-center min-w-[26px] h-5 px-2 rounded-full font-bold text-xs ${
-                          idx === 0
-                            ? 'bg-teal-800 text-white shadow-2xs'
-                            : idx === 1
-                            ? 'bg-teal-100 text-teal-900'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}>
-                          {res.totalScore}
-                        </span>
-                      </td>
-
-                      <td className="py-2.5 px-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-16 sm:w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-teal-800 rounded-full"
-                              style={{
-                                width: `${Math.min(100, Math.max(10, (res.coverageCount / Math.max(1, selectedSymptoms.length)) * 100))}%`
-                              }}
-                            />
-                          </div>
-                          <span className="text-slate-600 text-xs font-medium">
-                            {res.coverageCount} / {selectedSymptoms.length}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="py-2.5 px-3 text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedTopRemedyKey(res.remedyKey);
-                            setCurrentStep(4);
-                            setResultSubTab('vergleich');
-                          }}
-                          className="p-1 rounded-lg text-slate-400 group-hover:text-teal-700 group-hover:translate-x-0.5 transition-all cursor-pointer"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* STUFE 3: REPERTORISATIONSERGEBNIS, MATRIX & MATERIA MEDICA */}
-      {/* ========================================================================= */}
-      {currentStep === 3 && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Sub-Tabs: 4. Ergebnisliste | 5. Rubriken-Matrix | 6. Top-Arznei Detail */}
+          {/* Sub-Tabs: 1. Rubriken-Matrix | 2. Repertorisation (nach Boericke) | 3. Top-Arznei Detail */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setResultSubTab('ergebnis')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                  resultSubTab === 'ergebnis'
-                    ? 'bg-teal-700 text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
-              >
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">4</div>
-                <span>{t('repertoryTabRanking' as any) || 'Rangliste (Abdeckung)'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentStep(2);
-                  setResultSubTab('analyse');
-                }}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                  resultSubTab === 'analyse'
-                    ? 'bg-teal-700 text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-teal-200" />
-                <span>Boericke-Analyse (Punkte)</span>
-              </button>
-
+              {/* 1. Rubriken-Abdeckung (Matrix) */}
               <button
                 type="button"
                 onClick={() => setResultSubTab('matrix')}
@@ -2189,11 +1898,27 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">5</div>
+                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">1</div>
                 <Table className="w-3.5 h-3.5" />
                 <span>{t('repertoryTabRubricMatrix' as any) || 'Rubriken-Abdeckung (Matrix)'}</span>
               </button>
 
+              {/* 2. Repertorisation (nach Boericke) */}
+              <button
+                type="button"
+                onClick={() => setResultSubTab('ergebnis')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  resultSubTab === 'ergebnis'
+                    ? 'bg-teal-700 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">2</div>
+                <Sliders className="w-3.5 h-3.5" />
+                <span>{t('repertoryRankingTitle' as any) || 'Repertorisation (nach Boericke)'}</span>
+              </button>
+
+              {/* 3. Top-Arznei im Detail */}
               <button
                 type="button"
                 onClick={() => setResultSubTab('vergleich')}
@@ -2203,9 +1928,9 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">6</div>
+                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">3</div>
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>{t('repertoryTabMateriaMedicaDetail' as any) || 'Top-Arznei im Detail (Boericke)'}</span>
+                <span>{t('repertoryTabMateriaMedicaDetail' as any) || 'Top-Arznei im Detail'}</span>
               </button>
             </div>
 
@@ -2222,321 +1947,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
           </div>
 
 
-          {/* 4. REPERTORISATION TABELLEN-RANGLISTE */}
-          {resultSubTab === 'ergebnis' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Haupt-Rangliste (8 cols auf lg) */}
-              <div className="lg:col-span-8 space-y-4">
-                <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm md:text-base font-bold text-slate-900">
-                        {t('repertoryRankingTitle' as any) || 'Repertorisation (nach Boericke)'}
-                      </h3>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-900">
-                        {calculationResults.length} Mittel ausgewertet
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-slate-500">
-                      Sortiert nach Abdeckung & Gesamtpunktzahl
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]">
-                          <th className="py-2.5 px-3">Rang</th>
-                          <th className="py-2.5 px-3">Arzneimittel</th>
-                          <th className="py-2.5 px-3 text-center">Gradsumme</th>
-                          <th className="py-2.5 px-3 text-center">Abdeckung</th>
-                          <th className="py-2.5 px-3 text-center">Abgedeckte Symptome</th>
-                          <th className="py-2.5 px-3 text-right">Aktion</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {calculationResults.slice(0, 15).map((res, idx) => {
-                          const isWinner = idx === 0;
-                          return (
-                            <tr
-                              key={res.remedyKey}
-                              onClick={() => setSelectedTopRemedyKey(res.remedyKey)}
-                              className={`hover:bg-slate-50 transition-colors cursor-pointer ${
-                                selectedTopRemedyKey === res.remedyKey ? 'bg-teal-50/50' : ''
-                              }`}
-                            >
-                              <td className="py-3 px-3 font-bold text-slate-700">
-                                #{idx + 1}
-                              </td>
-
-                              <td className="py-3 px-3">
-                                <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                                  <span>{res.latinName}</span>
-                                  {res.isPolychrest && (
-                                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                                      Polychrest
-                                    </span>
-                                  )}
-                                </div>
-                                {res.commonName && (
-                                  <div className="text-[11px] text-slate-400">
-                                    {res.commonName}
-                                  </div>
-                                )}
-                              </td>
-
-                              <td className="py-3 px-3 text-center">
-                                <span className="inline-block px-3 py-1 rounded-lg bg-teal-50 border border-teal-200 text-teal-900 font-extrabold text-xs">
-                                  {res.totalScore}
-                                </span>
-                              </td>
-
-                              <td className="py-3 px-3 text-center">
-                                <span className={`inline-block px-2 py-0.5 rounded-md font-bold text-xs ${
-                                  res.isFullCoverage 
-                                    ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' 
-                                    : 'bg-slate-100 text-slate-700'
-                                }`}>
-                                  {res.coverageCount}/{res.totalSymptoms}
-                                </span>
-                              </td>
-
-                              <td className="py-3 px-3 text-center">
-                                <div className="flex flex-col items-center gap-1">
-                                  <div className="flex items-center justify-center gap-1.5 flex-wrap max-w-[200px] mx-auto">
-                                    {selectedSymptoms.map((sym, sIdx) => {
-                                      const hit = res.rubricHits[sym.id];
-                                      return (
-                                        <span
-                                          key={sym.id}
-                                          title={`${sIdx + 1}. ${sym.patientNote || sym.rubricName}: ${hit ? `Boericke Grad ${hit.grade}` : 'Nicht abgedeckt'}`}
-                                          className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center transition-all ${
-                                            hit
-                                              ? 'bg-teal-700 text-white shadow-2xs font-extrabold'
-                                              : 'bg-slate-100 text-slate-300 border border-slate-200/50'
-                                          }`}
-                                        >
-                                          {sIdx + 1}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 justify-center max-w-[250px]">
-                                    {selectedSymptoms.filter(sym => res.rubricHits[sym.id]).slice(0, 3).map((sym) => (
-                                      <span key={sym.id} className="text-[9px] text-teal-700 truncate max-w-[80px]">
-                                        • {sym.patientNote || sym.rubricName.split(',')[0]}
-                                      </span>
-                                    ))}
-                                    {res.coverageCount > 3 && (
-                                      <span className="text-[9px] text-slate-400">+{res.coverageCount - 3}</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-
-                              <td className="py-3 px-3 text-right">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openMonographModalForKey(res.remedyKey);
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-teal-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
-                                >
-                                  Materia Medica
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              {/* Seiten-Panel: Top-Arznei Kurzfassung (4 cols auf lg) */}
-              <div className="lg:col-span-4 space-y-4">
-                {currentDetailRemedy && (
-                  <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4 sticky top-6">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                      <div>
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-teal-800">
-                          Führendes Mittel
-                        </span>
-                        <h4 className="text-base font-bold text-slate-900">
-                          {currentDetailRemedy.latinName}
-                        </h4>
-                      </div>
-                      <span className="px-2.5 py-1 rounded-xl bg-teal-100 text-teal-900 font-extrabold text-xs">
-                        {currentDetailRemedy.totalScore} Pkt
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 text-xs text-slate-600">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Symptom-Abdeckung:</span>
-                        <span className="font-bold text-slate-800">
-                          {currentDetailRemedy.coverageCount} von {currentDetailRemedy.totalSymptoms} ({Math.round((currentDetailRemedy.coverageCount / currentDetailRemedy.totalSymptoms) * 100)}%)
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Volle Deckung:</span>
-                        <span className={`font-bold ${currentDetailRemedy.isFullCoverage ? 'text-emerald-700' : 'text-amber-700'}`}>
-                          {currentDetailRemedy.isFullCoverage ? 'Ja (Vollständig)' : 'Teilweise'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Rubriken Breakdown */}
-                    <div className="space-y-2 pt-2 border-t border-slate-100">
-                      <div className="text-[11px] font-bold text-slate-800">Abgedeckte Rubriken:</div>
-                      <div className="space-y-1.5">
-                        {selectedSymptoms.map((sym, sIdx) => {
-                          const hit = currentDetailRemedy.rubricHits[sym.id];
-                          return (
-                            <div key={sym.id} className="flex items-center justify-between text-xs p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                              <div className="flex items-center gap-2 truncate pr-2">
-                                <span className="w-5 h-5 rounded bg-teal-50 border border-teal-200/80 text-teal-800 text-[10px] font-bold flex items-center justify-center shrink-0">
-                                  {sIdx + 1}
-                                </span>
-                                <span className="truncate text-slate-700">{sym.patientNote || sym.rubricName}</span>
-                              </div>
-                              <span className={`font-bold text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
-                                hit ? 'bg-teal-100 text-teal-900 border border-teal-200' : 'bg-slate-100 text-slate-400'
-                              }`}>
-                                {hit ? `Grad ${hit.grade}` : '—'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => openMonographModalForKey(currentDetailRemedy.remedyKey)}
-                        className="w-full py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-xs"
-                      >
-                        <BookOpen className="w-4 h-4 text-teal-200" />
-                        <span>Vollständige Boericke-Monographie</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* 5. BOERICKE-ANALYSE (SORTIERT NACH PUNKTEN) */}
-          {resultSubTab === 'analyse' && (
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                <h3 className="text-sm font-bold text-slate-900">Punkte-Analyse (Sortierung nach Gradsumme)</h3>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Diese Ansicht priorisiert die Summe der Boericke-Grade. Ideal um zu sehen, welches Mittel die höchste Intensität bei den vorhandenen Treffern aufweist.
-                </p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]">
-                      <th className="py-2.5 px-4 font-bold">Arzneimittel</th>
-                      <th className="py-2.5 px-4 font-bold">Berechnungsformel (Grade)</th>
-                      <th className="py-2.5 px-4 text-center font-bold">Summe (Σ)</th>
-                      <th className="py-2.5 px-4 text-center font-bold">Abdeckung</th>
-                      <th className="py-2.5 px-4 text-right font-bold">Aktion</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {[...calculationResults]
-                      .sort((a, b) => b.totalScore - a.totalScore || b.coverageCount - a.coverageCount)
-                      .slice(0, 50)
-                      .map((res) => (
-                        <tr 
-                          key={res.remedyKey} 
-                          onClick={() => setSelectedTopRemedyKey(res.remedyKey)}
-                          className={`hover:bg-slate-50/70 transition-colors cursor-pointer ${
-                            selectedTopRemedyKey === res.remedyKey ? 'bg-teal-50/50' : ''
-                          }`}
-                        >
-                          <td className="py-4 px-4">
-                            <div className="font-bold text-slate-900 text-sm">{res.latinName}</div>
-                            <div className="text-[10px] text-slate-500 italic">{res.commonName}</div>
-                          </td>
-
-                          <td className="py-4 px-4">
-                            <div className="flex flex-col gap-1.5 max-w-[300px]">
-                              {selectedSymptoms.map((sym, idx) => {
-                                const hit = res.rubricHits[sym.id];
-                                return (
-                                  <div 
-                                    key={sym.id} 
-                                    className={`flex items-start gap-2 px-2 py-1 rounded border text-[10px] ${
-                                      hit 
-                                        ? 'bg-teal-50 border-teal-200 text-teal-800 shadow-3xs' 
-                                        : 'bg-slate-50 border-slate-100 text-slate-300 opacity-50'
-                                    }`}
-                                  >
-                                    <span className={`font-bold shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${hit ? 'bg-teal-700 text-white' : 'bg-slate-200'}`}>
-                                      {idx + 1}
-                                    </span>
-                                    <div className="flex flex-col min-w-0">
-                                      <span className="truncate font-medium">{sym.patientNote || sym.rubricName}</span>
-                                      {hit && (
-                                        <span className="text-[9px] font-bold text-teal-600">
-                                          Grad {hit.grade}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </td>
-
-                          <td className="py-4 px-4 text-center">
-                            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-teal-700 text-white font-black text-sm shadow-sm ring-4 ring-teal-50">
-                              {res.totalScore}
-                            </span>
-                          </td>
-
-                          <td className="py-4 px-4 text-center">
-                            <div className="text-xs font-bold text-slate-700">
-                              {res.coverageCount} / {selectedSymptoms.length}
-                            </div>
-                            <div className="w-16 h-1 bg-slate-100 rounded-full mt-1.5 mx-auto overflow-hidden">
-                              <div 
-                                className="h-full bg-teal-500" 
-                                style={{ width: `${(res.coverageCount / selectedSymptoms.length) * 100}%` }}
-                              />
-                            </div>
-                          </td>
-
-                          <td className="py-4 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedTopRemedyKey(res.remedyKey);
-                                setResultSubTab('vergleich');
-                              }}
-                              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-teal-700 transition-colors"
-                            >
-                              <ChevronRight className="w-5 h-5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* 5. RUBRIKEN-ABDECKUNG MATRIX TAB */}
+          {/* 1. RUBRIKEN-ABDECKUNG MATRIX TAB */}
           {resultSubTab === 'matrix' && (
             <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -2545,7 +1956,7 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                     {t('repertoryRubricMatrixTitle' as any) || 'Rubriken-Abdeckung (Matrix-Übersicht)'}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {t('repertoryRubricMatrixSubtitle' as any) || 'Visuelle Gegenüberstellung aller gewählten Symptome gegen die Top-10 Arzneien'}
+                    {t('repertoryRubricMatrixSubtitle' as any) || 'Visuelle Gegenüberstellung aller gewählten Symptome gegen die Top-Arzneien'}
                   </p>
                 </div>
 
@@ -2592,7 +2003,6 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
                         key={cand.remedyKey} 
                         onClick={() => {
                           setSelectedTopRemedyKey(cand.remedyKey);
-                          setCurrentStep(4);
                           setResultSubTab('vergleich');
                         }}
                         className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${
@@ -2651,15 +2061,152 @@ export const BoerickeRepertoryWizardView: React.FC<BoerickeRepertoryWizardViewPr
             </div>
           )}
 
-          {/* 6. TOP-ARZNEIMITTEL IM DETAIL TAB */}
+          {/* 2. REPERTORISATION TABELLEN-RANGLISTE */}
+          {resultSubTab === 'ergebnis' && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm md:text-base font-bold text-slate-900">
+                      {t('repertoryRankingTitle' as any) || 'Repertorisation (nach Boericke)'}
+                    </h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-900">
+                      {calculationResults.length} {t('repertoriumRemediesUnit' as any) || 'Mittel'}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-500">
+                    {t('repertorySortByCoverageAndScore' as any) || 'Sortiert nach Abdeckung & Gesamtpunktzahl'}
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]">
+                        <th className="py-2.5 px-3">Rang</th>
+                        <th className="py-2.5 px-3">Arzneimittel</th>
+                        <th className="py-2.5 px-3 text-center">Gradsumme</th>
+                        <th className="py-2.5 px-3 text-center">Abdeckung</th>
+                        <th className="py-2.5 px-3 text-center">Abgedeckte Symptome</th>
+                        <th className="py-2.5 px-3 text-right">Aktion</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {calculationResults.slice(0, 30).map((res, idx) => {
+                        return (
+                          <tr
+                            key={res.remedyKey}
+                            onClick={() => {
+                              setSelectedTopRemedyKey(res.remedyKey);
+                              setResultSubTab('vergleich');
+                            }}
+                            className={`hover:bg-slate-50 transition-colors cursor-pointer ${
+                              selectedTopRemedyKey === res.remedyKey ? 'bg-teal-50/50' : ''
+                            }`}
+                          >
+                            <td className="py-3 px-3 font-bold text-slate-700">
+                              #{idx + 1}
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                <span>{res.latinName}</span>
+                                {res.isPolychrest && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                    Polychrest
+                                  </span>
+                                )}
+                              </div>
+                              {res.commonName && (
+                                <div className="text-[11px] text-slate-400">
+                                  {res.commonName}
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              <span className="inline-block px-3 py-1 rounded-lg bg-teal-50 border border-teal-200 text-teal-900 font-extrabold text-xs">
+                                {res.totalScore}
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              <span className={`inline-block px-2 py-0.5 rounded-md font-bold text-xs ${
+                                res.isFullCoverage 
+                                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' 
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}>
+                                {res.coverageCount}/{res.totalSymptoms}
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="flex items-center justify-center gap-1.5 flex-wrap max-w-md mx-auto">
+                                  {selectedSymptoms.map((sym, sIdx) => {
+                                    const hit = res.rubricHits[sym.id];
+                                    return (
+                                      <span
+                                        key={sym.id}
+                                        title={`${sIdx + 1}. ${sym.patientNote || sym.rubricName}: ${hit ? `Boericke Grad ${hit.grade}` : 'Nicht abgedeckt'}`}
+                                        className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center transition-all ${
+                                          hit
+                                            ? 'bg-teal-700 text-white shadow-2xs font-extrabold'
+                                            : 'bg-slate-100 text-slate-300 border border-slate-200/50'
+                                        }`}
+                                      >
+                                        {sIdx + 1}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                                <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 justify-center max-w-lg">
+                                  {selectedSymptoms.filter(sym => res.rubricHits[sym.id]).slice(0, 4).map((sym) => (
+                                    <span key={sym.id} className="text-[9px] text-teal-700 truncate max-w-[120px]">
+                                      • {sym.patientNote || sym.rubricName.split(',')[0]}
+                                    </span>
+                                  ))}
+                                  {res.coverageCount > 4 && (
+                                    <span className="text-[9px] text-slate-400">+{res.coverageCount - 4}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openMonographModalForKey(res.remedyKey);
+                                }}
+                                className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-teal-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
+                              >
+                                {t('viewMonograph' as any) || 'Materia Medica'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. TOP-ARZNEIMITTEL IM DETAIL TAB */}
           {resultSubTab === 'vergleich' && renderTopRemedyDetail()}
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* STUFE 4: TOP-ARZNEIMITTEL IM DETAIL & MATERIA MEDICA */}
-      {/* ========================================================================= */}
-      {currentStep === 4 && renderTopRemedyDetail()}
+      {/* STUFE 3 FALLBACK: Rendert Top-Arznei im Detail */}
+      {currentStep === 3 && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {renderTopRemedyDetail()}
+        </div>
+      )}
 
       {/* Monograph Modal */}
       {monographRemedy && (
